@@ -2,28 +2,40 @@
 {
   "placeholderImages": [
     {
-      "id": "hero-bg",
-      "description": "Professional business growth background",
-      "imageUrl": "https://picsum.photos/seed/nica1/1200/600",
-      "imageHint": "business growth"
+      "id": "hero-business",
+      "description": "Professional business environment showing growth and collaboration",
+      "imageUrl": "https://picsum.photos/seed/affiliate_hero/1200/800",
+      "imageHint": "business success"
     },
     {
-      "id": "product-digital",
-      "description": "Digital product representation",
-      "imageUrl": "https://picsum.photos/seed/nica2/400/300",
-      "imageHint": "digital software"
+      "id": "product-tech",
+      "description": "Modern laptop with digital marketing tools",
+      "imageUrl": "https://picsum.photos/seed/tech_tool/400/300",
+      "imageHint": "digital technology"
     },
     {
-      "id": "product-course",
-      "description": "Online course or education",
-      "imageUrl": "https://picsum.photos/seed/nica3/400/300",
-      "imageHint": "online learning"
+      "id": "product-education",
+      "description": "Clean workspace for online learning",
+      "imageUrl": "https://picsum.photos/seed/online_course/400/300",
+      "imageHint": "online education"
     },
     {
-      "id": "user-avatar",
-      "description": "User profile placeholder",
-      "imageUrl": "https://picsum.photos/seed/user/200/200",
-      "imageHint": "person profile"
+      "id": "product-service",
+      "description": "Professional consulting or customer service desk",
+      "imageUrl": "https://picsum.photos/seed/service_pro/400/300",
+      "imageHint": "professional service"
+    },
+    {
+      "id": "product-analytics",
+      "description": "Data charts and growth metrics",
+      "imageUrl": "https://picsum.photos/seed/data_growth/400/300",
+      "imageHint": "business analytics"
+    },
+    {
+      "id": "product-code",
+      "description": "Software development and coding screens",
+      "imageUrl": "https://picsum.photos/seed/software_dev/400/300",
+      "imageHint": "software code"
     }
   ]
 }

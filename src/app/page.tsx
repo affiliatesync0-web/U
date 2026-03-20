@@ -7,9 +7,11 @@ import { Target, ArrowRight, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 export default function Home() {
   const { t } = useLanguage();
+  const heroImage = placeholderData.placeholderImages.find(img => img.id === 'hero-business');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -56,11 +58,11 @@ export default function Home() {
               </div>
               <div className="relative aspect-video overflow-hidden rounded-2xl shadow-2xl border-4 border-white hidden md:block">
                  <Image 
-                   src="https://picsum.photos/seed/nica1/1200/800"
-                   alt="AffiliateSync Dashboard"
+                   src={heroImage?.imageUrl || "https://picsum.photos/seed/nica1/1200/800"}
+                   alt={heroImage?.description || "AffiliateSync Dashboard"}
                    fill
                    className="object-cover"
-                   data-ai-hint="business success"
+                   data-ai-hint={heroImage?.imageHint || "business success"}
                  />
               </div>
             </div>
