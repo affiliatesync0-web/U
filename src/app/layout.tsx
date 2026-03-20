@@ -1,8 +1,10 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/language-context';
 import { FirebaseClientProvider } from '@/firebase';
+import { FloatingContact } from '@/components/floating-contact';
 
 export const metadata: Metadata = {
   title: 'AffiliateSync | Potenciando Afiliados en Nicaragua',
@@ -25,6 +27,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <LanguageProvider>
             {children}
+            <FloatingContact />
             <Toaster />
           </LanguageProvider>
         </FirebaseClientProvider>
