@@ -20,12 +20,6 @@ export function FloatingContact() {
       <div className="absolute right-20 bg-white text-primary text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl shadow-xl border border-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden md:block whitespace-nowrap">
         ¿Necesitas ayuda? Escríbenos
       </div>
-      
-      {/* Notificación visual (punto pulsante) */}
-      <span className="absolute -top-1 -right-1 flex h-5 w-5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-5 w-5 bg-accent"></span>
-      </span>
     </a>
   )
 }
