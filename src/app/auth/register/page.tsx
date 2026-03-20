@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -12,30 +13,65 @@ import { Target, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth, initiateAnonymousSignIn } from '@/firebase'
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase'
+import { signInAnonymously } from 'firebase/auth'
+import { doc } from 'firebase/firestore'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { t } = useLanguage()
   const auth = useAuth()
+  const db = useFirestore()
   const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    bank: '',
+    accNumber: '',
+    accHolder: ''
+  })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
-    // Autenticamos al usuario en Firebase
-    initiateAnonymousSignIn(auth)
-    
-    setTimeout(() => {
+    try {
+      // Usamos el SDK directamente para obtener el UID y guardar los datos
+      const cred = await signInAnonymously(auth)
+      const user = cred.user
+
+      const affiliateData = {
+        id: user.uid,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        bankId: formData.bank,
+        bankAccountNumber: formData.accNumber,
+        bankAccountHolderName: formData.accHolder,
+        currentBalance: 0,
+        registeredAt: new Date().toISOString(),
+        status: 'Active'
+      }
+
+      const affiliateRef = doc(db, 'affiliates', user.uid)
+      setDocumentNonBlocking(affiliateRef, affiliateData, { merge: true })
+      
       setLoading(false)
       toast({
         title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
         description: t.language === 'es' ? `¡Bienvenido a ${t.brand}!` : `Welcome to ${t.brand}!`,
       })
       router.push('/dashboard/affiliate')
-    }, 1500)
+    } catch (error) {
+      setLoading(false)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo completar el registro."
+      })
+    }
   }
 
   return (
@@ -64,15 +100,37 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">{t.firstName}</Label>
-                  <Input id="firstName" placeholder="Juan" required className="h-11" />
+                  <Input 
+                    id="firstName" 
+                    placeholder="Juan" 
+                    required 
+                    className="h-11" 
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">{t.lastName}</Label>
-                  <Input id="lastName" placeholder="Perez" required className="h-11" />
+                  <Input 
+                    id="lastName" 
+                    placeholder="Perez" 
+                    required 
+                    className="h-11" 
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="email">{t.email}</Label>
-                  <Input id="email" type="email" placeholder="juan.perez@gmail.com" required className="h-11" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="juan.perez@gmail.com" 
+                    required 
+                    className="h-11" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
                 </div>
               </div>
             </div>
@@ -82,13 +140,13 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="bank">{t.bankName}</Label>
-                  <Select required>
+                  <Select required onValueChange={(v) => setFormData({...formData, bank: v})}>
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder={t.language === 'es' ? "Selecciona un banco" : "Select a bank"} />
                     </SelectTrigger>
                     <SelectContent>
                       {NICA_BANKS.map((bank) => (
-                        <SelectItem key={bank} value={bank.toLowerCase()}>
+                        <SelectItem key={bank} value={bank}>
                           {bank}
                         </SelectItem>
                       ))}
@@ -97,11 +155,25 @@ export default function RegisterPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="accNumber">{t.accountNumber}</Label>
-                  <Input id="accNumber" placeholder="1234567890" required className="h-11" />
+                  <Input 
+                    id="accNumber" 
+                    placeholder="1234567890" 
+                    required 
+                    className="h-11" 
+                    value={formData.accNumber}
+                    onChange={(e) => setFormData({...formData, accNumber: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="accHolder">{t.accountHolder}</Label>
-                  <Input id="accHolder" placeholder="Juan Alberto Perez Lopez" required className="h-11" />
+                  <Input 
+                    id="accHolder" 
+                    placeholder="Juan Alberto Perez Lopez" 
+                    required 
+                    className="h-11" 
+                    value={formData.accHolder}
+                    onChange={(e) => setFormData({...formData, accHolder: e.target.value})}
+                  />
                 </div>
               </div>
             </div>

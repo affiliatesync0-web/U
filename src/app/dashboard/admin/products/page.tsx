@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -36,6 +37,7 @@ export default function AdminProductsPage() {
     commission: '',
     bankAccount: '',
     bankType: '',
+    bankHolder: '',
     features: '',
     description: ''
   })
@@ -76,17 +78,27 @@ export default function AdminProductsPage() {
   const handleSave = () => {
     if (!db) return;
     const productsRef = collection(db, 'products');
-    addDocumentNonBlocking(productsRef, {
-      ...formData,
+    
+    // Mapeo según el esquema backend.json
+    const productToSave = {
+      name: formData.name,
+      category: formData.category,
+      code: formData.code,
       price: parseFloat(formData.price),
       commissionRate: parseFloat(formData.commission),
+      payoutBankAccountNumber: formData.bankAccount,
+      payoutBankId: formData.bankType,
+      payoutBankAccountHolderName: formData.bankHolder,
+      description: formData.description,
       createdAt: new Date().toISOString()
-    });
+    };
+
+    addDocumentNonBlocking(productsRef, productToSave);
 
     toast({ title: t.saveProduct, description: `${formData.name} ha sido añadido al catálogo.` })
     setIsAdding(false)
     setFormData({
-      name: '', category: '', code: '', price: '', commission: '', bankAccount: '', bankType: '', features: '', description: ''
+      name: '', category: '', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', features: '', description: ''
     })
   }
 
@@ -173,11 +185,11 @@ export default function AdminProductsPage() {
                 <div className="space-y-4 border-l pl-6 bg-muted/20 rounded-lg p-4">
                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">{t.payoutSettings}</h3>
                    <div className="space-y-2">
-                    <Label>{t.accountNumber} (Nicaragua)</Label>
+                    <Label>{t.accountNumber}</Label>
                     <Input 
                       value={formData.bankAccount} 
                       onChange={e => setFormData({...formData, bankAccount: e.target.value})} 
-                      placeholder="Número de cuenta para ingresos" 
+                      placeholder="Número de cuenta" 
                     />
                   </div>
                   <div className="space-y-2">
@@ -190,6 +202,14 @@ export default function AdminProductsPage() {
                         {NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t.accountHolder}</Label>
+                    <Input 
+                      value={formData.bankHolder} 
+                      onChange={e => setFormData({...formData, bankHolder: e.target.value})} 
+                      placeholder="Nombre del titular" 
+                    />
                   </div>
 
                   <div className="pt-4 border-t mt-4">
@@ -271,7 +291,7 @@ export default function AdminProductsPage() {
                       </TableCell>
                       <TableCell>${p.price?.toFixed(2)}</TableCell>
                       <TableCell className="text-green-600 font-bold">{p.commissionRate}%</TableCell>
-                      <TableCell className="text-xs">{p.bankType}</TableCell>
+                      <TableCell className="text-xs">{p.payoutBankId}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600"><Pencil className="h-4 w-4" /></Button>
