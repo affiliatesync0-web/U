@@ -1,24 +1,30 @@
+"use client"
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Target, ArrowRight, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 import Image from 'next/image';
+import { useLanguage } from '@/components/language-context';
+import { LanguageToggle } from '@/components/language-toggle';
 
 export default function Home() {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white sticky top-0 z-50">
         <Link className="flex items-center justify-center gap-2" href="/">
           <Target className="h-6 w-6 text-primary" />
-          <span className="font-headline font-bold text-xl text-primary">NicaAffiliate</span>
+          <span className="font-headline font-bold text-xl text-primary">{t.brand}</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+        <nav className="ml-auto flex items-center gap-4 sm:gap-6">
           <Link className="text-sm font-medium hover:text-primary transition-colors" href="/auth/register">
-            Join as Affiliate
+            {t.joinAffiliate}
           </Link>
           <Link className="text-sm font-medium hover:text-primary transition-colors" href="/dashboard/admin">
-            Admin Login
+            {t.adminLogin}
           </Link>
+          <LanguageToggle />
         </nav>
       </header>
       <main className="flex-1">
@@ -28,21 +34,21 @@ export default function Home() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-headline font-bold tracking-tighter sm:text-5xl xl:text-6xl/none text-[#2870A3]">
-                    The Modern Affiliate Network for Nicaragua
+                    {t.heroTitle}
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl font-body">
-                    Connect with premium digital products and services. Earn high commissions and manage your earnings with local Nicaraguan bank transfers.
+                    {t.heroSubtitle}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button asChild size="lg" className="bg-[#2870A3] hover:bg-[#1e5a82] font-semibold text-white">
                     <Link href="/auth/register">
-                      Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                      {t.getStarted} <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="border-[#A37EDC] text-[#A37EDC] hover:bg-[#f3effb]">
                     <Link href="/dashboard/affiliate">
-                      Affiliate Portal
+                      {t.affiliatePortal}
                     </Link>
                   </Button>
                 </div>
@@ -50,7 +56,7 @@ export default function Home() {
               <div className="relative aspect-video overflow-hidden rounded-2xl shadow-2xl border-4 border-white">
                  <Image 
                    src="https://picsum.photos/seed/nica1/1200/800"
-                   alt="NicaAffiliate Dashboard"
+                   alt="AffiliateSync Dashboard"
                    fill
                    className="object-cover"
                    data-ai-hint="business success"
@@ -66,7 +72,7 @@ export default function Home() {
               <div className="space-y-2">
                 <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-5xl text-[#2870A3]">Built for Growth</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed font-body">
-                  Everything you need to succeed as an affiliate or manage your own product line in Nicaragua.
+                  Everything you need to succeed as an affiliate or manage your own product line.
                 </p>
               </div>
             </div>
@@ -75,16 +81,16 @@ export default function Home() {
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f3effb]">
                   <ShieldCheck className="h-8 w-8 text-[#A37EDC]" />
                 </div>
-                <h3 className="text-xl font-bold font-headline">Secure Payments</h3>
+                <h3 className="text-xl font-bold font-headline">{t.securePayments}</h3>
                 <p className="text-sm text-muted-foreground font-body">
-                  Direct transfers to any Nicaraguan bank account. Fast, reliable, and secure.
+                  Direct transfers to your bank account. Fast, reliable, and secure.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f3effb]">
                   <BarChart3 className="h-8 w-8 text-[#A37EDC]" />
                 </div>
-                <h3 className="text-xl font-bold font-headline">Real-time Analytics</h3>
+                <h3 className="text-xl font-bold font-headline">{t.realTimeAnalytics}</h3>
                 <p className="text-sm text-muted-foreground font-body">
                   Track every click and conversion with our advanced tracking system.
                 </p>
@@ -93,7 +99,7 @@ export default function Home() {
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f3effb]">
                   <Zap className="h-8 w-8 text-[#A37EDC]" />
                 </div>
-                <h3 className="text-xl font-bold font-headline">Premium Products</h3>
+                <h3 className="text-xl font-bold font-headline">{t.premiumProducts}</h3>
                 <p className="text-sm text-muted-foreground font-body">
                   Exclusive access to high-demand digital courses, services, and software.
                 </p>
@@ -103,7 +109,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-white">
-        <p className="text-xs text-muted-foreground">© 2024 NicaAffiliate Connect. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">© 2024 AffiliateSync. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link className="text-xs hover:underline underline-offset-4" href="#">
             Terms of Service

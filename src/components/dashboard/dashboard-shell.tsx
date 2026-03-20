@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -28,6 +27,8 @@ import {
 } from "@/components/ui/sidebar"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { Separator } from "@/components/ui/separator"
+import { useLanguage } from "@/components/language-context"
+import { LanguageToggle } from "@/components/language-toggle"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -35,6 +36,8 @@ interface DashboardShellProps {
 }
 
 export function DashboardShell({ children, role }: DashboardShellProps) {
+  const { t } = useLanguage();
+
   const adminItems = [
     { title: "Overview", url: "/dashboard/admin", icon: LayoutDashboard },
     { title: "Products", url: "/dashboard/admin/products", icon: Package },
@@ -43,9 +46,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   ]
 
   const affiliateItems = [
-    { title: "Dashboard", url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: "Products", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: "Register Sale", url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
+    { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
+    { title: t.products, url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
   ]
 
   return (
@@ -57,7 +60,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <Target className="h-5 w-5" />
             </div>
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-bold text-sm tracking-tight text-primary">NicaAffiliate</span>
+              <span className="font-headline font-bold text-sm tracking-tight text-primary">{t.brand}</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Connect</span>
             </div>
           </div>
@@ -71,7 +74,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <SidebarMenuButton asChild>
                 <a href="/">
                   <LogOut />
-                  <span>Logout</span>
+                  <span>{t.logout}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -88,6 +91,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                 {role} Area
              </h2>
           </div>
+          <LanguageToggle />
         </header>
         <main className="flex-1 p-4 md:p-8">
           <div className="mx-auto max-w-7xl">

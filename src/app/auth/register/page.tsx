@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -12,10 +11,12 @@ import { NICA_BANKS } from '@/lib/constants'
 import { Target, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguage } from '@/components/language-context'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,7 +28,7 @@ export default function RegisterPage() {
       setLoading(false)
       toast({
         title: "Registration successful",
-        description: "Welcome to NicaAffiliate Connect!",
+        description: `Welcome to ${t.brand}!`,
       })
       router.push('/dashboard/affiliate')
     }, 1500)
@@ -49,7 +50,7 @@ export default function RegisterPage() {
           </div>
           <CardTitle className="text-2xl font-headline font-bold text-[#2870A3]">Become an Affiliate</CardTitle>
           <CardDescription>
-            Join our network and start earning commissions today.
+            Join our network and start earning commissions today with {t.brand}.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,7 +71,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="pt-4 border-t">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Bank Information (Nicaragua)</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Bank Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="bank">Bank Name</Label>
