@@ -15,14 +15,19 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 
 export default function AdminSalesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  const salesQuery = useMemoFirebase(() => collection(db, 'sales'), [db]);
+  const salesQuery = useMemoFirebase(() => {
+    if (!db || isUserLoading || !user) return null;
+    return collection(db, 'sales');
+  }, [db, user, isUserLoading]);
+
   const { data: allSales, isLoading } = useCollection(salesQuery);
 
   return (
@@ -45,7 +50,7 @@ export default function AdminSalesPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading || isUserLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -55,7 +60,6 @@ export default function AdminSalesPage() {
           </Card>
         ) : (
           <>
-            {/* Mobile View */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
               {allSales.map((sale) => (
                 <Card key={sale.id} className="border-none shadow-sm">
@@ -88,7 +92,6 @@ export default function AdminSalesPage() {
               ))}
             </div>
 
-            {/* Desktop View */}
             <Card className="hidden md:block border-none shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">

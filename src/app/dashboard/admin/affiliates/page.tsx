@@ -15,14 +15,19 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
+  const affiliatesQuery = useMemoFirebase(() => {
+    if (!db || isUserLoading || !user) return null;
+    return collection(db, 'affiliates');
+  }, [db, user, isUserLoading]);
+
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
 
   const getStatusLabel = (status: string) => {
@@ -47,7 +52,7 @@ export default function AdminAffiliatesPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading || isUserLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -57,7 +62,6 @@ export default function AdminAffiliatesPage() {
           </Card>
         ) : (
           <>
-            {/* Mobile View */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
               {affiliates.map((aff) => (
                 <Card key={aff.id} className="border-none shadow-sm">
@@ -98,7 +102,6 @@ export default function AdminAffiliatesPage() {
               ))}
             </div>
 
-            {/* Desktop View */}
             <Card className="hidden md:block border-none shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">

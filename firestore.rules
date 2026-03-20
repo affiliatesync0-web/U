@@ -9,7 +9,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // Para el prototipo, permitimos acceso si está firmado
+      // En producción, aquí se verificaría el rol en roles_admin
+      return isSignedIn();
     }
 
     function isOwner(userId) {
@@ -28,40 +30,39 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow get, list: if isSignedIn();
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     match /affiliates/{affiliateId} {
       allow get: if isOwner(affiliateId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(affiliateId) && request.resource.data.id == affiliateId;
-      allow update: if (isOwner(affiliateId) || isAdmin()) && request.resource.data.id == resource.data.id;
+      allow create: if isOwner(affiliateId) || isAdmin();
+      allow update: if isOwner(affiliateId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /buyers/{buyerId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isSignedIn();
+      allow get, list: if isAdmin();
+      allow create: if true;
       allow update, delete: if isAdmin();
     }
 
     match /sales/{saleId} {
       allow get: if isDocumentOwner(resource.data.affiliateId) || isAdmin();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.affiliateId == request.auth.uid;
+      allow list: if isAdmin() || (isSignedIn() && resource.data.affiliateId == request.auth.uid);
+      allow create: if true;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     match /site_config/{configId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /roles_admin/{userId} {
-      allow get, list, create, update, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
   }
 }

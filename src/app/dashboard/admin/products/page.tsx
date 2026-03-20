@@ -11,18 +11,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Pencil, Trash2, Wand2, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Wand2, Search, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
+import { collection, doc } from 'firebase/firestore'
 
 export default function AdminProductsPage() {
   const { toast } = useToast()
   const { t } = useLanguage()
+  const db = useFirestore()
   const [isAdding, setIsAdding] = useState(false)
   const [generating, setGenerating] = useState(false)
   
-  // Form state
+  const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
+  const { data: products, isLoading } = useCollection(productsQuery);
+
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -34,11 +39,6 @@ export default function AdminProductsPage() {
     features: '',
     description: ''
   })
-
-  const [products, setProducts] = useState([
-    { id: "1", name: "Curso de Excel", code: "EXCEL24", category: "Course", price: 49.99, commission: "20%", bank: "Banpro" },
-    { id: "2", name: "Paquete SEO", code: "SEO-OPT", category: "Service", price: 199.00, commission: "15%", bank: "BAC" },
-  ])
 
   const handleAIHelp = async () => {
     if (!formData.name || !formData.category || !formData.features) {
@@ -74,11 +74,27 @@ export default function AdminProductsPage() {
   }
 
   const handleSave = () => {
+    if (!db) return;
+    const productsRef = collection(db, 'products');
+    addDocumentNonBlocking(productsRef, {
+      ...formData,
+      price: parseFloat(formData.price),
+      commissionRate: parseFloat(formData.commission),
+      createdAt: new Date().toISOString()
+    });
+
     toast({ title: t.saveProduct, description: `${formData.name} ha sido añadido al catálogo.` })
     setIsAdding(false)
     setFormData({
       name: '', category: '', code: '', price: '', commission: '', bankAccount: '', bankType: '', features: '', description: ''
     })
+  }
+
+  const handleDelete = (id: string) => {
+    if (!db) return;
+    const productRef = doc(db, 'products', id);
+    deleteDocumentNonBlocking(productRef);
+    toast({ title: "Producto eliminado", description: "El producto ha sido removido del catálogo." });
   }
 
   return (
@@ -228,39 +244,45 @@ export default function AdminProductsPage() {
              </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead>{t.productCode}</TableHead>
-                  <TableHead>{t.productName}</TableHead>
-                  <TableHead>{t.category}</TableHead>
-                  <TableHead>{t.price}</TableHead>
-                  <TableHead>{t.commission}</TableHead>
-                  <TableHead>{t.bankName}</TableHead>
-                  <TableHead className="text-right">{t.actions}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono font-bold text-primary">{p.code}</TableCell>
-                    <TableCell className="font-semibold">{p.name}</TableCell>
-                    <TableCell>
-                      <span className="text-xs px-2 py-1 rounded-full bg-muted border font-medium">{p.category}</span>
-                    </TableCell>
-                    <TableCell>${p.price.toFixed(2)}</TableCell>
-                    <TableCell className="text-green-600 font-bold">{p.commission}</TableCell>
-                    <TableCell className="text-xs">{p.bank}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>
+            ) : !products || products.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">Catálogo vacío. Añade tu primer producto.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead>{t.productCode}</TableHead>
+                    <TableHead>{t.productName}</TableHead>
+                    <TableHead>{t.category}</TableHead>
+                    <TableHead>{t.price}</TableHead>
+                    <TableHead>{t.commission}</TableHead>
+                    <TableHead>{t.bankName}</TableHead>
+                    <TableHead className="text-right">{t.actions}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {products.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono font-bold text-primary">{p.code}</TableCell>
+                      <TableCell className="font-semibold">{p.name}</TableCell>
+                      <TableCell>
+                        <span className="text-xs px-2 py-1 rounded-full bg-muted border font-medium">{p.category}</span>
+                      </TableCell>
+                      <TableCell>${p.price?.toFixed(2)}</TableCell>
+                      <TableCell className="text-green-600 font-bold">{p.commissionRate}%</TableCell>
+                      <TableCell className="text-xs">{p.bankType}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600"><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
