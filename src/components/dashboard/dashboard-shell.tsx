@@ -9,9 +9,10 @@ import {
   BadgeDollarSign,
   LogOut,
   ShoppingBag,
-  Target,
   Palette,
 } from "lucide-react"
+import Image from "next/image"
+import placeholderData from "@/app/lib/placeholder-images.json"
 
 import {
   Sidebar,
@@ -38,6 +39,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
+  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
@@ -58,9 +60,21 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Target className="h-5 w-5" />
-            </div>
+            {logoImage ? (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden">
+                <Image 
+                  src={logoImage.imageUrl} 
+                  alt="Logo" 
+                  width={32} 
+                  height={32} 
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <ShoppingBag className="h-5 w-5" />
+              </div>
+            )}
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
               <span className="font-headline font-bold text-sm tracking-tight text-primary">{t.brand}</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Connect</span>

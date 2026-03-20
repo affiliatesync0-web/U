@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Megaphone, ArrowRight, Globe, BarChart3, Users, Mail } from 'lucide-react';
+import { ArrowRight, Globe, BarChart3, Users, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
@@ -12,13 +12,24 @@ import placeholderData from '@/app/lib/placeholder-images.json';
 export default function Home() {
   const { t } = useLanguage();
   const heroImage = placeholderData.placeholderImages.find(img => img.id === 'hero-marketing');
+  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <Link className="flex items-center justify-center gap-2" href="/">
-          <Megaphone className="h-6 w-6 text-primary" />
-          <span className="font-headline font-bold text-lg md:text-xl text-primary">{t.brand}</span>
+      <header className="px-4 lg:px-6 h-20 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <Link className="flex items-center justify-center gap-3" href="/">
+          {logoImage && (
+            <div className="relative h-10 w-10 overflow-hidden rounded-lg">
+              <Image 
+                src={logoImage.imageUrl} 
+                alt="Logo" 
+                fill 
+                className="object-cover"
+                data-ai-hint={logoImage.imageHint}
+              />
+            </div>
+          )}
+          <span className="font-headline font-bold text-xl md:text-2xl text-primary tracking-tight">{t.brand}</span>
         </Link>
         <nav className="ml-auto flex items-center gap-2 sm:gap-6">
           <Link className="hidden sm:inline-block text-sm font-medium hover:text-primary transition-colors" href="/auth/register">
@@ -122,7 +133,11 @@ export default function Home() {
       <footer className="flex flex-col gap-8 sm:flex-row py-16 w-full shrink-0 items-center px-4 md:px-6 border-t bg-slate-50">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" />
+            {logoImage && (
+              <div className="relative h-6 w-6 overflow-hidden rounded-md">
+                <Image src={logoImage.imageUrl} alt="Logo" fill className="object-cover" />
+              </div>
+            )}
             <p className="text-lg font-bold text-primary">AffiliateSync</p>
           </div>
           <p className="text-xs text-muted-foreground max-w-[200px]">

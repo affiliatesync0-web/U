@@ -8,6 +8,12 @@
       "imageHint": "digital marketing"
     },
     {
+      "id": "site-logo",
+      "description": "Logo oficial de AffiliateSync",
+      "imageUrl": "https://picsum.photos/seed/affiliate_logo_1/200/200",
+      "imageHint": "marketing logo"
+    },
+    {
       "id": "product-social",
       "description": "Gestión de redes sociales y contenido",
       "imageUrl": "https://picsum.photos/seed/social_media_42/400/300",
