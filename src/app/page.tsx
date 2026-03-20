@@ -16,20 +16,20 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-20 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <Link className="flex items-center justify-center gap-3" href="/">
+      <header className="px-4 lg:px-6 h-24 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <Link className="flex items-center justify-center gap-4" href="/">
           {logoImage && (
-            <div className="relative h-10 w-10 overflow-hidden rounded-lg">
+            <div className="relative h-16 w-32 overflow-hidden">
               <Image 
                 src={logoImage.imageUrl} 
-                alt="Logo" 
+                alt="Logo AffiliateSync" 
                 fill 
-                className="object-cover"
+                className="object-contain"
                 data-ai-hint={logoImage.imageHint}
               />
             </div>
           )}
-          <span className="font-headline font-bold text-xl md:text-2xl text-primary tracking-tight">{t.brand}</span>
+          <span className="font-headline font-bold text-2xl md:text-3xl text-primary tracking-tight hidden md:inline-block">{t.brand}</span>
         </Link>
         <nav className="ml-auto flex items-center gap-2 sm:gap-6">
           <Link className="hidden sm:inline-block text-sm font-medium hover:text-primary transition-colors" href="/auth/register">
@@ -134,8 +134,8 @@ export default function Home() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             {logoImage && (
-              <div className="relative h-6 w-6 overflow-hidden rounded-md">
-                <Image src={logoImage.imageUrl} alt="Logo" fill className="object-cover" />
+              <div className="relative h-10 w-20 overflow-hidden">
+                <Image src={logoImage.imageUrl} alt="Logo" fill className="object-contain" />
               </div>
             )}
             <p className="text-lg font-bold text-primary">AffiliateSync</p>
