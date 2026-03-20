@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,6 +10,7 @@ import {
   LogOut,
   ShoppingBag,
   Target,
+  Palette,
 } from "lucide-react"
 
 import {
@@ -42,6 +44,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: t.allSales, url: "/dashboard/admin/sales", icon: ShoppingBag },
+    { title: t.design, url: "/dashboard/admin/design", icon: Palette },
   ]
 
   const affiliateItems = [

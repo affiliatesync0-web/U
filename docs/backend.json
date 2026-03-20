@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Bank": {
@@ -245,6 +246,30 @@
         "productPayoutAmount",
         "status"
       ]
+    },
+    "SiteConfig": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SiteConfig",
+      "type": "object",
+      "description": "Stores global application settings and media configurations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the config entry, often matching the resource being configured (e.g., an image ID)."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "The URL of the image to display."
+        },
+        "imageHint": {
+          "type": "string",
+          "description": "Keywords for AI searching."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what this image represents."
+        }
+      }
     }
   },
   "auth": {
@@ -262,7 +287,7 @@
           "schema": {
             "$ref": "#/backend/entities/Bank"
           },
-          "description": "Stores reference data for banks operating in Nicaragua. These documents are publicly readable for selection in forms, and fully managed by administrators.",
+          "description": "Stores reference data for banks operating in Nicaragua.",
           "params": [
             {
               "name": "bankId",
@@ -278,7 +303,7 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "The catalog of products, services, and infoproducts available for affiliates to sell. These documents are browsable by affiliates and fully managed by administrators. Includes denormalized 'payoutBankId' for direct reference to the associated bank.",
+          "description": "The catalog of products available for affiliates to sell.",
           "params": [
             {
               "name": "productId",
@@ -294,11 +319,11 @@
           "schema": {
             "$ref": "#/backend/entities/Affiliate"
           },
-          "description": "Profiles of registered affiliates. The document ID ('affiliateId') directly corresponds to the user's Firebase Authentication UID, enabling simple and secure self-management rules. Affiliates manage their own profile, while administrators can view and manage all affiliate profiles. Includes denormalized 'bankId' for direct reference to the affiliate's bank.",
+          "description": "Profiles of registered affiliates.",
           "params": [
             {
               "name": "affiliateId",
-              "description": "The unique ID of the affiliate, matching the user's Firebase Authentication UID."
+              "description": "The unique ID of the affiliate."
             }
           ]
         }
@@ -310,7 +335,7 @@
           "schema": {
             "$ref": "#/backend/entities/Buyer"
           },
-          "description": "Records of customers (buyers) who have made purchases. These are primarily created or referenced when an affiliate registers a sale and are managed/viewable by administrators. No direct ownership for authorization purposes is modeled at this level.",
+          "description": "Records of customers who have made purchases.",
           "params": [
             {
               "name": "buyerId",
@@ -326,7 +351,7 @@
           "schema": {
             "$ref": "#/backend/entities/Sale"
           },
-          "description": "Individual sales transactions, linking an affiliate, a product, and a buyer. Crucially includes 'affiliateId' for authorization independence, allowing affiliates to query and view only their own sales without needing to access parent 'affiliate' data. Administrators can view and manage all sales.",
+          "description": "Individual sales transactions.",
           "params": [
             {
               "name": "saleId",
@@ -334,8 +359,23 @@
             }
           ]
         }
+      },
+      {
+        "path": "/site_config/{configId}",
+        "definition": {
+          "entityName": "SiteConfig",
+          "schema": {
+            "$ref": "#/backend/entities/SiteConfig"
+          },
+          "description": "Global site configurations, including image overrides and hints.",
+          "params": [
+            {
+              "name": "configId",
+              "description": "The identifier for the setting (e.g., the image placeholder ID)."
+            }
+          ]
+        }
       }
-    ],
-    "reasoning": "The recommended Firestore structure prioritizes Authorization Independence, Structural Segregation, and consistent Access Modeling to ensure a secure, scalable, and debuggable system for NicaAffiliate Connect. \n\n**Authorization Independence:** This is achieved by denormalizing authorization-critical fields directly into the documents where they are needed. For example, the `Sale` documents will include the `affiliateId` field. This allows security rules to check `request.auth.uid == resource.data.affiliateId` directly on the `Sale` document, eliminating the need for expensive and complex `get()` calls to parent `Affiliate` documents, which would break atomic operations and be difficult to debug. Similarly, `Affiliate` documents are stored at `/affiliates/{affiliateId}`, where `{affiliateId}` is the `request.auth.uid`, allowing direct ownership checks (`request.auth.uid == resource.id`).\n\n**Structural Segregation & QAPs (Queryable Authorization Postures):** Collections are designed to have a homogeneous security posture, enabling efficient and secure `list` operations.\n*   `/banks/{bankId}` and `/products/{productId}`: These collections serve as global reference data. They are readable by all authenticated users (affiliates) for selection in forms and browsing product catalogs, and fully managed (read/write) by administrators. This clear segregation allows simple rules like `allow read: if request.auth.uid != null; allow write: if request.auth.uid in get(/roles_admin/$(request.auth.uid));`.\n*   `/affiliates/{affiliateId}`: Each affiliate's profile is stored here, with the document ID matching their Firebase Auth UID. This makes `request.auth.uid == request.resource.id` a direct and unambiguous rule for affiliates to manage their own profiles. Administrators can list and manage all affiliate profiles, enforcing an admin role check.\n*   `/sales/{saleId}`: This is a top-level collection containing all sales. The `affiliateId` field within each `Sale` document is critical for QAPs. Affiliates can securely query and list *only their own* sales using a `where('affiliateId', '==', request.auth.uid)` clause, enforced by rules that match `request.resource.data.affiliateId == request.auth.uid` on writes and list queries. Administrators can query and list *all* sales, with their access also gated by an admin role check.\n*   `/buyers/{buyerId}`: Buyers are a global collection of customer records. They are primarily created when an affiliate registers a sale (if the buyer is new) and are managed/viewable by administrators. Affiliates would typically view buyer information in the context of their specific sales, rather than listing all buyers independently.\n\n**DBAC (Database-Based Access Control):** Administrator roles will be managed through a dedicated collection, `/roles_admin/{userId}`. A document's existence at this path (where `{userId}` is the Firebase Auth UID) will signify administrative privileges. Security rules will use `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` to grant elevated access, avoiding custom claims and keeping role management within Firestore itself.\n\nThis architecture minimizes rule complexity, prevents security vulnerabilities arising from `get()` calls in rules, and supports efficient data retrieval for both individual users and administrators."
+    ]
   }
 }

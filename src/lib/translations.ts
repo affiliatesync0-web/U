@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     brand: "AffiliateSync",
@@ -75,6 +76,12 @@ export const translations = {
     review: "Review",
     contact: "Contact",
     cancel: "Cancel",
+    design: "Design",
+    media: "Media",
+    updateImage: "Update Image",
+    imageHint: "AI Hint (Keywords)",
+    imageUrl: "Image URL",
+    saveChanges: "Save Changes",
   },
   es: {
     brand: "AffiliateSync",
@@ -152,6 +159,12 @@ export const translations = {
     review: "Revisar",
     contact: "Contacto",
     cancel: "Cancelar",
+    design: "Diseño",
+    media: "Multimedia",
+    updateImage: "Actualizar Imagen",
+    imageHint: "Palabra Clave IA",
+    imageUrl: "URL de la Imagen",
+    saveChanges: "Guardar Cambios",
   }
 };
 
