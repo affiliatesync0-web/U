@@ -9,7 +9,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Para el prototipo, cualquier usuario firmado (incluyendo anónimos del panel de uriel) actúa como admin
+      // Para el prototipo, cualquier usuario firmado actúa como admin
       return isSignedIn();
     }
 
@@ -30,21 +30,21 @@ service cloud.firestore {
     }
 
     match /affiliates/{affiliateId} {
-      allow read: if true; // Permitir lectura para el directorio y perfiles en el prototipo
+      allow read: if isSignedIn(); 
       allow create: if true; 
       allow update: if isOwner(affiliateId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /buyers/{buyerId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow create: if true;
       allow update, delete: if isAdmin();
     }
 
     match /sales/{saleId} {
-      allow read: if true; // Permitir lectura global para el panel de ventas en el prototipo
-      allow create: if true;
+      allow read: if isSignedIn(); 
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 

@@ -26,12 +26,9 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setLoading(true)
     
-    // Credenciales para el prototipo
     if (username === 'uriel' && password === '190710') {
       try {
-        // Esperamos explícitamente a que el login anónimo se complete
         await signInAnonymously(auth);
-        
         toast({
           title: "Acceso concedido",
           description: "Bienvenido al panel administrativo.",
@@ -41,7 +38,7 @@ export default function AdminLoginPage() {
         toast({
           variant: "destructive",
           title: "Error de conexión",
-          description: "No se pudo establecer la sesión con Firebase.",
+          description: "No se pudo establecer la sesión con el servidor.",
         })
       } finally {
         setLoading(false)

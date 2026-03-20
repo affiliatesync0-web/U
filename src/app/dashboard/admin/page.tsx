@@ -17,33 +17,35 @@ import { collection } from 'firebase/firestore'
 export default function AdminDashboard() {
   const { t } = useLanguage();
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
 
   const salesQuery = useMemoFirebase(() => {
-    if (!db || isUserLoading || !user) return null;
+    if (!db || isAuthLoading || !user) return null;
     return collection(db, 'sales');
-  }, [db, user, isUserLoading]);
+  }, [db, user, isAuthLoading]);
+  
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
   const affiliatesQuery = useMemoFirebase(() => {
-    if (!db || isUserLoading || !user) return null;
+    if (!db || isAuthLoading || !user) return null;
     return collection(db, 'affiliates');
-  }, [db, user, isUserLoading]);
+  }, [db, user, isAuthLoading]);
+  
   const { data: affiliates, isLoading: affiliatesLoading } = useCollection(affiliatesQuery);
 
   const totalRevenue = sales?.reduce((acc, sale) => acc + (sale.saleAmount || 0), 0) || 0;
   const totalSalesCount = sales?.length || 0;
-  const activeAffiliatesCount = affiliates?.filter(a => a.status === 'Active').length || 0;
+  const activeAffiliatesCount = affiliates?.length || 0;
   
   const stats = [
     { title: t.totalRevenue, value: `$${totalRevenue.toLocaleString()}`, icon: Wallet, color: "text-[#2870A3]", change: "Real" },
     { title: t.totalSales, value: totalSalesCount.toString(), icon: ShoppingBag, color: "text-[#A37EDC]", change: "Real" },
     { title: t.activeAffiliates, value: activeAffiliatesCount.toString(), icon: Users, color: "text-blue-500", change: "Real" },
-    { title: t.conversionRate, value: totalSalesCount > 0 ? "Normal" : "N/A", icon: Activity, color: "text-green-500", change: "Datos" },
+    { title: t.conversionRate, value: totalSalesCount > 0 ? "Activo" : "Sin Datos", icon: Activity, color: "text-green-500", change: "Estado" },
   ]
 
   const chartData = [
-    { month: "Red de Marketing", sales: totalSalesCount },
+    { name: "Red de Marketing", sales: totalSalesCount },
   ]
 
   const chartConfig = {
@@ -71,7 +73,7 @@ export default function AdminDashboard() {
                   <div className={`p-2 rounded-lg bg-muted ${stat.color}`}>
                     <stat.icon className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
+                  <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground uppercase">
                     {stat.change}
                   </div>
                 </div>
@@ -91,13 +93,13 @@ export default function AdminDashboard() {
               <CardDescription>Visualización de transacciones reales en la red.</CardDescription>
             </CardHeader>
             <CardContent>
-               {salesLoading ? (
-                 <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div>
+               {salesLoading || isAuthLoading ? (
+                 <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                ) : (
                  <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                     <BarChart data={chartData}>
                       <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} />
                       <YAxis tickLine={false} axisLine={false} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
@@ -114,24 +116,24 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {affiliatesLoading ? (
-                  <div className="flex justify-center"><Loader2 className="animate-spin" /></div>
+                {affiliatesLoading || isAuthLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 className="animate-spin h-6 w-6 text-primary" /></div>
                 ) : affiliates && affiliates.length > 0 ? (
                   affiliates.slice(0, 5).map((aff) => (
-                    <div key={aff.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div key={aff.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-[#A37EDC]/20 text-[#A37EDC] flex items-center justify-center font-bold text-xs">
                           {aff.firstName?.charAt(0)}
                         </div>
                         <div>
                           <p className="text-sm font-semibold">{aff.firstName} {aff.lastName}</p>
-                          <p className="text-xs text-muted-foreground">{aff.email}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{aff.status || 'Activo'}</p>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-center text-muted-foreground py-10">Sin registros recientes.</p>
+                  <p className="text-xs text-center text-muted-foreground py-10">Sin registros reales todavía.</p>
                 )}
               </div>
             </CardContent>
