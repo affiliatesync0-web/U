@@ -3,7 +3,7 @@
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, ShieldAlert } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -42,7 +42,7 @@ export default function AffiliateDashboard() {
     { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: BadgeDollarSign, color: "text-green-600", bg: "bg-green-100" },
     { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-100" },
     { title: "Comisiones Totales", value: `$${sales?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0).toFixed(2) || '0.00'}`, icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-100" },
-    { title: "Estado Cuenta", value: profile?.status || 'Activo', icon: Users, color: "text-violet-600", bg: "bg-violet-100" },
+    { title: "Estado Cuenta", value: profile?.status === 'Blocked' ? t.blockedStatus : (profile?.status || t.active), icon: Users, color: profile?.status === 'Blocked' ? "text-red-600" : "text-violet-600", bg: profile?.status === 'Blocked' ? "bg-red-100" : "bg-violet-100" },
   ]
 
   if (isLoading) {
@@ -50,6 +50,37 @@ export default function AffiliateDashboard() {
       <DashboardShell role="affiliate">
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  // Si la cuenta está bloqueada, mostramos un aviso crítico
+  if (profile?.status === 'Blocked') {
+    return (
+      <DashboardShell role="affiliate">
+        <div className="space-y-8">
+          <Alert variant="destructive" className="border-red-600 bg-red-50 py-8">
+            <ShieldAlert className="h-8 w-8" />
+            <AlertTitle className="text-2xl font-bold mb-2">{t.blockedAccount}</AlertTitle>
+            <AlertDescription className="text-lg">
+              {t.blockedMessage}
+            </AlertDescription>
+          </Alert>
+          
+          <div className="opacity-40 pointer-events-none grayscale">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {stats.map((stat) => (
+                <Card key={stat.title} className="border-none shadow-sm">
+                  <CardContent className="p-6">
+                    <div className={`p-3 rounded-xl w-fit ${stat.bg} ${stat.color}`}><stat.icon className="h-6 w-6" /></div>
+                    <p className="mt-4 text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <h3 className="text-2xl font-bold font-headline mt-1">{stat.value}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
       </DashboardShell>
     )

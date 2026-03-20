@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -16,14 +16,17 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
-import { collection } from 'firebase/firestore'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
+import { collection, doc } from 'firebase/firestore'
+import { useToast } from '@/hooks/use-toast'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
 
   const affiliatesQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -36,9 +39,32 @@ export default function AdminAffiliatesPage() {
     switch(status) {
       case 'Active': return t.active;
       case 'Pending': return t.pending;
-      default: return 'Inactivo';
+      case 'Blocked': return t.blockedStatus;
+      default: return status || 'Inactivo';
     }
   }
+
+  const handleToggleBlock = (affId: string, currentStatus: string) => {
+    const affRef = doc(db, 'affiliates', affId);
+    const newStatus = currentStatus === 'Blocked' ? 'Active' : 'Blocked';
+    
+    updateDocumentNonBlocking(affRef, { status: newStatus });
+    
+    toast({
+      title: newStatus === 'Blocked' ? "Afiliado bloqueado" : "Afiliado desbloqueado",
+      description: `La cuenta ha sido ${newStatus === 'Blocked' ? 'suspendida' : 'activada'} correctamente.`,
+    });
+  };
+
+  const handleDeleteAffiliate = (affId: string) => {
+    const affRef = doc(db, 'affiliates', affId);
+    deleteDocumentNonBlocking(affRef);
+    
+    toast({
+      title: "Afiliado eliminado",
+      description: "Los datos han sido borrados permanentemente.",
+    });
+  };
 
   return (
     <DashboardShell role="admin">
@@ -78,7 +104,10 @@ export default function AdminAffiliatesPage() {
                           <p className="text-[10px] text-muted-foreground font-mono">{aff.id}</p>
                         </div>
                       </div>
-                      <Badge variant={aff.status === 'Active' ? 'default' : (aff.status === 'Pending' ? 'secondary' : 'outline')} className={aff.status === 'Active' ? 'bg-green-500' : ''}>
+                      <Badge 
+                        variant={aff.status === 'Active' ? 'default' : (aff.status === 'Blocked' ? 'destructive' : 'secondary')} 
+                        className={aff.status === 'Active' ? 'bg-green-500' : ''}
+                      >
                         {getStatusLabel(aff.status || 'Pending')}
                       </Badge>
                     </div>
@@ -86,7 +115,7 @@ export default function AdminAffiliatesPage() {
                     <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t">
                       <div>
                         <p className="text-muted-foreground uppercase text-[9px] font-bold mb-1">{t.bankName}</p>
-                        <p className="font-medium">{aff.bankAccountNumber ? 'Registrada' : 'No registrada'}</p>
+                        <p className="font-medium truncate">{aff.bankId || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground uppercase text-[9px] font-bold mb-1">{t.balance}</p>
@@ -94,8 +123,36 @@ export default function AdminAffiliatesPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2 pt-2 flex-wrap">
                       <AffiliateDetailsDialog affiliate={aff} t={t} />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`h-8 px-2 ${aff.status === 'Blocked' ? 'text-green-600 border-green-200' : 'text-amber-600 border-amber-200'}`}
+                        onClick={() => handleToggleBlock(aff.id, aff.status)}
+                      >
+                        {aff.status === 'Blocked' ? <Unlock className="mr-1 h-3 w-3" /> : <Lock className="mr-1 h-3 w-3" />}
+                        {aff.status === 'Blocked' ? t.unblock : t.block}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 px-2 text-destructive">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t.confirmDeleteTitle}</AlertDialogTitle>
+                            <AlertDialogDescription>{t.confirmDeleteDesc}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteAffiliate(aff.id)} className="bg-destructive text-destructive-foreground">
+                              {t.delete}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>
@@ -133,12 +190,45 @@ export default function AdminAffiliatesPage() {
                             <div className="font-bold text-[#2870A3]">${aff.currentBalance?.toFixed(2) || '0.00'}</div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={aff.status === 'Active' ? 'default' : (aff.status === 'Pending' ? 'secondary' : 'outline')} className={aff.status === 'Active' ? 'bg-green-500' : ''}>
+                            <Badge 
+                              variant={aff.status === 'Active' ? 'default' : (aff.status === 'Blocked' ? 'destructive' : 'secondary')} 
+                              className={aff.status === 'Active' ? 'bg-green-500' : ''}
+                            >
                               {getStatusLabel(aff.status || 'Pending')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                             <AffiliateDetailsDialog affiliate={aff} t={t} />
+                             <div className="flex justify-end gap-2">
+                               <AffiliateDetailsDialog affiliate={aff} t={t} />
+                               <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className={`h-8 w-8 ${aff.status === 'Blocked' ? 'text-green-600' : 'text-amber-600'}`}
+                                  onClick={() => handleToggleBlock(aff.id, aff.status)}
+                                  title={aff.status === 'Blocked' ? t.unblock : t.block}
+                               >
+                                  {aff.status === 'Blocked' ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                               </Button>
+                               <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title={t.delete}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>{t.confirmDeleteTitle}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t.confirmDeleteDesc}</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteAffiliate(aff.id)} className="bg-destructive text-destructive-foreground">
+                                        {t.delete}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                             </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -187,7 +277,7 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
                   </div>
                   <div className="flex justify-between items-center border-t pt-2 mt-2">
                     <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> {t.date}</span>
-                    <span className="text-xs font-mono">{new Date(affiliate.registeredAt).toLocaleString()}</span>
+                    <span className="text-xs font-mono">{affiliate.registeredAt ? new Date(affiliate.registeredAt).toLocaleString() : 'N/A'}</span>
                   </div>
                 </div>
              </div>
@@ -198,7 +288,7 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
                 </h3>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-[#2870A3] font-medium">{t.amount} Acumulado</span>
-                  <span className="text-2xl font-bold text-[#2870A3]">${affiliate.currentBalance?.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-[#2870A3]">${affiliate.currentBalance?.toFixed(2) || '0.00'}</span>
                 </div>
              </div>
           </div>
@@ -211,15 +301,15 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.bankName}</p>
-                    <p className="text-sm font-semibold text-[#A37EDC]">{affiliate.bankId}</p>
+                    <p className="text-sm font-semibold text-[#A37EDC]">{affiliate.bankId || 'Sin registrar'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.accountNumber}</p>
-                    <p className="text-sm font-mono font-bold tracking-wider">{affiliate.bankAccountNumber}</p>
+                    <p className="text-sm font-mono font-bold tracking-wider">{affiliate.bankAccountNumber || 'Sin registrar'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.accountHolder}</p>
-                    <p className="text-sm font-semibold">{affiliate.bankAccountHolderName}</p>
+                    <p className="text-sm font-semibold">{affiliate.bankAccountHolderName || 'Sin registrar'}</p>
                   </div>
                 </div>
              </div>
@@ -227,7 +317,7 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
              <div className="p-4 rounded-xl bg-muted/30 border">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">ID de Red</h3>
                 <div className="flex items-center gap-2">
-                   <Badge variant="outline" className="font-mono text-xs py-1 px-3 bg-white">{affiliate.id}</Badge>
+                   <Badge variant="outline" className="font-mono text-xs py-1 px-3 bg-white truncate max-w-full">{affiliate.id}</Badge>
                 </div>
              </div>
           </div>

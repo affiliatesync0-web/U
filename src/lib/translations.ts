@@ -89,7 +89,15 @@ export const translations = {
     viewProfile: "View Full Profile",
     details: "Details",
     weeklyPayments: "Weekly Payouts",
-    weeklyPaymentsNotice: "Your commission payments are processed and sent every week."
+    weeklyPaymentsNotice: "Your commission payments are processed and sent every week.",
+    block: "Block",
+    unblock: "Unblock",
+    delete: "Delete",
+    confirmDeleteTitle: "Are you absolutely sure?",
+    confirmDeleteDesc: "This action cannot be undone. This will permanently delete the affiliate account and all associated data.",
+    blockedAccount: "Account Blocked",
+    blockedMessage: "Your account has been suspended by administration. Please contact support for more information.",
+    blockedStatus: "Blocked"
   },
   es: {
     brand: "AffiliateSync",
@@ -180,7 +188,15 @@ export const translations = {
     viewProfile: "Ver Perfil Completo",
     details: "Detalles",
     weeklyPayments: "Pagos Semanales",
-    weeklyPaymentsNotice: "Tus pagos de comisiones se procesan y envían de forma semanal."
+    weeklyPaymentsNotice: "Tus pagos de comisiones se procesan y envían de forma semanal.",
+    block: "Bloquear",
+    unblock: "Desbloquear",
+    delete: "Eliminar",
+    confirmDeleteTitle: "¿Estás absolutamente seguro?",
+    confirmDeleteDesc: "Esta acción no se puede deshacer. Esto eliminará permanentemente la cuenta del afiliado y todos los datos asociados.",
+    blockedAccount: "Cuenta Bloqueada",
+    blockedMessage: "Tu cuenta ha sido suspendida por la administración. Por favor, contacta con soporte para más información.",
+    blockedStatus: "Bloqueado"
   }
 };
 
