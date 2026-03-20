@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Pencil, Trash2, Wand2, Search, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Wand2, Search, Loader2, Landmark } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -285,10 +285,10 @@ export default function AdminProductsPage() {
                   <TableRow className="bg-muted/30">
                     <TableHead>{t.productCode}</TableHead>
                     <TableHead>{t.productName}</TableHead>
-                    <TableHead>{t.category}</TableHead>
                     <TableHead>{t.price}</TableHead>
                     <TableHead>{t.commission}</TableHead>
                     <TableHead>{t.bankName}</TableHead>
+                    <TableHead>{t.accountNumber}</TableHead>
                     <TableHead className="text-right">{t.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -297,12 +297,10 @@ export default function AdminProductsPage() {
                     <TableRow key={p.id}>
                       <TableCell className="font-mono font-bold text-primary">{p.code}</TableCell>
                       <TableCell className="font-semibold">{p.name}</TableCell>
-                      <TableCell>
-                        <span className="text-xs px-2 py-1 rounded-full bg-muted border font-medium">{p.category}</span>
-                      </TableCell>
                       <TableCell>${p.price?.toFixed(2)}</TableCell>
                       <TableCell className="text-green-600 font-bold">{p.commissionRate}%</TableCell>
-                      <TableCell className="text-xs">{p.payoutBankId}</TableCell>
+                      <TableCell className="text-xs font-medium">{p.payoutBankId}</TableCell>
+                      <TableCell className="text-xs font-mono">{p.payoutBankAccountNumber}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
