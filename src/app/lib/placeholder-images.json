@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Professional business growth background",
+      "imageUrl": "https://picsum.photos/seed/nica1/1200/600",
+      "imageHint": "business growth"
+    },
+    {
+      "id": "product-digital",
+      "description": "Digital product representation",
+      "imageUrl": "https://picsum.photos/seed/nica2/400/300",
+      "imageHint": "digital software"
+    },
+    {
+      "id": "product-course",
+      "description": "Online course or education",
+      "imageUrl": "https://picsum.photos/seed/nica3/400/300",
+      "imageHint": "online learning"
+    },
+    {
+      "id": "user-avatar",
+      "description": "User profile placeholder",
+      "imageUrl": "https://picsum.photos/seed/user/200/200",
+      "imageHint": "person profile"
+    }
+  ]
+}
