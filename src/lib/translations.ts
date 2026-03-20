@@ -97,7 +97,11 @@ export const translations = {
     confirmDeleteDesc: "This action cannot be undone. This will permanently delete the affiliate account and all associated data.",
     blockedAccount: "Account Blocked",
     blockedMessage: "Your account has been suspended by administration. Please contact support for more information.",
-    blockedStatus: "Blocked"
+    blockedStatus: "Blocked",
+    profilePhoto: "Profile Photo",
+    updatePhoto: "Update Photo",
+    photoUrlLabel: "Profile Photo URL",
+    photoPlaceholder: "https://your-image-link.com/photo.jpg"
   },
   es: {
     brand: "AffiliateSync",
@@ -196,7 +200,11 @@ export const translations = {
     confirmDeleteDesc: "Esta acción no se puede deshacer. Esto eliminará permanentemente la cuenta del afiliado y todos los datos asociados.",
     blockedAccount: "Cuenta Bloqueada",
     blockedMessage: "Tu cuenta ha sido suspendida por la administración. Por favor, contacta con soporte para más información.",
-    blockedStatus: "Bloqueado"
+    blockedStatus: "Bloqueado",
+    profilePhoto: "Foto de Perfil",
+    updatePhoto: "Actualizar Foto",
+    photoUrlLabel: "URL de tu Foto de Perfil",
+    photoPlaceholder: "https://tu-enlace-de-imagen.com/foto.jpg"
   }
 };
 

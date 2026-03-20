@@ -10,6 +10,7 @@ import {
   LogOut,
   ShoppingBag,
   Palette,
+  User as UserIcon,
 } from "lucide-react"
 import Image from "next/image"
 import placeholderData from "@/app/lib/placeholder-images.json"
@@ -27,10 +28,13 @@ import {
   SidebarTrigger,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
+import { doc } from "firebase/firestore"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -39,7 +43,16 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
+  const { user } = useUser();
+  const db = useFirestore();
   const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user || role !== 'affiliate') return null;
+    return doc(db, 'affiliates', user.uid);
+  }, [db, user, role]);
+
+  const { data: profile } = useDoc(profileRef);
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
@@ -61,7 +74,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-4">
             {logoImage ? (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden border">
                 <Image 
                   src={logoImage.imageUrl} 
                   alt="Logo" 
@@ -77,7 +90,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             )}
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
               <span className="font-headline font-bold text-sm tracking-tight text-primary">{t.brand}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Connect</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Network</span>
             </div>
           </div>
         </SidebarHeader>
@@ -89,6 +102,22 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
+            {role === 'affiliate' && profile && (
+              <SidebarMenuItem className="group-data-[collapsible=icon]:hidden px-2 mb-2">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile.photoUrl} className="object-cover" />
+                    <AvatarFallback className="bg-primary text-[10px] text-white">
+                      {profile.firstName?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col truncate">
+                    <span className="text-xs font-bold truncate">{profile.firstName}</span>
+                    <span className="text-[10px] text-muted-foreground truncate">{profile.email}</span>
+                  </div>
+                </div>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <a href="/">

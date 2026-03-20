@@ -1,9 +1,10 @@
 
 "use client"
 
+import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, ShieldAlert } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, ShieldAlert, User, Camera } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -14,13 +15,23 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase'
 import { collection, query, where, doc } from 'firebase/firestore'
+import { useToast } from '@/hooks/use-toast'
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const db = useFirestore();
+
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
 
   const affiliateRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -37,6 +48,17 @@ export default function AffiliateDashboard() {
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
   const isLoading = isAuthLoading || profileLoading;
+
+  const handleUpdatePhoto = () => {
+    if (!affiliateRef || !newPhotoUrl) return;
+    
+    updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl });
+    toast({
+      title: t.language === 'es' ? "Foto actualizada" : "Photo updated",
+      description: t.language === 'es' ? "Tu foto de perfil ha sido cambiada." : "Your profile picture has been changed.",
+    });
+    setIsEditingPhoto(false);
+  };
 
   const stats = [
     { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: BadgeDollarSign, color: "text-green-600", bg: "bg-green-100" },
@@ -55,7 +77,6 @@ export default function AffiliateDashboard() {
     )
   }
 
-  // Si la cuenta está bloqueada, mostramos un aviso crítico
   if (profile?.status === 'Blocked') {
     return (
       <DashboardShell role="affiliate">
@@ -89,10 +110,49 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.welcomeBack}, {profile?.firstName || 'Afiliado'}</h1>
-            <p className="text-muted-foreground">Rastrea tus ganancias y gestiona tus registros de ventas reales.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <Avatar className="h-24 w-24 border-4 border-white shadow-xl">
+                <AvatarImage src={profile?.photoUrl} className="object-cover" />
+                <AvatarFallback className="bg-[#2870A3] text-white text-3xl font-bold">
+                  {profile?.firstName?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <Dialog open={isEditingPhoto} onOpenChange={setIsEditingPhoto}>
+                <DialogTrigger asChild>
+                  <button className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg border hover:bg-muted transition-colors">
+                    <Camera className="h-4 w-4 text-primary" />
+                  </button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t.updatePhoto}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="photoUrl">{t.photoUrlLabel}</Label>
+                      <Input 
+                        id="photoUrl" 
+                        placeholder={t.photoPlaceholder}
+                        value={newPhotoUrl}
+                        onChange={(e) => setNewPhotoUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsEditingPhoto(false)}>{t.cancel}</Button>
+                    <Button onClick={handleUpdatePhoto} className="bg-primary">{t.saveChanges}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div>
+              <h1 className="text-3xl font-headline font-bold text-primary leading-tight">
+                {t.welcomeBack}, {profile?.firstName || 'Afiliado'}
+              </h1>
+              <p className="text-muted-foreground">Rastrea tus ganancias y gestiona tus registros reales.</p>
+            </div>
           </div>
           <Alert className="md:max-w-xs border-primary/20 bg-primary/5">
             <CalendarClock className="h-4 w-4 text-primary" />
