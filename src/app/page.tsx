@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Target, ArrowRight, ShieldCheck, Zap, BarChart3, Megaphone, Globe, Users } from 'lucide-react';
+import { Megaphone, ArrowRight, Globe, BarChart3, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
@@ -23,6 +23,9 @@ export default function Home() {
         <nav className="ml-auto flex items-center gap-2 sm:gap-6">
           <Link className="hidden sm:inline-block text-sm font-medium hover:text-primary transition-colors" href="/auth/register">
             {t.joinAffiliate}
+          </Link>
+          <Link className="text-xs sm:text-sm font-medium hover:text-primary transition-colors" href="/auth/login">
+            {t.login}
           </Link>
           <Link className="text-xs sm:text-sm font-medium hover:text-primary transition-colors" href="/auth/admin-login">
             {t.adminLogin}
@@ -53,7 +56,7 @@ export default function Home() {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="border-2 border-[#A37EDC] text-[#A37EDC] hover:bg-[#f3effb] px-10 h-14 rounded-xl font-bold transition-all">
-                    <Link href="/dashboard/affiliate">
+                    <Link href="/auth/login">
                       {t.affiliatePortal}
                     </Link>
                   </Button>

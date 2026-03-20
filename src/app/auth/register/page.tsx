@@ -9,12 +9,12 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { Target, ArrowLeft } from 'lucide-react'
+import { Target, ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase'
-import { signInAnonymously } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc } from 'firebase/firestore'
 
 export default function RegisterPage() {
@@ -24,10 +24,12 @@ export default function RegisterPage() {
   const auth = useAuth()
   const db = useFirestore()
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     bank: '',
     accNumber: '',
     accHolder: ''
@@ -35,11 +37,20 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (formData.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.language === 'es' ? "La contraseña debe tener al menos 6 caracteres." : "Password must be at least 6 characters."
+      })
+      return
+    }
+
     setLoading(true)
     
     try {
-      // Usamos el SDK directamente para obtener el UID y guardar los datos
-      const cred = await signInAnonymously(auth)
+      // Crear usuario con email y contraseña
+      const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
       const user = cred.user
 
       const affiliateData = {
@@ -58,19 +69,23 @@ export default function RegisterPage() {
       const affiliateRef = doc(db, 'affiliates', user.uid)
       setDocumentNonBlocking(affiliateRef, affiliateData, { merge: true })
       
-      setLoading(false)
       toast({
         title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
         description: t.language === 'es' ? `¡Bienvenido a ${t.brand}!` : `Welcome to ${t.brand}!`,
       })
       router.push('/dashboard/affiliate')
-    } catch (error) {
-      setLoading(false)
+    } catch (error: any) {
+      let message = "No se pudo completar el registro."
+      if (error.code === 'auth/email-already-in-use') {
+        message = "Este correo electrónico ya está en uso."
+      }
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo completar el registro."
+        description: message
       })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -120,7 +135,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="email">{t.email}</Label>
                   <Input 
                     id="email" 
@@ -131,6 +146,27 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t.password}</Label>
+                  <div className="relative">
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="••••••" 
+                      required 
+                      className="h-11 pr-10" 
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -185,7 +221,7 @@ export default function RegisterPage() {
         </CardContent>
         <CardFooter className="justify-center border-t py-6 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            {t.language === 'es' ? "¿Ya tienes cuenta?" : "Already have an account?"} <Link href="/dashboard/affiliate" className="text-primary font-bold hover:underline">{t.login}</Link>
+            {t.language === 'es' ? "¿Ya tienes cuenta?" : "Already have an account?"} <Link href="/auth/login" className="text-primary font-bold hover:underline">{t.login}</Link>
           </p>
         </CardFooter>
       </Card>
