@@ -1,7 +1,8 @@
-
 "use client"
 
 import * as React from "react"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Package,
@@ -11,6 +12,7 @@ import {
   ShoppingBag,
   Palette,
   User as UserIcon,
+  Loader2,
 } from "lucide-react"
 import Image from "next/image"
 import placeholderData from "@/app/lib/placeholder-images.json"
@@ -43,9 +45,17 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const db = useFirestore();
   const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+
+  // Redirigir si no está autenticado
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
+    }
+  }, [user, isUserLoading, router, role]);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user || role !== 'affiliate') return null;
@@ -68,29 +78,37 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
   ]
 
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center gap-2 px-2 py-4">
+          <div className="flex items-center gap-3 px-2 py-6">
             {logoImage ? (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden border">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border bg-white shadow-sm">
                 <Image 
                   src={logoImage.imageUrl} 
-                  alt="Logo" 
-                  width={32} 
-                  height={32} 
+                  alt="Logo AffiliateSync" 
+                  width={40} 
+                  height={40} 
                   className="object-cover"
                 />
               </div>
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <ShoppingBag className="h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
+                <ShoppingBag className="h-6 w-6" />
               </div>
             )}
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-bold text-sm tracking-tight text-primary">{t.brand}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Network</span>
+              <span className="font-headline font-bold text-base tracking-tight text-primary">AffiliateSync</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Network</span>
             </div>
           </div>
         </SidebarHeader>
@@ -104,15 +122,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <SidebarMenu>
             {role === 'affiliate' && profile && (
               <SidebarMenuItem className="group-data-[collapsible=icon]:hidden px-2 mb-2">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
-                  <Avatar className="h-8 w-8">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border">
+                  <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
                     <AvatarImage src={profile.photoUrl} className="object-cover" />
-                    <AvatarFallback className="bg-primary text-[10px] text-white">
+                    <AvatarFallback className="bg-primary text-xs text-white font-bold">
                       {profile.firstName?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col truncate">
-                    <span className="text-xs font-bold truncate">{profile.firstName}</span>
+                    <span className="text-xs font-bold truncate text-slate-900">{profile.firstName} {profile.lastName}</span>
                     <span className="text-[10px] text-muted-foreground truncate">{profile.email}</span>
                   </div>
                 </div>
@@ -135,7 +153,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex-1">
-             <h2 className="text-sm font-semibold capitalize text-muted-foreground">
+             <h2 className="text-sm font-bold capitalize text-primary tracking-tight">
                 {role === 'admin' ? t.adminLogin : t.affiliatePortal}
              </h2>
           </div>
