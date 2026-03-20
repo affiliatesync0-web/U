@@ -82,6 +82,7 @@ export const translations = {
     imageHint: "AI Hint (Keywords)",
     imageUrl: "Image URL",
     saveChanges: "Save Changes",
+    productImageUrl: "Product Image URL",
   },
   es: {
     brand: "AffiliateSync",
@@ -165,6 +166,7 @@ export const translations = {
     imageHint: "Palabra Clave IA",
     imageUrl: "URL de la Imagen",
     saveChanges: "Guardar Cambios",
+    productImageUrl: "URL de la Imagen del Producto",
   }
 };
 

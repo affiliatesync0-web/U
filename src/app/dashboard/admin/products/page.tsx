@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Trash2, Wand2, Search, Loader2, Landmark } from 'lucide-react'
+import { Plus, Trash2, Wand2, Search, Loader2, Landmark, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -43,7 +44,8 @@ export default function AdminProductsPage() {
     bankType: '',
     bankHolder: '',
     features: '',
-    description: ''
+    description: '',
+    imageUrl: ''
   })
 
   const handleAIHelp = async () => {
@@ -93,6 +95,7 @@ export default function AdminProductsPage() {
       payoutBankId: formData.bankType,
       payoutBankAccountHolderName: formData.bankHolder,
       description: formData.description,
+      imageUrl: formData.imageUrl,
       createdAt: new Date().toISOString()
     };
 
@@ -101,7 +104,7 @@ export default function AdminProductsPage() {
     toast({ title: t.saveProduct, description: `${formData.name} ha sido añadido al catálogo.` })
     setIsAdding(false)
     setFormData({
-      name: '', category: '', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', features: '', description: ''
+      name: '', category: '', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', features: '', description: '', imageUrl: ''
     })
   }
 
@@ -189,6 +192,16 @@ export default function AdminProductsPage() {
                       onChange={e => setFormData({...formData, code: e.target.value})} 
                       placeholder="MARKETING-01" 
                       className="font-mono uppercase"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-muted-foreground" /> {t.productImageUrl}
+                    </Label>
+                    <Input 
+                      value={formData.imageUrl} 
+                      onChange={e => setFormData({...formData, imageUrl: e.target.value})} 
+                      placeholder="https://ejemplo.com/imagen.jpg" 
                     />
                   </div>
                 </div>

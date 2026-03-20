@@ -115,6 +115,10 @@
           "description": "The commission percentage or fixed amount an affiliate earns from selling this product.",
           "format": "float"
         },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional URL for the product image."
+        },
         "payoutBankAccountNumber": {
           "type": "string",
           "description": "The bank account number designated for receiving payments for this product."

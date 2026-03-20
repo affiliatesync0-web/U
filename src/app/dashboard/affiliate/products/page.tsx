@@ -20,7 +20,7 @@ export default function AffiliateProductsPage() {
   const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  const getImage = (category: string) => {
+  const getPlaceholderImage = (category: string) => {
     const mapping: Record<string, string> = {
       'Service': 'product-social',
       'Course': 'product-seo',
@@ -60,16 +60,19 @@ export default function AffiliateProductsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => {
-              const imageData = getImage(product.category);
+              const placeholderImg = getPlaceholderImage(product.category);
+              const displayImageUrl = product.imageUrl || placeholderImg.imageUrl;
+              const displayImageHint = product.imageUrl ? "product image" : placeholderImg.imageHint;
+
               return (
                 <Card key={product.id} className="border-none shadow-sm overflow-hidden flex flex-col rounded-[1.25rem] bg-white group hover:shadow-md transition-all">
                   <div className="relative h-48 w-full">
                     <Image 
-                      src={imageData.imageUrl} 
+                      src={displayImageUrl} 
                       alt={product.name} 
                       fill 
                       className="object-cover" 
-                      data-ai-hint={imageData.imageHint}
+                      data-ai-hint={displayImageHint}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                     <div className="absolute bottom-4 left-4 text-white">
