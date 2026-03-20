@@ -83,6 +83,11 @@ export const translations = {
     imageUrl: "Image URL",
     saveChanges: "Save Changes",
     productImageUrl: "Product Image URL",
+    affiliateMe: "Affiliate Me",
+    depositAccount: "Deposit Account",
+    instructions: "Instructions",
+    viewProfile: "View Full Profile",
+    details: "Details"
   },
   es: {
     brand: "AffiliateSync",
@@ -167,6 +172,11 @@ export const translations = {
     imageUrl: "URL de la Imagen",
     saveChanges: "Guardar Cambios",
     productImageUrl: "URL de la Imagen del Producto",
+    affiliateMe: "Afiliarme",
+    depositAccount: "Cuenta para Depósito",
+    instructions: "Instrucciones de Pago",
+    viewProfile: "Ver Perfil Completo",
+    details: "Detalles"
   }
 };
 

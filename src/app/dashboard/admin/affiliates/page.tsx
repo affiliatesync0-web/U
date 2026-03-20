@@ -1,9 +1,10 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2 } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 
@@ -93,9 +95,7 @@ export default function AdminAffiliatesPage() {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1 text-xs">
-                        <Mail className="mr-2 h-3 w-3" /> {t.contact}
-                      </Button>
+                      <AffiliateDetailsDialog affiliate={aff} t={t} />
                     </div>
                   </CardContent>
                 </Card>
@@ -138,9 +138,7 @@ export default function AdminAffiliatesPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-[#A37EDC] hover:text-[#8e69c4] hover:bg-[#f3effb]">
-                              <ShieldCheck className="mr-2 h-4 w-4" /> {t.review}
-                            </Button>
+                             <AffiliateDetailsDialog affiliate={aff} t={t} />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -153,5 +151,88 @@ export default function AdminAffiliatesPage() {
         )}
       </div>
     </DashboardShell>
+  )
+}
+
+function AffiliateDetailsDialog({ affiliate, t }: any) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 px-2 text-[#A37EDC] hover:text-[#8e69c4] hover:bg-[#f3effb]">
+          <ShieldCheck className="mr-2 h-4 w-4" /> {t.review}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-headline font-bold text-primary flex items-center gap-2">
+            <User className="h-6 w-6" /> {t.viewProfile}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+          <div className="space-y-4">
+             <div className="p-4 rounded-xl bg-muted/30 border">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">{t.personalInfo}</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">{t.firstName}</span>
+                    <span className="text-sm font-semibold">{affiliate.firstName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">{t.lastName}</span>
+                    <span className="text-sm font-semibold">{affiliate.lastName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">{t.email}</span>
+                    <span className="text-sm font-semibold">{affiliate.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-t pt-2 mt-2">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> {t.date}</span>
+                    <span className="text-xs font-mono">{new Date(affiliate.registeredAt).toLocaleString()}</span>
+                  </div>
+                </div>
+             </div>
+
+             <div className="p-4 rounded-xl bg-[#2870A3]/10 border border-[#2870A3]/20">
+                <h3 className="text-xs font-bold text-[#2870A3] uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <DollarSign className="h-3 w-3" /> {t.balance}
+                </h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-[#2870A3] font-medium">{t.amount} Acumulado</span>
+                  <span className="text-2xl font-bold text-[#2870A3]">${affiliate.currentBalance?.toFixed(2)}</span>
+                </div>
+             </div>
+          </div>
+
+          <div className="space-y-4">
+             <div className="p-4 rounded-xl bg-accent/10 border border-accent/20">
+                <h3 className="text-xs font-bold text-[#A37EDC] uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Landmark className="h-3 w-3" /> {t.bankDetails}
+                </h3>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.bankName}</p>
+                    <p className="text-sm font-semibold text-[#A37EDC]">{affiliate.bankId}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.accountNumber}</p>
+                    <p className="text-sm font-mono font-bold tracking-wider">{affiliate.bankAccountNumber}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.accountHolder}</p>
+                    <p className="text-sm font-semibold">{affiliate.bankAccountHolderName}</p>
+                  </div>
+                </div>
+             </div>
+
+             <div className="p-4 rounded-xl bg-muted/30 border">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">ID de Red</h3>
+                <div className="flex items-center gap-2">
+                   <Badge variant="outline" className="font-mono text-xs py-1 px-3 bg-white">{affiliate.id}</Badge>
+                </div>
+             </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
