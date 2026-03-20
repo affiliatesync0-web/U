@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -7,11 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { BadgeDollarSign, User, Mail, Tag, Landmark } from 'lucide-react'
+import { BadgeDollarSign, User, Mail, Tag, Landmark, AlertCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
 import { collection, query, where, getDocs, doc, increment } from 'firebase/firestore'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function RegisterSalePage() {
   const { toast } = useToast()
@@ -29,16 +29,18 @@ export default function RegisterSalePage() {
 
   const handleRegisterSale = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !db) return
-
+    
+    // VALIDACIÓN ESTRICTA: Si no hay voucher, no se permite continuar
     if (!voucherReference.trim()) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "El número de referencia del voucher es obligatorio.",
+        title: "Campo Obligatorio",
+        description: "Debes ingresar el número de referencia del voucher para registrar la venta.",
       })
       return
     }
+
+    if (!user || !db) return
 
     setLoading(true)
     
@@ -51,8 +53,8 @@ export default function RegisterSalePage() {
       if (querySnapshot.empty) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "El código de producto no existe en el catálogo."
+          title: "Error de Código",
+          description: "El código de producto no existe en nuestro catálogo."
         })
         setLoading(false)
         return
@@ -66,7 +68,7 @@ export default function RegisterSalePage() {
       const commissionRate = product.commissionRate || 0
       const commissionEarned = (saleAmount * commissionRate) / 100
 
-      // 3. Registrar venta
+      // 3. Registrar venta con referencia de voucher
       const saleData = {
         affiliateId: user.uid,
         productId: productDoc.id,
@@ -77,7 +79,7 @@ export default function RegisterSalePage() {
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
-        voucherReference: voucherReference,
+        voucherReference: voucherReference.trim(),
         status: 'Completed'
       }
 
@@ -91,11 +93,11 @@ export default function RegisterSalePage() {
       })
 
       toast({
-        title: "¡Venta registrada!",
-        description: `Se han sumado $${commissionEarned.toFixed(2)} a tu saldo.`,
+        title: "¡Venta Registrada Exitosamente!",
+        description: `Se han sumado $${commissionEarned.toFixed(2)} a tu saldo acumulado.`,
       })
       
-      // Limpiar formulario
+      // Limpiar formulario tras éxito
       setProductCode('')
       setVoucherReference('')
       setBuyerData({ firstName: '', lastName: '', email: '' })
@@ -103,8 +105,8 @@ export default function RegisterSalePage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Hubo un problema al registrar la venta.",
+        title: "Error de Registro",
+        description: "Hubo un problema técnico al procesar la venta. Inténtalo de nuevo.",
       })
     } finally {
       setLoading(false)
@@ -116,29 +118,39 @@ export default function RegisterSalePage() {
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.registerSale}</h1>
-          <p className="text-muted-foreground">Ingresa los datos reales de la venta y la referencia de depósito para recibir tu comisión.</p>
+          <p className="text-muted-foreground">Ingresa los datos de la transacción. Recuerda que la referencia del depósito es indispensable para validar tu comisión.</p>
         </div>
+
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800 font-bold">Atención</AlertTitle>
+          <AlertDescription className="text-amber-700 text-xs">
+            No se permite el registro de ventas sin un número de referencia de voucher válido. El administrador verificará este número antes de procesar pagos.
+          </AlertDescription>
+        </Alert>
 
         <form onSubmit={handleRegisterSale}>
           <div className="grid gap-6">
-            <Card className="border-none shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-headline flex items-center gap-2">
-                  <Landmark className="h-5 w-5 text-[#A37EDC]" />
-                  Comprobante de Depósito
+            <Card className="border-none shadow-md ring-2 ring-primary/5">
+              <CardHeader className="bg-primary/5 rounded-t-lg">
+                <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
+                  <Landmark className="h-5 w-5" />
+                  Paso 1: Comprobante de Pago (Obligatorio)
                 </CardTitle>
-                <CardDescription>Indica el número de referencia del pago realizado.</CardDescription>
+                <CardDescription>Escribe el número que aparece en tu voucher de depósito o transferencia.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="voucherRef">{t.voucherReference}</Label>
+                  <Label htmlFor="voucherRef" className="flex items-center gap-1">
+                    {t.voucherReference} <span className="text-destructive">*</span>
+                  </Label>
                   <Input 
                     id="voucherRef" 
-                    placeholder="e.g. 987654321" 
+                    placeholder="Ej: 00123456789" 
                     required 
                     value={voucherReference}
                     onChange={(e) => setVoucherReference(e.target.value)}
-                    className="h-12 border-primary/20"
+                    className="h-12 border-primary/30 focus:border-primary font-bold text-lg"
                   />
                 </div>
               </CardContent>
@@ -148,18 +160,17 @@ export default function RegisterSalePage() {
               <CardHeader>
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <Tag className="h-5 w-5 text-[#A37EDC]" />
-                  Información del Producto
+                  Paso 2: Detalles del Producto
                 </CardTitle>
-                <CardDescription>Introduce el código del producto tal como aparece en el catálogo.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productCode">{t.productCode}</Label>
+                  <Label htmlFor="productCode">Código del Producto <span className="text-destructive">*</span></Label>
                   <Input 
                     id="productCode" 
-                    placeholder="e.g. MARKETING-01" 
+                    placeholder="Ej: MARKETING-01" 
                     required 
-                    className="font-mono uppercase" 
+                    className="font-mono uppercase h-11" 
                     value={productCode}
                     onChange={(e) => setProductCode(e.target.value)}
                   />
@@ -171,14 +182,13 @@ export default function RegisterSalePage() {
               <CardHeader>
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <User className="h-5 w-5 text-[#A37EDC]" />
-                  {t.buyerInfo}
+                  Paso 3: {t.buyerInfo}
                 </CardTitle>
-                <CardDescription>Detalles del cliente para el registro de la transacción.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="buyerFirstName">{t.firstName}</Label>
+                    <Label htmlFor="buyerFirstName">{t.firstName} <span className="text-destructive">*</span></Label>
                     <Input 
                       id="buyerFirstName" 
                       placeholder="Nombre del cliente" 
@@ -188,7 +198,7 @@ export default function RegisterSalePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="buyerLastName">{t.lastName}</Label>
+                    <Label htmlFor="buyerLastName">{t.lastName} <span className="text-destructive">*</span></Label>
                     <Input 
                       id="buyerLastName" 
                       placeholder="Apellido del cliente" 
@@ -200,7 +210,7 @@ export default function RegisterSalePage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="buyerEmail" className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" /> {t.email}
+                    <Mail className="h-4 w-4" /> {t.email} <span className="text-destructive">*</span>
                   </Label>
                   <Input 
                     id="buyerEmail" 
@@ -214,10 +224,15 @@ export default function RegisterSalePage() {
               </CardContent>
             </Card>
 
-            <Button type="submit" size="lg" className="w-full bg-[#A37EDC] hover:bg-[#8e69c4] text-white font-semibold py-6 shadow-md transition-all" disabled={loading}>
-              {loading ? "Procesando Venta..." : (
-                <span className="flex items-center gap-2 text-lg">
-                  <BadgeDollarSign className="h-5 w-5" /> {t.confirmSale}
+            <Button 
+              type="submit" 
+              size="lg" 
+              className="w-full bg-[#A37EDC] hover:bg-[#8e69c4] text-white font-bold py-6 shadow-xl transition-all h-16 rounded-2xl" 
+              disabled={loading}
+            >
+              {loading ? "Verificando Datos..." : (
+                <span className="flex items-center gap-3 text-xl">
+                  <BadgeDollarSign className="h-6 w-6" /> {t.confirmSale}
                 </span>
               )}
             </Button>
