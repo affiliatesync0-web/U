@@ -2,7 +2,7 @@
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { Users, ShoppingBag, Wallet, Activity, ArrowUpRight, Loader2 } from 'lucide-react'
+import { Users, ShoppingBag, Wallet, Activity, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartConfig,
@@ -11,20 +11,26 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  const salesQuery = useMemoFirebase(() => collection(db, 'sales'), [db]);
+  const salesQuery = useMemoFirebase(() => {
+    if (!db || isUserLoading || !user) return null;
+    return collection(db, 'sales');
+  }, [db, user, isUserLoading]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
-  const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
+  const affiliatesQuery = useMemoFirebase(() => {
+    if (!db || isUserLoading || !user) return null;
+    return collection(db, 'affiliates');
+  }, [db, user, isUserLoading]);
   const { data: affiliates, isLoading: affiliatesLoading } = useCollection(affiliatesQuery);
 
-  // Calcular métricas reales
   const totalRevenue = sales?.reduce((acc, sale) => acc + (sale.saleAmount || 0), 0) || 0;
   const totalSalesCount = sales?.length || 0;
   const activeAffiliatesCount = affiliates?.filter(a => a.status === 'Active').length || 0;
@@ -33,12 +39,11 @@ export default function AdminDashboard() {
     { title: t.totalRevenue, value: `$${totalRevenue.toLocaleString()}`, icon: Wallet, color: "text-[#2870A3]", change: "Real" },
     { title: t.totalSales, value: totalSalesCount.toString(), icon: ShoppingBag, color: "text-[#A37EDC]", change: "Real" },
     { title: t.activeAffiliates, value: activeAffiliatesCount.toString(), icon: Users, color: "text-blue-500", change: "Real" },
-    { title: t.conversionRate, value: "N/A", icon: Activity, color: "text-green-500", change: "Datos" },
+    { title: t.conversionRate, value: totalSalesCount > 0 ? "Normal" : "N/A", icon: Activity, color: "text-green-500", change: "Datos" },
   ]
 
-  // Datos para el gráfico (esto debería ser real basado en fechas de venta, pero por ahora mostramos 0 si no hay ventas)
   const chartData = [
-    { month: "Ventas Totales", sales: totalSalesCount },
+    { month: "Red de Marketing", sales: totalSalesCount },
   ]
 
   const chartConfig = {

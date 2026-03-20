@@ -9,8 +9,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Para el prototipo, permitimos acceso si está firmado
-      // En producción, aquí se verificaría el rol en roles_admin
+      // Para el prototipo, permitimos acceso si está firmado (anónimo o contraseña)
       return isSignedIn();
     }
 
@@ -25,35 +24,33 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     match /banks/{bankId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /products/{productId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /affiliates/{affiliateId} {
       allow get: if isOwner(affiliateId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(affiliateId) || isAdmin();
+      allow create: if true; // Permitir registro inicial
       allow update: if isOwner(affiliateId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /buyers/{buyerId} {
-      allow get, list: if isAdmin();
+      allow read: if isAdmin();
       allow create: if true;
       allow update, delete: if isAdmin();
     }
 
     match /sales/{saleId} {
-      allow get: if isDocumentOwner(resource.data.affiliateId) || isAdmin();
-      allow list: if isAdmin() || (isSignedIn() && resource.data.affiliateId == request.auth.uid);
+      allow read: if isAdmin() || (isSignedIn() && resource.data.affiliateId == request.auth.uid);
       allow create: if true;
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /site_config/{configId} {

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -7,30 +6,33 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2 } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import placeholderData from '@/app/lib/placeholder-images.json'
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase'
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
 
 export default function AdminDesignPage() {
   const { toast } = useToast()
   const { t } = useLanguage()
   const db = useFirestore()
+  const { user, isUserLoading } = useUser();
   const [savingId, setSavingId] = useState<string | null>(null)
 
-  // Fetch current overrides from Firestore
-  const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
-  const { data: overrides } = useCollection(configQuery);
+  const configQuery = useMemoFirebase(() => {
+    if (!db || isUserLoading || !user) return null;
+    return collection(db, 'site_config');
+  }, [db, user, isUserLoading]);
+  const { data: overrides, isLoading } = useCollection(configQuery);
 
   const images = placeholderData.placeholderImages;
 
   const handleSave = (imgId: string, url: string, hint: string) => {
+    const configRef = doc(db, 'site_config', imgId);
     setSavingId(imgId);
     
-    const configRef = doc(db, 'site_config', imgId);
     setDocumentNonBlocking(configRef, {
       id: imgId,
       imageUrl: url,
@@ -46,6 +48,16 @@ export default function AdminDesignPage() {
       });
     }, 1000);
   };
+
+  if (isUserLoading || isLoading) {
+    return (
+      <DashboardShell role="admin">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell role="admin">
