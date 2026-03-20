@@ -6,7 +6,6 @@ import {
   Package,
   Users,
   BadgeDollarSign,
-  Settings,
   LogOut,
   ShoppingBag,
   Target,
@@ -39,10 +38,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
 
   const adminItems = [
-    { title: "Overview", url: "/dashboard/admin", icon: LayoutDashboard },
-    { title: "Products", url: "/dashboard/admin/products", icon: Package },
-    { title: "Affiliates", url: "/dashboard/admin/affiliates", icon: Users },
-    { title: "All Sales", url: "/dashboard/admin/sales", icon: ShoppingBag },
+    { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
+    { title: t.products, url: "/dashboard/admin/products", icon: Package },
+    { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
+    { title: t.allSales, url: "/dashboard/admin/sales", icon: ShoppingBag },
   ]
 
   const affiliateItems = [
@@ -66,7 +65,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <NavMain items={role === "admin" ? adminItems : affiliateItems} label={role === "admin" ? "Admin Panel" : "Affiliate Center"} />
+          <NavMain 
+            items={role === "admin" ? adminItems : affiliateItems} 
+            label={role === "admin" ? t.adminLogin : t.affiliatePortal} 
+          />
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
@@ -88,7 +90,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex-1">
              <h2 className="text-sm font-semibold capitalize text-muted-foreground">
-                {role} Area
+                {role === 'admin' ? t.adminLogin : t.affiliatePortal}
              </h2>
           </div>
           <LanguageToggle />

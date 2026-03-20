@@ -1,17 +1,9 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Users, ShoppingBag, Wallet, Activity, ArrowUpRight } from 'lucide-react'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { useLanguage } from '@/components/language-context'
 import {
   ChartConfig,
   ChartContainer,
@@ -21,25 +13,27 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
+  
   const stats = [
-    { title: "Total Revenue", value: "$24,580.00", icon: Wallet, color: "text-[#2870A3]", change: "+12.5%" },
-    { title: "Total Sales", value: "1,248", icon: ShoppingBag, color: "text-[#A37EDC]", change: "+18.2%" },
-    { title: "Active Affiliates", value: "342", icon: Users, color: "text-blue-500", change: "+4.1%" },
-    { title: "Conversion Rate", value: "3.2%", icon: Activity, color: "text-green-500", change: "+0.8%" },
+    { title: t.totalRevenue, value: "$24,580.00", icon: Wallet, color: "text-[#2870A3]", change: "+12.5%" },
+    { title: t.totalSales, value: "1,248", icon: ShoppingBag, color: "text-[#A37EDC]", change: "+18.2%" },
+    { title: t.activeAffiliates, value: "342", icon: Users, color: "text-blue-500", change: "+4.1%" },
+    { title: t.conversionRate, value: "3.2%", icon: Activity, color: "text-green-500", change: "+0.8%" },
   ]
 
   const chartData = [
-    { month: "Jan", sales: 1200 },
+    { month: "Ene", sales: 1200 },
     { month: "Feb", sales: 1900 },
     { month: "Mar", sales: 1500 },
-    { month: "Apr", sales: 2200 },
+    { month: "Abr", sales: 2200 },
     { month: "May", sales: 2800 },
     { month: "Jun", sales: 2400 },
   ]
 
   const chartConfig = {
     sales: {
-      label: "Monthly Sales",
+      label: t.totalSales,
       color: "hsl(var(--primary))",
     },
   } satisfies ChartConfig
@@ -49,8 +43,8 @@ export default function AdminDashboard() {
       <div className="space-y-8">
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-headline font-bold text-primary mb-2">Network Overview</h1>
-            <p className="text-muted-foreground">Monitoring NicaAffiliate Connect performance.</p>
+            <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.networkOverview}</h1>
+            <p className="text-muted-foreground">{t.manageNetwork}</p>
           </div>
         </div>
 
@@ -78,8 +72,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <Card className="lg:col-span-2 border-none shadow-sm">
             <CardHeader>
-              <CardTitle className="text-xl font-headline">Sales Growth</CardTitle>
-              <CardDescription>Monthly conversion volume across the network.</CardDescription>
+              <CardTitle className="text-xl font-headline">{t.salesGrowth}</CardTitle>
+              <CardDescription>Volumen de conversión mensual en toda la red.</CardDescription>
             </CardHeader>
             <CardContent>
                <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
@@ -105,16 +99,16 @@ export default function AdminDashboard() {
 
           <Card className="border-none shadow-sm">
             <CardHeader>
-              <CardTitle className="text-xl font-headline">Recent Affiliates</CardTitle>
-              <CardDescription>Latest registrations needing review.</CardDescription>
+              <CardTitle className="text-xl font-headline">{t.recentAffiliates}</CardTitle>
+              <CardDescription>Últimos registros pendientes de revisión.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { name: "Maria L.", bank: "Banpro", date: "2 mins ago" },
-                  { name: "Roberto C.", bank: "BAC", date: "45 mins ago" },
-                  { name: "Sonia G.", bank: "Lafise", date: "3 hours ago" },
-                  { name: "Oscar P.", bank: "BDF", date: "5 hours ago" },
+                  { name: "Maria L.", bank: "Banpro", date: "Hace 2 mins" },
+                  { name: "Roberto C.", bank: "BAC", date: "Hace 45 mins" },
+                  { name: "Sonia G.", bank: "Lafise", date: "Hace 3 horas" },
+                  { name: "Oscar P.", bank: "BDF", date: "Hace 5 horas" },
                 ].map((aff) => (
                   <div key={aff.name} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">

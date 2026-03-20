@@ -4,8 +4,8 @@ import {Toaster} from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/language-context';
 
 export const metadata: Metadata = {
-  title: 'AffiliateSync | Empowering Affiliates Everywhere',
-  description: 'Manage your digital products and affiliate commissions seamlessly with AffiliateSync.',
+  title: 'AffiliateSync | Potenciando Afiliados en Nicaragua',
+  description: 'Gestiona tus productos digitales y comisiones de afiliados sin problemas con AffiliateSync.',
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
