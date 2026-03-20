@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -116,7 +117,7 @@ export default function AffiliateDashboard() {
             <div className="relative group">
               <Avatar className="h-28 w-28 border-4 border-white shadow-2xl transition-transform hover:scale-105 duration-500">
                 <AvatarImage src={profile?.photoUrl} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-[#1e5a82] text-white text-4xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white text-4xl font-bold">
                   {profile?.firstName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
@@ -146,7 +147,7 @@ export default function AffiliateDashboard() {
                     <Button variant="ghost" onClick={() => setIsEditingPhoto(false)} className="rounded-xl h-12">
                       {t.cancel}
                     </Button>
-                    <Button onClick={handleUpdatePhoto} className="bg-primary rounded-xl h-12 px-8 font-bold">
+                    <Button onClick={handleUpdatePhoto} className="bg-primary rounded-xl h-12 px-8 font-bold text-white">
                       {t.saveChanges}
                     </Button>
                   </DialogFooter>
@@ -233,7 +234,7 @@ export default function AffiliateDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-xl bg-gradient-to-br from-[#2870A3] to-[#1e5a82] text-white rounded-[2rem] overflow-hidden">
+          <Card className="border-none shadow-xl bg-gradient-to-br from-primary to-primary/80 text-white rounded-[2rem] overflow-hidden">
             <CardHeader className="flex flex-row items-center gap-3 px-8 pt-8 pb-4">
               <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm"><Landmark className="h-5 w-5" /></div>
               <CardTitle className="text-xl font-headline font-bold">{t.payoutInfo}</CardTitle>

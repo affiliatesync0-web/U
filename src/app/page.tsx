@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -52,7 +53,7 @@ export default function Home() {
                   <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary mb-2 shadow-sm border border-primary/5">
                     #1 Red de Marketing de Afiliados en Nicaragua
                   </div>
-                  <h1 className="text-4xl font-headline font-bold tracking-tighter sm:text-5xl xl:text-7xl/none text-[#2870A3]">
+                  <h1 className="text-4xl font-headline font-bold tracking-tighter sm:text-5xl xl:text-7xl/none text-primary">
                     {t.heroTitle}
                   </h1>
                   <p className="max-w-[600px] mx-auto lg:mx-0 text-slate-600 md:text-xl font-body leading-relaxed">
@@ -60,12 +61,12 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-4 min-[400px]:flex-row justify-center lg:justify-start">
-                  <Button asChild size="lg" className="bg-[#2870A3] hover:bg-[#1e5a82] font-bold text-white px-10 h-16 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90 font-bold text-white px-10 h-16 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1">
                     <Link href="/auth/register">
                       {t.getStarted} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="border-2 border-[#A37EDC] text-[#A37EDC] hover:bg-[#f3effb] px-10 h-16 rounded-2xl font-bold transition-all shadow-md hover:shadow-lg">
+                  <Button asChild variant="outline" size="lg" className="border-2 border-accent text-accent hover:bg-accent/10 px-10 h-16 rounded-2xl font-bold transition-all shadow-md hover:shadow-lg">
                     <Link href="/auth/login">
                       {t.affiliatePortal}
                     </Link>
@@ -90,7 +91,7 @@ export default function Home() {
           <div className="container px-4 md:px-6 mx-auto">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-20">
               <div className="space-y-3">
-                <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-4xl md:text-6xl text-[#2870A3]">Impulsa tu Presencia Digital</h2>
+                <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-4xl md:text-6xl text-primary">Impulsa tu Presencia Digital</h2>
                 <p className="max-w-[800px] text-slate-500 md:text-xl font-body leading-relaxed">
                   Nuestra plataforma está diseñada por marketers para marketers, enfocada en la conversión y el ROI.
                 </p>
@@ -98,7 +99,7 @@ export default function Home() {
             </div>
             <div className="mx-auto grid max-w-6xl items-start gap-10 sm:grid-cols-2 lg:grid-cols-3">
               <div className="group flex flex-col items-center space-y-6 text-center p-12 rounded-[2.5rem] bg-white border border-slate-100 transition-all hover:border-primary/30 hover:shadow-[0_20px_50px_rgba(40,112,163,0.15)] hover:-translate-y-2">
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-50 text-[#2870A3] group-hover:bg-[#2870A3] group-hover:text-white transition-all duration-500 shadow-inner rotate-3 group-hover:rotate-0">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-50 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner rotate-3 group-hover:rotate-0">
                   <Globe className="h-12 w-12" />
                 </div>
                 <h3 className="text-2xl font-bold font-headline">Alcance Global</h3>
@@ -107,7 +108,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="group flex flex-col items-center space-y-6 text-center p-12 rounded-[2.5rem] bg-white border border-slate-100 transition-all hover:border-accent/30 hover:shadow-[0_20px_50px_rgba(163,126,220,0.15)] hover:-translate-y-2">
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-purple-50 text-[#A37EDC] group-hover:bg-[#A37EDC] group-hover:text-white transition-all duration-500 shadow-inner -rotate-3 group-hover:rotate-0">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-purple-50 text-accent group-hover:bg-accent group-hover:text-white transition-all duration-500 shadow-inner -rotate-3 group-hover:rotate-0">
                   <BarChart3 className="h-12 w-12" />
                 </div>
                 <h3 className="text-2xl font-bold font-headline">Datos en Vivo</h3>
@@ -144,7 +145,7 @@ export default function Home() {
         </div>
         <div className="flex flex-col sm:flex-row gap-12 sm:ml-auto">
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#2870A3]">Información Legal</h4>
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Información Legal</h4>
             <nav className="flex flex-col gap-3">
               <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Términos y Condiciones</Link>
               <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Política de Privacidad</Link>
@@ -152,7 +153,7 @@ export default function Home() {
             </nav>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#A37EDC]">Soporte Técnico</h4>
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Soporte Técnico</h4>
             <nav className="flex flex-col gap-3">
               <a 
                 className="text-sm text-slate-600 hover:text-primary transition-colors flex items-center gap-2 group" 

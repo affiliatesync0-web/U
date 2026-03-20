@@ -134,7 +134,7 @@ export default function AdminProductsPage() {
           
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
             <DialogTrigger asChild>
-              <Button size="lg" className="bg-[#2870A3] hover:bg-[#1e5a82] font-semibold shadow-lg">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 font-semibold shadow-lg">
                 <Plus className="mr-2 h-5 w-5" /> {t.addProduct}
               </Button>
             </DialogTrigger>
@@ -238,7 +238,7 @@ export default function AdminProductsPage() {
 
                   <div className="pt-4 border-t mt-4">
                     <Label className="flex items-center gap-2 mb-2">
-                      <Wand2 className="h-4 w-4 text-[#A37EDC]" /> {t.aiAssistant}
+                      <Wand2 className="h-4 w-4 text-accent" /> {t.aiAssistant}
                     </Label>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase">{t.features} (separadas por comas)</Label>
@@ -252,7 +252,7 @@ export default function AdminProductsPage() {
                       onClick={handleAIHelp} 
                       type="button" 
                       variant="outline" 
-                      className="w-full mt-2 border-[#A37EDC] text-[#A37EDC] hover:bg-[#f3effb]"
+                      className="w-full mt-2 border-accent text-accent hover:bg-accent/10"
                       disabled={generating}
                     >
                       {generating ? "Creando..." : t.generateDescription}
@@ -273,7 +273,7 @@ export default function AdminProductsPage() {
 
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setIsAdding(false)}>{t.cancel}</Button>
-                <Button className="bg-[#2870A3]" onClick={handleSave}>{t.saveProduct}</Button>
+                <Button className="bg-primary" onClick={handleSave}>{t.saveProduct}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

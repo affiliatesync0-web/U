@@ -17,7 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
@@ -129,7 +129,7 @@ export default function AdminAffiliatesPage() {
                       </div>
                       <div>
                         <p className="text-muted-foreground uppercase text-[9px] font-bold mb-1">{t.balance}</p>
-                        <p className="font-bold text-[#2870A3]">${aff.currentBalance?.toFixed(2) || '0.00'}</p>
+                        <p className="font-bold text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</p>
                       </div>
                     </div>
 
@@ -224,7 +224,7 @@ export default function AdminAffiliatesPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-bold text-[#2870A3]">${aff.currentBalance?.toFixed(2) || '0.00'}</div>
+                            <div className="font-bold text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</div>
                           </TableCell>
                           <TableCell>
                             <Badge 
@@ -313,7 +313,7 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 px-2 text-[#A37EDC] hover:text-[#8e69c4] hover:bg-[#f3effb]">
+        <Button variant="ghost" size="sm" className="h-8 px-2 text-accent hover:text-accent/80 hover:bg-accent/10">
           <ShieldCheck className="mr-2 h-4 w-4" /> {t.review}
         </Button>
       </DialogTrigger>
@@ -355,26 +355,26 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
                 </div>
              </div>
 
-             <div className="p-4 rounded-xl bg-[#2870A3]/10 border border-[#2870A3]/20">
-                <h3 className="text-xs font-bold text-[#2870A3] uppercase tracking-widest mb-3 flex items-center gap-2">
+             <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                <h3 className="text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
                   <DollarSign className="h-3 w-3" /> {t.balance}
                 </h3>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[#2870A3] font-medium">{t.amount} Acumulado</span>
-                  <span className="text-2xl font-bold text-[#2870A3]">${affiliate.currentBalance?.toFixed(2) || '0.00'}</span>
+                  <span className="text-sm text-primary font-medium">{t.amount} Acumulado</span>
+                  <span className="text-2xl font-bold text-primary">${affiliate.currentBalance?.toFixed(2) || '0.00'}</span>
                 </div>
              </div>
           </div>
 
           <div className="space-y-4">
              <div className="p-4 rounded-xl bg-accent/10 border border-accent/20">
-                <h3 className="text-xs font-bold text-[#A37EDC] uppercase tracking-widest mb-3 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-accent uppercase tracking-widest mb-3 flex items-center gap-2">
                   <Landmark className="h-3 w-3" /> {t.bankDetails}
                 </h3>
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.bankName}</p>
-                    <p className="text-sm font-semibold text-[#A37EDC]">{affiliate.bankId || 'Sin registrar'}</p>
+                    <p className="text-sm font-semibold text-accent">{affiliate.bankId || 'Sin registrar'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.accountNumber}</p>
