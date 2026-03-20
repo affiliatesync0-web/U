@@ -20,9 +20,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // 1. Check local storage
     const savedLang = localStorage.getItem('app-language') as Language;
     if (savedLang && (savedLang === 'en' || savedLang === 'es')) {
       setLanguageState(savedLang);
+    } else {
+      // 2. Detect from browser locale
+      const browserLang = navigator.language.split('-')[0] as Language;
+      if (browserLang === 'en' || browserLang === 'es') {
+        setLanguageState(browserLang);
+      } else {
+        // 3. Fallback to Spanish as requested
+        setLanguageState('es');
+      }
     }
   }, []);
 

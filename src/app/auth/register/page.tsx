@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -24,12 +23,11 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     
-    // Simulate API call
     setTimeout(() => {
       setLoading(false)
       toast({
-        title: "Registration successful",
-        description: `Welcome to ${t.brand}!`,
+        title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
+        description: t.language === 'es' ? `¡Bienvenido a ${t.brand}!` : `Welcome to ${t.brand}!`,
       })
       router.push('/dashboard/affiliate')
     }, 1500)
@@ -39,7 +37,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-[#EFF2F4] flex flex-col justify-center items-center p-4 py-12 md:py-24">
       <Link href="/" className="mb-6 flex items-center gap-2 text-primary hover:opacity-80 transition-opacity self-start md:self-center">
         <ArrowLeft className="h-4 w-4" />
-        <span className="text-sm font-medium">Back to Home</span>
+        <span className="text-sm font-medium">{t.language === 'es' ? "Volver al Inicio" : "Back to Home"}</span>
       </Link>
 
       <Card className="w-full max-w-2xl shadow-xl border-none overflow-hidden">
@@ -49,39 +47,39 @@ export default function RegisterPage() {
               <Target className="h-8 w-8" />
             </div>
           </div>
-          <CardTitle className="text-2xl md:text-3xl font-headline font-bold text-[#2870A3]">Become an Affiliate</CardTitle>
+          <CardTitle className="text-2xl md:text-3xl font-headline font-bold text-[#2870A3]">{t.joinAffiliate}</CardTitle>
           <CardDescription className="max-w-md mx-auto">
-            Join our network and start earning commissions today with {t.brand}.
+            {t.language === 'es' ? "Únete a nuestra red y empieza a ganar comisiones hoy mismo." : "Join our network and start earning commissions today."}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-8">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Personal Information</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t.personalInfo}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">{t.firstName}</Label>
                   <Input id="firstName" placeholder="Juan" required className="h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">{t.lastName}</Label>
                   <Input id="lastName" placeholder="Perez" required className="h-11" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="email">Email (Gmail preferred)</Label>
+                  <Label htmlFor="email">{t.email}</Label>
                   <Input id="email" type="email" placeholder="juan.perez@gmail.com" required className="h-11" />
                 </div>
               </div>
             </div>
 
             <div className="pt-6 border-t">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Bank Payout Details</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">{t.bankDetails}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="bank">Bank Name</Label>
+                  <Label htmlFor="bank">{t.bankName}</Label>
                   <Select required>
                     <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Select a bank" />
+                      <SelectValue placeholder={t.language === 'es' ? "Selecciona un banco" : "Select a bank"} />
                     </SelectTrigger>
                     <SelectContent>
                       {NICA_BANKS.map((bank) => (
@@ -93,24 +91,24 @@ export default function RegisterPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="accNumber">Account Number</Label>
+                  <Label htmlFor="accNumber">{t.accountNumber}</Label>
                   <Input id="accNumber" placeholder="1234567890" required className="h-11" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="accHolder">Account Holder Name</Label>
+                  <Label htmlFor="accHolder">{t.accountHolder}</Label>
                   <Input id="accHolder" placeholder="Juan Alberto Perez Lopez" required className="h-11" />
                 </div>
               </div>
             </div>
 
             <Button type="submit" className="w-full bg-[#2870A3] hover:bg-[#1e5a82] font-bold text-lg h-14 shadow-lg transition-all rounded-xl" disabled={loading}>
-              {loading ? "Creating Account..." : "Create My Account"}
+              {loading ? (t.language === 'es' ? "Creando Cuenta..." : "Creating Account...") : t.createAccount}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="justify-center border-t py-6 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            Already have an account? <Link href="/dashboard/affiliate" className="text-primary font-bold hover:underline">Log in</Link>
+            {t.language === 'es' ? "¿Ya tienes cuenta?" : "Already have an account?"} <Link href="/dashboard/affiliate" className="text-primary font-bold hover:underline">{t.login}</Link>
           </p>
         </CardFooter>
       </Card>
