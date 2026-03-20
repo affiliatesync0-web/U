@@ -12,16 +12,21 @@ import { Target, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
+import { useAuth, initiateAnonymousSignIn } from '@/firebase'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { t } = useLanguage()
+  const auth = useAuth()
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    
+    // Autenticamos al usuario en Firebase
+    initiateAnonymousSignIn(auth)
     
     setTimeout(() => {
       setLoading(false)

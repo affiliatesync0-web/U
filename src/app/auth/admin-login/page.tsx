@@ -10,11 +10,13 @@ import { ShieldAlert, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
+import { useAuth, initiateAnonymousSignIn } from '@/firebase'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { t } = useLanguage()
+  const auth = useAuth()
   const [loading, setLoading] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -23,8 +25,11 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setLoading(true)
     
-    // Hardcoded credentials for the prototype
+    // Credenciales para el prototipo
     if (username === 'uriel' && password === '190710') {
+      // Iniciamos sesión en Firebase para satisfacer las reglas de seguridad
+      initiateAnonymousSignIn(auth)
+      
       setTimeout(() => {
         setLoading(false)
         toast({
