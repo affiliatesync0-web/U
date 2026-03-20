@@ -10,7 +10,8 @@ import { ShieldAlert, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth, initiateAnonymousSignIn } from '@/firebase'
+import { useAuth } from '@/firebase'
+import { signInAnonymously } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -21,32 +22,37 @@ export default function AdminLoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
     // Credenciales para el prototipo
     if (username === 'uriel' && password === '190710') {
-      // Iniciamos sesión en Firebase para satisfacer las reglas de seguridad
-      initiateAnonymousSignIn(auth)
-      
-      setTimeout(() => {
-        setLoading(false)
+      try {
+        // Esperamos explícitamente a que el login anónimo se complete
+        await signInAnonymously(auth);
+        
         toast({
           title: "Acceso concedido",
           description: "Bienvenido al panel administrativo.",
         })
         router.push('/dashboard/admin')
-      }, 1000)
-    } else {
-      setTimeout(() => {
-        setLoading(false)
+      } catch (error) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: t.invalidCredentials,
+          title: "Error de conexión",
+          description: "No se pudo establecer la sesión con Firebase.",
         })
-      }, 800)
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      setLoading(false)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.invalidCredentials,
+      })
     }
   }
 

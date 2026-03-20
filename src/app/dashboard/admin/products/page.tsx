@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -16,17 +15,22 @@ import { Plus, Pencil, Trash2, Wand2, Search, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 
 export default function AdminProductsPage() {
   const { toast } = useToast()
   const { t } = useLanguage()
   const db = useFirestore()
+  const { user, isUserLoading } = useUser()
   const [isAdding, setIsAdding] = useState(false)
   const [generating, setGenerating] = useState(false)
   
-  const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
+  const productsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return collection(db, 'products');
+  }, [db, user]);
+  
   const { data: products, isLoading } = useCollection(productsQuery);
 
   const [formData, setFormData] = useState({
@@ -79,11 +83,10 @@ export default function AdminProductsPage() {
     if (!db) return;
     const productsRef = collection(db, 'products');
     
-    // Mapeo según el esquema backend.json
     const productToSave = {
       name: formData.name,
       category: formData.category,
-      code: formData.code,
+      code: formData.code.toUpperCase(),
       price: parseFloat(formData.price),
       commissionRate: parseFloat(formData.commission),
       payoutBankAccountNumber: formData.bankAccount,
@@ -107,6 +110,14 @@ export default function AdminProductsPage() {
     const productRef = doc(db, 'products', id);
     deleteDocumentNonBlocking(productRef);
     toast({ title: "Producto eliminado", description: "El producto ha sido removido del catálogo." });
+  }
+
+  if (isUserLoading) {
+    return (
+      <DashboardShell role="admin">
+        <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+      </DashboardShell>
+    )
   }
 
   return (
@@ -176,8 +187,8 @@ export default function AdminProductsPage() {
                     <Input 
                       value={formData.code} 
                       onChange={e => setFormData({...formData, code: e.target.value})} 
-                      placeholder="CURSO-2024" 
-                      className="font-mono"
+                      placeholder="MARKETING-01" 
+                      className="font-mono uppercase"
                     />
                   </div>
                 </div>
@@ -267,7 +278,7 @@ export default function AdminProductsPage() {
             {isLoading ? (
               <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>
             ) : !products || products.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">Catálogo vacío. Añade tu primer producto.</div>
+              <div className="text-center py-10 text-muted-foreground">Catálogo vacío. Añade tu primer producto real.</div>
             ) : (
               <Table>
                 <TableHeader>
@@ -294,7 +305,6 @@ export default function AdminProductsPage() {
                       <TableCell className="text-xs">{p.payoutBankId}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600"><Pencil className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
