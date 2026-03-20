@@ -2,7 +2,7 @@
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { Users, ShoppingBag, Wallet, Activity, ArrowUpRight } from 'lucide-react'
+import { Users, ShoppingBag, Wallet, Activity, ArrowUpRight, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartConfig,
@@ -11,24 +11,34 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { collection } from 'firebase/firestore'
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
+  const db = useFirestore();
+
+  const salesQuery = useMemoFirebase(() => collection(db, 'sales'), [db]);
+  const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
+
+  const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
+  const { data: affiliates, isLoading: affiliatesLoading } = useCollection(affiliatesQuery);
+
+  // Calcular métricas reales
+  const totalRevenue = sales?.reduce((acc, sale) => acc + (sale.saleAmount || 0), 0) || 0;
+  const totalSalesCount = sales?.length || 0;
+  const activeAffiliatesCount = affiliates?.filter(a => a.status === 'Active').length || 0;
   
   const stats = [
-    { title: t.totalRevenue, value: "$24,580.00", icon: Wallet, color: "text-[#2870A3]", change: "+12.5%" },
-    { title: t.totalSales, value: "1,248", icon: ShoppingBag, color: "text-[#A37EDC]", change: "+18.2%" },
-    { title: t.activeAffiliates, value: "342", icon: Users, color: "text-blue-500", change: "+4.1%" },
-    { title: t.conversionRate, value: "3.2%", icon: Activity, color: "text-green-500", change: "+0.8%" },
+    { title: t.totalRevenue, value: `$${totalRevenue.toLocaleString()}`, icon: Wallet, color: "text-[#2870A3]", change: "Real" },
+    { title: t.totalSales, value: totalSalesCount.toString(), icon: ShoppingBag, color: "text-[#A37EDC]", change: "Real" },
+    { title: t.activeAffiliates, value: activeAffiliatesCount.toString(), icon: Users, color: "text-blue-500", change: "Real" },
+    { title: t.conversionRate, value: "N/A", icon: Activity, color: "text-green-500", change: "Datos" },
   ]
 
+  // Datos para el gráfico (esto debería ser real basado en fechas de venta, pero por ahora mostramos 0 si no hay ventas)
   const chartData = [
-    { month: "Ene", sales: 1200 },
-    { month: "Feb", sales: 1900 },
-    { month: "Mar", sales: 1500 },
-    { month: "Abr", sales: 2200 },
-    { month: "May", sales: 2800 },
-    { month: "Jun", sales: 2400 },
+    { month: "Ventas Totales", sales: totalSalesCount },
   ]
 
   const chartConfig = {
@@ -56,8 +66,8 @@ export default function AdminDashboard() {
                   <div className={`p-2 rounded-lg bg-muted ${stat.color}`}>
                     <stat.icon className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-green-600">
-                    {stat.change} <ArrowUpRight className="h-3 w-3" />
+                  <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
+                    {stat.change}
                   </div>
                 </div>
                 <div>
@@ -72,57 +82,52 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <Card className="lg:col-span-2 border-none shadow-sm">
             <CardHeader>
-              <CardTitle className="text-xl font-headline">{t.salesGrowth}</CardTitle>
-              <CardDescription>Volumen de conversión mensual en toda la red.</CardDescription>
+              <CardTitle className="text-xl font-headline">Resumen de Actividad</CardTitle>
+              <CardDescription>Visualización de transacciones reales en la red.</CardDescription>
             </CardHeader>
             <CardContent>
-               <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                  <BarChart data={chartData}>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-               </ChartContainer>
+               {salesLoading ? (
+                 <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div>
+               ) : (
+                 <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                    <BarChart data={chartData}>
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                      <YAxis tickLine={false} axisLine={false} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                 </ChartContainer>
+               )}
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl font-headline">{t.recentAffiliates}</CardTitle>
-              <CardDescription>Últimos registros pendientes de revisión.</CardDescription>
+              <CardDescription>Últimos registros en la plataforma.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  { name: "Maria L.", bank: "Banpro", date: "Hace 2 mins" },
-                  { name: "Roberto C.", bank: "BAC", date: "Hace 45 mins" },
-                  { name: "Sonia G.", bank: "Lafise", date: "Hace 3 horas" },
-                  { name: "Oscar P.", bank: "BDF", date: "Hace 5 horas" },
-                ].map((aff) => (
-                  <div key={aff.name} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-[#A37EDC]/20 text-[#A37EDC] flex items-center justify-center font-bold text-xs">
-                        {aff.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">{aff.name}</p>
-                        <p className="text-xs text-muted-foreground">{aff.bank}</p>
+                {affiliatesLoading ? (
+                  <div className="flex justify-center"><Loader2 className="animate-spin" /></div>
+                ) : affiliates && affiliates.length > 0 ? (
+                  affiliates.slice(0, 5).map((aff) => (
+                    <div key={aff.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-[#A37EDC]/20 text-[#A37EDC] flex items-center justify-center font-bold text-xs">
+                          {aff.firstName?.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">{aff.firstName} {aff.lastName}</p>
+                          <p className="text-xs text-muted-foreground">{aff.email}</p>
+                        </div>
                       </div>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">{aff.date}</span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-center text-muted-foreground py-10">Sin registros recientes.</p>
+                )}
               </div>
             </CardContent>
           </Card>

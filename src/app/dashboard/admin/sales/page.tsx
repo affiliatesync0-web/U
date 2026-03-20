@@ -3,7 +3,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Calendar, Filter } from 'lucide-react'
+import { Search, Calendar, Filter, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -15,16 +15,15 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { collection } from 'firebase/firestore'
 
 export default function AdminSalesPage() {
   const { t } = useLanguage();
+  const db = useFirestore();
 
-  const allSales = [
-    { id: "S-5001", date: "2024-05-20", product: "Curso de Excel", buyer: "Carlos M.", buyerEmail: "cm@example.com", affiliate: "Juan P.", amount: "$49.99", commission: "$9.99", status: "Completed" },
-    { id: "S-5002", date: "2024-05-19", product: "Paquete SEO", buyer: "Elena R.", buyerEmail: "elena@corp.ni", affiliate: "Maria L.", amount: "$199.00", commission: "$29.85", status: "Completed" },
-    { id: "S-5003", date: "2024-05-19", product: "Pack Arte Digital", buyer: "Luis V.", buyerEmail: "luis.v@gmail.com", affiliate: "Juan P.", amount: "$29.00", commission: "$8.70", status: "Completed" },
-    { id: "S-5004", date: "2024-05-18", product: "Curso de Excel", buyer: "Ana S.", buyerEmail: "anas@outlook.com", affiliate: "Sonia G.", amount: "$49.99", commission: "$9.99", status: "Pending" },
-  ]
+  const salesQuery = useMemoFirebase(() => collection(db, 'sales'), [db]);
+  const { data: allSales, isLoading } = useCollection(salesQuery);
 
   return (
     <DashboardShell role="admin">
@@ -46,77 +45,88 @@ export default function AdminSalesPage() {
           </div>
         </div>
 
-        {/* Mobile-only sales cards */}
-        <div className="grid grid-cols-1 gap-4 md:hidden">
-          {allSales.map((sale) => (
-            <Card key={sale.id} className="border-none shadow-sm">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1 rounded">{sale.id}</span>
-                    <h3 className="font-bold text-sm mt-1">{sale.product}</h3>
-                  </div>
-                  <Badge variant={sale.status === 'Completed' ? 'default' : 'secondary'} className="text-[10px]">
-                    {sale.status === 'Completed' ? t.completed : t.pending}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-muted-foreground uppercase text-[9px] font-bold">{t.buyer}</p>
-                    <p className="font-medium">{sale.buyer}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground uppercase text-[9px] font-bold">{t.affiliate}</p>
-                    <p className="text-primary font-medium">{sale.affiliate}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <div className="text-lg font-bold">{sale.amount}</div>
-                  <div className="text-sm font-bold text-green-600">Comisión: {sale.commission}</div>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : !allSales || allSales.length === 0 ? (
+          <Card className="border-dashed border-2 flex flex-col items-center justify-center p-12 text-center">
+            <p className="text-muted-foreground mb-4">No se han registrado ventas todavía.</p>
+          </Card>
+        ) : (
+          <>
+            {/* Mobile View */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {allSales.map((sale) => (
+                <Card key={sale.id} className="border-none shadow-sm">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1 rounded">{sale.id.substring(0, 8)}</span>
+                        <h3 className="font-bold text-sm mt-1">{sale.productId}</h3>
+                      </div>
+                      <Badge variant={sale.status === 'Completed' ? 'default' : 'secondary'} className="text-[10px]">
+                        {sale.status === 'Completed' ? t.completed : t.pending}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-muted-foreground uppercase text-[9px] font-bold">{t.buyer}</p>
+                        <p className="font-medium">{sale.buyerId}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground uppercase text-[9px] font-bold">{t.affiliate}</p>
+                        <p className="text-primary font-medium">{sale.affiliateId}</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <div className="text-lg font-bold">${sale.saleAmount?.toFixed(2)}</div>
+                      <div className="text-sm font-bold text-green-600">Comisión: ${sale.commissionEarned?.toFixed(2)}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Desktop View */}
+            <Card className="hidden md:block border-none shadow-sm overflow-hidden">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead>ID Venta</TableHead>
+                        <TableHead>{t.date}</TableHead>
+                        <TableHead>Producto</TableHead>
+                        <TableHead>{t.buyer}</TableHead>
+                        <TableHead>{t.affiliate}</TableHead>
+                        <TableHead>{t.amount}</TableHead>
+                        <TableHead className="text-right">{t.commission}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allSales.map((sale) => (
+                        <TableRow key={sale.id}>
+                          <TableCell className="font-mono font-bold text-xs">{sale.id.substring(0, 8)}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell className="font-semibold">{sale.productId}</TableCell>
+                          <TableCell>
+                            <div className="text-sm font-medium">{sale.buyerId}</div>
+                          </TableCell>
+                          <TableCell>
+                             <Badge variant="outline" className="text-[#A37EDC] border-[#A37EDC]">{sale.affiliateId}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">${sale.saleAmount?.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-bold text-green-600">${sale.commissionEarned?.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {/* Desktop-only sales table */}
-        <Card className="hidden md:block border-none shadow-sm overflow-hidden">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead>ID Venta</TableHead>
-                    <TableHead>{t.date}</TableHead>
-                    <TableHead>{t.products}</TableHead>
-                    <TableHead>{t.buyer}</TableHead>
-                    <TableHead>{t.affiliate}</TableHead>
-                    <TableHead>{t.amount}</TableHead>
-                    <TableHead className="text-right">{t.commission}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allSales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell className="font-mono font-bold text-xs">{sale.id}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{sale.date}</TableCell>
-                      <TableCell className="font-semibold">{sale.product}</TableCell>
-                      <TableCell>
-                        <div className="text-sm font-medium">{sale.buyer}</div>
-                        <div className="text-[10px] text-muted-foreground">{sale.buyerEmail}</div>
-                      </TableCell>
-                      <TableCell>
-                         <Badge variant="outline" className="text-[#A37EDC] border-[#A37EDC]">{sale.affiliate}</Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{sale.amount}</TableCell>
-                      <TableCell className="text-right font-bold text-green-600">{sale.commission}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+          </>
+        )}
       </div>
     </DashboardShell>
   )
