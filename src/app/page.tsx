@@ -131,22 +131,24 @@ export default function Home() {
         </div>
         <div className="flex flex-col sm:flex-row gap-8 sm:ml-auto">
           <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider">Legal</h4>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-[#2870A3]">Información Legal</h4>
             <nav className="flex flex-col gap-2">
-              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Términos</Link>
-              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Privacidad</Link>
+              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Términos y Condiciones</Link>
+              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Política de Privacidad</Link>
+              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Acuerdo de Afiliado</Link>
             </nav>
           </div>
           <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider">Soporte</h4>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-[#A37EDC]">Soporte Técnico</h4>
             <nav className="flex flex-col gap-2">
-              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Contacto</Link>
-              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">FAQ</Link>
+              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Centro de Ayuda</Link>
+              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Contacto de Soporte</Link>
+              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Preguntas Frecuentes</Link>
             </nav>
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground sm:self-end">
-          © 2024 AffiliateSync. Hecho con pasión por el marketing.
+          © 2024 AffiliateSync. Hecho con pasión por el marketing en Nicaragua.
         </p>
       </footer>
     </div>
