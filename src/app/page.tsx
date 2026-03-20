@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Megaphone, ArrowRight, Globe, BarChart3, Users } from 'lucide-react';
+import { Megaphone, ArrowRight, Globe, BarChart3, Users, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
@@ -141,8 +141,14 @@ export default function Home() {
           <div className="flex flex-col gap-3">
             <h4 className="text-sm font-bold uppercase tracking-wider text-[#A37EDC]">Soporte Técnico</h4>
             <nav className="flex flex-col gap-2">
+              <a 
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-2" 
+                href="mailto:affiliatesync0@gmail.com"
+              >
+                <Mail className="h-3 w-3" />
+                affiliatesync0@gmail.com
+              </a>
               <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Centro de Ayuda</Link>
-              <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Contacto de Soporte</Link>
               <Link className="text-xs text-muted-foreground hover:text-primary transition-colors" href="#">Preguntas Frecuentes</Link>
             </nav>
           </div>
