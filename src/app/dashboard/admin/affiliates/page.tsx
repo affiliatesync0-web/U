@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2 } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
@@ -53,6 +53,16 @@ export default function AdminAffiliatesPage() {
     toast({
       title: newStatus === 'Blocked' ? "Afiliado bloqueado" : "Afiliado desbloqueado",
       description: `La cuenta ha sido ${newStatus === 'Blocked' ? 'suspendida' : 'activada'} correctamente.`,
+    });
+  };
+
+  const handleMarkAsPaid = (affId: string) => {
+    const affRef = doc(db, 'affiliates', affId);
+    updateDocumentNonBlocking(affRef, { currentBalance: 0 });
+    
+    toast({
+      title: t.paymentSuccess,
+      description: t.paymentSuccessDesc,
     });
   };
 
@@ -125,6 +135,32 @@ export default function AdminAffiliatesPage() {
 
                     <div className="flex gap-2 pt-2 flex-wrap">
                       <AffiliateDetailsDialog affiliate={aff} t={t} />
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 px-2 text-green-600 border-green-200 hover:bg-green-50"
+                            disabled={aff.currentBalance === 0}
+                          >
+                            <Banknote className="mr-1 h-3 w-3" /> {t.markAsPaid}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t.confirmPaidTitle}</AlertDialogTitle>
+                            <AlertDialogDescription>{t.confirmPaidDesc}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleMarkAsPaid(aff.id)} className="bg-green-600 hover:bg-green-700">
+                              {t.markAsPaid}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -134,6 +170,7 @@ export default function AdminAffiliatesPage() {
                         {aff.status === 'Blocked' ? <Unlock className="mr-1 h-3 w-3" /> : <Lock className="mr-1 h-3 w-3" />}
                         {aff.status === 'Blocked' ? t.unblock : t.block}
                       </Button>
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 px-2 text-destructive">
@@ -200,6 +237,33 @@ export default function AdminAffiliatesPage() {
                           <TableCell className="text-right">
                              <div className="flex justify-end gap-2">
                                <AffiliateDetailsDialog affiliate={aff} t={t} />
+                               
+                               <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      disabled={aff.currentBalance === 0}
+                                      title={t.markAsPaid}
+                                    >
+                                      <Banknote className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>{t.confirmPaidTitle}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t.confirmPaidDesc}</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleMarkAsPaid(aff.id)} className="bg-green-600 hover:bg-green-700">
+                                        {t.markAsPaid}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+
                                <Button 
                                   variant="ghost" 
                                   size="icon" 
@@ -209,6 +273,7 @@ export default function AdminAffiliatesPage() {
                                >
                                   {aff.status === 'Blocked' ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                                </Button>
+
                                <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title={t.delete}>
@@ -254,9 +319,17 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-headline font-bold text-primary flex items-center gap-2">
-            <User className="h-6 w-6" /> {t.viewProfile}
-          </DialogTitle>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+              {affiliate.firstName?.charAt(0)}
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-headline font-bold text-primary">
+                {affiliate.firstName} {affiliate.lastName}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground font-mono">{affiliate.id}</p>
+            </div>
+          </div>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
           <div className="space-y-4">
@@ -311,13 +384,6 @@ function AffiliateDetailsDialog({ affiliate, t }: any) {
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t.accountHolder}</p>
                     <p className="text-sm font-semibold">{affiliate.bankAccountHolderName || 'Sin registrar'}</p>
                   </div>
-                </div>
-             </div>
-
-             <div className="p-4 rounded-xl bg-muted/30 border">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">ID de Red</h3>
-                <div className="flex items-center gap-2">
-                   <Badge variant="outline" className="font-mono text-xs py-1 px-3 bg-white truncate max-w-full">{affiliate.id}</Badge>
                 </div>
              </div>
           </div>
