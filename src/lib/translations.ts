@@ -106,7 +106,8 @@ export const translations = {
     confirmPaidTitle: "Confirm Payment",
     confirmPaidDesc: "This will reset the affiliate's balance to $0.00. Use this after you have sent the bank transfer.",
     paymentSuccess: "Payment Recorded",
-    paymentSuccessDesc: "The affiliate's balance has been reset to zero."
+    paymentSuccessDesc: "The affiliate's balance has been reset to zero.",
+    voucherReference: "Voucher Reference"
   },
   es: {
     brand: "AffiliateSync",
@@ -214,8 +215,7 @@ export const translations = {
     confirmPaidTitle: "Confirmar Pago Realizado",
     confirmPaidDesc: "Esto reseteará el saldo del afiliado a $0.00. Úsalo solo después de haber enviado la transferencia bancaria.",
     paymentSuccess: "Pago Registrado",
-    paymentSuccessDesc: "El saldo del afiliado se ha reseteado correctamente."
+    paymentSuccessDesc: "El saldo del afiliado se ha reseteado correctamente.",
+    voucherReference: "Referencia del Voucher"
   }
 };
-
-export type Language = 'en' | 'es';

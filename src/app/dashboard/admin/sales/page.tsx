@@ -1,9 +1,10 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Calendar, Filter, Loader2, ShoppingBag } from 'lucide-react'
+import { Search, Calendar, Filter, Loader2, ShoppingBag, Landmark } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -74,6 +75,11 @@ export default function AdminSalesPage() {
                       <div>
                         <span className="text-[10px] font-mono font-bold text-muted-foreground bg-slate-100 px-2 py-1 rounded-md">ID: {sale.id.substring(0, 8)}</span>
                         <h3 className="font-bold text-base mt-2 text-slate-800">{sale.productName || sale.productId}</h3>
+                        {sale.voucherReference && (
+                          <div className="flex items-center gap-1 mt-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded w-fit">
+                            <Landmark className="h-2 w-2" /> REF: {sale.voucherReference}
+                          </div>
+                        )}
                       </div>
                       <Badge variant={sale.status === 'Completed' ? 'default' : 'secondary'} className="rounded-lg font-bold text-[10px] px-3">
                         {sale.status === 'Completed' ? t.completed : t.pending}
@@ -106,7 +112,7 @@ export default function AdminSalesPage() {
                       <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
                         <TableHead className="px-8 h-14 uppercase text-[10px] font-bold tracking-widest">ID Venta</TableHead>
                         <TableHead className="h-14 uppercase text-[10px] font-bold tracking-widest">{t.date}</TableHead>
-                        <TableHead className="h-14 uppercase text-[10px] font-bold tracking-widest">Producto</TableHead>
+                        <TableHead className="h-14 uppercase text-[10px] font-bold tracking-widest">Producto / Ref Voucher</TableHead>
                         <TableHead className="h-14 uppercase text-[10px] font-bold tracking-widest">{t.buyer}</TableHead>
                         <TableHead className="h-14 uppercase text-[10px] font-bold tracking-widest">{t.affiliate}</TableHead>
                         <TableHead className="h-14 uppercase text-[10px] font-bold tracking-widest">{t.amount}</TableHead>
@@ -118,7 +124,14 @@ export default function AdminSalesPage() {
                         <TableRow key={sale.id} className="hover:bg-slate-50/50 transition-colors h-16">
                           <TableCell className="px-8 font-mono font-bold text-xs text-muted-foreground">#{sale.id.substring(0, 8)}</TableCell>
                           <TableCell className="text-slate-500 text-xs font-medium">{sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}</TableCell>
-                          <TableCell className="font-bold text-slate-800">{sale.productName || sale.productId}</TableCell>
+                          <TableCell>
+                            <div className="font-bold text-slate-800">{sale.productName || sale.productId}</div>
+                            {sale.voucherReference && (
+                              <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 uppercase tracking-tighter">
+                                <Landmark className="h-2 w-2" /> Voucher: {sale.voucherReference}
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <div className="text-sm font-bold text-slate-700">{sale.buyerName || sale.buyerId}</div>
                             <div className="text-[10px] text-muted-foreground font-medium">{sale.buyerId}</div>

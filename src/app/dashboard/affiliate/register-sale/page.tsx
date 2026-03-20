@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -6,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { BadgeDollarSign, User, Mail, Tag } from 'lucide-react'
+import { BadgeDollarSign, User, Mail, Tag, Landmark } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
@@ -19,6 +20,7 @@ export default function RegisterSalePage() {
   const { user } = useUser()
   const [loading, setLoading] = useState(false)
   const [productCode, setProductCode] = useState('')
+  const [voucherReference, setVoucherReference] = useState('')
   const [buyerData, setBuyerData] = useState({
     firstName: '',
     lastName: '',
@@ -28,6 +30,16 @@ export default function RegisterSalePage() {
   const handleRegisterSale = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !db) return
+
+    if (!voucherReference.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "El número de referencia del voucher es obligatorio.",
+      })
+      return
+    }
+
     setLoading(true)
     
     try {
@@ -65,6 +77,7 @@ export default function RegisterSalePage() {
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
+        voucherReference: voucherReference,
         status: 'Completed'
       }
 
@@ -84,6 +97,7 @@ export default function RegisterSalePage() {
       
       // Limpiar formulario
       setProductCode('')
+      setVoucherReference('')
       setBuyerData({ firstName: '', lastName: '', email: '' })
       
     } catch (error) {
@@ -102,11 +116,34 @@ export default function RegisterSalePage() {
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.registerSale}</h1>
-          <p className="text-muted-foreground">Ingresa los datos reales de la venta para recibir tu comisión.</p>
+          <p className="text-muted-foreground">Ingresa los datos reales de la venta y la referencia de depósito para recibir tu comisión.</p>
         </div>
 
         <form onSubmit={handleRegisterSale}>
           <div className="grid gap-6">
+            <Card className="border-none shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-headline flex items-center gap-2">
+                  <Landmark className="h-5 w-5 text-[#A37EDC]" />
+                  Comprobante de Depósito
+                </CardTitle>
+                <CardDescription>Indica el número de referencia del pago realizado.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="voucherRef">{t.voucherReference}</Label>
+                  <Input 
+                    id="voucherRef" 
+                    placeholder="e.g. 987654321" 
+                    required 
+                    value={voucherReference}
+                    onChange={(e) => setVoucherReference(e.target.value)}
+                    className="h-12 border-primary/20"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-none shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg font-headline flex items-center gap-2">

@@ -242,6 +242,10 @@
           "description": "The amount designated to be paid to the product's owner for this sale (saleAmount - commissionEarned).",
           "format": "float"
         },
+        "voucherReference": {
+          "type": "string",
+          "description": "The reference number from the bank deposit voucher."
+        },
         "status": {
           "type": "string",
           "description": "The current status of the sale (e.g., completed, pending payout, refunded)."
@@ -256,6 +260,7 @@
         "saleAmount",
         "commissionEarned",
         "productPayoutAmount",
+        "voucherReference",
         "status"
       ]
     },
