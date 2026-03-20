@@ -2,40 +2,40 @@
 {
   "placeholderImages": [
     {
-      "id": "hero-business",
-      "description": "Tablero de análisis de datos moderno y profesional",
-      "imageUrl": "https://picsum.photos/seed/affiliate_growth_99/1200/800",
-      "imageHint": "business analytics"
+      "id": "hero-marketing",
+      "description": "Estrategia de marketing digital y análisis de datos",
+      "imageUrl": "https://picsum.photos/seed/marketing_strategy_99/1200/800",
+      "imageHint": "digital marketing"
     },
     {
-      "id": "product-tech",
-      "description": "Herramientas de marketing digital en un dispositivo moderno",
-      "imageUrl": "https://picsum.photos/seed/digital_marketing_42/400/300",
-      "imageHint": "digital technology"
+      "id": "product-social",
+      "description": "Gestión de redes sociales y contenido",
+      "imageUrl": "https://picsum.photos/seed/social_media_42/400/300",
+      "imageHint": "social media"
     },
     {
-      "id": "product-education",
-      "description": "Entorno de aprendizaje en línea limpio y productivo",
-      "imageUrl": "https://picsum.photos/seed/online_course_21/400/300",
-      "imageHint": "online education"
+      "id": "product-seo",
+      "description": "Optimización SEO y motores de búsqueda",
+      "imageUrl": "https://picsum.photos/seed/seo_optimization_21/400/300",
+      "imageHint": "search optimization"
     },
     {
-      "id": "product-service",
-      "description": "Escritorio de consultoría profesional",
-      "imageUrl": "https://picsum.photos/seed/consulting_pro_77/400/300",
-      "imageHint": "professional service"
+      "id": "product-ads",
+      "description": "Publicidad pagada y campañas de anuncios",
+      "imageUrl": "https://picsum.photos/seed/online_ads_77/400/300",
+      "imageHint": "digital advertising"
     },
     {
-      "id": "product-analytics",
-      "description": "Gráficos financieros y métricas de éxito",
-      "imageUrl": "https://picsum.photos/seed/data_success_12/400/300",
-      "imageHint": "business analytics"
+      "id": "product-email",
+      "description": "Marketing por correo electrónico y automatización",
+      "imageUrl": "https://picsum.photos/seed/email_marketing_12/400/300",
+      "imageHint": "email marketing"
     },
     {
-      "id": "product-code",
-      "description": "Interfaz de desarrollo de software moderna",
-      "imageUrl": "https://picsum.photos/seed/software_code_88/400/300",
-      "imageHint": "software code"
+      "id": "product-growth",
+      "description": "Gráficos de crecimiento y KPIs de marketing",
+      "imageUrl": "https://picsum.photos/seed/marketing_growth_88/400/300",
+      "imageHint": "growth hacking"
     }
   ]
 }
