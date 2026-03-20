@@ -21,7 +21,7 @@ export default function Home() {
           <Link className="text-sm font-medium hover:text-primary transition-colors" href="/auth/register">
             {t.joinAffiliate}
           </Link>
-          <Link className="text-sm font-medium hover:text-primary transition-colors" href="/dashboard/admin">
+          <Link className="text-sm font-medium hover:text-primary transition-colors" href="/auth/admin-login">
             {t.adminLogin}
           </Link>
           <LanguageToggle />

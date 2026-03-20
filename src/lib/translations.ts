@@ -15,6 +15,11 @@ export const translations = {
     products: "Products",
     registerSale: "Register Sale",
     logout: "Logout",
+    adminTitle: "Admin Access",
+    username: "Username",
+    password: "Password",
+    login: "Log In",
+    invalidCredentials: "Invalid username or password",
   },
   es: {
     brand: "AffiliateSync",
@@ -32,6 +37,11 @@ export const translations = {
     products: "Productos",
     registerSale: "Registrar Venta",
     logout: "Cerrar Sesión",
+    adminTitle: "Acceso Administrativo",
+    username: "Usuario",
+    password: "Contraseña",
+    login: "Iniciar Sesión",
+    invalidCredentials: "Usuario o contraseña incorrectos",
   }
 };
 
