@@ -1,8 +1,9 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -12,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase'
 import { collection, query, where, doc } from 'firebase/firestore'
 
@@ -56,9 +58,18 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.welcomeBack}, {profile?.firstName || 'Afiliado'}</h1>
-          <p className="text-muted-foreground">Rastrea tus ganancias y gestiona tus registros de ventas reales.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.welcomeBack}, {profile?.firstName || 'Afiliado'}</h1>
+            <p className="text-muted-foreground">Rastrea tus ganancias y gestiona tus registros de ventas reales.</p>
+          </div>
+          <Alert className="md:max-w-xs border-primary/20 bg-primary/5">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            <AlertTitle className="text-xs font-bold text-primary uppercase tracking-wider">{t.weeklyPayments}</AlertTitle>
+            <AlertDescription className="text-[10px] text-muted-foreground">
+              {t.weeklyPaymentsNotice}
+            </AlertDescription>
+          </Alert>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -133,6 +144,11 @@ export default function AffiliateDashboard() {
               <div className="bg-white/10 p-4 rounded-lg border border-white/10">
                 <p className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.accountHolder}</p>
                 <p className="font-semibold text-lg">{profile?.bankAccountHolderName || 'Sin registrar'}</p>
+              </div>
+              <div className="pt-2 px-1">
+                <p className="text-[10px] italic opacity-80 leading-relaxed">
+                  * {t.weeklyPaymentsNotice}
+                </p>
               </div>
             </CardContent>
           </Card>

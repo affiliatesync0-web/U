@@ -87,7 +87,9 @@ export const translations = {
     depositAccount: "Deposit Account",
     instructions: "Instructions",
     viewProfile: "View Full Profile",
-    details: "Details"
+    details: "Details",
+    weeklyPayments: "Weekly Payouts",
+    weeklyPaymentsNotice: "Your commission payments are processed and sent every week."
   },
   es: {
     brand: "AffiliateSync",
@@ -119,7 +121,7 @@ export const translations = {
     createAccount: "Crear Mi Cuenta",
     personalInfo: "Información Personal",
     bankDetails: "Detalles de Pago Bancario",
-    productCode: "Código de Producto",
+    productCode: "Producto",
     buyerInfo: "Información del Comprador",
     confirmSale: "Confirmar y Registrar Venta",
     catalog: "Catálogo de Productos",
@@ -176,7 +178,9 @@ export const translations = {
     depositAccount: "Cuenta para Depósito",
     instructions: "Instrucciones de Pago",
     viewProfile: "Ver Perfil Completo",
-    details: "Detalles"
+    details: "Detalles",
+    weeklyPayments: "Pagos Semanales",
+    weeklyPaymentsNotice: "Tus pagos de comisiones se procesan y envían de forma semanal."
   }
 };
 
