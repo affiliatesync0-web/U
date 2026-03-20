@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Target, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { Target, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth } from '@/firebase'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
 
 export default function AffiliateLoginPage() {
   const router = useRouter()
@@ -20,6 +20,7 @@ export default function AffiliateLoginPage() {
   const { t } = useLanguage()
   const auth = useAuth()
   const [loading, setLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,6 +44,34 @@ export default function AffiliateLoginPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Atención",
+        description: t.enterEmailFirst,
+      })
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      await sendPasswordResetEmail(auth, email)
+      toast({
+        title: "Email enviado",
+        description: t.resetEmailSent,
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.language === 'es' ? "No se pudo enviar el correo. Verifica el email." : "Could not send reset email. Check your email address.",
+      })
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -79,7 +108,17 @@ export default function AffiliateLoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t.password}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">{t.password}</Label>
+                <button 
+                  type="button" 
+                  onClick={handleForgotPassword}
+                  className="text-xs text-primary font-bold hover:underline"
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
+                </button>
+              </div>
               <div className="relative">
                 <Input 
                   id="password" 
