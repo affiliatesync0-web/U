@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Target, ArrowLeft, Eye, EyeOff, Loader2, MailCheck } from 'lucide-react'
+import { Target, ArrowLeft, Eye, EyeOff, Loader2, MailCheck, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -72,8 +72,8 @@ export default function AffiliateLoginPage() {
       toast({
         title: t.language === 'es' ? "Correo de Recuperación Enviado" : "Reset Email Sent",
         description: t.language === 'es' 
-          ? `Se ha enviado un enlace seguro a ${email} desde nuestra cuenta oficial. Revisa tu bandeja de entrada.` 
-          : `A secure reset link has been sent to ${email} from our official account. Please check your inbox.`,
+          ? `Se ha enviado un enlace seguro a ${email} desde nuestra cuenta verificada. Revisa tu bandeja de entrada.` 
+          : `A secure reset link has been sent to ${email} from our verified account. Please check your inbox.`,
       })
     } catch (error: any) {
       console.error("Password reset error:", error)
@@ -166,6 +166,11 @@ export default function AffiliateLoginPage() {
             </Button>
           </form>
         </CardContent>
+        <div className="px-6 pb-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-[10px] text-primary font-bold uppercase tracking-wider">
+            <ShieldCheck className="h-3 w-3" /> Acceso Protegido por AffiliateSync
+          </div>
+        </div>
         <CardFooter className="justify-center border-t py-6 bg-muted/30">
           <p className="text-sm text-muted-foreground">
             {t.language === 'es' ? "¿No tienes cuenta?" : "Don't have an account?"} <Link href="/auth/register" className="text-primary font-bold hover:underline">{t.getStarted}</Link>
