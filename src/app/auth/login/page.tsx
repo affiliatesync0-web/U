@@ -51,13 +51,12 @@ export default function AffiliateLoginPage() {
     if (!email) {
       toast({
         variant: "destructive",
-        title: "Atención",
+        title: "Email Requerido",
         description: t.enterEmailFirst,
       })
       return
     }
 
-    // Validar formato de email simple
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       toast({
@@ -72,10 +71,10 @@ export default function AffiliateLoginPage() {
     try {
       await sendPasswordResetEmail(auth, email)
       toast({
-        title: t.language === 'es' ? "Correo Enviado" : "Email Sent",
+        title: t.language === 'es' ? "Correo de Recuperación Enviado" : "Reset Email Sent",
         description: t.language === 'es' 
-          ? `Se ha enviado un enlace a ${email}. Revisa tu bandeja de entrada (y la carpeta de spam).` 
-          : `A reset link has been sent to ${email}. Please check your inbox and spam folder.`,
+          ? `Se ha enviado un enlace seguro a ${email} desde nuestra cuenta oficial. Revisa tu bandeja de entrada.` 
+          : `A secure reset link has been sent to ${email} from our official account. Please check your inbox.`,
       })
     } catch (error: any) {
       console.error("Password reset error:", error)
@@ -133,7 +132,7 @@ export default function AffiliateLoginPage() {
                 <button 
                   type="button" 
                   onClick={handleForgotPassword}
-                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1 transition-colors"
                   disabled={resetLoading}
                 >
                   {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <MailCheck className="h-3 w-3" />}
@@ -161,7 +160,7 @@ export default function AffiliateLoginPage() {
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-primary hover:opacity-90 font-bold py-6 shadow-lg transition-all mt-4" 
+              className="w-full bg-primary hover:bg-primary/90 font-bold py-6 shadow-lg transition-all mt-4" 
               disabled={loading}
             >
               {loading ? (t.language === 'es' ? "Iniciando..." : "Logging in...") : t.login}

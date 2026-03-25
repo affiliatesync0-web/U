@@ -1,10 +1,10 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, ShieldAlert, User, Camera } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, ShieldAlert, Camera } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -32,6 +32,11 @@ export default function AffiliateDashboard() {
 
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const affiliateRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -69,7 +74,7 @@ export default function AffiliateDashboard() {
     { title: "Estado Cuenta", value: profile?.status === 'Blocked' ? t.blockedStatus : (profile?.status || t.active), icon: Users, color: profile?.status === 'Blocked' ? "text-red-600" : "text-violet-600", bg: profile?.status === 'Blocked' ? "bg-red-100" : "bg-violet-100" },
   ]
 
-  if (isLoading) {
+  if (!isMounted || isLoading) {
     return (
       <DashboardShell role="affiliate">
         <div className="flex items-center justify-center min-h-[400px]">
