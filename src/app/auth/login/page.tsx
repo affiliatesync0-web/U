@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Target, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Target, ArrowLeft, Eye, EyeOff, Loader2, MailCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -57,18 +57,38 @@ export default function AffiliateLoginPage() {
       return
     }
 
+    // Validar formato de email simple
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast({
+        variant: "destructive",
+        title: "Email Inválido",
+        description: t.language === 'es' ? "Por favor ingresa un correo electrónico válido." : "Please enter a valid email address.",
+      })
+      return
+    }
+
     setResetLoading(true)
     try {
       await sendPasswordResetEmail(auth, email)
       toast({
-        title: "Email enviado",
-        description: t.resetEmailSent,
+        title: t.language === 'es' ? "Correo Enviado" : "Email Sent",
+        description: t.language === 'es' 
+          ? `Se ha enviado un enlace a ${email} (desde affiliatesync0@gmail.com si lo configuraste en la consola).` 
+          : `A reset link has been sent to ${email}.`,
       })
     } catch (error: any) {
+      console.error("Password reset error:", error)
+      let message = t.language === 'es' ? "No se pudo enviar el correo. Verifica el email." : "Could not send reset email. Check your email address."
+      
+      if (error.code === 'auth/user-not-found') {
+        message = t.language === 'es' ? "No existe una cuenta registrada con este correo." : "No account found with this email."
+      }
+
       toast({
         variant: "destructive",
         title: "Error",
-        description: t.language === 'es' ? "No se pudo enviar el correo. Verifica el email." : "Could not send reset email. Check your email address.",
+        description: message,
       })
     } finally {
       setResetLoading(false)
@@ -76,7 +96,7 @@ export default function AffiliateLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EFF2F4] flex flex-col justify-center items-center p-4">
+    <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4">
       <Link href="/" className="mb-8 flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
         <ArrowLeft className="h-4 w-4" />
         <span className="text-sm font-medium">{t.language === 'es' ? "Volver al inicio" : "Back to home"}</span>
@@ -89,7 +109,7 @@ export default function AffiliateLoginPage() {
               <Target className="h-8 w-8" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-headline font-bold text-[#2870A3]">{t.affiliatePortal}</CardTitle>
+          <CardTitle className="text-2xl font-headline font-bold text-primary">{t.affiliatePortal}</CardTitle>
           <CardDescription>
             {t.language === 'es' ? "Ingresa tus datos para acceder a tu panel." : "Enter your details to access your dashboard."}
           </CardDescription>
@@ -113,10 +133,11 @@ export default function AffiliateLoginPage() {
                 <button 
                   type="button" 
                   onClick={handleForgotPassword}
-                  className="text-xs text-primary font-bold hover:underline"
+                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
                   disabled={resetLoading}
                 >
-                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
+                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <MailCheck className="h-3 w-3" />}
+                  {t.forgotPassword}
                 </button>
               </div>
               <div className="relative">
@@ -140,7 +161,7 @@ export default function AffiliateLoginPage() {
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-[#2870A3] hover:bg-[#1e5a82] font-semibold py-6 shadow-lg transition-all mt-4" 
+              className="w-full bg-primary hover:opacity-90 font-bold py-6 shadow-lg transition-all mt-4" 
               disabled={loading}
             >
               {loading ? (t.language === 'es' ? "Iniciando..." : "Logging in...") : t.login}
