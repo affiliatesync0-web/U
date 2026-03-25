@@ -74,8 +74,8 @@ export default function AffiliateLoginPage() {
       toast({
         title: t.language === 'es' ? "Correo Enviado" : "Email Sent",
         description: t.language === 'es' 
-          ? `Se ha enviado un enlace a ${email} (desde affiliatesync0@gmail.com si lo configuraste en la consola).` 
-          : `A reset link has been sent to ${email}.`,
+          ? `Se ha enviado un enlace a ${email}. Revisa tu bandeja de entrada (y la carpeta de spam).` 
+          : `A reset link has been sent to ${email}. Please check your inbox and spam folder.`,
       })
     } catch (error: any) {
       console.error("Password reset error:", error)
