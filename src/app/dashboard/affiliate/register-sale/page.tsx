@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -86,7 +87,7 @@ export default function RegisterSalePage() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 4. Actualizar saldo del afiliado (optimista)
+      // 4. Actualizar saldo del afiliado (optimista con increment)
       const affiliateRef = doc(db, 'affiliates', user.uid)
       updateDocumentNonBlocking(affiliateRef, {
         currentBalance: increment(commissionEarned)
