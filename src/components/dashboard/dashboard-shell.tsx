@@ -12,7 +12,7 @@ import {
   LogOut,
   ShoppingBag,
   Palette,
-  User as UserIcon,
+  Flame,
   Loader2,
   Users2,
 } from "lucide-react"
@@ -50,7 +50,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const db = useFirestore();
-  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   // Redirigir si no está autenticado
   useEffect(() => {
@@ -94,23 +93,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-3 px-2 py-6">
-            {logoImage ? (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border bg-white shadow-sm">
-                <Image 
-                  src={logoImage.imageUrl} 
-                  alt="Logo AffiliateSync" 
-                  width={40} 
-                  height={40} 
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
-                <ShoppingBag className="h-6 w-6" />
-              </div>
-            )}
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg rotate-3">
+              <Flame className="h-6 w-6" />
+            </div>
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-bold text-base tracking-tight text-primary">AffiliateSync</span>
+              <span className="font-headline font-bold text-base tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Network</span>
             </div>
           </div>
@@ -125,7 +112,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <SidebarMenu>
             {role === 'affiliate' && profile && (
               <SidebarMenuItem className="group-data-[collapsible=icon]:hidden px-2 mb-2">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-slate-200">
                   <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
                     <AvatarImage src={profile.photoUrl} className="object-cover" />
                     <AvatarFallback className="bg-primary text-xs text-white font-bold">
@@ -153,7 +140,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-white/50 backdrop-blur-sm sticky top-0 z-30 px-4">
-          <SidebarTrigger className="-ml-1" />
+          <SidebarTrigger className="-ml-1 text-primary" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex-1">
              <h2 className="text-sm font-bold capitalize text-primary tracking-tight">

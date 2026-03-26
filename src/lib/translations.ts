@@ -1,9 +1,9 @@
 
 export const translations = {
   en: {
-    brand: "AffiliateSync",
-    heroTitle: "The Modern Marketing Network",
-    heroSubtitle: "Scale your sales with cutting-edge marketing tools and products that actually convert.",
+    brand: "Sync Connect",
+    heroTitle: "The Future of Marketing Sync",
+    heroSubtitle: "Scale your sales with the most powerful marketing network. Sync your efforts, connect with results.",
     getStarted: "Get Started",
     affiliatePortal: "Affiliate Portal",
     joinAffiliate: "Join as Affiliate",
@@ -118,9 +118,9 @@ export const translations = {
     saveBuyer: "Save Buyer"
   },
   es: {
-    brand: "AffiliateSync",
-    heroTitle: "La Red de Marketing Moderna",
-    heroSubtitle: "Escala tus ventas con herramientas de marketing de última generación y productos que convierten de verdad.",
+    brand: "Sync Connect",
+    heroTitle: "El Futuro del Marketing Sync",
+    heroSubtitle: "Escala tus ventas con la red de marketing más potente. Sincroniza tus esfuerzos, conecta con resultados.",
     getStarted: "Empezar Ahora",
     affiliatePortal: "Portal de Afiliados",
     joinAffiliate: "Unirse como Afiliado",

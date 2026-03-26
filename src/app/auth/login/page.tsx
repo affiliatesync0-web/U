@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Target, ArrowLeft, Eye, EyeOff, Loader2, MailCheck, Globe } from 'lucide-react'
+import { Flame, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -81,9 +81,9 @@ export default function AffiliateLoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <Link href="/" className="mb-10 flex items-center gap-2 group transition-all">
         <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform">
-           <Globe className="h-6 w-6" />
+           <Flame className="h-6 w-6" />
         </div>
-        <span className="font-headline font-black text-2xl text-slate-900 tracking-tight">AffiliateSync</span>
+        <span className="font-headline font-black text-2xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[2rem] overflow-hidden bg-white">
@@ -109,7 +109,7 @@ export default function AffiliateLoginPage() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" font-bold text-slate-700>{t.password}</Label>
+                <Label htmlFor="password" className="font-bold text-slate-700">{t.password}</Label>
                 <button 
                   type="button" 
                   onClick={handleForgotPassword}
@@ -149,7 +149,7 @@ export default function AffiliateLoginPage() {
         </CardContent>
         <CardFooter className="justify-center border-t py-8 bg-slate-50/50 mt-8">
           <p className="text-sm font-bold text-slate-500">
-            {t.language === 'es' ? "¿Eres nuevo?" : "New here?"} <Link href="/auth/register" className="text-primary hover:underline">{t.getStarted}</Link>
+            {t.language === 'es' ? "¿Eres nuevo?" : "New here?"} <Link href="/auth/register" className="text-primary hover:underline font-black ml-1">{t.getStarted}</Link>
           </p>
         </CardFooter>
       </Card>

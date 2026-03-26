@@ -7,8 +7,8 @@ import { FirebaseClientProvider } from '@/firebase';
 import { FloatingContact } from '@/components/floating-contact';
 
 export const metadata: Metadata = {
-  title: 'AffiliateSync | Potenciando Afiliados en Nicaragua',
-  description: 'Gestiona tus productos digitales y comisiones de afiliados sin problemas con AffiliateSync.',
+  title: 'Sync Connect | Potenciando Afiliados en Nicaragua',
+  description: 'Gestiona tus productos digitales y comisiones de afiliados sin problemas con Sync Connect.',
 };
 
 export default function RootLayout({
