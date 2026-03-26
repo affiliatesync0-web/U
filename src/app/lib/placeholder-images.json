@@ -10,8 +10,8 @@
     {
       "id": "site-logo",
       "description": "Logo oficial de Sync Connect",
-      "imageUrl": "https://picsum.photos/seed/sync_connect_logo/400/250",
-      "imageHint": "professional logo"
+      "imageUrl": "https://picsum.photos/seed/sync_connect_logo/500/500",
+      "imageHint": "sync logo"
     },
     {
       "id": "product-social",

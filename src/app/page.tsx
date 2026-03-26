@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Flame, BarChart3, Users, Globe, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, BarChart3, Users, Globe, CheckCircle2 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
@@ -12,13 +12,20 @@ import placeholderData from '@/app/lib/placeholder-images.json';
 export default function Home() {
   const { t } = useLanguage();
   const heroImage = placeholderData.placeholderImages.find(img => img.id === 'hero-marketing');
+  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-20 flex items-center border-b bg-white sticky top-0 z-50">
         <Link className="flex items-center justify-center gap-2" href="/">
-          <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg rotate-3">
-             <Flame className="h-6 w-6" />
+          <div className="relative h-10 w-10 overflow-hidden">
+             <Image 
+                src={logoImage?.imageUrl || ""} 
+                alt="Logo Sync Connect" 
+                fill 
+                className="object-contain" 
+                data-ai-hint="sync logo"
+             />
           </div>
           <span className="font-headline font-extrabold text-2xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
         </Link>
@@ -111,8 +118,13 @@ export default function Home() {
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2 space-y-6">
             <Link className="flex items-center gap-2" href="/">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                 <Flame className="h-5 w-5" />
+              <div className="relative h-8 w-8">
+                 <Image 
+                    src={logoImage?.imageUrl || ""} 
+                    alt="Logo Sync Connect" 
+                    fill 
+                    className="object-contain" 
+                 />
               </div>
               <span className="font-headline font-black text-xl tracking-tight">Sync <span className="text-primary">Connect</span></span>
             </Link>

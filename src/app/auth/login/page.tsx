@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Flame, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth } from '@/firebase'
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
+import placeholderData from '@/app/lib/placeholder-images.json'
 
 export default function AffiliateLoginPage() {
   const router = useRouter()
@@ -24,6 +26,8 @@ export default function AffiliateLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,11 +83,16 @@ export default function AffiliateLoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
-      <Link href="/" className="mb-10 flex items-center gap-2 group transition-all">
-        <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform">
-           <Flame className="h-6 w-6" />
+      <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
+        <div className="relative h-20 w-20 shadow-xl rounded-2xl overflow-hidden bg-white border group-hover:scale-105 transition-transform">
+           <Image 
+              src={logoImage?.imageUrl || ""} 
+              alt="Logo Sync Connect" 
+              fill 
+              className="object-contain p-2"
+           />
         </div>
-        <span className="font-headline font-black text-2xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
+        <span className="font-headline font-black text-3xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[2rem] overflow-hidden bg-white">

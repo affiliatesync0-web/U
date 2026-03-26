@@ -4,6 +4,7 @@
 import * as React from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import {
   LayoutDashboard,
   Package,
@@ -12,7 +13,6 @@ import {
   LogOut,
   ShoppingBag,
   Palette,
-  Flame,
   Loader2,
   Users2,
 } from "lucide-react"
@@ -36,6 +36,7 @@ import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
+import placeholderData from "@/app/lib/placeholder-images.json"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -47,6 +48,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const db = useFirestore();
+
+  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -89,8 +92,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-3 px-2 py-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg rotate-3">
-              <Flame className="h-6 w-6" />
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white shadow-md border">
+              <Image 
+                src={logoImage?.imageUrl || ""} 
+                alt="Logo" 
+                fill 
+                className="object-contain p-1"
+              />
             </div>
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
               <span className="font-headline font-bold text-base tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>

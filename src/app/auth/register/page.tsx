@@ -9,13 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { Target, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc } from 'firebase/firestore'
+import placeholderData from '@/app/lib/placeholder-images.json'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -35,6 +37,8 @@ export default function RegisterPage() {
     accHolder: ''
   })
 
+  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password.length < 6) {
@@ -49,7 +53,6 @@ export default function RegisterPage() {
     setLoading(true)
     
     try {
-      // Crear usuario con email y contraseña
       const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
       const user = cred.user
 
@@ -96,11 +99,16 @@ export default function RegisterPage() {
         <span className="text-sm font-medium">{t.language === 'es' ? "Volver al Inicio" : "Back to Home"}</span>
       </Link>
 
-      <Card className="w-full max-w-2xl shadow-xl border-none overflow-hidden">
+      <Card className="w-full max-w-2xl shadow-xl border-none overflow-hidden rounded-[2rem]">
         <CardHeader className="text-center space-y-1 bg-white border-b pb-8">
           <div className="flex justify-center mb-4 pt-4">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
-              <Target className="h-8 w-8" />
+            <div className="relative h-16 w-16 overflow-hidden rounded-2xl shadow-lg border">
+              <Image 
+                 src={logoImage?.imageUrl || ""} 
+                 alt="Logo" 
+                 fill 
+                 className="object-contain p-2"
+              />
             </div>
           </div>
           <CardTitle className="text-2xl md:text-3xl font-headline font-bold text-[#2870A3]">{t.joinAffiliate}</CardTitle>
@@ -108,7 +116,7 @@ export default function RegisterPage() {
             {t.language === 'es' ? "Únete a nuestra red y empieza a ganar comisiones hoy mismo." : "Join our network and start earning commissions today."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-8">
+        <CardContent className="pt-8 px-6 md:px-12">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t.personalInfo}</h3>
@@ -119,7 +127,7 @@ export default function RegisterPage() {
                     id="firstName" 
                     placeholder="Juan" 
                     required 
-                    className="h-11" 
+                    className="h-11 rounded-xl" 
                     value={formData.firstName}
                     onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                   />
@@ -130,7 +138,7 @@ export default function RegisterPage() {
                     id="lastName" 
                     placeholder="Perez" 
                     required 
-                    className="h-11" 
+                    className="h-11 rounded-xl" 
                     value={formData.lastName}
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                   />
@@ -142,7 +150,7 @@ export default function RegisterPage() {
                     type="email" 
                     placeholder="juan.perez@gmail.com" 
                     required 
-                    className="h-11" 
+                    className="h-11 rounded-xl" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
@@ -155,7 +163,7 @@ export default function RegisterPage() {
                       type={showPassword ? "text" : "password"} 
                       placeholder="••••••" 
                       required 
-                      className="h-11 pr-10" 
+                      className="h-11 pr-10 rounded-xl" 
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                     />
@@ -177,7 +185,7 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="bank">{t.bankName}</Label>
                   <Select required onValueChange={(v) => setFormData({...formData, bank: v})}>
-                    <SelectTrigger className="h-11">
+                    <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue placeholder={t.language === 'es' ? "Selecciona un banco" : "Select a bank"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -195,7 +203,7 @@ export default function RegisterPage() {
                     id="accNumber" 
                     placeholder="1234567890" 
                     required 
-                    className="h-11" 
+                    className="h-11 rounded-xl" 
                     value={formData.accNumber}
                     onChange={(e) => setFormData({...formData, accNumber: e.target.value})}
                   />
@@ -206,7 +214,7 @@ export default function RegisterPage() {
                     id="accHolder" 
                     placeholder="Juan Alberto Perez Lopez" 
                     required 
-                    className="h-11" 
+                    className="h-11 rounded-xl" 
                     value={formData.accHolder}
                     onChange={(e) => setFormData({...formData, accHolder: e.target.value})}
                   />
@@ -214,13 +222,13 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-[#2870A3] hover:bg-[#1e5a82] font-bold text-lg h-14 shadow-lg transition-all rounded-xl" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 font-bold text-lg h-14 shadow-lg transition-all rounded-xl mb-4" disabled={loading}>
               {loading ? (t.language === 'es' ? "Creando Cuenta..." : "Creating Account...") : t.createAccount}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="justify-center border-t py-6 bg-muted/30">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground font-medium">
             {t.language === 'es' ? "¿Ya tienes cuenta?" : "Already have an account?"} <Link href="/auth/login" className="text-primary font-bold hover:underline">{t.login}</Link>
           </p>
         </CardFooter>
