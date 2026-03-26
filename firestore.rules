@@ -10,7 +10,6 @@ service cloud.firestore {
 
     function isAdmin() {
       // Para el prototipo, cualquier usuario firmado actúa como admin
-      // Se puede refinar vinculando a un email específico en el futuro
       return isSignedIn();
     }
 
@@ -32,10 +31,12 @@ service cloud.firestore {
 
     match /affiliates/{affiliateId} {
       allow read: if isSignedIn(); 
-      // Permitimos creación a cualquiera (registro)
+      // Permitimos creación durante el registro
       allow create: if true; 
-      // Permitimos escritura (update/set) si es el dueño del perfil o un administrador
-      allow update, write: if isOwner(affiliateId) || isAdmin();
+      // Permitimos actualización si es el dueño del perfil
+      allow update: if isOwner(affiliateId) || isAdmin();
+      // Permitimos escritura general (set/merge)
+      allow write: if isOwner(affiliateId) || isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -55,5 +56,7 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    
+    // Sincronización de reglas forzada para corregir errores de permisos
   }
 }
