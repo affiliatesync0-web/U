@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Smartphone, Bot, Send, RefreshCw, CheckCircle2, Info, Loader2, User, Globe, Copy, Check } from 'lucide-react'
+import { Smartphone, Bot, Send, RefreshCw, CheckCircle2, Info, Loader2, User, Globe, Copy, Check, QrCode, Zap } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, setDocumentNonBlocking, useCollection } from '@/firebase'
@@ -77,7 +77,6 @@ export default function BotSettingsPage() {
     if (!profileRef || !user) return
     setIsSaving(true)
     
-    // Limpiar el número de WhatsApp antes de guardar
     const cleanNumber = formData.whatsappNumber.replace(/\D/g, '');
 
     setDocumentNonBlocking(profileRef, {
@@ -138,7 +137,7 @@ export default function BotSettingsPage() {
     setTimeout(() => setCopied(false), 2000);
     toast({
       title: "URL Copiada",
-      description: "Pega esta URL en tu proveedor de WhatsApp (Twilio/Meta).",
+      description: "Pega esta URL en la configuración de Webhook de tu proveedor de WhatsApp.",
     });
   }
 
@@ -163,23 +162,35 @@ export default function BotSettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5 space-y-6">
             <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
-              <CardHeader className="bg-slate-50/50">
-                <CardTitle className="text-xl font-headline flex items-center gap-2">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                  {t.whatsappConnection}
+              <CardHeader className="bg-slate-50/50 border-b">
+                <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
+                  <Zap className="h-5 w-5" />
+                  ¿Cómo conectar mi WhatsApp?
                 </CardTitle>
-                <CardDescription>{t.whatsappHelp}</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="whatsappNumber" className="font-bold">{t.whatsappNumberLabel}</Label>
-                  <Input 
-                    id="whatsappNumber" 
-                    placeholder="50588888888" 
-                    value={formData.whatsappNumber}
-                    onChange={(e) => setFormData({...formData, whatsappNumber: e.target.value})}
-                    className="h-12 rounded-xl bg-slate-50 font-mono text-lg border-none ring-1 ring-slate-200"
-                  />
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">1</div>
+                    <p className="text-sm font-medium">Usa un proveedor de API (Twilio, Gupshup o Gateway Local).</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">2</div>
+                    <p className="text-sm font-medium">Busca la sección de <strong>Webhook URL</strong> en su panel.</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">3</div>
+                    <p className="text-sm font-medium">Copia y pega la URL que aparece abajo en tu proveedor.</p>
+                  </div>
+                  <div className="p-4 bg-muted/50 rounded-xl border border-dashed flex flex-col gap-2">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tu URL de Webhook</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={webhookUrl} className="h-9 text-[10px] font-mono bg-white" />
+                      <Button variant="secondary" size="icon" className="h-9 w-9" onClick={copyToClipboard}>
+                        {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -187,27 +198,21 @@ export default function BotSettingsPage() {
             <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
               <CardHeader className="bg-slate-50/50">
                 <CardTitle className="text-xl font-headline flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-accent" />
-                  Vinculación Real
+                  <Smartphone className="h-5 w-5 text-primary" />
+                  {t.whatsappNumberLabel}
                 </CardTitle>
-                <CardDescription>Usa esta URL para conectar tu cuenta de WhatsApp Business.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">URL de Webhook</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      readOnly 
-                      value={webhookUrl} 
-                      className="h-10 text-[10px] font-mono bg-slate-50 border-dashed"
-                    />
-                    <Button variant="outline" size="icon" onClick={copyToClipboard}>
-                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                    Configura esta URL en tu proveedor de gateway (Twilio, Gupshup o similar) para que el bot responda mensajes reales.
-                  </p>
+                  <Label htmlFor="whatsappNumber" className="font-bold">Número de Teléfono</Label>
+                  <Input 
+                    id="whatsappNumber" 
+                    placeholder="50588888888" 
+                    value={formData.whatsappNumber}
+                    onChange={(e) => setFormData({...formData, whatsappNumber: e.target.value})}
+                    className="h-12 rounded-xl bg-slate-50 font-mono text-lg border-none ring-1 ring-slate-200"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Incluye el código de país sin el símbolo + (ej: 505 para Nicaragua).</p>
                 </div>
               </CardContent>
             </Card>
@@ -223,7 +228,7 @@ export default function BotSettingsPage() {
                 <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
                   <div className="space-y-0.5">
                     <Label className="text-base font-bold">{t.enableBot}</Label>
-                    <p className="text-xs text-muted-foreground">Activa el asistente para respuestas automáticas.</p>
+                    <p className="text-xs text-muted-foreground">Activa la Inteligencia Artificial.</p>
                   </div>
                   <Switch 
                     checked={formData.botEnabled}
@@ -258,13 +263,19 @@ export default function BotSettingsPage() {
           <div className="lg:col-span-7 space-y-6">
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-[750px]">
                <CardHeader className="bg-slate-900 text-white pb-6 pt-8 flex-shrink-0">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg">
-                      <Bot className="h-7 w-7" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg">
+                        <Bot className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg font-headline font-black uppercase tracking-widest text-primary">Simulador IA</CardTitle>
+                        <p className="text-[10px] text-slate-400 font-bold">Prueba las respuestas de tu bot aquí</p>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg font-headline font-black uppercase tracking-widest text-primary">Simulador IA</CardTitle>
-                      <p className="text-[10px] text-slate-400 font-bold">Entrena a tu bot aquí antes de vincularlo</p>
+                    <div className="flex items-center gap-2 bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-[10px] font-black border border-green-500/20">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                      SISTEMA ACTIVO
                     </div>
                   </div>
                </CardHeader>
@@ -312,7 +323,7 @@ export default function BotSettingsPage() {
                   <div className="p-4 bg-white border-t border-slate-100 flex-shrink-0">
                     <form onSubmit={handleSendMessage} className="flex gap-2">
                        <Input 
-                        placeholder="Escribe un mensaje para probar..." 
+                        placeholder="Escribe para probar las respuestas del bot..." 
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         className="h-12 rounded-full px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1"
@@ -328,17 +339,6 @@ export default function BotSettingsPage() {
                     </form>
                   </div>
                </CardContent>
-               
-               <CardFooter className="bg-slate-900/5 py-4 border-t border-slate-100 flex-shrink-0">
-                  <div className="flex items-center gap-3 px-2">
-                    <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                      <Info className="h-3 w-3 text-blue-600" />
-                    </div>
-                    <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                      Este simulador usa la misma IA que responderá en tu WhatsApp real.
-                    </p>
-                  </div>
-               </CardFooter>
             </Card>
           </div>
         </div>
