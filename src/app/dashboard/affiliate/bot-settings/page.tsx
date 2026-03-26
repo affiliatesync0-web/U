@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Smartphone, Bot, Send, RefreshCw, CheckCircle2, Loader2, User, Copy, Check, Zap, ShieldCheck, Key } from 'lucide-react'
+import { Smartphone, Bot, Send, RefreshCw, CheckCircle2, Loader2, User, Copy, Check, Zap, ShieldCheck, Key, HelpCircle, ExternalLink } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, setDocumentNonBlocking, useCollection } from '@/firebase'
@@ -123,7 +123,7 @@ export default function BotSettingsPage() {
       setIsSaving(false)
       toast({
         title: t.saveChanges,
-        description: "Configuración actualizada.",
+        description: "Configuración actualizada correctamente.",
       })
     }, 1000)
   }
@@ -156,7 +156,7 @@ export default function BotSettingsPage() {
 
       setMessages(prev => [...prev, { role: 'bot', content: response.reply }])
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'bot', content: "Error de conexión con la IA." }])
+      setMessages(prev => [...prev, { role: 'bot', content: "Error de conexión con la IA. Inténtalo de nuevo." }])
     } finally {
       setIsTyping(false)
     }
@@ -170,7 +170,7 @@ export default function BotSettingsPage() {
     setTimeout(() => setCopied(false), 2000);
     toast({
       title: "URL Copiada",
-      description: "Pégala en tu proveedor de WhatsApp.",
+      description: "Ahora pégala en tu panel de Twilio o Meta Business.",
     });
   }
 
@@ -194,19 +194,37 @@ export default function BotSettingsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5 space-y-6">
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
+            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
               <CardHeader className="bg-slate-50/50">
                 <CardTitle className="text-xl font-headline flex items-center gap-2">
                   <Smartphone className="h-5 w-5 text-primary" />
-                  {t.whatsappConnection}
+                  Conexión Profesional
                 </CardTitle>
-                <CardDescription>Vincula tu número de empresa mediante código SIM</CardDescription>
+                <CardDescription>Configura tu Webhook para recibir mensajes reales</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
+                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl space-y-3">
+                   <div className="flex items-center gap-2 text-blue-700 font-bold text-sm">
+                     <HelpCircle className="h-4 w-4" /> ¿Cómo conectar?
+                   </div>
+                   <p className="text-xs text-blue-600 leading-relaxed">
+                     Copia el enlace de abajo y pégalo en el campo <strong>"Webhook URL"</strong> de tu proveedor de WhatsApp (Twilio, Meta, etc.). Esto permitirá que el bot reciba y responda mensajes automáticamente.
+                   </p>
+                   <div className="pt-2">
+                      <Label className="text-[10px] uppercase font-bold text-blue-400 mb-1 block">Tu Webhook Personal</Label>
+                      <div className="flex gap-2">
+                        <Input readOnly value={webhookUrl} className="h-10 text-[10px] font-mono bg-white border-blue-200" />
+                        <Button variant="secondary" size="icon" className="h-10 w-10 bg-white border-blue-200" onClick={copyToClipboard}>
+                          {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-blue-600" />}
+                        </Button>
+                      </div>
+                   </div>
+                 </div>
+
                 {step === 1 ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="whatsappNumber" className="font-bold">{t.whatsappNumberLabel}</Label>
+                      <Label htmlFor="whatsappNumber" className="font-bold">Número de Empresa</Label>
                       <div className="flex gap-2">
                         <Input 
                           id="whatsappNumber" 
@@ -226,22 +244,17 @@ export default function BotSettingsPage() {
                             disabled={!formData.whatsappNumber || isVerifying}
                             className="h-12 rounded-xl px-4"
                           >
-                            {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : t.sendCode}
+                            {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vincular"}
                           </Button>
                         )}
                       </div>
-                      {isVerified && (
-                        <p className="text-xs text-green-600 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" /> {t.numberVerified}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                     <div className="space-y-2">
                       <Label htmlFor="code" className="font-bold flex items-center gap-2">
-                        <Key className="h-4 w-4 text-primary" /> {t.verificationCode}
+                        <Key className="h-4 w-4 text-primary" /> Código SIM / SMS
                       </Label>
                       <Input 
                         id="code" 
@@ -256,41 +269,31 @@ export default function BotSettingsPage() {
                       <Button 
                         onClick={handleVerifyCode} 
                         disabled={verificationCode.length !== 6 || isVerifying}
-                        className="w-full h-12 rounded-xl font-bold bg-primary"
+                        className="w-full h-12 rounded-xl font-bold bg-primary shadow-lg shadow-primary/20"
                       >
-                        {isVerifying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : t.verify}
+                        {isVerifying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Confirmar Vinculación"}
                       </Button>
-                      <Button variant="ghost" onClick={() => setStep(1)} className="text-xs">
-                        {t.cancel}
+                      <Button variant="ghost" onClick={() => setStep(1)} className="text-xs text-muted-foreground">
+                        Cambiar Número
                       </Button>
                     </div>
                   </div>
                 )}
-
-                <div className="p-4 bg-muted/50 rounded-xl border border-dashed flex flex-col gap-2 mt-4">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t.webhookUrl}</Label>
-                  <div className="flex gap-2">
-                    <Input readOnly value={webhookUrl} className="h-9 text-[10px] font-mono bg-white" />
-                    <Button variant="secondary" size="icon" className="h-9 w-9" onClick={copyToClipboard}>
-                      {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
+            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
               <CardHeader className="bg-slate-50/50">
                 <CardTitle className="text-xl font-headline flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-[#A37EDC]" />
-                  {t.botStatus}
+                  <Bot className="h-5 w-5 text-primary" />
+                  Personalización IA
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
                   <div className="space-y-0.5">
-                    <Label className="text-base font-bold">{t.enableBot}</Label>
-                    <p className="text-xs text-muted-foreground">Activa la Inteligencia Artificial.</p>
+                    <Label className="text-base font-bold">Bot Inteligente</Label>
+                    <p className="text-xs text-muted-foreground">Responde automáticamente basándose en tu catálogo.</p>
                   </div>
                   <Switch 
                     checked={formData.botEnabled}
@@ -299,13 +302,13 @@ export default function BotSettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="welcomeMessage" className="font-bold">{t.botWelcomeMessageLabel}</Label>
+                  <Label htmlFor="welcomeMessage" className="font-bold">Mensaje de Bienvenida</Label>
                   <Textarea 
                     id="welcomeMessage" 
-                    placeholder="¡Hola! ¿En qué producto estás interesado?"
+                    placeholder="Escribe cómo quieres que el bot salude..."
                     value={formData.botWelcomeMessage}
                     onChange={(e) => setFormData({...formData, botWelcomeMessage: e.target.value})}
-                    className="min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200"
+                    className="min-h-[100px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200"
                   />
                 </div>
               </CardContent>
@@ -316,14 +319,14 @@ export default function BotSettingsPage() {
                   disabled={isSaving}
                 >
                   {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  {t.saveChanges}
+                  Guardar Cambios
                 </Button>
               </CardFooter>
             </Card>
           </div>
 
           <div className="lg:col-span-7 space-y-6">
-            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-[750px]">
+            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-[750px] ring-1 ring-slate-200">
                <CardHeader className="bg-slate-900 text-white pb-6 pt-8 flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -331,13 +334,13 @@ export default function BotSettingsPage() {
                         <Bot className="h-7 w-7" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg font-headline font-black uppercase tracking-widest text-primary">Simulador IA</CardTitle>
-                        <p className="text-[10px] text-slate-400 font-bold">Prueba las respuestas de tu bot aquí</p>
+                        <CardTitle className="text-lg font-headline font-black uppercase tracking-widest text-primary">Simulador de Ventas</CardTitle>
+                        <p className="text-[10px] text-slate-400 font-bold">Entrena y prueba las respuestas de tu IA</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-[10px] font-black border border-green-500/20">
                       <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                      SISTEMA ACTIVO
+                      LISTO PARA VENDER
                     </div>
                   </div>
                </CardHeader>
@@ -357,7 +360,7 @@ export default function BotSettingsPage() {
                             {msg.role === 'user' ? <User className="h-4 w-4 text-slate-600" /> : <Bot className="h-4 w-4" />}
                           </div>
                           <div className={cn(
-                            "p-4 rounded-2xl text-sm font-medium shadow-sm",
+                            "p-4 rounded-2xl text-sm font-medium shadow-sm leading-relaxed",
                             msg.role === 'user' ? "bg-white text-slate-800 rounded-br-none" : "bg-slate-900 text-white rounded-bl-none"
                           )}>
                             {msg.content}
@@ -385,7 +388,7 @@ export default function BotSettingsPage() {
                   <div className="p-4 bg-white border-t border-slate-100 flex-shrink-0">
                     <form onSubmit={handleSendMessage} className="flex gap-2">
                        <Input 
-                        placeholder="Escribe para probar las respuestas del bot..." 
+                        placeholder="Hazle una pregunta sobre tus productos..." 
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         className="h-12 rounded-full px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1"
@@ -393,7 +396,7 @@ export default function BotSettingsPage() {
                        <Button 
                         type="submit" 
                         size="icon" 
-                        className="h-12 w-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg shrink-0"
+                        className="h-12 w-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg shrink-0 transition-all active:scale-95"
                         disabled={!chatInput.trim() || isTyping}
                        >
                          <Send className="h-5 w-5" />

@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -5,14 +6,14 @@ import { processBotMessage } from '@/ai/flows/whatsapp-bot-flow';
 
 /**
  * Webhook universal para recibir mensajes de WhatsApp.
- * Soporta formatos comunes de proveedores (Twilio, Meta, etc.)
+ * Optimizado para identificar al afiliado y procesar respuestas IA inmediatamente.
  */
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get('content-type');
     let body: any;
 
-    // Manejar diferentes tipos de contenido (JSON o Form URL Encoded)
+    // Manejar formatos JSON (Meta/Gupshup) y Form URL Encoded (Twilio)
     if (contentType?.includes('application/json')) {
       body = await req.json();
     } else {
@@ -20,20 +21,20 @@ export async function POST(req: Request) {
       body = Object.fromEntries(formData.entries());
     }
 
-    // Extraer datos según el proveedor (Twilio usa 'From'/'Body', Meta usa 'from'/'message')
-    const from = body.From || body.from || body.sender;
-    const message = body.Body || body.message || body.text;
+    // Extraer remitente y mensaje soportando múltiples proveedores
+    const from = body.From || body.from || body.sender || (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from);
+    const message = body.Body || body.message || body.text || (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body);
 
     if (!from || !message) {
-      return NextResponse.json({ error: 'Mensaje o remitente no encontrado' }, { status: 400 });
+      return NextResponse.json({ error: 'Formato de mensaje no reconocido' }, { status: 400 });
     }
 
     const { firestore } = initializeFirebase();
     
-    // Limpiar número: quitar '+', espacios y dejar solo dígitos
+    // Limpiar número: quitar '+', espacios y dejar solo dígitos para la búsqueda
     const cleanNumber = from.toString().replace(/\D/g, '');
     
-    // Buscar al afiliado que tiene este número configurado y el bot activo
+    // Buscar al afiliado con el bot activo para este número
     const affiliatesRef = collection(firestore, 'affiliates');
     const q = query(affiliatesRef, 
       where('whatsappNumber', '==', cleanNumber), 
@@ -43,17 +44,16 @@ export async function POST(req: Request) {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      // Si no se encuentra por número exacto, buscamos todos los activos para ver si hay error de formato
       return NextResponse.json({ 
-        error: 'Afiliado no configurado para este número',
-        debug_received_number: cleanNumber 
+        error: 'Afiliado no encontrado o bot desactivado',
+        number: cleanNumber 
       }, { status: 404 });
     }
 
     const affiliateDoc = querySnapshot.docs[0];
     const affiliate = affiliateDoc.data();
 
-    // Obtener catálogo actualizado
+    // Obtener catálogo de productos en tiempo real
     const productsRef = collection(firestore, 'products');
     const productsSnapshot = await getDocs(productsRef);
     const catalog = productsSnapshot.docs.map(doc => ({
@@ -63,33 +63,34 @@ export async function POST(req: Request) {
       description: doc.data().description
     }));
 
-    // Procesar con IA
+    // Procesar con la Inteligencia Artificial de Sync Connect
     const aiResponse = await processBotMessage({
       userMessage: message.toString(),
-      affiliateName: affiliate.firstName || 'Asistente de Sync Connect',
+      affiliateName: affiliate.firstName || 'Asistente Sync Connect',
       welcomeMessage: affiliate.botWelcomeMessage || '¡Hola! ¿En qué puedo ayudarte?',
       catalog: catalog,
       history: []
     });
 
-    // Respuesta para el proveedor de WhatsApp
+    // Retornar la respuesta para que el proveedor de WhatsApp la envíe al cliente
     return NextResponse.json({ 
       success: true,
       reply: aiResponse.reply,
-      to: from
+      recipient: from,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error: any) {
-    console.error('CRITICAL: Error en Webhook de WhatsApp:', error);
+    console.error('CRITICAL ERROR: Webhook WhatsApp:', error);
     return NextResponse.json({ 
-      error: 'Error interno procesando el mensaje',
-      details: error.message 
+      error: 'Error procesando el mensaje en el servidor',
+      message: error.message 
     }, { status: 500 });
   }
 }
 
 /**
- * Endpoint para verificación de Webhook (requerido por algunos proveedores como Meta)
+ * Verificación del Webhook (Requerido por Meta Business y otros proveedores)
  */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -97,9 +98,9 @@ export async function GET(req: Request) {
   const token = searchParams.get('hub.verify_token');
   const challenge = searchParams.get('hub.challenge');
 
-  if (mode && token) {
+  if (mode === 'subscribe' && token) {
     return new Response(challenge, { status: 200 });
   }
   
-  return NextResponse.json({ status: 'Webhook active' });
+  return NextResponse.json({ status: 'Webhook Sync Connect activo y escuchando' });
 }
