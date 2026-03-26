@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     brand: "Sync Connect",
@@ -126,7 +125,9 @@ export const translations = {
     connectWhatsApp: "Connect WhatsApp",
     qrCodeSim: "Scan this QR code to connect with your WhatsApp bot (Simulation)",
     botFeatures: "Your bot will automatically handle: Product Info, Price Quotes, and Voucher Collection.",
-    whatsappHelp: "Enter your number in international format (e.g., 50588888888)"
+    whatsappHelp: "Enter your number in international format (e.g., 50588888888)",
+    chatSimulator: "Chat Simulator",
+    askBot: "Ask your bot something..."
   },
   es: {
     brand: "Sync Connect",
@@ -254,6 +255,8 @@ export const translations = {
     connectWhatsApp: "Conectar WhatsApp",
     qrCodeSim: "Escanea este código QR para conectar con tu bot de WhatsApp (Simulación)",
     botFeatures: "Tu bot manejará automáticamente: Info de Productos, Cotizaciones y Recolección de Vouchers.",
-    whatsappHelp: "Ingresa tu número en formato internacional (ej: 50588888888)"
+    whatsappHelp: "Ingresa tu número en formato internacional (ej: 50588888888)",
+    chatSimulator: "Simulador de Chat",
+    askBot: "Pregúntale algo a tu bot..."
   }
 };
