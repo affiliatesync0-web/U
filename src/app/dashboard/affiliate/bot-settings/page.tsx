@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Smartphone, Bot, Send, RefreshCw, CheckCircle2, Info, Loader2, User, Globe, Copy, Check, QrCode, Zap } from 'lucide-react'
+import { Smartphone, Bot, Send, RefreshCw, CheckCircle2, Loader2, User, Copy, Check, Zap, ShieldCheck, Key } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, setDocumentNonBlocking, useCollection } from '@/firebase'
@@ -33,6 +33,10 @@ export default function BotSettingsPage() {
   const [chatInput, setChatInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [copied, setCopied] = useState(false)
+  const [step, setStep] = useState(1) // 1: Number, 2: Code
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [isVerified, setIsVerified] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const profileRef = useMemoFirebase(() => {
@@ -61,6 +65,7 @@ export default function BotSettingsPage() {
         botEnabled: profile.botEnabled || false,
         botWelcomeMessage: profile.botWelcomeMessage || '¡Hola! Soy tu asistente de ventas de Sync Connect. ¿En qué producto estás interesado?'
       })
+      if (profile.whatsappNumber) setIsVerified(true)
       if (messages.length === 0) {
         setMessages([{ role: 'bot', content: profile.botWelcomeMessage || '¡Hola! ¿En qué puedo ayudarte hoy?' }])
       }
@@ -72,6 +77,34 @@ export default function BotSettingsPage() {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
+
+  const handleSendCode = () => {
+    if (!formData.whatsappNumber) return;
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      setStep(2);
+      toast({
+        title: t.codeSent,
+        description: t.enterCode,
+      });
+    }, 1500);
+  };
+
+  const handleVerifyCode = () => {
+    if (verificationCode.length !== 6) return;
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      setIsVerified(true);
+      setStep(1);
+      toast({
+        title: t.numberVerified,
+        description: "Tu WhatsApp ha sido vinculado exitosamente.",
+      });
+      handleSave();
+    }, 1500);
+  };
 
   const handleSave = () => {
     if (!profileRef || !user) return
@@ -89,8 +122,8 @@ export default function BotSettingsPage() {
     setTimeout(() => {
       setIsSaving(false)
       toast({
-        title: t.language === 'es' ? "Configuración Guardada" : "Settings Saved",
-        description: t.language === 'es' ? "Tu bot ha sido actualizado correctamente." : "Your bot has been updated successfully.",
+        title: t.saveChanges,
+        description: "Configuración actualizada.",
       })
     }, 1000)
   }
@@ -123,7 +156,7 @@ export default function BotSettingsPage() {
 
       setMessages(prev => [...prev, { role: 'bot', content: response.reply }])
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'bot', content: "Lo siento, tuve un pequeño problema técnico. ¿Puedes repetir eso?" }])
+      setMessages(prev => [...prev, { role: 'bot', content: "Error de conexión con la IA." }])
     } finally {
       setIsTyping(false)
     }
@@ -137,7 +170,7 @@ export default function BotSettingsPage() {
     setTimeout(() => setCopied(false), 2000);
     toast({
       title: "URL Copiada",
-      description: "Pega esta URL en la configuración de Webhook de tu proveedor de WhatsApp.",
+      description: "Pégala en tu proveedor de WhatsApp.",
     });
   }
 
@@ -162,57 +195,86 @@ export default function BotSettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5 space-y-6">
             <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
-              <CardHeader className="bg-slate-50/50 border-b">
-                <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
-                  <Zap className="h-5 w-5" />
-                  ¿Cómo conectar mi WhatsApp?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">1</div>
-                    <p className="text-sm font-medium">Usa un proveedor de API (Twilio, Gupshup o Gateway Local).</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">2</div>
-                    <p className="text-sm font-medium">Busca la sección de <strong>Webhook URL</strong> en su panel.</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">3</div>
-                    <p className="text-sm font-medium">Copia y pega la URL que aparece abajo en tu proveedor.</p>
-                  </div>
-                  <div className="p-4 bg-muted/50 rounded-xl border border-dashed flex flex-col gap-2">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tu URL de Webhook</Label>
-                    <div className="flex gap-2">
-                      <Input readOnly value={webhookUrl} className="h-9 text-[10px] font-mono bg-white" />
-                      <Button variant="secondary" size="icon" className="h-9 w-9" onClick={copyToClipboard}>
-                        {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
               <CardHeader className="bg-slate-50/50">
                 <CardTitle className="text-xl font-headline flex items-center gap-2">
                   <Smartphone className="h-5 w-5 text-primary" />
-                  {t.whatsappNumberLabel}
+                  {t.whatsappConnection}
                 </CardTitle>
+                <CardDescription>Vincula tu número de empresa mediante código SIM</CardDescription>
               </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="whatsappNumber" className="font-bold">Número de Teléfono</Label>
-                  <Input 
-                    id="whatsappNumber" 
-                    placeholder="50588888888" 
-                    value={formData.whatsappNumber}
-                    onChange={(e) => setFormData({...formData, whatsappNumber: e.target.value})}
-                    className="h-12 rounded-xl bg-slate-50 font-mono text-lg border-none ring-1 ring-slate-200"
-                  />
-                  <p className="text-[10px] text-muted-foreground italic">Incluye el código de país sin el símbolo + (ej: 505 para Nicaragua).</p>
+              <CardContent className="pt-6 space-y-6">
+                {step === 1 ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsappNumber" className="font-bold">{t.whatsappNumberLabel}</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          id="whatsappNumber" 
+                          placeholder="50588888888" 
+                          value={formData.whatsappNumber}
+                          onChange={(e) => setFormData({...formData, whatsappNumber: e.target.value})}
+                          disabled={isVerified}
+                          className="h-12 rounded-xl bg-slate-50 font-mono text-lg border-none ring-1 ring-slate-200"
+                        />
+                        {isVerified ? (
+                           <div className="flex items-center justify-center h-12 w-12 bg-green-100 text-green-600 rounded-xl">
+                             <ShieldCheck className="h-6 w-6" />
+                           </div>
+                        ) : (
+                          <Button 
+                            onClick={handleSendCode} 
+                            disabled={!formData.whatsappNumber || isVerifying}
+                            className="h-12 rounded-xl px-4"
+                          >
+                            {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : t.sendCode}
+                          </Button>
+                        )}
+                      </div>
+                      {isVerified && (
+                        <p className="text-xs text-green-600 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> {t.numberVerified}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="code" className="font-bold flex items-center gap-2">
+                        <Key className="h-4 w-4 text-primary" /> {t.verificationCode}
+                      </Label>
+                      <Input 
+                        id="code" 
+                        placeholder="123456" 
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        className="h-14 text-center text-3xl font-black tracking-[0.5em] rounded-xl bg-slate-50"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        onClick={handleVerifyCode} 
+                        disabled={verificationCode.length !== 6 || isVerifying}
+                        className="w-full h-12 rounded-xl font-bold bg-primary"
+                      >
+                        {isVerifying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : t.verify}
+                      </Button>
+                      <Button variant="ghost" onClick={() => setStep(1)} className="text-xs">
+                        {t.cancel}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 bg-muted/50 rounded-xl border border-dashed flex flex-col gap-2 mt-4">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t.webhookUrl}</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={webhookUrl} className="h-9 text-[10px] font-mono bg-white" />
+                    <Button variant="secondary" size="icon" className="h-9 w-9" onClick={copyToClipboard}>
+                      {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

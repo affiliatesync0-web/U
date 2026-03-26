@@ -127,7 +127,15 @@ export const translations = {
     botFeatures: "Your bot will automatically handle: Product Info, Price Quotes, and Voucher Collection.",
     whatsappHelp: "Enter your number in international format (e.g., 50588888888)",
     chatSimulator: "Chat Simulator",
-    askBot: "Ask your bot something..."
+    askBot: "Ask your bot something...",
+    verifyNumber: "Verify Number",
+    sendCode: "Send Code",
+    enterCode: "Enter Code",
+    verificationCode: "Verification Code",
+    verify: "Verify",
+    resendCode: "Resend Code",
+    numberVerified: "Number Verified Successfully",
+    codeSent: "A 6-digit code has been sent to your WhatsApp/SIM.",
   },
   es: {
     brand: "Sync Connect",
@@ -256,6 +264,14 @@ export const translations = {
     botFeatures: "Tu bot manejará automáticamente: Info de Productos, Cotizaciones y Recolección de Vouchers.",
     whatsappHelp: "Ingresa tu número en formato internacional (ej: 50588888888)",
     chatSimulator: "Simulador de Chat",
-    askBot: "Pregúntale algo a tu bot..."
+    askBot: "Pregúntale algo a tu bot...",
+    verifyNumber: "Verificar Número",
+    sendCode: "Enviar Código",
+    enterCode: "Ingresar Código",
+    verificationCode: "Código de Verificación",
+    verify: "Verificar",
+    resendCode: "Reenviar Código",
+    numberVerified: "Número Verificado Exitosamente",
+    codeSent: "Se ha enviado un código de 6 dígitos a tu WhatsApp/SIM.",
   }
 };
