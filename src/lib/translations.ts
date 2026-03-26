@@ -115,7 +115,18 @@ export const translations = {
     registerBuyer: "Register Buyer",
     myCustomers: "My Customers",
     customerList: "Manage your client list and details.",
-    saveBuyer: "Save Buyer"
+    saveBuyer: "Save Buyer",
+    botSettings: "Bot Configuration",
+    whatsappConnection: "WhatsApp Connection",
+    whatsappNumberLabel: "WhatsApp Number (with country code)",
+    botWelcomeMessageLabel: "Bot Welcome Message",
+    botStatus: "Bot Status",
+    enableBot: "Enable Sales Bot",
+    disableBot: "Disable Bot",
+    connectWhatsApp: "Connect WhatsApp",
+    qrCodeSim: "Scan this QR code to connect with your WhatsApp bot (Simulation)",
+    botFeatures: "Your bot will automatically handle: Product Info, Price Quotes, and Voucher Collection.",
+    whatsappHelp: "Enter your number in international format (e.g., 50588888888)"
   },
   es: {
     brand: "Sync Connect",
@@ -205,7 +216,7 @@ export const translations = {
     productImageUrl: "URL de la Imagen del Producto",
     affiliateMe: "Afiliarme",
     depositAccount: "Cuenta para Depósito",
-    instructions: "Instrucciones de Pago",
+    instructions: "Instructions",
     viewProfile: "Ver Perfil Completo",
     details: "Detalles",
     weeklyPayments: "Pagos Semanales",
@@ -232,6 +243,17 @@ export const translations = {
     registerBuyer: "Registrar Comprador",
     myCustomers: "Mis Clientes",
     customerList: "Gestiona tu lista de clientes y sus detalles.",
-    saveBuyer: "Guardar Comprador"
+    saveBuyer: "Guardar Comprador",
+    botSettings: "Configuración de Bot",
+    whatsappConnection: "Conexión de WhatsApp",
+    whatsappNumberLabel: "Número de WhatsApp (con código de país)",
+    botWelcomeMessageLabel: "Mensaje de Bienvenida del Bot",
+    botStatus: "Estado del Bot",
+    enableBot: "Activar Bot de Ventas",
+    disableBot: "Desactivar Bot",
+    connectWhatsApp: "Conectar WhatsApp",
+    qrCodeSim: "Escanea este código QR para conectar con tu bot de WhatsApp (Simulación)",
+    botFeatures: "Tu bot manejará automáticamente: Info de Productos, Cotizaciones y Recolección de Vouchers.",
+    whatsappHelp: "Ingresa tu número en formato internacional (ej: 50588888888)"
   }
 };

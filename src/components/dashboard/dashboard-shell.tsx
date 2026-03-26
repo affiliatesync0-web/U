@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -14,6 +15,7 @@ import {
   Palette,
   Loader2,
   Users2,
+  MessageSquare,
   Image as ImageIcon,
 } from "lucide-react"
 import {
@@ -82,6 +84,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.products, url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
+    { title: t.botSettings, url: "/dashboard/affiliate/bot-settings", icon: MessageSquare },
   ]
 
   if (isUserLoading) {

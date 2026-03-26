@@ -45,12 +45,24 @@
         },
         "email": {
           "type": "string",
-          "description": "The primary email address of the affiliate (typically a Gmail account as specified by requirements).",
+          "description": "The primary email address of the affiliate.",
           "format": "email"
         },
         "photoUrl": {
           "type": "string",
           "description": "Optional URL for the affiliate's profile picture."
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "description": "The WhatsApp number used for bot interactions and sales."
+        },
+        "botEnabled": {
+          "type": "boolean",
+          "description": "Whether the automated sales bot is active for this affiliate."
+        },
+        "botWelcomeMessage": {
+          "type": "string",
+          "description": "Customized message the bot sends to potential buyers."
         },
         "bankAccountNumber": {
           "type": "string",
@@ -58,7 +70,7 @@
         },
         "bankId": {
           "type": "string",
-          "description": "Reference to the Bank entity for the type of bank where the affiliate's account is held. (Relationship: Bank 1:N Affiliate)"
+          "description": "Reference to the Bank entity."
         },
         "bankAccountHolderName": {
           "type": "string",
@@ -66,7 +78,7 @@
         },
         "currentBalance": {
           "type": "number",
-          "description": "The current accumulated commission balance for the affiliate.",
+          "description": "The current accumulated commission balance.",
           "format": "float"
         },
         "registeredAt": {
@@ -76,7 +88,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Current status of the account (Active, Blocked, etc.)"
+          "description": "Current status (Active, Blocked, etc.)"
         }
       },
       "required": [
@@ -95,7 +107,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents a digital product, service, or infoproduct available for affiliates to sell.",
+      "description": "Represents a digital product, service, or infoproduct.",
       "properties": {
         "id": {
           "type": "string",
@@ -103,7 +115,7 @@
         },
         "code": {
           "type": "string",
-          "description": "A unique alphanumeric code for the product or service, used for identification during sales."
+          "description": "Unique alphanumeric code for identification."
         },
         "name": {
           "type": "string",
@@ -111,42 +123,42 @@
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the product or service, potentially AI-generated."
+          "description": "Detailed description of the product."
         },
         "price": {
           "type": "number",
-          "description": "The sale price of the product or service.",
+          "description": "The sale price.",
           "format": "float"
         },
         "commissionRate": {
           "type": "number",
-          "description": "The commission percentage or fixed amount an affiliate earns from selling this product.",
+          "description": "The commission percentage.",
           "format": "float"
         },
         "imageUrl": {
           "type": "string",
-          "description": "Optional URL for the product image."
+          "description": "URL for the product image."
         },
         "payoutBankAccountNumber": {
           "type": "string",
-          "description": "The bank account number designated for receiving payments for this product."
+          "description": "Bank account to receive payments."
         },
         "payoutBankId": {
           "type": "string",
-          "description": "Reference to the Bank entity for the type of bank where the product's payout account is held. (Relationship: Bank 1:N Product)"
+          "description": "Reference to the Bank entity."
         },
         "payoutBankAccountHolderName": {
           "type": "string",
-          "description": "The name of the account holder for the product's payment destination bank account."
+          "description": "Name of the account holder for product payouts."
         },
         "createdAt": {
           "type": "string",
-          "description": "The timestamp when the product was created.",
+          "description": "Creation timestamp.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "The timestamp when the product information was last updated.",
+          "description": "Last update timestamp.",
           "format": "date-time"
         }
       },
@@ -167,28 +179,28 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Buyer",
       "type": "object",
-      "description": "Represents a customer who has purchased a product or service through an affiliate.",
+      "description": "Represents a customer who has purchased a product.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Buyer entity."
+          "description": "Unique identifier (email)."
         },
         "firstName": {
           "type": "string",
-          "description": "The first name of the buyer."
+          "description": "The first name."
         },
         "lastName": {
           "type": "string",
-          "description": "The last name of the buyer."
+          "description": "The last name."
         },
         "email": {
           "type": "string",
-          "description": "The email address of the buyer.",
+          "description": "The email address.",
           "format": "email"
         },
         "registeredAt": {
           "type": "string",
-          "description": "The timestamp when the buyer's information was first recorded (e.g., first purchase).",
+          "description": "Recording timestamp.",
           "format": "date-time"
         }
       },
@@ -204,51 +216,51 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Sale",
       "type": "object",
-      "description": "Records a single sales transaction made by an affiliate for a specific product to a buyer.",
+      "description": "Records a single sales transaction.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Sale entity."
+          "description": "Unique identifier."
         },
         "affiliateId": {
           "type": "string",
-          "description": "Reference to the Affiliate entity who made this sale. (Relationship: Affiliate 1:N Sale)"
+          "description": "Reference to the Affiliate."
         },
         "productId": {
           "type": "string",
-          "description": "Reference to the Product entity that was sold. (Relationship: Product 1:N Sale)"
+          "description": "Reference to the Product."
         },
         "buyerId": {
           "type": "string",
-          "description": "Reference to the Buyer entity who purchased the product. (Relationship: Buyer 1:N Sale)"
+          "description": "Reference to the Buyer."
         },
         "saleDate": {
           "type": "string",
-          "description": "The date and time when the sale was recorded.",
+          "description": "Recording date.",
           "format": "date-time"
         },
         "saleAmount": {
           "type": "number",
-          "description": "The total amount of the sale.",
+          "description": "Total amount.",
           "format": "float"
         },
         "commissionEarned": {
           "type": "number",
-          "description": "The commission amount earned by the affiliate for this specific sale.",
+          "description": "Commission amount.",
           "format": "float"
         },
         "productPayoutAmount": {
           "type": "number",
-          "description": "The amount designated to be paid to the product's owner for this sale (saleAmount - commissionEarned).",
+          "description": "Amount for product owner.",
           "format": "float"
         },
         "voucherReference": {
           "type": "string",
-          "description": "The reference number from the bank deposit voucher."
+          "description": "Reference from bank voucher."
         },
         "status": {
           "type": "string",
-          "description": "The current status of the sale (e.g., completed, pending payout, refunded)."
+          "description": "Current status (completed, pending, etc.)"
         }
       },
       "required": [
@@ -268,15 +280,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SiteConfig",
       "type": "object",
-      "description": "Stores global application settings and media configurations.",
+      "description": "Global application settings.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "The ID of the config entry, often matching the resource being configured (e.g., an image ID)."
+          "description": "The identifier for the setting."
         },
         "imageUrl": {
           "type": "string",
-          "description": "The URL of the image to display."
+          "description": "The URL of the image."
         },
         "imageHint": {
           "type": "string",
@@ -284,7 +296,7 @@
         },
         "description": {
           "type": "string",
-          "description": "Human-readable description of what this image represents."
+          "description": "Human-readable description."
         }
       }
     }
@@ -304,13 +316,7 @@
           "schema": {
             "$ref": "#/backend/entities/Bank"
           },
-          "description": "Stores reference data for banks operating in Nicaragua.",
-          "params": [
-            {
-              "name": "bankId",
-              "description": "The unique identifier for a specific bank."
-            }
-          ]
+          "description": "Stores reference data for banks."
         }
       },
       {
@@ -320,13 +326,7 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "The catalog of products available for affiliates to sell.",
-          "params": [
-            {
-              "name": "productId",
-              "description": "The unique identifier for a specific product."
-            }
-          ]
+          "description": "The catalog of products."
         }
       },
       {
@@ -336,13 +336,7 @@
           "schema": {
             "$ref": "#/backend/entities/Affiliate"
           },
-          "description": "Profiles of registered affiliates.",
-          "params": [
-            {
-              "name": "affiliateId",
-              "description": "The unique ID of the affiliate."
-            }
-          ]
+          "description": "Profiles of registered affiliates."
         }
       },
       {
@@ -352,13 +346,7 @@
           "schema": {
             "$ref": "#/backend/entities/Buyer"
           },
-          "description": "Records of customers who have made purchases.",
-          "params": [
-            {
-              "name": "buyerId",
-              "description": "The unique identifier for a specific buyer."
-            }
-          ]
+          "description": "Records of customers."
         }
       },
       {
@@ -368,13 +356,7 @@
           "schema": {
             "$ref": "#/backend/entities/Sale"
           },
-          "description": "Individual sales transactions.",
-          "params": [
-            {
-              "name": "saleId",
-              "description": "The unique ID for each sales transaction."
-            }
-          ]
+          "description": "Individual sales transactions."
         }
       },
       {
@@ -384,13 +366,7 @@
           "schema": {
             "$ref": "#/backend/entities/SiteConfig"
           },
-          "description": "Global site configurations, including image overrides and hints.",
-          "params": [
-            {
-              "name": "configId",
-              "description": "The identifier for the setting (e.g., the image placeholder ID)."
-            }
-          ]
+          "description": "Global site configurations."
         }
       }
     ]
