@@ -1,8 +1,9 @@
+
 {
   "placeholderImages": [
     {
       "id": "hero-marketing",
-      "description": "Estrategia de marketing digital y análisis de datos",
+      "description": "Imagen Principal (Hero)",
       "imageUrl": "https://picsum.photos/seed/marketing_strategy_99/1200/800",
       "imageHint": "digital marketing"
     },
@@ -11,6 +12,24 @@
       "description": "Logo oficial de Sync Connect",
       "imageUrl": "https://drive.google.com/thumbnail?id=13xOWikydykURKtXVB2cpQQdgkVe6I888&sz=w1000",
       "imageHint": "sync logo"
+    },
+    {
+      "id": "feature-1",
+      "description": "Imagen Característica 1 (Mercado Global)",
+      "imageUrl": "",
+      "imageHint": "global market"
+    },
+    {
+      "id": "feature-2",
+      "description": "Imagen Característica 2 (Analíticas)",
+      "imageUrl": "",
+      "imageHint": "analytics chart"
+    },
+    {
+      "id": "feature-3",
+      "description": "Imagen Característica 3 (Soporte)",
+      "imageUrl": "",
+      "imageHint": "vip support"
     },
     {
       "id": "product-social",
@@ -23,24 +42,6 @@
       "description": "Optimización SEO y motores de búsqueda",
       "imageUrl": "https://picsum.photos/seed/seo_optimization_21/400/300",
       "imageHint": "search optimization"
-    },
-    {
-      "id": "product-ads",
-      "description": "Publicidad pagada y campañas de anuncios",
-      "imageUrl": "https://picsum.photos/seed/online_ads_77/400/300",
-      "imageHint": "digital advertising"
-    },
-    {
-      "id": "product-email",
-      "description": "Marketing por correo electrónico y automatización",
-      "imageUrl": "https://picsum.photos/seed/email_marketing_12/400/300",
-      "imageHint": "email marketing"
-    },
-    {
-      "id": "product-growth",
-      "description": "Gráficos de crecimiento y KPIs de marketing",
-      "imageUrl": "https://picsum.photos/seed/marketing_growth_88/400/300",
-      "imageHint": "growth hacking"
     }
   ]
 }

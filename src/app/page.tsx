@@ -8,33 +8,62 @@ import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
 import placeholderData from '@/app/lib/placeholder-images.json';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
 
 export default function Home() {
   const { t } = useLanguage();
   const db = useFirestore();
 
-  // Fetch Site Config Overrides
-  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
-  const heroConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'hero-marketing'), [db]);
+  // Fetch All Site Config Overrides
+  const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
+  const { data: configs, isLoading: isConfigLoading } = useCollection(configQuery);
 
-  const { data: logoOverride, isLoading: isLogoLoading } = useDoc(logoConfigRef);
-  const { data: heroOverride } = useDoc(heroConfigRef);
+  const getOverride = (id: string) => configs?.find(c => c.id === id);
 
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const defaultHero = placeholderData.placeholderImages.find(img => img.id === 'hero-marketing');
 
-  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
-  const displayHeroUrl = getGoogleDriveDirectLink(heroOverride?.imageUrl || defaultHero?.imageUrl || "");
+  const logoConfig = getOverride('site-logo');
+  const heroConfig = getOverride('hero-marketing');
+
+  const displayLogoUrl = getGoogleDriveDirectLink(logoConfig?.imageUrl || defaultLogo?.imageUrl || "");
+  const displayHeroUrl = getGoogleDriveDirectLink(heroConfig?.imageUrl || defaultHero?.imageUrl || "");
+
+  const features = [
+    { 
+      id: 'feature-1', 
+      icon: Globe, 
+      title: "Mercado Global", 
+      desc: "Vende productos digitales en todo el mundo y recibe tus comisiones localmente.", 
+      color: "text-blue-500", 
+      bg: "bg-blue-50" 
+    },
+    { 
+      id: 'feature-2', 
+      icon: BarChart3, 
+      title: "Analíticas Reales", 
+      desc: "Monitorea cada clic y cada venta con nuestro panel de control avanzado.", 
+      color: "text-primary", 
+      bg: "bg-primary/10" 
+    },
+    { 
+      id: 'feature-3', 
+      icon: Users, 
+      title: "Soporte VIP", 
+      desc: "Acompañamiento constante para que tu negocio nunca se detenga.", 
+      color: "text-purple-500", 
+      bg: "bg-purple-50" 
+    }
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="px-4 lg:px-6 h-20 flex items-center bg-white sticky top-0 z-50">
         <Link className="flex items-center justify-center gap-2" href="/">
           <div className="relative h-14 w-14 overflow-hidden flex items-center justify-center">
-             {isLogoLoading ? (
+             {isConfigLoading ? (
                <Loader2 className="h-5 w-5 animate-spin text-primary" />
              ) : displayLogoUrl ? (
                <Image 
@@ -128,21 +157,26 @@ export default function Home() {
             
             <div className="max-w-6xl mx-auto rounded-[4rem] border-[3px] border-slate-900 p-8 md:p-12 bg-white shadow-2xl">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  { icon: Globe, title: "Mercado Global", desc: "Vende productos digitales en todo el mundo y recibe tus comisiones localmente.", color: "text-blue-500", bg: "bg-blue-50" },
-                  { icon: BarChart3, title: "Analíticas Reales", desc: "Monitorea cada clic y cada venta con nuestro panel de control avanzado.", color: "text-primary", bg: "bg-primary/10" },
-                  { icon: Users, title: "Soporte VIP", desc: "Acompañamiento constante para que tu negocio nunca se detenga.", color: "text-purple-500", bg: "bg-purple-50" }
-                ].map((feature, i) => (
-                  <div key={i} className="flex flex-col items-center text-center space-y-6 p-6">
-                    <div className={`h-14 w-14 ${feature.bg} ${feature.color} rounded-2xl flex items-center justify-center shadow-inner`}>
-                      <feature.icon className="h-7 w-7" />
+                {features.map((feature, i) => {
+                  const override = getOverride(feature.id);
+                  const displayImg = getGoogleDriveDirectLink(override?.imageUrl || "");
+                  
+                  return (
+                    <div key={i} className="flex flex-col items-center text-center space-y-6 p-6">
+                      <div className={`h-14 w-14 ${feature.bg} ${feature.color} rounded-2xl flex items-center justify-center shadow-inner overflow-hidden relative`}>
+                        {displayImg ? (
+                          <Image src={displayImg} alt={feature.title} fill className="object-cover" unoptimized />
+                        ) : (
+                          <feature.icon className="h-7 w-7" />
+                        )}
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{feature.title}</h3>
+                        <p className="text-slate-500 text-sm font-medium leading-relaxed">{feature.desc}</p>
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{feature.title}</h3>
-                      <p className="text-slate-500 text-sm font-medium leading-relaxed">{feature.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
