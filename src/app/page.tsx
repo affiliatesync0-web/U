@@ -42,6 +42,7 @@ export default function Home() {
                   fill 
                   className="object-contain" 
                   priority
+                  unoptimized
                />
              ) : (
                <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
@@ -104,6 +105,7 @@ export default function Home() {
                      fill
                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                      priority
+                     unoptimized
                    />
                  ) : (
                    <div className="flex items-center justify-center h-full">
@@ -151,6 +153,7 @@ export default function Home() {
                       alt="Sync Connect" 
                       fill 
                       className="object-contain" 
+                      unoptimized
                    />
                  ) : (
                    <ImageIcon className="h-6 w-6 text-slate-700" />
