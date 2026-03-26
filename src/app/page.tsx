@@ -32,7 +32,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-20 flex items-center border-b bg-white sticky top-0 z-50">
         <Link className="flex items-center justify-center gap-2" href="/">
-          <div className="relative h-12 w-12 overflow-hidden flex items-center justify-center">
+          <div className="relative h-14 w-14 overflow-hidden flex items-center justify-center">
              {isLogoLoading ? (
                <Loader2 className="h-5 w-5 animate-spin text-primary" />
              ) : displayLogoUrl.length > 0 ? (
@@ -48,7 +48,10 @@ export default function Home() {
                <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
              )}
           </div>
-          <span className="font-headline font-extrabold text-2xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
+          <div className="flex flex-col -gap-1">
+            <span className="font-headline font-black text-2xl text-slate-900 tracking-tighter leading-none">Sync <span className="text-primary">Connect</span></span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Marketing Sync</span>
+          </div>
         </Link>
         <nav className="ml-auto flex items-center gap-4 sm:gap-8">
           <Link className="hidden md:inline-block text-sm font-semibold text-slate-600 hover:text-primary transition-colors" href="/auth/register">
@@ -146,7 +149,7 @@ export default function Home() {
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2 space-y-6">
             <Link className="flex items-center gap-2" href="/">
-              <div className="relative h-10 w-10 flex items-center justify-center">
+              <div className="relative h-12 w-12 flex items-center justify-center">
                  {displayLogoUrl.length > 0 ? (
                    <Image 
                       src={displayLogoUrl} 
