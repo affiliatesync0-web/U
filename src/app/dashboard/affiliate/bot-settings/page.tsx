@@ -219,11 +219,11 @@ export default function BotSettingsPage() {
                       </AccordionTrigger>
                       <AccordionContent className="text-[11px] text-slate-500 leading-relaxed bg-white/50 p-3 rounded-xl border border-slate-100 mt-1">
                         1. Ve a tu consola de Twilio.<br/>
-                        2. Entra en <strong>Messaging</strong> -> <strong>Services</strong>.<br/>
+                        2. Entra en <strong>Messaging</strong> &rarr; <strong>Services</strong>.<br/>
                         3. Selecciona tu servicio y ve a <strong>Sender Pool</strong>.<br/>
                         4. Haz clic en <strong>Edit</strong> sobre tu número.<br/>
-                        5. Busca el campo <strong>"A MESSAGE COMES IN"</strong>.<br/>
-                        6. Selecciona <strong>"Webhook"</strong> y pega el enlace de abajo.
+                        5. Busca el campo <strong>&quot;A MESSAGE COMES IN&quot;</strong>.<br/>
+                        6. Selecciona <strong>&quot;Webhook&quot;</strong> y pega el enlace de abajo.
                       </AccordionContent>
                     </AccordionItem>
                     
@@ -233,10 +233,10 @@ export default function BotSettingsPage() {
                       </AccordionTrigger>
                       <AccordionContent className="text-[11px] text-slate-500 leading-relaxed bg-white/50 p-3 rounded-xl border border-slate-100 mt-1">
                         1. Ve al <strong>Administrador de WhatsApp</strong> de Meta.<br/>
-                        2. Entra en <strong>Configuración</strong> -> <strong>Configuración de WhatsApp</strong>.<br/>
+                        2. Entra en <strong>Configuración</strong> &rarr; <strong>Configuración de WhatsApp</strong>.<br/>
                         3. Busca la sección <strong>Webhooks</strong>.<br/>
                         4. Haz clic en <strong>Editar</strong> y pega el enlace de abajo.<br/>
-                        5. Activa los eventos de <strong>"messages"</strong>.
+                        5. Activa los eventos de <strong>&quot;messages&quot;</strong>.
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
