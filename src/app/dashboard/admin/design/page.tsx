@@ -28,7 +28,7 @@ export default function AdminDesignPage() {
   }, [db, user, isUserLoading]);
   const { data: overrides, isLoading } = useCollection(configQuery);
 
-  const images = placeholderData.placeholderImages;
+  const images = placeholderData.placeholderImages || [];
 
   const handleSave = (imgId: string, url: string, hint: string) => {
     const configRef = doc(db, 'site_config', imgId);
@@ -71,8 +71,8 @@ export default function AdminDesignPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {images.map((img) => {
             const override = overrides?.find(o => o.id === img.id);
-            const currentUrl = override?.imageUrl || img.imageUrl;
-            const currentHint = override?.imageHint || img.imageHint;
+            const currentUrl = override?.imageUrl || img.imageUrl || "";
+            const currentHint = override?.imageHint || img.imageHint || "";
 
             return (
               <ImageEditorCard 
@@ -102,14 +102,20 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   return (
     <Card className={`border-none shadow-sm overflow-hidden flex flex-col ${isLogo ? 'ring-2 ring-primary/20' : ''}`}>
       <div className={`relative h-48 w-full bg-muted ${isLogo ? 'flex items-center justify-center' : ''}`}>
-        <Image 
-          src={url} 
-          alt={description} 
-          fill={!isLogo}
-          width={isLogo ? 160 : undefined}
-          height={isLogo ? 160 : undefined}
-          className={isLogo ? 'object-contain h-32 w-32' : 'object-cover'}
-        />
+        {url ? (
+          <Image 
+            src={url} 
+            alt={description} 
+            fill={!isLogo}
+            width={isLogo ? 160 : undefined}
+            height={isLogo ? 160 : undefined}
+            className={isLogo ? 'object-contain h-32 w-32' : 'object-cover'}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <ImageIcon className="h-12 w-12 opacity-20" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
            <ImageIcon className="text-white h-10 w-10" />
         </div>

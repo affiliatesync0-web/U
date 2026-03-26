@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart3, Users, Globe, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowRight, BarChart3, Users, Globe, CheckCircle2, Loader2, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
@@ -26,16 +26,16 @@ export default function Home() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
   const displayLogoUrl = logoOverride?.imageUrl || defaultLogo?.imageUrl || "";
-  const displayHeroUrl = heroOverride?.imageUrl || defaultHero?.imageUrl || "https://picsum.photos/seed/marketing/1200/800";
+  const displayHeroUrl = heroOverride?.imageUrl || defaultHero?.imageUrl || "";
 
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-20 flex items-center border-b bg-white sticky top-0 z-50">
         <Link className="flex items-center justify-center gap-2" href="/">
-          <div className="relative h-12 w-12 overflow-hidden">
+          <div className="relative h-12 w-12 overflow-hidden flex items-center justify-center">
              {isLogoLoading ? (
                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-             ) : (
+             ) : displayLogoUrl ? (
                <Image 
                   src={displayLogoUrl} 
                   alt="Sync Connect" 
@@ -43,6 +43,8 @@ export default function Home() {
                   className="object-contain" 
                   priority
                />
+             ) : (
+               <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
              )}
           </div>
           <span className="font-headline font-extrabold text-2xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
@@ -94,14 +96,20 @@ export default function Home() {
                    </div>
                 </div>
               </div>
-              <div className="relative aspect-video lg:aspect-square overflow-hidden rounded-[2.5rem] shadow-2xl group border-8 border-slate-50">
-                 <Image 
-                   src={displayHeroUrl}
-                   alt="Sync Connect Platform"
-                   fill
-                   className="object-cover transition-transform duration-700 group-hover:scale-105"
-                   priority
-                 />
+              <div className="relative aspect-video lg:aspect-square overflow-hidden rounded-[2.5rem] shadow-2xl group border-8 border-slate-50 bg-muted">
+                 {displayHeroUrl ? (
+                   <Image 
+                     src={displayHeroUrl}
+                     alt="Sync Connect Platform"
+                     fill
+                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                     priority
+                   />
+                 ) : (
+                   <div className="flex items-center justify-center h-full">
+                     <ImageIcon className="h-20 w-20 text-muted-foreground opacity-10" />
+                   </div>
+                 )}
                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent" />
               </div>
             </div>
@@ -136,13 +144,17 @@ export default function Home() {
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2 space-y-6">
             <Link className="flex items-center gap-2" href="/">
-              <div className="relative h-10 w-10">
-                 <Image 
-                    src={displayLogoUrl} 
-                    alt="Sync Connect" 
-                    fill 
-                    className="object-contain" 
-                 />
+              <div className="relative h-10 w-10 flex items-center justify-center">
+                 {displayLogoUrl ? (
+                   <Image 
+                      src={displayLogoUrl} 
+                      alt="Sync Connect" 
+                      fill 
+                      className="object-contain" 
+                   />
+                 ) : (
+                   <ImageIcon className="h-6 w-6 text-slate-700" />
+                 )}
               </div>
               <span className="font-headline font-black text-xl tracking-tight">Sync <span className="text-primary">Connect</span></span>
             </Link>

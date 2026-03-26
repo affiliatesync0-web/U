@@ -15,6 +15,7 @@ import {
   Palette,
   Loader2,
   Users2,
+  Image as ImageIcon,
 } from "lucide-react"
 import {
   Sidebar,
@@ -96,13 +97,17 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-3 px-2 py-6">
-            <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white shadow-md border">
-              <Image 
-                src={displayLogoUrl} 
-                alt="Logo" 
-                fill 
-                className="object-contain p-1"
-              />
+            <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white shadow-md border flex items-center justify-center">
+              {displayLogoUrl ? (
+                <Image 
+                  src={displayLogoUrl} 
+                  alt="Logo" 
+                  fill 
+                  className="object-contain p-1"
+                />
+              ) : (
+                <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
+              )}
             </div>
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
               <span className="font-headline font-bold text-base tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
