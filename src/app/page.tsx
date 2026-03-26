@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Globe, BarChart3, Users, Mail } from 'lucide-react';
+import { ArrowRight, Globe, BarChart3, Users, Mail, CheckCircle2 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
@@ -16,161 +16,126 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-24 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <Link className="flex items-center justify-center gap-4" href="/">
-          {logoImage && (
-            <div className="relative h-16 w-48 overflow-hidden">
-              <Image 
-                src={logoImage.imageUrl} 
-                alt="Logo AffiliateSync" 
-                fill 
-                className="object-contain"
-                priority
-              />
-            </div>
-          )}
-          <span className="font-headline font-bold text-2xl md:text-3xl text-primary tracking-tighter hidden md:inline-block">AffiliateSync</span>
+      <header className="px-4 lg:px-6 h-20 flex items-center border-b bg-white sticky top-0 z-50">
+        <Link className="flex items-center justify-center gap-2" href="/">
+          <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg rotate-3">
+             <Globe className="h-6 w-6" />
+          </div>
+          <span className="font-headline font-extrabold text-2xl text-slate-900 tracking-tight">AffiliateSync</span>
         </Link>
-        <nav className="ml-auto flex items-center gap-2 sm:gap-6">
-          <Link className="hidden sm:inline-block text-sm font-bold text-slate-700 hover:text-primary transition-colors" href="/auth/register">
+        <nav className="ml-auto flex items-center gap-4 sm:gap-8">
+          <Link className="hidden md:inline-block text-sm font-semibold text-slate-600 hover:text-primary transition-colors" href="/auth/register">
             {t.joinAffiliate}
           </Link>
-          <Link className="text-xs sm:text-sm font-bold text-slate-700 hover:text-primary transition-colors" href="/auth/login">
+          <Link className="text-sm font-bold text-slate-800 hover:text-primary transition-colors" href="/auth/login">
             {t.login}
           </Link>
-          <Link className="text-xs sm:text-sm font-bold text-slate-700 hover:text-primary transition-colors" href="/auth/admin-login">
-            {t.adminLogin}
-          </Link>
+          <Button asChild variant="default" className="hidden sm:flex font-bold rounded-full px-6">
+            <Link href="/auth/register">{t.getStarted}</Link>
+          </Button>
           <LanguageToggle />
         </nav>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-br from-[#f8fafc] via-white to-[#f1f5f9]">
+        <section className="w-full py-20 lg:py-32 bg-white">
           <div className="container px-4 md:px-6 mx-auto">
-            <div className="grid gap-10 lg:grid-cols-[1fr_500px] lg:gap-12 xl:grid-cols-[1fr_600px] items-center">
-              <div className="flex flex-col justify-center space-y-6 text-center lg:text-left">
-                <div className="space-y-4">
-                  <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary mb-2 shadow-sm border border-primary/5">
-                    #1 Red de Marketing de Afiliados en Nicaragua
-                  </div>
-                  <h1 className="text-4xl font-headline font-bold tracking-tighter sm:text-5xl xl:text-7xl/none text-primary">
-                    {t.heroTitle}
+            <div className="grid gap-12 lg:grid-cols-2 items-center">
+              <div className="flex flex-col justify-center space-y-8 text-center lg:text-left">
+                <div className="space-y-6">
+                  <h1 className="text-5xl font-headline font-black tracking-tight sm:text-6xl xl:text-7xl text-slate-900 leading-[1.1]">
+                    {t.heroTitle.split(' ').slice(0, -1).join(' ')} <span className="text-primary">{t.heroTitle.split(' ').pop()}</span>
                   </h1>
-                  <p className="max-w-[600px] mx-auto lg:mx-0 text-slate-600 md:text-xl font-body leading-relaxed">
-                    Escala tus ventas con herramientas de marketing de última generación y productos que convierten de verdad.
+                  <p className="max-w-[600px] mx-auto lg:mx-0 text-slate-500 text-lg md:text-xl font-medium leading-relaxed">
+                    {t.heroSubtitle}
                   </p>
                 </div>
-                <div className="flex flex-col gap-4 min-[400px]:flex-row justify-center lg:justify-start">
-                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90 font-bold text-white px-10 h-16 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                <div className="flex flex-col gap-4 sm:flex-row justify-center lg:justify-start">
+                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90 font-bold text-white px-12 h-16 rounded-full shadow-xl shadow-primary/20 transition-all hover:-translate-y-1">
                     <Link href="/auth/register">
                       {t.getStarted} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="border-2 border-accent text-accent hover:bg-accent/10 px-10 h-16 rounded-2xl font-bold transition-all shadow-md hover:shadow-lg">
+                  <Button asChild variant="outline" size="lg" className="border-2 border-slate-200 text-slate-700 hover:bg-slate-50 px-12 h-16 rounded-full font-bold transition-all">
                     <Link href="/auth/login">
                       {t.affiliatePortal}
                     </Link>
                   </Button>
                 </div>
+                <div className="flex items-center justify-center lg:justify-start gap-6 pt-4">
+                   <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" /> +1k Afiliados
+                   </div>
+                   <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" /> Pagos Semanales
+                   </div>
+                </div>
               </div>
-              <div className="relative aspect-[4/3] lg:aspect-square overflow-hidden rounded-[3rem] shadow-2xl border-[12px] border-white/90 hidden md:block">
+              <div className="relative aspect-video lg:aspect-square overflow-hidden rounded-[2.5rem] shadow-2xl group">
                  <Image 
-                   src={heroImage?.imageUrl || "https://picsum.photos/seed/nica_marketing/1200/800"}
-                   alt={heroImage?.description || "Marketing Dashboard"}
+                   src={heroImage?.imageUrl || "https://picsum.photos/seed/marketing/800/800"}
+                   alt="Marketing Platform"
                    fill
-                   className="object-cover hover:scale-105 transition-transform duration-1000"
+                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                    priority
                  />
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                 <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-[2.5rem]" />
               </div>
             </div>
           </div>
         </section>
 
-        <section className="w-full py-24 bg-white">
+        <section className="w-full py-24 bg-slate-50">
           <div className="container px-4 md:px-6 mx-auto">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-20">
-              <div className="space-y-3">
-                <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-4xl md:text-6xl text-primary">Impulsa tu Presencia Digital</h2>
-                <p className="max-w-[800px] text-slate-500 md:text-xl font-body leading-relaxed">
-                  Nuestra plataforma está diseñada por marketers para marketers, enfocada en la conversión y el ROI.
-                </p>
-              </div>
+            <div className="flex flex-col items-center text-center space-y-4 mb-20">
+              <h2 className="text-3xl font-headline font-black sm:text-5xl text-slate-900">Todo lo que necesitas para escalar</h2>
+              <p className="max-w-[800px] text-slate-500 text-lg font-medium">Nuestra tecnología te permite enfocarte en lo que mejor sabes hacer: vender.</p>
             </div>
-            <div className="mx-auto grid max-w-6xl items-start gap-10 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="group flex flex-col items-center space-y-6 text-center p-12 rounded-[2.5rem] bg-white border border-slate-100 transition-all hover:border-primary/30 hover:shadow-[0_20px_50px_rgba(40,112,163,0.15)] hover:-translate-y-2">
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-50 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner rotate-3 group-hover:rotate-0">
-                  <Globe className="h-12 w-12" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { icon: Globe, title: "Mercado Global", desc: "Vende productos digitales en todo el mundo y recibe tus comisiones localmente.", color: "text-blue-500", bg: "bg-blue-50" },
+                { icon: BarChart3, title: "Analíticas Reales", desc: "Monitorea cada clic y cada venta con nuestro panel de control avanzado.", color: "text-primary", bg: "bg-primary/10" },
+                { icon: Users, title: "Soporte VIP", desc: "Acompañamiento constante para que tu negocio nunca se detenga.", color: "text-purple-500", bg: "bg-purple-50" }
+              ].map((feature, i) => (
+                <div key={i} className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100 transition-all hover:shadow-xl hover:-translate-y-2">
+                  <div className={`h-16 w-16 ${feature.bg} ${feature.color} rounded-2xl flex items-center justify-center mb-6`}>
+                    <feature.icon className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4 text-slate-900">{feature.title}</h3>
+                  <p className="text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
                 </div>
-                <h3 className="text-2xl font-bold font-headline">Alcance Global</h3>
-                <p className="text-base text-slate-500 font-body leading-relaxed">
-                  Promueve productos en todo el mercado hispanohablante con pagos directos en Nicaragua.
-                </p>
-              </div>
-              <div className="group flex flex-col items-center space-y-6 text-center p-12 rounded-[2.5rem] bg-white border border-slate-100 transition-all hover:border-accent/30 hover:shadow-[0_20px_50px_rgba(163,126,220,0.15)] hover:-translate-y-2">
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-purple-50 text-accent group-hover:bg-accent group-hover:text-white transition-all duration-500 shadow-inner -rotate-3 group-hover:rotate-0">
-                  <BarChart3 className="h-12 w-12" />
-                </div>
-                <h3 className="text-2xl font-bold font-headline">Datos en Vivo</h3>
-                <p className="text-base text-slate-500 font-body leading-relaxed">
-                  Analíticas precisas de cada clic para que sepas qué campañas están generando dinero.
-                </p>
-              </div>
-              <div className="group flex flex-col items-center space-y-6 text-center p-12 rounded-[2.5rem] bg-white border border-slate-100 transition-all hover:border-orange-200 hover:shadow-[0_20px_50px_rgba(255,165,0,0.1)] hover:-translate-y-2 sm:col-span-2 lg:col-span-1">
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-orange-50 text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500 shadow-inner rotate-6 group-hover:rotate-0">
-                  <Users className="h-12 w-12" />
-                </div>
-                <h3 className="text-2xl font-bold font-headline">Comunidad Elite</h3>
-                <p className="text-base text-slate-500 font-body leading-relaxed">
-                  Únete a los mejores afiliados de la región y comparte estrategias ganadoras.
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-12 sm:flex-row py-20 w-full shrink-0 items-center px-4 md:px-8 border-t bg-slate-50">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            {logoImage && (
-              <div className="relative h-12 w-24 overflow-hidden">
-                <Image src={logoImage.imageUrl} alt="Logo" fill className="object-contain" />
+      <footer className="bg-slate-900 text-white py-20 px-4 md:px-8 border-t">
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="col-span-1 md:col-span-2 space-y-6">
+            <Link className="flex items-center gap-2" href="/">
+              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white">
+                 <Globe className="h-5 w-5" />
               </div>
-            )}
-            <p className="text-2xl font-bold text-primary tracking-tighter">AffiliateSync</p>
+              <span className="font-headline font-black text-xl tracking-tight">AffiliateSync</span>
+            </Link>
+            <p className="text-slate-400 max-w-sm leading-relaxed">
+              La plataforma definitiva para el marketing de afiliados en Nicaragua. Potenciamos tu crecimiento con herramientas reales y seguras.
+            </p>
           </div>
-          <p className="text-sm text-slate-500 max-w-[280px] leading-relaxed">
-            La plataforma líder en marketing de afiliados para el mercado nicaragüense. Gestión integral de comisiones y productos digitales.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-12 sm:ml-auto">
-          <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Información Legal</h4>
+          <div className="space-y-4">
+            <h4 className="text-sm font-black uppercase tracking-widest text-primary">Plataforma</h4>
             <nav className="flex flex-col gap-3">
-              <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Términos y Condiciones</Link>
-              <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Política de Privacidad</Link>
-              <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Acuerdo de Afiliado</Link>
+              <Link className="text-slate-400 hover:text-white transition-colors" href="/auth/login">Entrar</Link>
+              <Link className="text-slate-400 hover:text-white transition-colors" href="/auth/register">Registrarse</Link>
+              <Link className="text-slate-400 hover:text-white transition-colors" href="/auth/admin-login">Administración</Link>
             </nav>
           </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Soporte Técnico</h4>
+          <div className="space-y-4">
+            <h4 className="text-sm font-black uppercase tracking-widest text-primary">Contacto</h4>
             <nav className="flex flex-col gap-3">
-              <a 
-                className="text-sm text-slate-600 hover:text-primary transition-colors flex items-center gap-2 group" 
-                href="mailto:affiliatesync0@gmail.com"
-              >
-                <Mail className="h-4 w-4 text-accent group-hover:scale-110 transition-transform" />
-                affiliatesync0@gmail.com
-              </a>
-              <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Centro de Ayuda</Link>
-              <Link className="text-sm text-slate-600 hover:text-primary transition-colors" href="#">Preguntas Frecuentes</Link>
+              <a className="text-slate-400 hover:text-white transition-colors" href="mailto:affiliatesync0@gmail.com">Soporte</a>
+              <p className="text-slate-500 text-sm mt-4">© 2024 AffiliateSync. Todos los derechos reservados.</p>
             </nav>
           </div>
-        </div>
-        <div className="w-full sm:w-auto border-t sm:border-none pt-8 sm:pt-0 sm:self-end">
-          <p className="text-xs text-slate-400 font-medium">
-            © 2024 AffiliateSync. Hecho con pasión por el marketing en Nicaragua.
-          </p>
         </div>
       </footer>
     </div>

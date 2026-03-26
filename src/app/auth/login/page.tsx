@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Target, ArrowLeft, Eye, EyeOff, Loader2, MailCheck, ShieldCheck } from 'lucide-react'
+import { Target, ArrowLeft, Eye, EyeOff, Loader2, MailCheck, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -31,15 +32,15 @@ export default function AffiliateLoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password)
       toast({
-        title: t.language === 'es' ? "Bienvenido" : "Welcome",
-        description: t.language === 'es' ? "Sesión iniciada correctamente." : "Logged in successfully.",
+        title: t.language === 'es' ? "¡Hola de nuevo!" : "Welcome back!",
+        description: t.language === 'es' ? "Has iniciado sesión correctamente." : "Logged in successfully.",
       })
       router.push('/dashboard/affiliate')
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: t.language === 'es' ? "Credenciales incorrectas o cuenta no existe." : "Invalid credentials or account does not exist.",
+        title: "Error de Acceso",
+        description: t.language === 'es' ? "Tus credenciales no coinciden con nuestros registros." : "Your credentials don't match our records.",
       })
     } finally {
       setLoading(false)
@@ -56,37 +57,20 @@ export default function AffiliateLoginPage() {
       return
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      toast({
-        variant: "destructive",
-        title: "Email Inválido",
-        description: t.language === 'es' ? "Por favor ingresa un correo electrónico válido." : "Please enter a valid email address.",
-      })
-      return
-    }
-
     setResetLoading(true)
     try {
       await sendPasswordResetEmail(auth, email)
       toast({
-        title: t.language === 'es' ? "Correo de Recuperación Enviado" : "Reset Email Sent",
+        title: "Enlace enviado",
         description: t.language === 'es' 
-          ? `Se ha enviado un enlace seguro a ${email} desde nuestra cuenta verificada. Revisa tu bandeja de entrada.` 
-          : `A secure reset link has been sent to ${email} from our verified account. Please check your inbox.`,
+          ? `Revisa tu correo ${email} para restablecer tu contraseña.` 
+          : `Check your email ${email} to reset your password.`,
       })
     } catch (error: any) {
-      console.error("Password reset error:", error)
-      let message = t.language === 'es' ? "No se pudo enviar el correo. Verifica el email." : "Could not send reset email. Check your email address."
-      
-      if (error.code === 'auth/user-not-found') {
-        message = t.language === 'es' ? "No existe una cuenta registrada con este correo." : "No account found with this email."
-      }
-
       toast({
         variant: "destructive",
         title: "Error",
-        description: message,
+        description: t.language === 'es' ? "No pudimos enviar el correo. Verifica el email." : "Could not send reset email. Check your email.",
       })
     } finally {
       setResetLoading(false)
@@ -94,65 +78,61 @@ export default function AffiliateLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4">
-      <Link href="/" className="mb-8 flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
-        <ArrowLeft className="h-4 w-4" />
-        <span className="text-sm font-medium">{t.language === 'es' ? "Volver al inicio" : "Back to home"}</span>
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+      <Link href="/" className="mb-10 flex items-center gap-2 group transition-all">
+        <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform">
+           <Globe className="h-6 w-6" />
+        </div>
+        <span className="font-headline font-black text-2xl text-slate-900 tracking-tight">AffiliateSync</span>
       </Link>
 
-      <Card className="w-full max-w-md shadow-xl border-none">
-        <CardHeader className="text-center space-y-1">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
-              <Target className="h-8 w-8" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-headline font-bold text-primary">{t.affiliatePortal}</CardTitle>
-          <CardDescription>
-            {t.language === 'es' ? "Ingresa tus datos para acceder a tu panel." : "Enter your details to access your dashboard."}
+      <Card className="w-full max-w-md shadow-2xl border-none rounded-[2rem] overflow-hidden bg-white">
+        <CardHeader className="text-center pt-10 pb-6">
+          <CardTitle className="text-3xl font-headline font-black text-slate-900">{t.login}</CardTitle>
+          <CardDescription className="font-medium text-slate-500">
+            {t.language === 'es' ? "Entra a tu universo de marketing." : "Enter your marketing universe."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+        <CardContent className="px-8">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">{t.email}</Label>
-              <input 
+              <Label htmlFor="email" className="font-bold text-slate-700">{t.email}</Label>
+              <Input 
                 id="email" 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@ejemplo.com" 
+                placeholder="tu@correo.com" 
                 required 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t.password}</Label>
+                <Label htmlFor="password" font-bold text-slate-700>{t.password}</Label>
                 <button 
                   type="button" 
                   onClick={handleForgotPassword}
-                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1 transition-colors"
+                  className="text-xs text-primary font-bold hover:underline"
                   disabled={resetLoading}
                 >
-                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <MailCheck className="h-3 w-3" />}
-                  {t.forgotPassword}
+                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
                 </button>
               </div>
               <div className="relative">
-                <input 
+                <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••" 
                   required 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                  className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white pr-10"
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -160,21 +140,16 @@ export default function AffiliateLoginPage() {
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-primary hover:bg-primary/90 font-bold py-6 shadow-lg transition-all mt-4" 
+              className="w-full bg-primary hover:bg-primary/90 font-black text-lg py-7 rounded-xl shadow-lg shadow-primary/20 transition-all mt-4" 
               disabled={loading}
             >
-              {loading ? (t.language === 'es' ? "Iniciando..." : "Logging in...") : t.login}
+              {loading ? (t.language === 'es' ? "Entrando..." : "Entering...") : t.login}
             </Button>
           </form>
         </CardContent>
-        <div className="px-6 pb-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-[10px] text-primary font-bold uppercase tracking-wider">
-            <ShieldCheck className="h-3 w-3" /> Acceso Protegido por AffiliateSync
-          </div>
-        </div>
-        <CardFooter className="justify-center border-t py-6 bg-muted/30">
-          <p className="text-sm text-muted-foreground">
-            {t.language === 'es' ? "¿No tienes cuenta?" : "Don't have an account?"} <Link href="/auth/register" className="text-primary font-bold hover:underline">{t.getStarted}</Link>
+        <CardFooter className="justify-center border-t py-8 bg-slate-50/50 mt-8">
+          <p className="text-sm font-bold text-slate-500">
+            {t.language === 'es' ? "¿Eres nuevo?" : "New here?"} <Link href="/auth/register" className="text-primary hover:underline">{t.getStarted}</Link>
           </p>
         </CardFooter>
       </Card>

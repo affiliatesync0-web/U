@@ -5,39 +5,39 @@
 
 @layer base {
   :root {
-    --background: 204 20% 95%; /* #EFF2F4 */
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 205 60% 40%; /* #2870A3 approximation */
-    --primary-foreground: 210 40% 98%;
+    --primary: 18 100% 55%; /* Hotmart Orange #FF5D1B */
+    --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 263 58% 68%; /* #A37EDC */
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 100% 50%; /* Deep Blue Accent */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 205 60% 40%;
+    --ring: 18 100% 55%;
     --radius: 0.75rem;
-    --chart-1: 205 60% 40%;
-    --chart-2: 263 58% 68%;
+    --chart-1: 18 100% 55%;
+    --chart-2: 210 100% 50%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 205 60% 40%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 18 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 263 58% 95%;
-    --sidebar-accent-foreground: 263 58% 40%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 205 60% 40%;
+    --sidebar-accent: 222 47% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 20%;
+    --sidebar-ring: 18 100% 55%;
   }
 
   .dark {
@@ -47,8 +47,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 18 100% 55%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
