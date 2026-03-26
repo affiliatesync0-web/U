@@ -141,6 +141,13 @@ export const translations = {
     linkStep2: "2. Verify Number",
     linkStep3: "3. Connect Bot",
     magicLinkDesc: "Click to send a verification message directly from your WhatsApp.",
+    selectRole: "What is your main goal?",
+    iWantToBuy: "I want to buy products",
+    iWantToSell: "I want to sell and earn commissions",
+    buyerRegister: "Register as Buyer",
+    affiliateRegister: "Register as Affiliate",
+    buyerSubtitle: "Access high-quality digital products and manage your purchases.",
+    joinAs: "Join as",
   },
   es: {
     brand: "Sync Connect",
@@ -283,5 +290,12 @@ export const translations = {
     linkStep2: "2. Verificación",
     linkStep3: "3. Conexión Final",
     magicLinkDesc: "Haz clic para enviar un mensaje de verificación directamente desde tu WhatsApp.",
+    selectRole: "¿Cuál es tu objetivo principal?",
+    iWantToBuy: "Quiero comprar productos",
+    iWantToSell: "Quiero vender y ganar comisiones",
+    buyerRegister: "Registro de Comprador",
+    affiliateRegister: "Registro de Afiliado",
+    buyerSubtitle: "Accede a productos digitales de alta calidad y gestiona tus compras.",
+    joinAs: "Unirse como",
   }
 };
