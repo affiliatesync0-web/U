@@ -78,6 +78,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
+    { title: t.buyers, url: "/dashboard/admin/buyers", icon: Users2 },
     { title: t.allSales, url: "/dashboard/admin/sales", icon: ShoppingBag },
     { title: t.design, url: "/dashboard/admin/design", icon: Palette },
   ]
