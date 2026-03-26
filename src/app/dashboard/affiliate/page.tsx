@@ -86,38 +86,39 @@ export default function AffiliateDashboard() {
 
   return (
     <DashboardShell role="affiliate">
-      <div className="space-y-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
+      <div className="space-y-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex items-center gap-8">
             <div className="relative">
-              <Avatar className="h-24 w-24 border-4 border-white shadow-xl">
+              <Avatar className="h-28 w-28 border-8 border-white shadow-2xl rotate-3 transition-transform hover:rotate-0">
                 <AvatarImage src={profile?.photoUrl} className="object-cover" />
-                <AvatarFallback className="bg-primary text-white text-3xl font-black">
+                <AvatarFallback className="bg-primary text-white text-4xl font-black">
                   {profile?.firstName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <button 
                 onClick={() => setIsEditingPhoto(true)}
-                className="absolute -bottom-1 -right-1 bg-white p-2 rounded-full shadow-lg border hover:bg-slate-50 transition-all"
+                className="absolute -bottom-1 -right-1 bg-white p-3 rounded-2xl shadow-xl border hover:bg-slate-50 transition-all text-primary"
               >
-                <Camera className="h-4 w-4 text-primary" />
+                <Camera className="h-5 w-5" />
               </button>
             </div>
             <div>
-              <h1 className="text-3xl font-headline font-black text-slate-900 leading-tight">
+              <h1 className="text-4xl font-headline font-black text-slate-900 leading-tight tracking-tight">
                 {t.welcomeBack}, {profile?.firstName || 'Campeón'} 👋
               </h1>
-              <p className="text-slate-500 font-bold text-sm tracking-wide flex items-center gap-2">
-                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Panel de Control Verificado
+              <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.4em] flex items-center gap-3 mt-2">
+                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Partner Verificado Sync
               </p>
             </div>
           </div>
-          <Alert className="md:max-w-sm border-none bg-white shadow-sm rounded-2xl py-4 border-l-4 border-primary">
-            <div className="flex items-start gap-3">
-               <CalendarClock className="h-6 w-6 text-primary mt-1" />
+          <Alert className="md:max-w-md border-none bg-white shadow-xl rounded-[2.5rem] py-6 px-8 border-l-8 border-primary relative overflow-hidden">
+            <div className="absolute top-0 right-0 h-full w-24 bg-primary/5 -skew-x-12 translate-x-12" />
+            <div className="flex items-start gap-5 relative z-10">
+               <CalendarClock className="h-8 w-8 text-primary mt-1" />
                <div>
-                 <AlertTitle className="text-sm font-black text-slate-900">{t.weeklyPayments}</AlertTitle>
-                 <AlertDescription className="text-xs text-slate-500 font-medium">
+                 <AlertTitle className="text-base font-black text-slate-900 tracking-tight">{t.weeklyPayments}</AlertTitle>
+                 <AlertDescription className="text-xs text-slate-500 font-bold leading-relaxed mt-1">
                    {t.weeklyPaymentsNotice}
                  </AlertDescription>
                </div>
@@ -125,56 +126,64 @@ export default function AffiliateDashboard() {
           </Alert>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat) => (
-            <Card key={stat.title} className="border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[1.5rem] bg-white group overflow-hidden">
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
-                    <stat.icon className="h-6 w-6" />
+            <Card key={stat.title} className="border-none shadow-sm hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] bg-white group overflow-hidden ring-1 ring-slate-50">
+              <CardContent className="p-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className={`p-4 rounded-[1.25rem] ${stat.bg} ${stat.color} shadow-inner`}>
+                    <stat.icon className="h-7 w-7" />
                   </div>
-                  <ArrowUpRight className="h-5 w-5 text-slate-200 group-hover:text-primary transition-colors" />
+                  <ArrowUpRight className="h-6 w-6 text-slate-100 group-hover:text-primary transition-colors duration-500" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.title}</p>
-                  <h3 className="text-3xl font-black text-slate-900">{stat.value}</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{stat.title}</p>
+                  <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="lg:col-span-2 border-none shadow-sm rounded-[2rem] bg-white overflow-hidden">
-            <CardHeader className="px-8 py-6 border-b border-slate-50">
-              <CardTitle className="text-xl font-headline font-black text-slate-900">Ventas Recientes</CardTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <Card className="lg:col-span-8 border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-50">
+            <CardHeader className="px-10 py-8 border-b border-slate-50 bg-slate-50/30 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-headline font-black text-slate-900 tracking-tight">Ventas Recientes</CardTitle>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Últimos movimientos financieros</p>
+              </div>
+              <Button variant="ghost" className="text-xs font-black uppercase text-primary tracking-widest">Ver Todo</Button>
             </CardHeader>
             <CardContent className="p-0">
               {salesLoading ? (
-                <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                <div className="flex justify-center py-24"><Loader2 className="animate-spin h-10 w-10 text-primary opacity-50" /></div>
               ) : !sales || sales.length === 0 ? (
-                <div className="text-center py-24">
-                  <ShoppingBag className="h-12 w-12 text-slate-100 mx-auto mb-4" />
-                  <p className="text-slate-400 font-bold text-sm">Tu primer venta está por llegar. ¡Sigue así!</p>
+                <div className="text-center py-32">
+                  <ShoppingBag className="h-20 w-20 text-slate-100 mx-auto mb-6 rotate-12" />
+                  <p className="text-slate-400 font-black text-sm uppercase tracking-widest">Aún no has registrado ventas. ¡Es momento de empezar!</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                        <TableHead className="px-8 uppercase text-[10px] font-black text-slate-400 tracking-widest">ID</TableHead>
-                        <TableHead className="uppercase text-[10px] font-black text-slate-400 tracking-widest">Producto</TableHead>
-                        <TableHead className="uppercase text-[10px] font-black text-slate-400 tracking-widest">Monto</TableHead>
-                        <TableHead className="px-8 text-right uppercase text-[10px] font-black text-slate-400 tracking-widest">Comisión</TableHead>
+                        <TableHead className="px-10 h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">ID Operación</TableHead>
+                        <TableHead className="h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">Producto / Servicio</TableHead>
+                        <TableHead className="h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">Importe</TableHead>
+                        <TableHead className="px-10 text-right h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">Comisión Neta</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {sales.slice(0, 5).map((sale) => (
-                        <TableRow key={sale.id} className="hover:bg-slate-50/30 transition-colors h-16">
-                          <TableCell className="px-8 font-mono text-xs font-bold text-slate-300">#{sale.id.substring(0, 8)}</TableCell>
-                          <TableCell className="font-bold text-slate-700">{sale.productName || sale.productId}</TableCell>
-                          <TableCell className="font-bold text-slate-500">${sale.saleAmount?.toFixed(2)}</TableCell>
-                          <TableCell className="px-8 text-right font-black text-primary">${sale.commissionEarned?.toFixed(2)}</TableCell>
+                        <TableRow key={sale.id} className="hover:bg-slate-50/30 transition-colors h-20">
+                          <TableCell className="px-10 font-mono text-[10px] font-black text-slate-300">#{sale.id.substring(0, 8)}</TableCell>
+                          <TableCell className="font-black text-slate-800 tracking-tight">{sale.productName || sale.productId}</TableCell>
+                          <TableCell className="font-bold text-slate-500 tracking-tighter">${sale.saleAmount?.toFixed(2)}</TableCell>
+                          <TableCell className="px-10 text-right">
+                             <span className="bg-green-50 text-green-600 font-black px-4 py-2 rounded-xl text-lg tracking-tighter inline-block shadow-sm">
+                               ${sale.commissionEarned?.toFixed(2)}
+                             </span>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -184,28 +193,34 @@ export default function AffiliateDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-xl bg-slate-900 text-white rounded-[2rem] overflow-hidden">
-            <CardHeader className="px-8 pt-8 pb-4">
-              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4">
-                <Landmark className="h-6 w-6 text-primary" />
+          <Card className="lg:col-span-4 border-none shadow-2xl bg-slate-900 text-white rounded-[3rem] overflow-hidden flex flex-col justify-between">
+            <CardHeader className="px-10 pt-12 pb-6">
+              <div className="h-16 w-16 bg-primary/20 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-primary/10 rotate-3">
+                <Landmark className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle className="text-xl font-headline font-black">Cobros Bancarios</CardTitle>
+              <CardTitle className="text-3xl font-headline font-black tracking-tight">Cobros <span className="text-primary">Sync</span></CardTitle>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-2">Tus datos de retiro</p>
             </CardHeader>
-            <CardContent className="space-y-6 px-8 pb-10">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.bankName}</p>
-                <p className="font-bold text-lg">{profile?.bankId || 'Sin registrar'}</p>
+            <CardContent className="space-y-10 px-10 pb-16">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">{t.bankName}</p>
+                <p className="font-black text-xl text-slate-100">{profile?.bankId || 'Sin registrar'}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.accountNumber}</p>
-                <p className="font-black font-mono tracking-widest text-lg text-primary">
-                  {profile?.bankAccountNumber || '--- --- ---'}
-                </p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">{t.accountNumber}</p>
+                <div className="p-6 bg-white/5 rounded-[1.5rem] border border-white/10 shadow-inner">
+                  <p className="font-black font-mono tracking-[0.3em] text-2xl text-primary text-center">
+                    {profile?.bankAccountNumber || '--- --- ---'}
+                  </p>
+                </div>
               </div>
-              <div className="pt-4 border-t border-slate-800">
-                <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic">
-                  * Recuerda mantener tus datos bancarios actualizados para recibir tus pagos sin demora.
-                </p>
+              <div className="pt-6 border-t border-white/5">
+                <div className="flex items-center gap-3">
+                   <div className="h-2 w-2 rounded-full bg-primary" />
+                   <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic">
+                     Los datos bancarios deben coincidir con tu identificación para procesar retiros.
+                   </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -213,25 +228,28 @@ export default function AffiliateDashboard() {
       </div>
 
       <Dialog open={isEditingPhoto} onOpenChange={setIsEditingPhoto}>
-        <DialogContent className="rounded-[2rem]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-headline font-black">{t.updatePhoto}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-6">
-            <div className="space-y-2">
-              <Label className="font-bold text-slate-700">{t.photoUrlLabel}</Label>
+        <DialogContent className="rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-primary p-10 text-white text-center">
+             <Camera className="h-16 w-16 mx-auto mb-6" />
+             <DialogHeader>
+               <DialogTitle className="text-3xl font-headline font-black text-white text-center tracking-tight">{t.updatePhoto}</DialogTitle>
+             </DialogHeader>
+          </div>
+          <div className="p-10 space-y-8">
+            <div className="space-y-3">
+              <Label className="font-black text-xs text-slate-600 uppercase tracking-widest px-1">{t.photoUrlLabel}</Label>
               <Input 
-                placeholder="https://enlace-a-tu-foto.jpg"
+                placeholder="https://images.unsplash.com/..."
                 value={newPhotoUrl}
                 onChange={(e) => setNewPhotoUrl(e.target.value)}
-                className="h-12 rounded-xl"
+                className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 text-sm font-bold"
               />
             </div>
+            <div className="flex gap-4">
+              <Button variant="ghost" onClick={() => setIsEditingPhoto(false)} className="flex-1 h-14 rounded-2xl font-black text-slate-400">CANCELAR</Button>
+              <Button onClick={handleUpdatePhoto} className="flex-1 h-14 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/20">GUARDAR FOTO</Button>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsEditingPhoto(false)}>Cancelar</Button>
-            <Button onClick={handleUpdatePhoto} className="font-black px-8">Guardar</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardShell>
