@@ -2,32 +2,32 @@
 {
   "placeholderImages": [
     {
-      "id": "hero-marketing",
-      "description": "Imagen Principal (Hero) - Plataforma Sync",
-      "imageUrl": "https://picsum.photos/seed/sync_network_hero/1200/800",
-      "imageHint": "digital entrepreneur"
-    },
-    {
       "id": "site-logo",
-      "description": "Logo oficial de Sync Connect",
+      "description": "Logo oficial de Sync Connect (Icono lateral y navegación)",
       "imageUrl": "https://drive.google.com/thumbnail?id=13xOWikydykURKtXVB2cpQQdgkVe6I888&sz=w1000",
       "imageHint": "sync logo"
     },
     {
+      "id": "hero-marketing",
+      "description": "Imagen Principal (Hero) - Portada de la página de inicio",
+      "imageUrl": "https://picsum.photos/seed/sync_network_hero/1200/800",
+      "imageHint": "digital entrepreneur"
+    },
+    {
       "id": "feature-1",
-      "description": "Mercado Global - Característica",
+      "description": "Icono/Imagen: Mercado Global (Sección características)",
       "imageUrl": "",
       "imageHint": "world network"
     },
     {
       "id": "feature-2",
-      "description": "Analíticas Reales - Característica",
+      "description": "Icono/Imagen: Analíticas Reales (Sección características)",
       "imageUrl": "",
       "imageHint": "growth statistics"
     },
     {
       "id": "feature-3",
-      "description": "Soporte VIP - Característica",
+      "description": "Icono/Imagen: Soporte VIP (Sección características)",
       "imageUrl": "",
       "imageHint": "client success"
     },
