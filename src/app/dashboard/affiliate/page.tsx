@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, ShieldAlert, Camera, ArrowUpRight } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -68,10 +68,10 @@ export default function AffiliateDashboard() {
   const totalCommissions = sales?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0;
 
   const stats = [
-    { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: BadgeDollarSign, color: "text-primary", bg: "bg-primary/5" },
+    { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
     { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
     { title: "Ganancias Totales", value: `$${totalCommissions.toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
-    { title: "Status", value: profile?.status === 'Blocked' ? t.blockedStatus : (profile?.status || t.active), icon: Users, color: profile?.status === 'Blocked' ? "text-red-500" : "text-slate-500", bg: "bg-slate-50" },
+    { title: "Estado", value: profile?.status === 'Blocked' ? t.blockedStatus : (profile?.status || t.active), icon: Users, color: profile?.status === 'Blocked' ? "text-red-500" : "text-slate-500", bg: "bg-slate-50" },
   ]
 
   if (!isMounted || isLoading) {

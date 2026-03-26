@@ -17,6 +17,7 @@ import {
   Users2,
   MessageSquare,
   Image as ImageIcon,
+  Flame,
 } from "lucide-react"
 import {
   Sidebar,
@@ -81,7 +82,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: t.products, url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
     { title: t.botSettings, url: "/dashboard/affiliate/bot-settings", icon: MessageSquare },
@@ -97,57 +98,60 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <div className="flex items-center gap-3 px-2 py-6">
-            <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white shadow-md border flex items-center justify-center">
+      <Sidebar collapsible="icon" className="border-r border-slate-100">
+        <SidebarHeader className="bg-white">
+          <div className="flex items-center gap-4 px-3 py-8">
+            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white shadow-xl shadow-primary/5 ring-1 ring-slate-100 flex items-center justify-center">
               {displayLogoUrl ? (
                 <Image 
                   src={displayLogoUrl} 
                   alt="Logo" 
                   fill 
-                  className="object-contain p-1"
+                  className="object-contain p-2"
                   unoptimized
                 />
               ) : (
                 <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
               )}
             </div>
-            <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-bold text-base tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Network</span>
+            <div className="flex flex-col gap-0 leading-none group-data-[collapsible=icon]:hidden">
+              <span className="font-headline font-black text-lg tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <Flame className="h-2 w-2 text-primary" />
+                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">Platinum</span>
+              </div>
             </div>
           </div>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="bg-white px-2">
           <NavMain 
             items={role === "admin" ? adminItems : affiliateItems} 
-            label={role === "admin" ? t.adminLogin : t.affiliatePortal} 
+            label={role === "admin" ? "ADMINISTRACIÓN" : "TU NEGOCIO"} 
           />
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className="bg-white border-t border-slate-50 p-4">
           <SidebarMenu>
             {role === 'affiliate' && profile && (
-              <SidebarMenuItem className="group-data-[collapsible=icon]:hidden px-2 mb-2">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-slate-200">
-                  <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+              <SidebarMenuItem className="group-data-[collapsible=icon]:hidden mb-4">
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+                  <Avatar className="h-10 w-10 border-2 border-white shadow-md">
                     <AvatarImage src={getGoogleDriveDirectLink(profile.photoUrl)} className="object-cover" />
-                    <AvatarFallback className="bg-primary text-xs text-white font-bold">
+                    <AvatarFallback className="bg-primary text-xs text-white font-black">
                       {profile.firstName?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col truncate">
-                    <span className="text-xs font-bold truncate text-slate-900">{profile.firstName} {profile.lastName}</span>
-                    <span className="text-[10px] text-muted-foreground truncate">{profile.email}</span>
+                    <span className="text-xs font-black truncate text-slate-900 uppercase tracking-tight">{profile.firstName} {profile.lastName}</span>
+                    <span className="text-[10px] text-slate-400 font-bold truncate lowercase">{profile.email}</span>
                   </div>
                 </div>
               </SidebarMenuItem>
             )}
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild className="h-12 rounded-xl text-slate-500 hover:text-primary transition-colors">
                 <a href="/">
-                  <LogOut />
-                  <span>{t.logout}</span>
+                  <LogOut className="h-5 w-5" />
+                  <span className="font-black uppercase text-[11px] tracking-widest">{t.logout}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -155,19 +159,27 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-white/50 backdrop-blur-sm sticky top-0 z-30 px-4">
-          <SidebarTrigger className="-ml-1 text-primary" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
+      <SidebarInset className="bg-[#F8FAFC]">
+        <header className="flex h-20 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-16 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-30 px-6">
+          <SidebarTrigger className="-ml-1 text-primary hover:bg-primary/5 transition-colors" />
+          <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100" />
           <div className="flex-1">
-             <h2 className="text-sm font-bold capitalize text-primary tracking-tight">
-                {role === 'admin' ? t.adminLogin : t.affiliatePortal}
+             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
+                {role === 'admin' ? "Centro de Control" : "Workspace Afiliado"}
              </h2>
           </div>
-          <LanguageToggle />
+          <div className="flex items-center gap-4">
+             <LanguageToggle />
+             {role === 'affiliate' && profile && (
+               <div className="hidden md:flex flex-col items-end mr-2">
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldo</span>
+                 <span className="text-sm font-black text-green-600">${profile.currentBalance?.toFixed(2) || '0.00'}</span>
+               </div>
+             )}
+          </div>
         </header>
-        <main className="flex-1 p-4 md:p-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 p-6 md:p-10">
+          <div className="mx-auto max-w-7xl animate-in fade-in duration-700">
             {children}
           </div>
         </main>
