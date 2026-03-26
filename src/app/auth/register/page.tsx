@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, User, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, User, Mail, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -114,177 +114,209 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EFF2F4] flex flex-col justify-center items-center p-4 py-12 md:py-24">
-      <Link href="/" className="mb-8 flex items-center gap-2 text-primary hover:opacity-80 transition-opacity self-start md:self-center">
-        <ArrowLeft className="h-4 w-4" />
-        <span className="text-sm font-black uppercase tracking-widest">{t.language === 'es' ? "Volver al Inicio" : "Back to Home"}</span>
-      </Link>
-
-      <div className="w-full max-w-3xl mb-10">
-        <h2 className="text-center text-sm font-black text-slate-400 uppercase tracking-[0.3em] mb-6">{t.selectRole}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button 
-            onClick={() => setRole('buyer')}
-            className={cn(
-              "p-6 rounded-[2.5rem] border-4 transition-all flex items-center gap-4 text-left shadow-xl",
-              role === 'buyer' ? "bg-primary border-primary text-white scale-105 shadow-primary/20" : "bg-white border-white text-slate-400 hover:border-slate-100"
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center py-12 px-4 md:py-24">
+      {/* Header & Logo */}
+      <div className="w-full max-w-4xl flex flex-col items-center mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+        <Link href="/" className="group mb-8">
+          <div className="relative h-20 w-20 shadow-2xl rounded-[1.5rem] overflow-hidden bg-white ring-8 ring-primary/5 transition-transform group-hover:scale-110 flex items-center justify-center">
+            {displayLogoUrl ? (
+              <Image 
+                src={displayLogoUrl} 
+                alt="Logo" 
+                fill 
+                className="object-contain p-3"
+                unoptimized
+              />
+            ) : (
+              <Sparkles className="h-10 w-10 text-primary" />
             )}
-          >
-            <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center shrink-0", role === 'buyer' ? "bg-white/20" : "bg-slate-50")}>
-              <ShoppingBag className={cn("h-8 w-8", role === 'buyer' ? "text-white" : "text-slate-400")} />
-            </div>
-            <div>
-              <h3 className="font-black text-lg leading-tight uppercase tracking-tight">{t.iWantToBuy}</h3>
-              <p className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", role === 'buyer' ? "text-white/60" : "text-slate-300")}>{t.joinAs} Comprador</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setRole('affiliate')}
-            className={cn(
-              "p-6 rounded-[2.5rem] border-4 transition-all flex items-center gap-4 text-left shadow-xl",
-              role === 'affiliate' ? "bg-primary border-primary text-white scale-105 shadow-primary/20" : "bg-white border-white text-slate-400 hover:border-slate-100"
-            )}
-          >
-            <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center shrink-0", role === 'affiliate' ? "bg-white/20" : "bg-slate-50")}>
-              <Target className={cn("h-8 w-8", role === 'affiliate' ? "text-white" : "text-slate-400")} />
-            </div>
-            <div>
-              <h3 className="font-black text-lg leading-tight uppercase tracking-tight">{t.iWantToSell}</h3>
-              <p className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", role === 'affiliate' ? "text-white/60" : "text-slate-300")}>{t.joinAs} Afiliado</p>
-            </div>
-          </button>
-        </div>
+          </div>
+        </Link>
+        <h1 className="text-4xl md:text-5xl font-headline font-black text-slate-900 tracking-tight text-center">
+          Crea tu cuenta en <span className="text-primary">Sync Connect</span>
+        </h1>
+        <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-4">
+          Únete a la nueva era del marketing digital
+        </p>
       </div>
 
-      <Card className="w-full max-w-2xl shadow-2xl border-none overflow-hidden rounded-[3rem] bg-white ring-1 ring-slate-100">
-        <CardHeader className="text-center space-y-4 pt-12 pb-8 px-10">
-          <div className="flex justify-center mb-2">
-            <div className="relative h-20 w-20 overflow-hidden rounded-[1.5rem] shadow-2xl border-4 border-white flex items-center justify-center bg-slate-50 rotate-3 transition-transform hover:rotate-0">
-              {displayLogoUrl ? (
-                <Image 
-                   src={displayLogoUrl} 
-                   alt="Logo" 
-                   fill 
-                   className="object-contain p-2"
-                   unoptimized
-                />
-              ) : (
-                <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
-              )}
-            </div>
+      {/* Role Selection - Hotmart Style */}
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <button 
+          onClick={() => setRole('buyer')}
+          className={cn(
+            "relative group overflow-hidden p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl hover:shadow-primary/10",
+            role === 'buyer' 
+              ? "bg-white border-primary scale-[1.02] ring-8 ring-primary/5" 
+              : "bg-white/50 border-white hover:border-slate-200 opacity-60 hover:opacity-100"
+          )}
+        >
+          <div className={cn(
+            "h-16 w-16 rounded-2xl flex items-center justify-center mb-6 transition-colors",
+            role === 'buyer' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+          )}>
+            <ShoppingBag className="h-8 w-8" />
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tighter">
-              {role === 'affiliate' ? t.affiliateRegister : t.buyerRegister}
-            </CardTitle>
-            <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest max-w-sm mx-auto">
-              {role === 'affiliate' 
-                ? "Únete a nuestra red y empieza a ganar comisiones hoy mismo." 
-                : t.buyerSubtitle}
-            </CardDescription>
+          <h3 className="font-headline font-black text-2xl text-slate-900 leading-tight">
+            {t.iWantToBuy}
+          </h3>
+          <p className="text-sm font-medium text-slate-500 mt-2">
+            Accede a los mejores productos y servicios digitales del mercado.
+          </p>
+          <div className={cn(
+            "mt-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest",
+            role === 'buyer' ? "text-primary" : "text-slate-400"
+          )}>
+            {t.joinAs} Comprador <ChevronRight className="h-3 w-3" />
           </div>
+          {role === 'buyer' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
+        </button>
+
+        <button 
+          onClick={() => setRole('affiliate')}
+          className={cn(
+            "relative group overflow-hidden p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl hover:shadow-primary/10",
+            role === 'affiliate' 
+              ? "bg-white border-primary scale-[1.02] ring-8 ring-primary/5" 
+              : "bg-white/50 border-white hover:border-slate-200 opacity-60 hover:opacity-100"
+          )}
+        >
+          <div className={cn(
+            "h-16 w-16 rounded-2xl flex items-center justify-center mb-6 transition-colors",
+            role === 'affiliate' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+          )}>
+            <Target className="h-8 w-8" />
+          </div>
+          <h3 className="font-headline font-black text-2xl text-slate-900 leading-tight">
+            {t.iWantToSell}
+          </h3>
+          <p className="text-sm font-medium text-slate-500 mt-2">
+            Promociona productos ganadores y escala tus comisiones semanales.
+          </p>
+          <div className={cn(
+            "mt-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest",
+            role === 'affiliate' ? "text-primary" : "text-slate-400"
+          )}>
+            {t.joinAs} Afiliado <ChevronRight className="h-3 w-3" />
+          </div>
+          {role === 'affiliate' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
+        </button>
+      </div>
+
+      {/* Registration Form */}
+      <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[3.5rem] overflow-hidden bg-white animate-in zoom-in-95 duration-500">
+        <CardHeader className="pt-16 pb-8 px-10 text-center">
+          <CardTitle className="text-3xl font-headline font-black text-slate-900">
+            {role === 'affiliate' ? "Datos de Negocio" : "Datos de Acceso"}
+          </CardTitle>
+          <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest mt-2">
+            Completa tu perfil para continuar
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-4 px-10">
-          <form onSubmit={handleSubmit} className="space-y-10">
-            <div className="space-y-6">
-              <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] px-1 border-l-4 border-primary ml-1">{t.personalInfo}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.firstName}</Label>
+        <CardContent className="px-10 pb-12">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.firstName}</Label>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
-                    id="firstName" 
                     placeholder="Juan" 
                     required 
-                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all pl-12 text-sm font-bold" 
                     value={formData.firstName}
                     onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.lastName}</Label>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.lastName}</Label>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
-                    id="lastName" 
                     placeholder="Perez" 
                     required 
-                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all pl-12 text-sm font-bold" 
                     value={formData.lastName}
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.email}</Label>
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.email}</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
-                    id="email" 
                     type="email" 
-                    placeholder="juan.perez@gmail.com" 
+                    placeholder="juan.perez@email.com" 
                     required 
-                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all pl-12 text-sm font-bold" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.password}</Label>
-                  <div className="relative">
-                    <Input 
-                      id="password" 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••" 
-                      required 
-                      className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold pr-12" 
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.password}</Label>
+                <div className="relative group">
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••" 
+                    required 
+                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold pr-12" 
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
             </div>
 
             {role === 'affiliate' && (
-              <div className="pt-10 border-t border-slate-100 space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] px-1 border-l-4 border-primary ml-1">{t.bankDetails}</h3>
+              <div className="pt-8 border-t border-slate-50 space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                    <Landmark className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">{t.bankDetails}</h3>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="bank" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.bankName}</Label>
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.bankName}</Label>
                     <Select required onValueChange={(v) => setFormData({...formData, bank: v})}>
-                      <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200">
-                        <SelectValue placeholder={t.language === 'es' ? "Selecciona un banco" : "Select a bank"} />
+                      <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold">
+                        <SelectValue placeholder="Selecciona" />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl shadow-2xl">
                         {NICA_BANKS.map((bank) => (
-                          <SelectItem key={bank} value={bank}>
-                            {bank}
-                          </SelectItem>
+                          <SelectItem key={bank} value={bank}>{bank}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="accNumber" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.accountNumber}</Label>
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.accountNumber}</Label>
                     <Input 
-                      id="accNumber" 
                       placeholder="1234567890" 
                       required 
-                      className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                      className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold font-mono" 
                       value={formData.accNumber}
                       onChange={(e) => setFormData({...formData, accNumber: e.target.value})}
                     />
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="accHolder" className="font-black text-[10px] uppercase tracking-widest text-slate-500 px-1">{t.accountHolder}</Label>
+                  <div className="md:col-span-2 space-y-2">
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.accountHolder}</Label>
                     <Input 
-                      id="accHolder" 
-                      placeholder="Juan Alberto Perez Lopez" 
+                      placeholder="Nombre completo según identificación" 
                       required 
-                      className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                      className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                       value={formData.accHolder}
                       onChange={(e) => setFormData({...formData, accHolder: e.target.value})}
                     />
@@ -295,19 +327,35 @@ export default function RegisterPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-primary hover:bg-primary/90 font-black text-xl h-20 shadow-2xl shadow-primary/30 transition-all rounded-[1.5rem] mb-4 hover:scale-[1.02] active:scale-95" 
+              className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[1.5rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95" 
               disabled={loading}
             >
-              {loading ? (t.language === 'es' ? "CREANDO CUENTA..." : "CREATING ACCOUNT...") : t.createAccount.toUpperCase()}
+              {loading ? "PROCESANDO..." : "EMPEZAR AHORA"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="justify-center border-t border-slate-50 py-10 bg-slate-50/50">
-          <p className="text-sm text-slate-400 font-bold">
-            {t.language === 'es' ? "¿Ya tienes cuenta?" : "Already have an account?"} <Link href="/auth/login" className="text-primary font-black ml-1 uppercase tracking-widest text-[11px] hover:underline">{t.login}</Link>
+        <CardFooter className="bg-slate-50/50 py-10 flex flex-col items-center border-t border-slate-100">
+          <p className="text-sm font-bold text-slate-400">
+            {t.language === 'es' ? "¿Ya tienes cuenta?" : "Already have an account?"} 
+            <Link href="/auth/login" className="text-primary hover:underline font-black ml-2 uppercase tracking-widest text-[11px]">
+              {t.login}
+            </Link>
           </p>
+          <Link href="/" className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">
+            <ArrowLeft className="h-3 w-3" /> Volver al Inicio
+          </Link>
         </CardFooter>
       </Card>
+
+      {/* Trust Badges */}
+      <div className="mt-16 flex flex-wrap justify-center gap-8 opacity-40">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-900">
+          <ShieldCheck className="h-4 w-4" /> Pagos 100% Seguros
+        </div>
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-900">
+          <Sparkles className="h-4 w-4" /> Tecnología de Punta
+        </div>
+      </div>
     </div>
   )
 }
