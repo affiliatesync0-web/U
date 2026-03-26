@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -10,6 +9,7 @@ import { LanguageToggle } from '@/components/language-toggle';
 import placeholderData from '@/app/lib/placeholder-images.json';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { getGoogleDriveDirectLink } from '@/lib/utils';
 
 export default function Home() {
   const { t } = useLanguage();
@@ -22,11 +22,11 @@ export default function Home() {
   const { data: logoOverride, isLoading: isLogoLoading } = useDoc(logoConfigRef);
   const { data: heroOverride } = useDoc(heroConfigRef);
 
-  const defaultHero = placeholderData.placeholderImages.find(img => img.id === 'hero-marketing');
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  const defaultHero = placeholderData.placeholderImages.find(img => img.id === 'hero-marketing');
 
-  const displayLogoUrl = (logoOverride?.imageUrl || defaultLogo?.imageUrl || "").trim();
-  const displayHeroUrl = (heroOverride?.imageUrl || defaultHero?.imageUrl || "").trim();
+  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
+  const displayHeroUrl = getGoogleDriveDirectLink(heroOverride?.imageUrl || defaultHero?.imageUrl || "");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -35,7 +35,7 @@ export default function Home() {
           <div className="relative h-14 w-14 overflow-hidden flex items-center justify-center">
              {isLogoLoading ? (
                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-             ) : displayLogoUrl.length > 0 ? (
+             ) : displayLogoUrl ? (
                <Image 
                   src={displayLogoUrl} 
                   alt="Sync Connect" 
@@ -101,7 +101,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="relative aspect-video lg:aspect-square overflow-hidden rounded-[2.5rem] shadow-2xl group border-8 border-slate-50 bg-muted">
-                 {displayHeroUrl.length > 0 ? (
+                 {displayHeroUrl ? (
                    <Image 
                      src={displayHeroUrl}
                      alt="Sync Connect Platform"
@@ -150,7 +150,7 @@ export default function Home() {
           <div className="col-span-1 md:col-span-2 space-y-6">
             <Link className="flex items-center gap-2" href="/">
               <div className="relative h-12 w-12 flex items-center justify-center">
-                 {displayLogoUrl.length > 0 ? (
+                 {displayLogoUrl ? (
                    <Image 
                       src={displayLogoUrl} 
                       alt="Sync Connect" 

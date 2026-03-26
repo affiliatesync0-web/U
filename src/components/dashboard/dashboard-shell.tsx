@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -38,6 +37,7 @@ import { LanguageToggle } from "@/components/language-toggle"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
+import { getGoogleDriveDirectLink } from "@/lib/utils"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -54,7 +54,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
-  const displayLogoUrl = logoOverride?.imageUrl || defaultLogo?.imageUrl || "";
+  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -104,6 +104,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                   alt="Logo" 
                   fill 
                   className="object-contain p-1"
+                  unoptimized
                 />
               ) : (
                 <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
@@ -127,7 +128,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <SidebarMenuItem className="group-data-[collapsible=icon]:hidden px-2 mb-2">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-slate-200">
                   <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
-                    <AvatarImage src={profile.photoUrl} className="object-cover" />
+                    <AvatarImage src={getGoogleDriveDirectLink(profile.photoUrl)} className="object-cover" />
                     <AvatarFallback className="bg-primary text-xs text-white font-bold">
                       {profile.firstName?.charAt(0)}
                     </AvatarFallback>
