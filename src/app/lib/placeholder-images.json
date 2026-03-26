@@ -3,9 +3,9 @@
   "placeholderImages": [
     {
       "id": "hero-marketing",
-      "description": "Imagen Principal (Hero)",
-      "imageUrl": "https://picsum.photos/seed/marketing_strategy_99/1200/800",
-      "imageHint": "digital marketing"
+      "description": "Imagen Principal (Hero) - Plataforma Sync",
+      "imageUrl": "https://picsum.photos/seed/sync_network_hero/1200/800",
+      "imageHint": "digital entrepreneur"
     },
     {
       "id": "site-logo",
@@ -15,33 +15,39 @@
     },
     {
       "id": "feature-1",
-      "description": "Imagen Característica 1 (Mercado Global)",
+      "description": "Mercado Global - Característica",
       "imageUrl": "",
-      "imageHint": "global market"
+      "imageHint": "world network"
     },
     {
       "id": "feature-2",
-      "description": "Imagen Característica 2 (Analíticas)",
+      "description": "Analíticas Reales - Característica",
       "imageUrl": "",
-      "imageHint": "analytics chart"
+      "imageHint": "growth statistics"
     },
     {
       "id": "feature-3",
-      "description": "Imagen Característica 3 (Soporte)",
+      "description": "Soporte VIP - Característica",
       "imageUrl": "",
-      "imageHint": "vip support"
+      "imageHint": "client success"
     },
     {
       "id": "product-social",
-      "description": "Gestión de redes sociales y contenido",
-      "imageUrl": "https://picsum.photos/seed/social_media_42/400/300",
-      "imageHint": "social media"
+      "description": "Imagen para Servicios de Redes Sociales",
+      "imageUrl": "https://picsum.photos/seed/social_media_pro/400/300",
+      "imageHint": "content creator"
     },
     {
       "id": "product-seo",
-      "description": "Optimización SEO y motores de búsqueda",
-      "imageUrl": "https://picsum.photos/seed/seo_optimization_21/400/300",
-      "imageHint": "search optimization"
+      "description": "Imagen para Cursos de SEO",
+      "imageUrl": "https://picsum.photos/seed/seo_mastery/400/300",
+      "imageHint": "search ranking"
+    },
+    {
+      "id": "product-ads",
+      "description": "Imagen para Estrategias de Ads",
+      "imageUrl": "https://picsum.photos/seed/advertising_focus/400/300",
+      "imageHint": "paid ads"
     }
   ]
 }
