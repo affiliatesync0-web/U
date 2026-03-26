@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { MessageSquare, Smartphone, Bot, QrCode, RefreshCw, CheckCircle2, Info } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useUser, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase'
 import { doc } from 'firebase/firestore'
 
 export default function BotSettingsPage() {
@@ -27,7 +26,7 @@ export default function BotSettingsPage() {
     return doc(db, 'affiliates', user.uid);
   }, [db, user]);
 
-  const { data: profile } = useDoc(profileRef);
+  const { data: profile, isLoading: profileLoading } = useDoc(profileRef);
 
   const [formData, setFormData] = useState({
     whatsappNumber: '',
@@ -35,8 +34,8 @@ export default function BotSettingsPage() {
     botWelcomeMessage: ''
   })
 
-  // Sincronizar estado local cuando carguen los datos
-  useState(() => {
+  // Sincronizar estado local cuando carguen los datos del perfil
+  useEffect(() => {
     if (profile) {
       setFormData({
         whatsappNumber: profile.whatsappNumber || '',
@@ -44,17 +43,18 @@ export default function BotSettingsPage() {
         botWelcomeMessage: profile.botWelcomeMessage || '¡Hola! Soy tu asistente de ventas de Sync Connect. ¿En qué producto estás interesado?'
       })
     }
-  })
+  }, [profile])
 
   const handleSave = () => {
     if (!profileRef) return
     setIsSaving(true)
     
-    updateDocumentNonBlocking(profileRef, {
+    // Usamos setDocumentNonBlocking con merge: true para asegurar que el documento se actualice correctamente
+    setDocumentNonBlocking(profileRef, {
       whatsappNumber: formData.whatsappNumber,
       botEnabled: formData.botEnabled,
       botWelcomeMessage: formData.botWelcomeMessage
-    })
+    }, { merge: true })
 
     setTimeout(() => {
       setIsSaving(false)
@@ -130,8 +130,8 @@ export default function BotSettingsPage() {
               <CardFooter className="border-t pt-4">
                 <Button 
                   onClick={handleSave} 
-                  className="w-full bg-primary font-bold h-12 rounded-xl shadow-lg"
-                  disabled={isSaving}
+                  className="w-full bg-primary hover:bg-primary/90 font-bold h-12 rounded-xl shadow-lg"
+                  disabled={isSaving || profileLoading}
                 >
                   {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                   {t.saveChanges}

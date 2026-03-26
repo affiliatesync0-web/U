@@ -10,6 +10,7 @@ service cloud.firestore {
 
     function isAdmin() {
       // Para el prototipo, cualquier usuario firmado actúa como admin
+      // Se puede refinar vinculando a un email específico en el futuro
       return isSignedIn();
     }
 
@@ -32,7 +33,8 @@ service cloud.firestore {
     match /affiliates/{affiliateId} {
       allow read: if isSignedIn(); 
       allow create: if true; 
-      allow update: if isOwner(affiliateId) || isAdmin();
+      // Permitimos actualización si es el dueño del perfil o un administrador
+      allow update: if request.auth.uid == affiliateId || isAdmin();
       allow delete: if isAdmin();
     }
 
