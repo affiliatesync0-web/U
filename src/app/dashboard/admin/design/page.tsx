@@ -71,8 +71,8 @@ export default function AdminDesignPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {images.map((img) => {
             const override = overrides?.find(o => o.id === img.id);
-            const currentUrl = override?.imageUrl || img.imageUrl || "";
-            const currentHint = override?.imageHint || img.imageHint || "";
+            const currentUrl = (override?.imageUrl || img.imageUrl || "").trim();
+            const currentHint = (override?.imageHint || img.imageHint || "").trim();
 
             return (
               <ImageEditorCard 
