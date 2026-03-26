@@ -32,9 +32,10 @@ service cloud.firestore {
 
     match /affiliates/{affiliateId} {
       allow read: if isSignedIn(); 
+      // Permitimos creación a cualquiera (registro)
       allow create: if true; 
-      // Permitimos actualización si es el dueño del perfil o un administrador
-      allow update: if request.auth.uid == affiliateId || isAdmin();
+      // Permitimos escritura (update/set) si es el dueño del perfil o un administrador
+      allow update, write: if isOwner(affiliateId) || isAdmin();
       allow delete: if isAdmin();
     }
 

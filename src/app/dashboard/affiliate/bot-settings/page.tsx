@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { MessageSquare, Smartphone, Bot, QrCode, RefreshCw, CheckCircle2, Info } from 'lucide-react'
+import { MessageSquare, Smartphone, Bot, QrCode, RefreshCw, CheckCircle2, Info, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase'
@@ -50,19 +50,31 @@ export default function BotSettingsPage() {
     setIsSaving(true)
     
     // Usamos setDocumentNonBlocking con merge: true para asegurar que el documento se actualice correctamente
+    // Esto funciona como un update si el documento existe, o un create si no
     setDocumentNonBlocking(profileRef, {
       whatsappNumber: formData.whatsappNumber,
       botEnabled: formData.botEnabled,
       botWelcomeMessage: formData.botWelcomeMessage
     }, { merge: true })
 
+    // Simulamos un pequeño retraso para feedback visual, aunque el guardado es no-bloqueante
     setTimeout(() => {
       setIsSaving(false)
       toast({
         title: t.language === 'es' ? "Configuración Guardada" : "Settings Saved",
         description: t.language === 'es' ? "Tu bot de WhatsApp ha sido actualizado." : "Your WhatsApp bot has been updated.",
       })
-    }, 1000)
+    }, 800)
+  }
+
+  if (profileLoading) {
+    return (
+      <DashboardShell role="affiliate">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardShell>
+    )
   }
 
   return (
@@ -131,7 +143,7 @@ export default function BotSettingsPage() {
                 <Button 
                   onClick={handleSave} 
                   className="w-full bg-primary hover:bg-primary/90 font-bold h-12 rounded-xl shadow-lg"
-                  disabled={isSaving || profileLoading}
+                  disabled={isSaving}
                 >
                   {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                   {t.saveChanges}
