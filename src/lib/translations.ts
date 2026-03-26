@@ -136,6 +136,11 @@ export const translations = {
     resendCode: "Resend Code",
     numberVerified: "Number Verified Successfully",
     codeSent: "A 6-digit code has been sent to your WhatsApp/SIM.",
+    verifyViaWhatsApp: "Verify via WhatsApp",
+    linkStep1: "1. Basic Info",
+    linkStep2: "2. Verify Number",
+    linkStep3: "3. Connect Bot",
+    magicLinkDesc: "Click to send a verification message directly from your WhatsApp.",
   },
   es: {
     brand: "Sync Connect",
@@ -273,5 +278,10 @@ export const translations = {
     resendCode: "Reenviar Código",
     numberVerified: "Número Verificado Exitosamente",
     codeSent: "Se ha enviado un código de 6 dígitos a tu WhatsApp/SIM.",
+    verifyViaWhatsApp: "Verificar por WhatsApp",
+    linkStep1: "1. Información",
+    linkStep2: "2. Verificación",
+    linkStep3: "3. Conexión Final",
+    magicLinkDesc: "Haz clic para enviar un mensaje de verificación directamente desde tu WhatsApp.",
   }
 };
