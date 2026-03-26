@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -35,8 +36,8 @@ export default function AdminDesignPage() {
     
     setDocumentNonBlocking(configRef, {
       id: imgId,
-      imageUrl: url.trim(),
-      imageHint: hint.trim(),
+      imageUrl: (url || "").trim(),
+      imageHint: (hint || "").trim(),
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
@@ -44,7 +45,7 @@ export default function AdminDesignPage() {
       setSavingId(null);
       toast({
         title: t.saveChanges,
-        description: "La configuración de imagen se ha actualizado en la base de datos y se reflejará en todo el sitio.",
+        description: "La configuración de imagen se ha actualizado correctamente.",
       });
     }, 1000);
   };
@@ -110,7 +111,7 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
             width={isLogo ? 160 : undefined}
             height={isLogo ? 160 : undefined}
             className={isLogo ? 'object-contain h-32 w-32' : 'object-cover'}
-            unoptimized={url.includes('placehold.co')}
+            unoptimized={url.trim().includes('placehold.co')}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
