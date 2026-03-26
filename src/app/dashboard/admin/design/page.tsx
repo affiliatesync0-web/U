@@ -14,6 +14,7 @@ import { useLanguage } from '@/components/language-context'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 export default function AdminDesignPage() {
   const { toast } = useToast()
@@ -98,14 +99,15 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   const [hint, setHint] = useState(defaultHint);
 
   const isLogo = id === 'site-logo';
-  const hasValidUrl = url && url.trim().length > 0;
+  const displayUrl = getGoogleDriveDirectLink(url);
+  const hasValidUrl = displayUrl && displayUrl.trim().length > 0;
 
   return (
     <Card className={`border-none shadow-sm overflow-hidden flex flex-col ${isLogo ? 'ring-2 ring-primary/20' : ''}`}>
       <div className={`relative h-48 w-full bg-muted ${isLogo ? 'flex items-center justify-center' : ''}`}>
         {hasValidUrl ? (
           <Image 
-            src={url.trim()} 
+            src={displayUrl} 
             alt={description} 
             fill={!isLogo}
             width={isLogo ? 160 : undefined}
@@ -140,7 +142,7 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
           <Input 
             value={url} 
             onChange={(e) => setUrl(e.target.value)} 
-            placeholder="https://images.unsplash.com/..."
+            placeholder="https://drive.google.com/..."
             className="text-xs bg-slate-50"
           />
         </div>

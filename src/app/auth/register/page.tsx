@@ -14,10 +14,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase'
+import { useAuth, useFirestore, setDocumentNonBlocking, useMemoFirebase, useDoc } from '@/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -37,7 +38,11 @@ export default function RegisterPage() {
     accHolder: ''
   })
 
-  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  // Fetch Live Logo
+  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const { data: logoOverride } = useDoc(logoConfigRef);
+  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,13 +107,18 @@ export default function RegisterPage() {
       <Card className="w-full max-w-2xl shadow-xl border-none overflow-hidden rounded-[2rem]">
         <CardHeader className="text-center space-y-1 bg-white border-b pb-8">
           <div className="flex justify-center mb-4 pt-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-2xl shadow-lg border">
-              <Image 
-                 src={logoImage?.imageUrl || ""} 
-                 alt="Logo" 
-                 fill 
-                 className="object-contain p-2"
-              />
+            <div className="relative h-16 w-16 overflow-hidden rounded-2xl shadow-lg border flex items-center justify-center">
+              {displayLogoUrl ? (
+                <Image 
+                   src={displayLogoUrl} 
+                   alt="Logo" 
+                   fill 
+                   className="object-contain p-2"
+                   unoptimized
+                />
+              ) : (
+                <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
+              )}
             </div>
           </div>
           <CardTitle className="text-2xl md:text-3xl font-headline font-bold text-[#2870A3]">{t.joinAffiliate}</CardTitle>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -15,6 +16,7 @@ import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
 import { doc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 export default function AffiliateLoginPage() {
   const router = useRouter()
@@ -32,7 +34,7 @@ export default function AffiliateLoginPage() {
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
-  const displayLogoUrl = (logoOverride?.imageUrl || defaultLogo?.imageUrl || "").trim();
+  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,6 +98,7 @@ export default function AffiliateLoginPage() {
                 alt="Sync Connect" 
                 fill 
                 className="object-contain p-2"
+                unoptimized
              />
            ) : (
              <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
