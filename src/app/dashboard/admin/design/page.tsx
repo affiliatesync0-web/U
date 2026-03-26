@@ -36,8 +36,8 @@ export default function AdminDesignPage() {
     
     setDocumentNonBlocking(configRef, {
       id: imgId,
-      imageUrl: url,
-      imageHint: hint,
+      imageUrl: url.trim(),
+      imageHint: hint.trim(),
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
@@ -98,18 +98,20 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   const [hint, setHint] = useState(defaultHint);
 
   const isLogo = id === 'site-logo';
+  const hasValidUrl = url && url.trim().length > 0;
 
   return (
     <Card className={`border-none shadow-sm overflow-hidden flex flex-col ${isLogo ? 'ring-2 ring-primary/20' : ''}`}>
       <div className={`relative h-48 w-full bg-muted ${isLogo ? 'flex items-center justify-center' : ''}`}>
-        {url ? (
+        {hasValidUrl ? (
           <Image 
-            src={url} 
+            src={url.trim()} 
             alt={description} 
             fill={!isLogo}
             width={isLogo ? 160 : undefined}
             height={isLogo ? 160 : undefined}
             className={isLogo ? 'object-contain h-32 w-32' : 'object-cover'}
+            unoptimized={url.includes('placehold.co')}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">

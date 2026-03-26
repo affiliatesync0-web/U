@@ -25,8 +25,8 @@ export default function Home() {
   const defaultHero = placeholderData.placeholderImages.find(img => img.id === 'hero-marketing');
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
 
-  const displayLogoUrl = logoOverride?.imageUrl || defaultLogo?.imageUrl || "";
-  const displayHeroUrl = heroOverride?.imageUrl || defaultHero?.imageUrl || "";
+  const displayLogoUrl = (logoOverride?.imageUrl || defaultLogo?.imageUrl || "").trim();
+  const displayHeroUrl = (heroOverride?.imageUrl || defaultHero?.imageUrl || "").trim();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -35,7 +35,7 @@ export default function Home() {
           <div className="relative h-12 w-12 overflow-hidden flex items-center justify-center">
              {isLogoLoading ? (
                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-             ) : displayLogoUrl ? (
+             ) : displayLogoUrl.length > 0 ? (
                <Image 
                   src={displayLogoUrl} 
                   alt="Sync Connect" 
@@ -97,7 +97,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="relative aspect-video lg:aspect-square overflow-hidden rounded-[2.5rem] shadow-2xl group border-8 border-slate-50 bg-muted">
-                 {displayHeroUrl ? (
+                 {displayHeroUrl.length > 0 ? (
                    <Image 
                      src={displayHeroUrl}
                      alt="Sync Connect Platform"
@@ -145,7 +145,7 @@ export default function Home() {
           <div className="col-span-1 md:col-span-2 space-y-6">
             <Link className="flex items-center gap-2" href="/">
               <div className="relative h-10 w-10 flex items-center justify-center">
-                 {displayLogoUrl ? (
+                 {displayLogoUrl.length > 0 ? (
                    <Image 
                       src={displayLogoUrl} 
                       alt="Sync Connect" 
