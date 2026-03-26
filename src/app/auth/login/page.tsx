@@ -12,8 +12,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth } from '@/firebase'
+import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
+import { doc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 
 export default function AffiliateLoginPage() {
@@ -21,13 +22,18 @@ export default function AffiliateLoginPage() {
   const { toast } = useToast()
   const { t } = useLanguage()
   const auth = useAuth()
+  const db = useFirestore()
   const [loading, setLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  // Fetch Live Logo
+  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const { data: logoOverride } = useDoc(logoConfigRef);
+  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  const displayLogoUrl = logoOverride?.imageUrl || defaultLogo?.imageUrl || "";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,8 +92,8 @@ export default function AffiliateLoginPage() {
       <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
         <div className="relative h-20 w-20 shadow-xl rounded-2xl overflow-hidden bg-white border group-hover:scale-105 transition-transform">
            <Image 
-              src={logoImage?.imageUrl || ""} 
-              alt="Logo Sync Connect" 
+              src={displayLogoUrl} 
+              alt="Sync Connect" 
               fill 
               className="object-contain p-2"
            />

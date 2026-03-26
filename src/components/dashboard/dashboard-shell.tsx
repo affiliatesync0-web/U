@@ -49,7 +49,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const router = useRouter();
   const db = useFirestore();
 
-  const logoImage = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  // Fetch Live Logo
+  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const { data: logoOverride } = useDoc(logoConfigRef);
+  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  const displayLogoUrl = logoOverride?.imageUrl || defaultLogo?.imageUrl || "";
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -92,9 +96,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-3 px-2 py-6">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white shadow-md border">
+            <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white shadow-md border">
               <Image 
-                src={logoImage?.imageUrl || ""} 
+                src={displayLogoUrl} 
                 alt="Logo" 
                 fill 
                 className="object-contain p-1"

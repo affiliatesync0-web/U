@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -6,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2 } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -44,7 +45,7 @@ export default function AdminDesignPage() {
       setSavingId(null);
       toast({
         title: t.saveChanges,
-        description: "La configuración de imagen se ha actualizado en la base de datos.",
+        description: "La configuración de imagen se ha actualizado en la base de datos y se reflejará en todo el sitio.",
       });
     }, 1000);
   };
@@ -64,7 +65,7 @@ export default function AdminDesignPage() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.design}</h1>
-          <p className="text-muted-foreground">Personaliza las imágenes clave de tu plataforma de marketing.</p>
+          <p className="text-muted-foreground">Personaliza las imágenes clave y la identidad de Sync Connect.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -96,49 +97,61 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   const [url, setUrl] = useState(defaultUrl);
   const [hint, setHint] = useState(defaultHint);
 
+  const isLogo = id === 'site-logo';
+
   return (
-    <Card className="border-none shadow-sm overflow-hidden flex flex-col">
-      <div className="relative h-48 w-full bg-muted">
+    <Card className={`border-none shadow-sm overflow-hidden flex flex-col ${isLogo ? 'ring-2 ring-primary/20' : ''}`}>
+      <div className={`relative h-48 w-full bg-muted ${isLogo ? 'flex items-center justify-center' : ''}`}>
         <Image 
           src={url} 
           alt={description} 
-          fill 
-          className="object-cover"
+          fill={!isLogo}
+          width={isLogo ? 160 : undefined}
+          height={isLogo ? 160 : undefined}
+          className={isLogo ? 'object-contain h-32 w-32' : 'object-cover'}
         />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
            <ImageIcon className="text-white h-10 w-10" />
         </div>
+        {isLogo && (
+          <div className="absolute top-4 right-4 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <Star className="h-2 w-2" /> Marca Principal
+          </div>
+        )}
       </div>
       <CardHeader>
-        <CardTitle className="text-lg font-headline">{description}</CardTitle>
+        <CardTitle className="text-lg font-headline flex items-center gap-2">
+          {description}
+          {isLogo && <span className="text-primary font-bold">(LOGO)</span>}
+        </CardTitle>
         <CardDescription className="font-mono text-[10px] uppercase">ID: {id}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 flex-1">
         <div className="space-y-2">
-          <Label className="text-xs">{t.imageUrl}</Label>
+          <Label className="text-xs font-bold">{t.imageUrl}</Label>
           <Input 
             value={url} 
             onChange={(e) => setUrl(e.target.value)} 
             placeholder="https://images.unsplash.com/..."
-            className="text-xs"
+            className="text-xs bg-slate-50"
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs flex items-center gap-2">
+          <Label className="text-xs font-bold flex items-center gap-2">
             <Wand2 className="h-3 w-3 text-primary" /> {t.imageHint}
           </Label>
           <Input 
             value={hint} 
             onChange={(e) => setHint(e.target.value)} 
             placeholder="marketing analysis"
-            className="text-xs"
+            className="text-xs bg-slate-50"
           />
         </div>
       </CardContent>
       <CardFooter className="border-t pt-4 bg-muted/20">
         <Button 
           onClick={() => onSave(id, url, hint)} 
-          className="w-full bg-[#2870A3]"
+          className="w-full bg-primary font-bold shadow-lg"
           disabled={isSaving}
         >
           {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
