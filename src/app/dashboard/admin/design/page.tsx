@@ -111,7 +111,7 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
             width={isLogo ? 160 : undefined}
             height={isLogo ? 160 : undefined}
             className={isLogo ? 'object-contain h-32 w-32' : 'object-cover'}
-            unoptimized={url.trim().includes('placehold.co')}
+            unoptimized={true}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
