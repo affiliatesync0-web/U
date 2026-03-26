@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
-import { doc } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 
@@ -41,12 +41,23 @@ export default function AffiliateLoginPage() {
     setLoading(true)
     
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      const cred = await signInWithEmailAndPassword(auth, email, password)
+      const userId = cred.user.uid;
+
+      // Verificar si es afiliado o comprador para redireccionar
+      const affiliateSnap = await getDoc(doc(db, 'affiliates', userId));
+      
       toast({
         title: t.language === 'es' ? "¡Hola de nuevo!" : "Welcome back!",
         description: t.language === 'es' ? "Has iniciado sesión correctamente." : "Logged in successfully.",
       })
-      router.push('/dashboard/affiliate')
+
+      if (affiliateSnap.exists()) {
+        router.push('/dashboard/affiliate');
+      } else {
+        router.push('/dashboard/buyer');
+      }
+      
     } catch (error: any) {
       toast({
         variant: "destructive",

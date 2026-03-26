@@ -97,7 +97,7 @@ export default function RegisterPage() {
         description: t.language === 'es' ? `¡Bienvenido a ${t.brand}!` : `Welcome to ${t.brand}!`,
       })
       
-      router.push(role === 'affiliate' ? '/dashboard/affiliate' : '/')
+      router.push(role === 'affiliate' ? '/dashboard/affiliate' : '/dashboard/buyer')
     } catch (error: any) {
       let message = "No se pudo completar el registro."
       if (error.code === 'auth/email-already-in-use') {

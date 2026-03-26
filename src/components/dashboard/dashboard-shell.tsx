@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Image as ImageIcon,
   Flame,
+  ShoppingBasket,
 } from "lucide-react"
 import {
   Sidebar,
@@ -44,7 +45,7 @@ import { getGoogleDriveDirectLink } from "@/lib/utils"
 
 interface DashboardShellProps {
   children: React.ReactNode
-  role: "admin" | "affiliate"
+  role: "admin" | "affiliate" | "buyer"
 }
 
 export function DashboardShell({ children, role }: DashboardShellProps) {
@@ -66,8 +67,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   }, [user, isUserLoading, router, role]);
 
   const profileRef = useMemoFirebase(() => {
-    if (!db || !user || role !== 'affiliate') return null;
-    return doc(db, 'affiliates', user.uid);
+    if (!db || !user) return null;
+    const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
+    return doc(db, collectionName, user.uid);
   }, [db, user, role]);
 
   const { data: profile } = useDoc(profileRef);
@@ -87,6 +89,17 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
     { title: t.botSettings, url: "/dashboard/affiliate/bot-settings", icon: MessageSquare },
   ]
+
+  const buyerItems = [
+    { title: t.dashboard, url: "/dashboard/buyer", icon: LayoutDashboard },
+    { title: t.browseMarketplace, url: "/dashboard/buyer/products", icon: ShoppingBasket },
+  ]
+
+  const getMenu = () => {
+    if (role === 'admin') return adminItems;
+    if (role === 'buyer') return buyerItems;
+    return affiliateItems;
+  }
 
   if (isUserLoading) {
     return (
@@ -118,20 +131,20 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <span className="font-headline font-black text-lg tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
               <div className="flex items-center gap-1 mt-0.5">
                 <Flame className="h-2 w-2 text-primary" />
-                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">Platinum</span>
+                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">{role === 'buyer' ? 'CLIENT' : 'PLATINUM'}</span>
               </div>
             </div>
           </div>
         </SidebarHeader>
         <SidebarContent className="bg-white px-2">
           <NavMain 
-            items={role === "admin" ? adminItems : affiliateItems} 
-            label={role === "admin" ? "ADMINISTRACIÓN" : "TU NEGOCIO"} 
+            items={getMenu()} 
+            label={role === "admin" ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
           />
         </SidebarContent>
         <SidebarFooter className="bg-white border-t border-slate-50 p-4">
           <SidebarMenu>
-            {role === 'affiliate' && profile && (
+            {profile && (
               <SidebarMenuItem className="group-data-[collapsible=icon]:hidden mb-4">
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100">
                   <Avatar className="h-10 w-10 border-2 border-white shadow-md">
@@ -165,17 +178,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100" />
           <div className="flex-1">
              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
-                {role === 'admin' ? "Centro de Control" : "Workspace Afiliado"}
+                {role === 'admin' ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
              </h2>
           </div>
           <div className="flex items-center gap-4">
              <LanguageToggle />
-             {role === 'affiliate' && profile && (
-               <div className="hidden md:flex flex-col items-end mr-2">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldo</span>
-                 <span className="text-sm font-black text-green-600">${profile.currentBalance?.toFixed(2) || '0.00'}</span>
-               </div>
-             )}
           </div>
         </header>
         <main className="flex-1 p-6 md:p-10">

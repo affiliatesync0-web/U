@@ -148,6 +148,10 @@ export const translations = {
     affiliateRegister: "Register as Affiliate",
     buyerSubtitle: "Access high-quality digital products and manage your purchases.",
     joinAs: "Join as",
+    myPurchases: "My Purchases",
+    buyNow: "Buy Now",
+    buyerDashboard: "Buyer Dashboard",
+    browseMarketplace: "Browse Marketplace",
   },
   es: {
     brand: "Sync Connect",
@@ -297,5 +301,9 @@ export const translations = {
     affiliateRegister: "Registro de Afiliado",
     buyerSubtitle: "Accede a productos digitales de alta calidad y gestiona tus compras.",
     joinAs: "Unirse como",
+    myPurchases: "Mis Compras",
+    buyNow: "Comprar Ahora",
+    buyerDashboard: "Panel del Comprador",
+    browseMarketplace: "Ver Catálogo",
   }
 };
