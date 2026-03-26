@@ -16,9 +16,6 @@ import {
   Loader2,
   Users2,
 } from "lucide-react"
-import Image from "next/image"
-import placeholderData from "@/app/lib/placeholder-images.json"
-
 import {
   Sidebar,
   SidebarContent,
@@ -51,7 +48,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const router = useRouter();
   const db = useFirestore();
 
-  // Redirigir si no está autenticado
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
