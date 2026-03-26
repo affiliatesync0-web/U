@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -33,7 +32,7 @@ export default function AffiliateLoginPage() {
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
-  const displayLogoUrl = logoOverride?.imageUrl || defaultLogo?.imageUrl || "";
+  const displayLogoUrl = (logoOverride?.imageUrl || defaultLogo?.imageUrl || "").trim();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,13 +89,17 @@ export default function AffiliateLoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
-        <div className="relative h-20 w-20 shadow-xl rounded-2xl overflow-hidden bg-white border group-hover:scale-105 transition-transform">
-           <Image 
-              src={displayLogoUrl} 
-              alt="Sync Connect" 
-              fill 
-              className="object-contain p-2"
-           />
+        <div className="relative h-20 w-20 shadow-xl rounded-2xl overflow-hidden bg-white border group-hover:scale-105 transition-transform flex items-center justify-center">
+           {displayLogoUrl ? (
+             <Image 
+                src={displayLogoUrl} 
+                alt="Sync Connect" 
+                fill 
+                className="object-contain p-2"
+             />
+           ) : (
+             <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
+           )}
         </div>
         <span className="font-headline font-black text-3xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
       </Link>
