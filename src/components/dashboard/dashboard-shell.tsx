@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -13,6 +14,7 @@ import {
   Palette,
   User as UserIcon,
   Loader2,
+  Users2,
 } from "lucide-react"
 import Image from "next/image"
 import placeholderData from "@/app/lib/placeholder-images.json"
@@ -76,6 +78,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: t.products, url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
+    { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
   ]
 
   if (isUserLoading) {

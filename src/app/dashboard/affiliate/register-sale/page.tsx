@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { BadgeDollarSign, User, Mail, Tag, Landmark, AlertCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
 import { collection, query, where, getDocs, doc, increment } from 'firebase/firestore'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -35,8 +35,8 @@ export default function RegisterSalePage() {
     if (!voucherReference.trim()) {
       toast({
         variant: "destructive",
-        title: "Campo Obligatorio",
-        description: "Debes ingresar el número de referencia del voucher para registrar la venta.",
+        title: t.language === 'es' ? "Campo Obligatorio" : "Required Field",
+        description: t.language === 'es' ? "Debes ingresar el número de referencia del voucher para registrar la venta." : "You must enter the voucher reference number to register the sale.",
       })
       return
     }
@@ -54,8 +54,8 @@ export default function RegisterSalePage() {
       if (querySnapshot.empty) {
         toast({
           variant: "destructive",
-          title: "Error de Código",
-          description: "El código de producto no existe en nuestro catálogo."
+          title: t.language === 'es' ? "Error de Código" : "Code Error",
+          description: t.language === 'es' ? "El código de producto no existe en nuestro catálogo." : "The product code does not exist in our catalog."
         })
         setLoading(false)
         return
@@ -69,12 +69,23 @@ export default function RegisterSalePage() {
       const commissionRate = product.commissionRate || 0
       const commissionEarned = (saleAmount * commissionRate) / 100
 
-      // 3. Registrar venta con referencia de voucher
+      // 3. Registrar/Actualizar Comprador
+      const buyerId = buyerData.email.toLowerCase().trim();
+      const buyerRef = doc(db, 'buyers', buyerId);
+      setDocumentNonBlocking(buyerRef, {
+        id: buyerId,
+        firstName: buyerData.firstName,
+        lastName: buyerData.lastName,
+        email: buyerId,
+        registeredAt: new Date().toISOString()
+      }, { merge: true });
+
+      // 4. Registrar venta con referencia de voucher
       const saleData = {
         affiliateId: user.uid,
         productId: productDoc.id,
         productName: product.name,
-        buyerId: buyerData.email,
+        buyerId: buyerId,
         buyerName: `${buyerData.firstName} ${buyerData.lastName}`,
         saleDate: new Date().toISOString(),
         saleAmount: saleAmount,
@@ -87,15 +98,15 @@ export default function RegisterSalePage() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 4. Actualizar saldo del afiliado (optimista con increment)
+      // 5. Actualizar saldo del afiliado (optimista con increment)
       const affiliateRef = doc(db, 'affiliates', user.uid)
       updateDocumentNonBlocking(affiliateRef, {
         currentBalance: increment(commissionEarned)
       })
 
       toast({
-        title: "¡Venta Registrada Exitosamente!",
-        description: `Se han sumado $${commissionEarned.toFixed(2)} a tu saldo acumulado.`,
+        title: t.language === 'es' ? "¡Venta Registrada Exitosamente!" : "Sale Registered Successfully!",
+        description: t.language === 'es' ? `Se han sumado $${commissionEarned.toFixed(2)} a tu saldo acumulado.` : `$${commissionEarned.toFixed(2)} has been added to your balance.`,
       })
       
       // Limpiar formulario tras éxito
@@ -106,8 +117,8 @@ export default function RegisterSalePage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error de Registro",
-        description: "Hubo un problema técnico al procesar la venta. Inténtalo de nuevo.",
+        title: t.language === 'es' ? "Error de Registro" : "Registration Error",
+        description: t.language === 'es' ? "Hubo un problema técnico al procesar la venta. Inténtalo de nuevo." : "A technical problem occurred while processing the sale. Try again.",
       })
     } finally {
       setLoading(false)
