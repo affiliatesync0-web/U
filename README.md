@@ -4,12 +4,12 @@
 Esta es la versión profesional de **Sync Connect**, una plataforma optimizada para el mercado de Nicaragua con un diseño premium inspirado en **Hotmart**.
 
 ## 🛠️ Tecnologías Utilizadas
-- **Framework Moderno**: Máximo rendimiento y SEO.
+- **Arquitectura de Alto Rendimiento**: Máximo rendimiento y SEO.
 - **Firebase (Auth & Firestore)**: Gestión segura de usuarios y base de datos en tiempo real.
 - **Genkit (IA)**: Inteligencia Artificial para el bot de ventas de WhatsApp y descripciones de productos.
 - **ShadCN UI & Tailwind**: Interfaz moderna, minimalista y responsiva.
 
-## 🚀 Guía de Instalación Local (Después de Descargar el ZIP)
+## 🚀 Guía de Instalación Local
 
 Una vez que tengas el archivo `.zip` y lo extraigas en tu computadora, sigue estos pasos:
 
@@ -32,18 +32,18 @@ GEMINI_API_KEY=tu_api_key_de_google_ai
 ```
 
 ### 3. Configurar Reglas de Firebase
-Asegúrate de copiar el contenido del archivo `firestore.rules` a la sección de "Rules" en tu consola de Firebase Firestore para que los permisos funcionen correctamente.
+Asegúrate de copiar el contenido del archivo `firestore.rules` a la sección de "Rules" en tu consola de Firebase Firestore.
 
 ### 4. Iniciar Servidor de Desarrollo
 ```bash
 npm run dev
 ```
-Visita `http://localhost:9002` en tu navegador para ver la aplicación funcionando.
+Visita `http://localhost:9002` en tu navegador.
 
 ## 📁 Estructura de Roles
-- **Administrador**: Gestión total de productos, red de afiliados, directorio de compradores y diseño del sitio.
-- **Afiliado**: Acceso al marketplace, registro de ventas con voucher y configuración del bot de IA.
-- **Comprador**: Panel exclusivo para ver el catálogo y sus compras realizadas (sin acceso a herramientas de venta).
+- **Administrador**: Gestión total de productos, red de afiliados, directorio de compradores y diseño.
+- **Afiliado**: Marketplace, links de divulgación, registro de ventas y bot de IA.
+- **Comprador**: Catálogo y acceso a sus comprobantes de compra.
 
 ---
-© 2024 Sync Connect. Desarrollado para escalar negocios digitales con tecnología de punta.
+© 2024 Sync Connect. Desarrollado para escalar negocios digitales.

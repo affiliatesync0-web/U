@@ -2,7 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- FUNCIONES DE AYUDA ---
+    // --- REGLAS DE SEGURIDAD SYNC CONNECT ---
+    // Actualización forzada para asegurar permisos de checkout
 
     function isSignedIn() {
       return request.auth != null;
@@ -30,8 +31,9 @@ service cloud.firestore {
     }
 
     match /affiliates/{affiliateId} {
-      // Permitimos lectura y actualización pública para que el flujo de ventas 
-      // e incremento de saldo funcione correctamente en el prototipo.
+      // Permitimos lectura y actualización pública total para el flujo de ventas
+      // Esto previene errores de permisos cuando un comprador (sin login)
+      // actualiza el saldo del afiliado que lo refirió.
       allow read: if true; 
       allow create: if true; 
       allow update: if true; 
@@ -39,14 +41,14 @@ service cloud.firestore {
     }
 
     match /buyers/{buyerId} {
-      // Permitimos escritura total para que los compradores puedan 
-      // registrarse o actualizar sus datos durante el checkout.
+      // Compradores pueden ser creados por afiliados o registrarse solos
       allow read: if true;
       allow write: if true;
     }
 
     match /sales/{saleId} {
-      allow read: if true; // Cambiado a true para que compradores vean sus recibos
+      // Ventas pueden ser creadas por cualquier flujo de checkout
+      allow read: if true; 
       allow create: if true; 
       allow update, delete: if isAdmin();
     }
