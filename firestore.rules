@@ -4,17 +4,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- REGLAS DE SEGURIDAD SYNC CONNECT ---
-    // Optimización de visibilidad: Ocultando rastros técnicos
+    // Actualización para permitir notificaciones y flujos de ventas
 
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isAdmin() {
-      return isSignedIn();
+      return isSignedIn() && (request.auth.token.email == 'affiliatesync0@gmail.com' || request.auth.uid == 'admin_uid'); 
     }
-
-    // --- REGLAS DE COLECCIONES ---
 
     match /banks/{bankId} {
       allow read: if true;
@@ -27,7 +25,6 @@ service cloud.firestore {
     }
 
     match /affiliates/{affiliateId} {
-      // Permitimos actualización pública para el flujo de ventas optimista
       allow read: if true; 
       allow create: if true; 
       allow update: if true; 
@@ -43,6 +40,13 @@ service cloud.firestore {
       allow read: if true; 
       allow create: if true; 
       allow update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow create: if true; // Permitir que el sistema cree notificaciones
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
     match /site_config/{configId} {

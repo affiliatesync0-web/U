@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -97,7 +98,18 @@ export default function RegisterSalePage() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 5. Actualizar saldo del afiliado (optimista con increment)
+      // 5. Crear Notificación Automática para el afiliado
+      const notificationsRef = collection(db, 'notifications')
+      addDocumentNonBlocking(notificationsRef, {
+        userId: user.uid,
+        title: t.saleConfirmedTitle,
+        message: t.saleConfirmedMsg.replace('{ref}', voucherReference.trim()),
+        type: 'sale',
+        createdAt: new Date().toISOString(),
+        isRead: false
+      })
+
+      // 6. Actualizar saldo del afiliado (optimista con increment)
       const affiliateRef = doc(db, 'affiliates', user.uid)
       updateDocumentNonBlocking(affiliateRef, {
         currentBalance: increment(commissionEarned)

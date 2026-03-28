@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -90,8 +91,31 @@ function CheckoutContent() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 3. Si hay afiliado real, intentar actualizar su saldo
+      // 3. Crear Notificaciones automáticas
+      const notificationsRef = collection(db, 'notifications')
+      
+      // Mensaje para el comprador
+      addDocumentNonBlocking(notificationsRef, {
+        userId: buyerId,
+        title: t.purchasePendingTitle,
+        message: t.purchasePendingMsg.replace('{product}', product?.name || '').replace('{ref}', formData.voucherRef),
+        type: 'system',
+        createdAt: new Date().toISOString(),
+        isRead: false
+      })
+
+      // Mensaje para el afiliado (si existe)
       if (affiliateId && affiliateId !== 'admin') {
+        addDocumentNonBlocking(notificationsRef, {
+          userId: affiliateId,
+          title: t.saleConfirmedTitle,
+          message: t.saleConfirmedMsg.replace('{ref}', formData.voucherRef),
+          type: 'sale',
+          createdAt: new Date().toISOString(),
+          isRead: false
+        })
+
+        // 4. Actualizar saldo del afiliado
         const affiliateRef = doc(db, 'affiliates', affiliateId)
         import('@/firebase/non-blocking-updates').then(({ updateDocumentNonBlocking }) => {
           updateDocumentNonBlocking(affiliateRef, {

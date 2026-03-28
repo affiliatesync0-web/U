@@ -177,6 +177,13 @@ export const translations = {
     facebook: "Facebook",
     instagram: "Instagram",
     tiktok: "TikTok",
+    platformMessages: "Sync Connect Messages",
+    welcomeTitle: "Welcome to the Family!",
+    welcomeMsg: "We are excited to have you here. Start exploring our marketplace and scale your results.",
+    saleConfirmedTitle: "New Sale Registered!",
+    saleConfirmedMsg: "A new sale has been recorded with voucher {ref}. Your commission is already in your balance.",
+    purchasePendingTitle: "Purchase Recorded",
+    purchasePendingMsg: "Your purchase of {product} is recorded. Access will be granted once the admin validates your voucher {ref}.",
   },
   es: {
     brand: "Sync Connect",
@@ -355,5 +362,12 @@ export const translations = {
     facebook: "Facebook",
     instagram: "Instagram",
     tiktok: "TikTok",
+    platformMessages: "Mensajes de Sync Connect",
+    welcomeTitle: "¡Bienvenido a la Familia!",
+    welcomeMsg: "Estamos emocionados de tenerte aquí. Empieza a explorar el mercado y escala tus resultados.",
+    saleConfirmedTitle: "¡Nueva Venta Registrada!",
+    saleConfirmedMsg: "Se ha registrado una nueva venta con el voucher {ref}. Tu comisión ya está disponible en tu saldo.",
+    purchasePendingTitle: "Compra Registrada",
+    purchasePendingMsg: "Tu compra de {product} ha sido registrada. El acceso se habilitará cuando el admin valide tu voucher {ref}.",
   }
 };

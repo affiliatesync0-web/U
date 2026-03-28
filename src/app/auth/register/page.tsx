@@ -14,9 +14,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth, useFirestore, setDocumentNonBlocking, useMemoFirebase, useDoc } from '@/firebase'
+import { useAuth, useFirestore, setDocumentNonBlocking, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc } from 'firebase/firestore'
+import { doc, collection } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink, cn } from '@/lib/utils'
 
@@ -102,6 +102,17 @@ function RegisterContent() {
         const buyerRef = doc(db, 'buyers', user.uid)
         setDocumentNonBlocking(buyerRef, buyerData, { merge: true })
       }
+
+      // CREAR MENSAJE DE BIENVENIDA AUTOMÁTICO
+      const notificationsRef = collection(db, 'notifications')
+      addDocumentNonBlocking(notificationsRef, {
+        userId: user.uid,
+        title: t.welcomeTitle,
+        message: t.welcomeMsg,
+        type: 'welcome',
+        createdAt: new Date().toISOString(),
+        isRead: false
+      })
       
       toast({
         title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
@@ -349,7 +360,7 @@ function RegisterContent() {
               className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[1.5rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95" 
               disabled={loading}
             >
-              {loading ? "PROCESANDO..." : "EMPEATAR AHORA"}
+              {loading ? "PROCESANDO..." : "EMPEZAR AHORA"}
             </Button>
           </form>
         </CardContent>
