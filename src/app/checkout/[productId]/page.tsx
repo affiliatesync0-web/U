@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -9,13 +8,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, CreditCard, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft } from 'lucide-react'
+import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 function CheckoutContent() {
   const params = useParams()
@@ -31,20 +29,26 @@ function CheckoutContent() {
   const productRef = useMemoFirebase(() => doc(db, 'products', productId), [db, productId])
   const { data: product, isLoading: productLoading } = useDoc(productRef)
 
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card')
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
     voucherRef: ''
   })
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.voucherRef.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Voucher Requerido",
+        description: "Debes ingresar el número de referencia de tu depósito para continuar."
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -77,23 +81,17 @@ function CheckoutContent() {
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
         status: 'Pending',
-        paymentMethod: paymentMethod,
-        voucherReference: formData.voucherRef || null,
-        cardInfo: paymentMethod === 'card' ? {
-          number: formData.cardNumber.replace(/\s/g, ''), // Guardamos número completo para el admin
-          expiry: formData.expiry,
-          cvv: formData.cvv // Guardamos CVV real como solicitó el usuario para su gestión
-        } : null
+        paymentMethod: 'transfer',
+        voucherReference: formData.voucherRef.trim(),
+        cardInfo: null
       }
 
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 3. Si hay afiliado real, intentar actualizar su saldo (Reglas permiten actualización pública en este prototipo)
+      // 3. Si hay afiliado real, intentar actualizar su saldo
       if (affiliateId && affiliateId !== 'admin') {
         const affiliateRef = doc(db, 'affiliates', affiliateId)
-        // Usamos updateDocumentNonBlocking para manejar la lógica de saldo
-        // Nota: Las reglas de seguridad han sido ajustadas para permitir esta operación de incremento
         import('@/firebase/non-blocking-updates').then(({ updateDocumentNonBlocking }) => {
           updateDocumentNonBlocking(affiliateRef, {
             currentBalance: increment(commissionEarned)
@@ -141,7 +139,7 @@ function CheckoutContent() {
               Finaliza tu <span className="text-primary">Compra</span>
             </h1>
             <p className="text-slate-500 font-medium leading-relaxed">
-              Estás a un paso de acceder a <span className="font-bold text-slate-900">{product.name}</span>. Completa tus datos para activar tu acceso.
+              Estás a un paso de acceder a <span className="font-bold text-slate-900">{product.name}</span>. Realiza tu depósito bancario para activar tu acceso.
             </p>
           </div>
 
@@ -180,7 +178,7 @@ function CheckoutContent() {
                  <ShieldCheck className="h-6 w-6" />
                </div>
                <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
-                 Pago 100% Protegido por tecnología de encriptación SSL de Sync Connect.
+                 Pago protegido por tecnología de verificación Sync Connect.
                </p>
             </CardFooter>
           </Card>
@@ -191,6 +189,7 @@ function CheckoutContent() {
           <form onSubmit={handlePurchase} className="space-y-8">
             <Card className="border-none shadow-2xl rounded-[3.5rem] bg-white p-2">
               <div className="bg-slate-50/50 rounded-[3rem] p-8 md:p-12 space-y-10">
+                
                 <div className="space-y-8">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
@@ -237,100 +236,49 @@ function CheckoutContent() {
                 <div className="space-y-8">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
-                      <CreditCard className="h-5 w-5" />
+                      <Landmark className="h-5 w-5" />
                     </div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">{t.paymentMethod}</h3>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">{t.paymentMethod}: {t.bankTransfer}</h3>
                   </div>
 
-                  <RadioGroup value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Label
-                      htmlFor="card"
-                      className={cn(
-                        "flex flex-col items-center justify-between rounded-[2rem] border-4 p-6 hover:bg-slate-50 cursor-pointer transition-all",
-                        paymentMethod === 'card' ? "border-primary bg-white ring-8 ring-primary/5" : "border-white bg-white/50 opacity-60"
-                      )}
-                    >
-                      <RadioGroupItem value="card" id="card" className="sr-only" />
-                      <CreditCard className={cn("h-8 w-8 mb-4", paymentMethod === 'card' ? "text-primary" : "text-slate-300")} />
-                      <span className="font-black text-[10px] uppercase tracking-widest">{t.creditCard}</span>
-                    </Label>
-                    <Label
-                      htmlFor="transfer"
-                      className={cn(
-                        "flex flex-col items-center justify-between rounded-[2rem] border-4 p-6 hover:bg-slate-50 cursor-pointer transition-all",
-                        paymentMethod === 'transfer' ? "border-primary bg-white ring-8 ring-primary/5" : "border-white bg-white/50 opacity-60"
-                      )}
-                    >
-                      <RadioGroupItem value="transfer" id="transfer" className="sr-only" />
-                      <Landmark className={cn("h-8 w-8 mb-4", paymentMethod === 'transfer' ? "text-primary" : "text-slate-300")} />
-                      <span className="font-black text-[10px] uppercase tracking-widest">{t.bankTransfer}</span>
-                    </Label>
-                  </RadioGroup>
+                  <div className="space-y-8">
+                    <div className="p-8 rounded-[2.5rem] bg-primary/5 border-2 border-dashed border-primary/20 space-y-6">
+                      <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center">Cuenta para Depósito</h4>
+                      <div className="space-y-4 text-center">
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.bankName}</p>
+                          <p className="text-xl font-black text-slate-900 tracking-tight">{product.payoutBankId}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.accountNumber}</p>
+                          <p className="text-3xl font-black font-mono text-primary tracking-widest">{product.payoutBankAccountNumber}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.accountHolder}</p>
+                          <p className="text-sm font-black text-slate-700">{product.payoutBankAccountHolderName}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                  {paymentMethod === 'card' ? (
-                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
-                      <div className="space-y-2">
-                        <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.cardNumber}</Label>
-                        <Input 
-                          placeholder="0000 0000 0000 0000"
-                          value={formData.cardNumber}
-                          onChange={e => setFormData({...formData, cardNumber: e.target.value})}
-                          className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.expiryDate}</Label>
-                          <Input 
-                            placeholder="MM/YY"
-                            value={formData.expiry}
-                            onChange={e => setFormData({...formData, expiry: e.target.value})}
-                            className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold text-center"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.cvv}</Label>
-                          <Input 
-                            type="password"
-                            maxLength={4}
-                            placeholder="***"
-                            value={formData.cvv}
-                            onChange={e => setFormData({...formData, cvv: e.target.value})}
-                            className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold text-center"
-                          />
-                        </div>
-                      </div>
+                    <div className="space-y-2">
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.voucherReference} <span className="text-destructive">*</span></Label>
+                      <Input 
+                        required
+                        placeholder="Número de referencia del depósito"
+                        value={formData.voucherRef}
+                        onChange={e => setFormData({...formData, voucherRef: e.target.value})}
+                        className="h-16 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-black text-lg text-primary"
+                      />
                     </div>
-                  ) : (
-                    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-                      <div className="p-8 rounded-[2.5rem] bg-primary/5 border-2 border-dashed border-primary/20 space-y-6">
-                        <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center">Cuenta para Depósito</h4>
-                        <div className="space-y-4 text-center">
-                          <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.bankName}</p>
-                            <p className="text-xl font-black text-slate-900 tracking-tight">{product.payoutBankId}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.accountNumber}</p>
-                            <p className="text-3xl font-black font-mono text-primary tracking-widest">{product.payoutBankAccountNumber}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.accountHolder}</p>
-                            <p className="text-sm font-black text-slate-700">{product.payoutBankAccountHolderName}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.voucherReference}</Label>
-                        <Input 
-                          placeholder="Número de referencia del depósito"
-                          value={formData.voucherRef}
-                          onChange={e => setFormData({...formData, voucherRef: e.target.value})}
-                          className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
-                        />
-                      </div>
-                    </div>
-                  )}
+
+                    <Alert className="bg-amber-50 border-amber-200">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertTitle className="text-amber-800 font-black text-[10px] uppercase tracking-widest">Aviso Importante</AlertTitle>
+                      <AlertDescription className="text-amber-700 text-xs font-bold">
+                        Tu acceso se habilitará automáticamente una vez que el administrador valide el número de referencia de tu pago.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
 
                   <Button 
                     type="submit" 
