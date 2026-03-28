@@ -90,6 +90,18 @@ function RegisterContent() {
         }
         const affiliateRef = doc(db, 'affiliates', user.uid)
         setDocumentNonBlocking(affiliateRef, affiliateData, { merge: true })
+
+        // MENSAJE DE BIENVENIDA CON LINK DE DIVULGACIÓN
+        const inviteLink = `${window.location.origin}/auth/register?role=buyer&ref=${user.uid}`
+        const notificationsRef = collection(db, 'notifications')
+        addDocumentNonBlocking(notificationsRef, {
+          userId: user.uid,
+          title: t.welcomeTitle,
+          message: t.welcomeAffiliateMsg.replace('{link}', inviteLink),
+          type: 'welcome',
+          createdAt: new Date().toISOString(),
+          isRead: false
+        })
       } else {
         const buyerData = {
           id: user.uid,
@@ -101,22 +113,22 @@ function RegisterContent() {
         }
         const buyerRef = doc(db, 'buyers', user.uid)
         setDocumentNonBlocking(buyerRef, buyerData, { merge: true })
-      }
 
-      // CREAR MENSAJE DE BIENVENIDA AUTOMÁTICO
-      const notificationsRef = collection(db, 'notifications')
-      addDocumentNonBlocking(notificationsRef, {
-        userId: user.uid,
-        title: t.welcomeTitle,
-        message: t.welcomeMsg,
-        type: 'welcome',
-        createdAt: new Date().toISOString(),
-        isRead: false
-      })
+        // MENSAJE DE BIENVENIDA ESTÁNDAR
+        const notificationsRef = collection(db, 'notifications')
+        addDocumentNonBlocking(notificationsRef, {
+          userId: user.uid,
+          title: t.welcomeTitle,
+          message: t.welcomeMsg,
+          type: 'welcome',
+          createdAt: new Date().toISOString(),
+          isRead: false
+        })
+      }
       
       toast({
         title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
-        description: t.language === 'es' ? `¡Bienvenido a ${t.brand}!` : `Welcome to ${t.brand}!`,
+        description: t.language === 'es' ? `¡Bienvenido a ${t.brand}! Revisa tu buzón de mensajes.` : `Welcome to ${t.brand}! Check your message box.`,
       })
       
       router.push(role === 'affiliate' ? '/dashboard/affiliate' : '/dashboard/buyer')
