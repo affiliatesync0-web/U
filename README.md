@@ -4,7 +4,7 @@
 Esta es la versión profesional de **Sync Connect**, una plataforma optimizada para el mercado de Nicaragua con un diseño premium inspirado en **Hotmart**.
 
 ## 🛠️ Tecnologías Utilizadas
-- **Next.js 15 (App Router)**: Máximo rendimiento y SEO.
+- **Framework Moderno**: Máximo rendimiento y SEO.
 - **Firebase (Auth & Firestore)**: Gestión segura de usuarios y base de datos en tiempo real.
 - **Genkit (IA)**: Inteligencia Artificial para el bot de ventas de WhatsApp y descripciones de productos.
 - **ShadCN UI & Tailwind**: Interfaz moderna, minimalista y responsiva.
