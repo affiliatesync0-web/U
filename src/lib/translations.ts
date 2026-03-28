@@ -185,6 +185,10 @@ export const translations = {
     saleConfirmedMsg: "A new sale has been recorded with voucher {ref}. Your commission is already in your balance.",
     purchasePendingTitle: "Purchase Recorded",
     purchasePendingMsg: "Your purchase of {product} is recorded. Access will be granted once the admin validates your voucher {ref}.",
+    emailConfig: "Gmail Connection",
+    gmailUser: "Gmail Address",
+    gmailPass: "App Password",
+    emailHelp: "Use a Google App Password, not your regular password.",
   },
   es: {
     brand: "Sync Connect",
@@ -371,5 +375,9 @@ export const translations = {
     saleConfirmedMsg: "Se ha registrado una nueva venta con el voucher {ref}. Tu comisión ya está disponible en tu saldo.",
     purchasePendingTitle: "Compra Registrada",
     purchasePendingMsg: "Tu compra de {product} ha sido registrada. El acceso se habilitará cuando el admin valide tu voucher {ref}.",
+    emailConfig: "Conexión de Gmail",
+    gmailUser: "Correo Gmail",
+    gmailPass: "Contraseña de Aplicación",
+    emailHelp: "Usa una 'Contraseña de Aplicación' de Google, no tu contraseña normal.",
   }
 };

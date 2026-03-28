@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2 } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldKey } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -86,9 +86,51 @@ export default function AdminDesignPage() {
     <DashboardShell role="admin">
       <div className="space-y-12">
         <div>
-          <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Contacto</h1>
-          <p className="text-muted-foreground">Personaliza la imagen de marca y los medios de contacto de Sync Connect.</p>
+          <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Configuración</h1>
+          <p className="text-muted-foreground">Personaliza la imagen de marca, medios de contacto y servicios de Sync Connect.</p>
         </div>
+
+        {/* CONFIGURACIÓN DE GMAIL */}
+        <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
+          <CardHeader className="bg-slate-900 text-white p-10">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
+                <Mail className="h-6 w-6" />
+              </div>
+              <CardTitle className="text-2xl font-headline font-black text-white">{t.emailConfig}</CardTitle>
+            </div>
+            <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Conecta tu Gmail para enviar links de divulgación y comprobantes</CardDescription>
+          </CardHeader>
+          <CardContent className="p-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.gmailUser}</Label>
+                <Input 
+                  placeholder="tu-correo@gmail.com" 
+                  defaultValue={getVal('gmail-user')}
+                  onBlur={(e) => handleSaveValue('gmail-user', e.target.value)}
+                  className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.gmailPass}</Label>
+                <Input 
+                  type="password"
+                  placeholder="•••• •••• •••• ••••" 
+                  defaultValue={getVal('gmail-pass')}
+                  onBlur={(e) => handleSaveValue('gmail-pass', e.target.value)}
+                  className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100">
+               <ShieldKey className="h-6 w-6 text-amber-600 shrink-0" />
+               <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                 {t.emailHelp} Debes activar la "Verificación en 2 pasos" en tu cuenta de Google y generar una <strong>Contraseña de Aplicación</strong>. No uses tu contraseña normal de Gmail.
+               </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* REDES SOCIALES Y WHATSAPP */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
