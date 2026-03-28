@@ -40,6 +40,7 @@ function CheckoutContent() {
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // VALIDACIÓN ESTRICTA DE VOUCHER
     if (!formData.voucherRef.trim()) {
       toast({
         variant: "destructive",
