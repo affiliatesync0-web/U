@@ -5,22 +5,38 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Tag, DollarSign, Percent, TrendingUp, Loader2, Target, Landmark, User, Info, Flame, Star, Sparkles } from 'lucide-react'
+import { Search, Tag, DollarSign, Percent, TrendingUp, Loader2, Target, Landmark, User, Info, Flame, Star, Sparkles, Link as LinkIcon, Check, Copy } from 'lucide-react'
 import Image from 'next/image'
 import placeholderData from '@/app/lib/placeholder-images.json'
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 import { useLanguage } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
 
 export default function AffiliateProductsPage() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
   // Obtener productos reales de Firestore
   const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
+
+  const handleCopyLink = (productId: string) => {
+    const link = `${window.location.origin}/checkout/${productId}?ref=${user?.uid}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(productId);
+    setTimeout(() => setCopiedId(null), 2000);
+    toast({
+      title: t.salesLinkCopied,
+      description: "Usa este enlace para enviarlo a tus clientes y cerrar ventas directas.",
+    });
+  };
 
   const getPlaceholderImage = (category: string) => {
     const mapping: Record<string, string> = {
@@ -109,7 +125,7 @@ export default function AffiliateProductsPage() {
                       {product.name}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-8 pb-10 pt-3 flex-1 flex flex-col gap-8">
+                  <CardContent className="px-8 pb-10 pt-3 flex-1 flex flex-col gap-6">
                     <div className="flex items-center justify-between p-6 rounded-[2rem] bg-slate-50 border border-slate-100 shadow-inner group-hover:bg-primary/5 transition-colors duration-500">
                       <div className="space-y-1.5">
                         <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest flex items-center gap-2">
@@ -126,7 +142,17 @@ export default function AffiliateProductsPage() {
                       </div>
                     </div>
 
-                    <AffiliateDialog product={product} t={t} />
+                    <div className="flex flex-col gap-3">
+                      <Button 
+                        onClick={() => handleCopyLink(product.id)}
+                        variant="outline"
+                        className="w-full h-14 rounded-2xl border-2 border-slate-100 font-black text-[10px] uppercase tracking-widest gap-3 hover:bg-slate-50"
+                      >
+                        {copiedId === product.id ? <Check className="h-4 w-4 text-green-600" /> : <LinkIcon className="h-4 w-4 text-primary" />}
+                        {t.copySalesLink}
+                      </Button>
+                      <AffiliateDialog product={product} t={t} />
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -142,8 +168,8 @@ function AffiliateDialog({ product, t }: any) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[1.75rem] h-20 shadow-2xl shadow-primary/30 hover:-translate-y-2 transition-all active:scale-95 duration-500 group">
-          <Target className="mr-3 h-7 w-7 transition-transform group-hover:rotate-12" /> {t.affiliateMe.toUpperCase()}
+        <Button className="w-full bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest rounded-2xl h-14 shadow-xl shadow-primary/20 transition-all active:scale-95 group">
+          <Target className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" /> {t.affiliateMe}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
@@ -178,7 +204,7 @@ function AffiliateDialog({ product, t }: any) {
                <div className="space-y-2">
                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest px-1">{t.accountHolder}</p>
                  <p className="font-black text-lg flex items-center gap-3 text-slate-800">
-                   <div className="h-8 w-8 bg-slate-200 rounded-xl flex items-center justify-center"><User className="h-4 w-4 text-slate-500" /></div> {product.payoutBankAccountHolderName}
+                   <span className="h-8 w-8 bg-slate-200 rounded-xl flex items-center justify-center"><User className="h-4 w-4 text-slate-500" /></span> {product.payoutBankAccountHolderName}
                  </p>
                </div>
             </div>
