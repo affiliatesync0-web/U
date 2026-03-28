@@ -165,6 +165,8 @@ export const translations = {
     transferDetails: "Transfer Details",
     copySalesLink: "Copy Sales Link",
     salesLinkCopied: "Direct sales link copied!",
+    affiliateGmailList: "Affiliate Gmail List",
+    affiliateContacts: "Affiliate Contacts",
   },
   es: {
     brand: "Sync Connect",
@@ -331,5 +333,7 @@ export const translations = {
     transferDetails: "Detalles de Transferencia",
     copySalesLink: "Link de Venta Directa",
     salesLinkCopied: "¡Link de venta directa copiado!",
+    affiliateGmailList: "Lista de Gmails",
+    affiliateContacts: "Contactos de Afiliados",
   }
 };
