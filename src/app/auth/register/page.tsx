@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, Suspense } from 'react'
@@ -19,6 +18,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, collection } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink, cn } from '@/lib/utils'
+import { sendEmail } from '@/lib/email'
 
 type UserRole = 'affiliate' | 'buyer'
 
@@ -76,6 +76,8 @@ function RegisterContent() {
       const user = cred.user
 
       if (role === 'affiliate') {
+        const inviteLink = `${window.location.origin}/auth/register?role=buyer&ref=${user.uid}`
+        
         const affiliateData = {
           id: user.uid,
           firstName: formData.firstName,
@@ -91,8 +93,7 @@ function RegisterContent() {
         const affiliateRef = doc(db, 'affiliates', user.uid)
         setDocumentNonBlocking(affiliateRef, affiliateData, { merge: true })
 
-        // MENSAJE DE BIENVENIDA CON LINK DE DIVULGACIÓN
-        const inviteLink = `${window.location.origin}/auth/register?role=buyer&ref=${user.uid}`
+        // 1. Notificación interna
         const notificationsRef = collection(db, 'notifications')
         addDocumentNonBlocking(notificationsRef, {
           userId: user.uid,
@@ -102,6 +103,33 @@ function RegisterContent() {
           createdAt: new Date().toISOString(),
           isRead: false
         })
+
+        // 2. ENVÍO DE EMAIL REAL VÍA GMAIL
+        await sendEmail({
+          to: formData.email,
+          subject: t.language === 'es' ? `¡Bienvenido a Sync Connect, ${formData.firstName}!` : `Welcome to Sync Connect, ${formData.firstName}!`,
+          text: `¡Hola ${formData.firstName}! Ya eres parte oficial de nuestra red.
+          
+Tu enlace de divulgación personalizado es:
+${inviteLink}
+
+Usa este enlace para invitar a nuevos compradores y empezar a ganar comisiones.`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+              <h1 style="color: #FF5D1B;">¡Bienvenido a Sync Connect!</h1>
+              <p>Hola <strong>${formData.firstName}</strong>,</p>
+              <p>Estamos emocionados de tenerte con nosotros. Ya puedes empezar a promocionar productos y ganar dinero.</p>
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #FF5D1B;">
+                <p style="margin: 0; font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold;">Tu Enlace de Divulgación:</p>
+                <p style="margin: 10px 0 0 0; font-size: 18px; font-weight: bold; color: #222;">${inviteLink}</p>
+              </div>
+              <p>Comparte este enlace con tus clientes potenciales. Cada compra realizada a través de él te generará comisiones automáticamente.</p>
+              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+              <p style="font-size: 12px; color: #999;">Sync Connect Team - Potenciando el marketing en Nicaragua.</p>
+            </div>
+          `
+        });
+
       } else {
         const buyerData = {
           id: user.uid,
@@ -114,7 +142,7 @@ function RegisterContent() {
         const buyerRef = doc(db, 'buyers', user.uid)
         setDocumentNonBlocking(buyerRef, buyerData, { merge: true })
 
-        // MENSAJE DE BIENVENIDA ESTÁNDAR
+        // Notificación interna
         const notificationsRef = collection(db, 'notifications')
         addDocumentNonBlocking(notificationsRef, {
           userId: user.uid,
@@ -124,11 +152,18 @@ function RegisterContent() {
           createdAt: new Date().toISOString(),
           isRead: false
         })
+
+        // Email de bienvenida para comprador
+        await sendEmail({
+          to: formData.email,
+          subject: `Bienvenido a Sync Connect`,
+          text: `Hola ${formData.firstName}, gracias por registrarte. Explora nuestro catálogo y adquiere los mejores productos digitales.`
+        });
       }
       
       toast({
         title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
-        description: t.language === 'es' ? `¡Bienvenido a ${t.brand}! Revisa tu buzón de mensajes.` : `Welcome to ${t.brand}! Check your message box.`,
+        description: t.language === 'es' ? `¡Bienvenido! Revisa tu correo electrónico.` : `Welcome! Check your email inbox.`,
       })
       
       router.push(role === 'affiliate' ? '/dashboard/affiliate' : '/dashboard/buyer')
@@ -180,7 +215,7 @@ function RegisterContent() {
         </p>
       </div>
 
-      {/* Role Selection - Hotmart Style */}
+      {/* Role Selection */}
       {!referralId && (
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <button 
@@ -210,7 +245,6 @@ function RegisterContent() {
             )}>
               {t.joinAs} Comprador <ChevronRight className="h-3 w-3" />
             </div>
-            {role === 'buyer' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
           </button>
 
           <button 
@@ -240,7 +274,6 @@ function RegisterContent() {
             )}>
               {t.joinAs} Afiliado <ChevronRight className="h-3 w-3" />
             </div>
-            {role === 'affiliate' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
           </button>
         </div>
       )}

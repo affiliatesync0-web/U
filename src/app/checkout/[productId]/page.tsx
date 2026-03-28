@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -15,6 +14,7 @@ import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, Ale
 import Image from 'next/image'
 import Link from 'next/link'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { sendEmail } from '@/lib/email'
 
 function CheckoutContent() {
   const params = useParams()
@@ -41,7 +41,6 @@ function CheckoutContent() {
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // VALIDACIÓN ESTRICTA DE VOUCHER
     if (!formData.voucherRef.trim()) {
       toast({
         variant: "destructive",
@@ -84,17 +83,15 @@ function CheckoutContent() {
         productPayoutAmount: saleAmount - commissionEarned,
         status: 'Pending',
         paymentMethod: 'transfer',
-        voucherReference: formData.voucherRef.trim(),
-        cardInfo: null
+        voucherReference: formData.voucherRef.trim()
       }
 
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 3. Crear Notificaciones automáticas
+      // 3. Crear Notificaciones internas
       const notificationsRef = collection(db, 'notifications')
       
-      // Mensaje para el comprador
       addDocumentNonBlocking(notificationsRef, {
         userId: buyerId,
         title: t.purchasePendingTitle,
@@ -104,7 +101,18 @@ function CheckoutContent() {
         isRead: false
       })
 
-      // Mensaje para el afiliado (si existe)
+      // 4. ENVÍO DE EMAIL DE CONFIRMACIÓN DE COMPRA
+      await sendEmail({
+        to: formData.email,
+        subject: `Compra Registrada - ${product?.name}`,
+        text: `¡Hola ${formData.firstName}! Hemos recibido tu registro de compra para "${product?.name}".
+        
+Referencia de Pago: ${formData.voucherRef}
+Estado: Pendiente de validación.
+
+Tu acceso será habilitado una vez que el administrador confirme la transferencia bancaria.`
+      });
+
       if (affiliateId && affiliateId !== 'admin') {
         addDocumentNonBlocking(notificationsRef, {
           userId: affiliateId,
@@ -115,7 +123,6 @@ function CheckoutContent() {
           isRead: false
         })
 
-        // 4. Actualizar saldo del afiliado
         const affiliateRef = doc(db, 'affiliates', affiliateId)
         import('@/firebase/non-blocking-updates').then(({ updateDocumentNonBlocking }) => {
           updateDocumentNonBlocking(affiliateRef, {
@@ -126,7 +133,7 @@ function CheckoutContent() {
 
       toast({
         title: t.purchaseSuccess,
-        description: t.purchaseSuccessDesc,
+        description: "Se ha enviado un correo de confirmación a tu Gmail.",
       })
 
       router.push('/auth/login?role=buyer')
@@ -188,10 +195,6 @@ function CheckoutContent() {
                 <span>Precio del Producto</span>
                 <span>${product.price?.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-500 font-bold uppercase text-[10px] tracking-widest">
-                <span>Impuestos / Tasas</span>
-                <span>$0.00</span>
-              </div>
               <div className="h-px bg-slate-100" />
               <div className="flex justify-between items-end">
                 <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Total a Pagar</span>
@@ -203,7 +206,7 @@ function CheckoutContent() {
                  <ShieldCheck className="h-6 w-6" />
                </div>
                <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
-                 Pago protegido por tecnología de verificación Sync Connect.
+                 Pago protegido por tecnología Sync Connect.
                </p>
             </CardFooter>
           </Card>
@@ -298,9 +301,9 @@ function CheckoutContent() {
 
                     <Alert className="bg-amber-50 border-amber-200">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <AlertTitle className="text-amber-800 font-black text-[10px] uppercase tracking-widest">Aviso Importante</AlertTitle>
+                      <AlertTitle className="text-amber-800 font-black text-[10px] uppercase tracking-widest">Aviso</AlertTitle>
                       <AlertDescription className="text-amber-700 text-xs font-bold">
-                        Tu acceso se habilitará automáticamente una vez que el administrador valide el número de referencia de tu pago.
+                        Tu acceso se habilitará automáticamente tras la validación administrativa. Recibirás un email.
                       </AlertDescription>
                     </Alert>
                   </div>
