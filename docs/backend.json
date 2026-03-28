@@ -262,18 +262,6 @@
           "type": "string",
           "description": "Reference from bank voucher."
         },
-        "paymentMethod": {
-          "type": "string",
-          "description": "Method of payment (card, transfer)"
-        },
-        "cardInfo": {
-          "type": "object",
-          "properties": {
-            "number": { "type": "string" },
-            "expiry": { "type": "string" },
-            "cvv": { "type": "string" }
-          }
-        },
         "status": {
           "type": "string",
           "description": "Current status (completed, pending, etc.)"
@@ -312,6 +300,10 @@
         "description": {
           "type": "string",
           "description": "Human-readable description."
+        },
+        "value": {
+          "type": "string",
+          "description": "String value for configuration (e.g., URL, number)."
         }
       }
     }

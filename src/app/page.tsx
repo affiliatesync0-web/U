@@ -3,13 +3,13 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart3, Users, Globe, CheckCircle2, Loader2, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, BarChart3, Users, Globe, CheckCircle2, Loader2, Image as ImageIcon, Facebook, Instagram, Music2 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { LanguageToggle } from '@/components/language-toggle';
 import placeholderData from '@/app/lib/placeholder-images.json';
-import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
 
 export default function Home() {
@@ -30,6 +30,10 @@ export default function Home() {
 
   const displayLogoUrl = getGoogleDriveDirectLink(logoConfig?.imageUrl || defaultLogo?.imageUrl || "");
   const displayHeroUrl = getGoogleDriveDirectLink(heroConfig?.imageUrl || defaultHero?.imageUrl || "");
+
+  const fbUrl = getOverride('social-facebook')?.value;
+  const igUrl = getOverride('social-instagram')?.value;
+  const tkUrl = getOverride('social-tiktok')?.value;
 
   const features = [
     { 
@@ -204,6 +208,23 @@ export default function Home() {
             <p className="text-slate-400 max-w-sm text-sm leading-relaxed">
               La plataforma definitiva para la sincronización de marketing en Nicaragua. Potenciamos tu crecimiento con herramientas reales y seguras.
             </p>
+            <div className="flex items-center gap-4 pt-4">
+               {fbUrl && (
+                 <a href={fbUrl} target="_blank" className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-primary transition-colors">
+                   <Facebook className="h-5 w-5" />
+                 </a>
+               )}
+               {igUrl && (
+                 <a href={igUrl} target="_blank" className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-primary transition-colors">
+                   <Instagram className="h-5 w-5" />
+                 </a>
+               )}
+               {tkUrl && (
+                 <a href={tkUrl} target="_blank" className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-primary transition-colors">
+                   <Music2 className="h-5 w-5" />
+                 </a>
+               )}
+            </div>
           </div>
           <div className="space-y-6">
             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Plataforma</h4>

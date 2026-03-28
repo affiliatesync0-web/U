@@ -171,6 +171,12 @@ export const translations = {
     resetSystemDesc: "Delete all sales history and reset all affiliate balances to zero.",
     confirmResetTitle: "Dangerous Action: Reset Sales?",
     confirmResetDesc: "This will permanently delete ALL recorded sales and set every affiliate's balance back to $0.00. This action is IRREVERSIBLE.",
+    contactConfig: "Contact & Social Media",
+    whatsappConfig: "WhatsApp Contact",
+    socialLinks: "Social Media Links",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    tiktok: "TikTok",
   },
   es: {
     brand: "Sync Connect",
@@ -343,5 +349,11 @@ export const translations = {
     resetSystemDesc: "Elimina todo el historial de ventas y resetea los saldos de los afiliados a cero.",
     confirmResetTitle: "¿Reiniciar Ventas y Saldos?",
     confirmResetDesc: "Esta acción eliminará PERMANENTEMENTE todas las ventas registradas y pondrá el saldo de todos los afiliados en $0.00. Esta acción NO se puede deshacer.",
+    contactConfig: "Contacto y Redes Sociales",
+    whatsappConfig: "WhatsApp de Contacto",
+    socialLinks: "Enlaces de Redes Sociales",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    tiktok: "TikTok",
   }
 };

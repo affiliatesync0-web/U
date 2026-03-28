@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2 } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2 } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -46,7 +46,26 @@ export default function AdminDesignPage() {
       setSavingId(null);
       toast({
         title: t.saveChanges,
-        description: "La configuración de imagen se ha actualizado correctamente.",
+        description: "La configuración se ha actualizado correctamente.",
+      });
+    }, 1000);
+  };
+
+  const handleSaveValue = (id: string, value: string) => {
+    const configRef = doc(db, 'site_config', id);
+    setSavingId(id);
+    
+    setDocumentNonBlocking(configRef, {
+      id: id,
+      value: (value || "").trim(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    setTimeout(() => {
+      setSavingId(null);
+      toast({
+        title: t.saveChanges,
+        description: "Se ha actualizado el valor de configuración.",
       });
     }, 1000);
   };
@@ -61,33 +80,112 @@ export default function AdminDesignPage() {
     )
   }
 
+  const getVal = (id: string) => overrides?.find(o => o.id === id)?.value || "";
+
   return (
     <DashboardShell role="admin">
-      <div className="space-y-8">
+      <div className="space-y-12">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-primary mb-2">{t.design}</h1>
-          <p className="text-muted-foreground">Personaliza las imágenes clave y la identidad de Sync Connect.</p>
+          <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Contacto</h1>
+          <p className="text-muted-foreground">Personaliza la imagen de marca y los medios de contacto de Sync Connect.</p>
         </div>
 
+        {/* REDES SOCIALES Y WHATSAPP */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {images.map((img) => {
-            const override = overrides?.find(o => o.id === img.id);
-            const currentUrl = (override?.imageUrl || img.imageUrl || "").trim();
-            const currentHint = (override?.imageHint || img.imageHint || "").trim();
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
+            <CardHeader className="bg-slate-50/50 p-10">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="h-12 w-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 shadow-inner">
+                  <Smartphone className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-2xl font-headline font-black text-slate-900">{t.whatsappConfig}</CardTitle>
+              </div>
+              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Número oficial para soporte y consultas</CardDescription>
+            </CardHeader>
+            <CardContent className="p-10 space-y-6">
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.whatsappNumberLabel}</Label>
+                <Input 
+                  placeholder="50588888888" 
+                  defaultValue={getVal('site-whatsapp')}
+                  onBlur={(e) => handleSaveValue('site-whatsapp', e.target.value)}
+                  className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-lg font-mono font-bold"
+                />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1 italic">Este número se usará para el botón flotante en la web.</p>
+              </div>
+            </CardContent>
+          </Card>
 
-            return (
-              <ImageEditorCard 
-                key={img.id}
-                id={img.id}
-                description={img.description}
-                defaultUrl={currentUrl}
-                defaultHint={currentHint}
-                onSave={handleSave}
-                isSaving={savingId === img.id}
-                t={t}
-              />
-            );
-          })}
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden">
+            <CardHeader className="p-10">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
+                  <Star className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-2xl font-headline font-black text-white">{t.socialLinks}</CardTitle>
+              </div>
+              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-500">Enlaces a tus perfiles oficiales</CardDescription>
+            </CardHeader>
+            <CardContent className="p-10 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Facebook className="h-3 w-3" /> {t.facebook}</Label>
+                  <Input 
+                    placeholder="https://facebook.com/tu-pagina" 
+                    defaultValue={getVal('social-facebook')}
+                    onBlur={(e) => handleSaveValue('social-facebook', e.target.value)}
+                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Instagram className="h-3 w-3" /> {t.instagram}</Label>
+                  <Input 
+                    placeholder="https://instagram.com/tu-perfil" 
+                    defaultValue={getVal('social-instagram')}
+                    onBlur={(e) => handleSaveValue('social-instagram', e.target.value)}
+                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Music2 className="h-3 w-3" /> {t.tiktok}</Label>
+                  <Input 
+                    placeholder="https://tiktok.com/@tu-cuenta" 
+                    defaultValue={getVal('social-tiktok')}
+                    onBlur={(e) => handleSaveValue('social-tiktok', e.target.value)}
+                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* IMÁGENES DEL SITIO */}
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="h-1 w-12 bg-primary rounded-full" />
+            <h2 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Galería de Medios</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {images.map((img) => {
+              const override = overrides?.find(o => o.id === img.id);
+              const currentUrl = (override?.imageUrl || img.imageUrl || "").trim();
+              const currentHint = (override?.imageHint || img.imageHint || "").trim();
+
+              return (
+                <ImageEditorCard 
+                  key={img.id}
+                  id={img.id}
+                  description={img.description}
+                  defaultUrl={currentUrl}
+                  defaultHint={currentHint}
+                  onSave={handleSave}
+                  isSaving={savingId === img.id}
+                  t={t}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </DashboardShell>
@@ -106,8 +204,8 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800000) { // Limit to ~800KB for Firestore documents
-        alert("La imagen es demasiado grande. Por favor sube una imagen de menos de 800KB.");
+      if (file.size > 800000) {
+        alert("La imagen es demasiado grande. Máximo 800KB.");
         return;
       }
       const reader = new FileReader();
@@ -119,8 +217,8 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   };
 
   return (
-    <Card className={cn("border-none shadow-sm overflow-hidden flex flex-col transition-all hover:shadow-md", isLogo && "ring-2 ring-primary/20")}>
-      <div className={cn("relative h-48 w-full bg-slate-100 flex items-center justify-center overflow-hidden", isLogo && "p-8")}>
+    <Card className={cn("border-none shadow-xl rounded-[2.5rem] overflow-hidden flex flex-col transition-all hover:shadow-2xl group bg-white ring-1 ring-slate-100", isLogo && "ring-2 ring-primary/20")}>
+      <div className={cn("relative h-56 w-full bg-slate-50 flex items-center justify-center overflow-hidden", isLogo && "p-10")}>
         {hasValidUrl ? (
           <Image 
             src={displayUrl} 
@@ -128,39 +226,38 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
             fill={!isLogo}
             width={isLogo ? 180 : undefined}
             height={isLogo ? 180 : undefined}
-            className={cn("transition-transform duration-500 hover:scale-105", isLogo ? "object-contain" : "object-cover")}
+            className={cn("transition-transform duration-1000 group-hover:scale-110", isLogo ? "object-contain" : "object-cover")}
             unoptimized={true}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground opacity-30">
-            <ImageIcon className="h-12 w-12 mb-2" />
-            <span className="text-xs font-bold uppercase tracking-widest">Sin Imagen</span>
+          <div className="flex flex-col items-center justify-center text-slate-300">
+            <ImageIcon className="h-16 w-16 mb-2 opacity-20" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Sin Multimedia</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
-           <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} className="font-bold">
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 gap-3 backdrop-blur-sm">
+           <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} className="font-black text-[10px] uppercase tracking-widest rounded-xl h-12 px-6">
              <Upload className="h-4 w-4 mr-2" /> {t.updateImage}
            </Button>
            {hasValidUrl && (
-             <Button variant="destructive" size="sm" onClick={() => setUrl("")} className="font-bold">
-               <Trash2 className="h-4 w-4" />
+             <Button variant="destructive" size="icon" onClick={() => setUrl("")} className="h-12 w-12 rounded-xl">
+               <Trash2 className="h-5 w-5" />
              </Button>
            )}
         </div>
         {isLogo && (
-          <div className="absolute top-4 right-4 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-            <Star className="h-2 w-2" /> Marca Principal
+          <div className="absolute top-6 right-6 bg-primary text-white text-[9px] font-black px-4 py-1.5 rounded-full flex items-center gap-2 shadow-2xl uppercase tracking-widest">
+            <Star className="h-3 w-3 fill-white" /> Branding
           </div>
         )}
       </div>
-      <CardHeader>
-        <CardTitle className="text-lg font-headline flex items-center gap-2">
+      <CardHeader className="px-8 pt-8 pb-4">
+        <CardTitle className="text-lg font-headline font-black text-slate-900 group-hover:text-primary transition-colors">
           {description}
-          {isLogo && <span className="text-primary font-bold">(LOGO)</span>}
         </CardTitle>
-        <CardDescription className="font-mono text-[10px] uppercase">ID: {id}</CardDescription>
+        <CardDescription className="font-mono text-[9px] uppercase font-bold text-slate-400">ID: {id}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 flex-1">
+      <CardContent className="px-8 pb-8 space-y-6 flex-1">
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -169,43 +266,35 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
           className="hidden" 
         />
         
-        <div className="space-y-2">
-          <Label className="text-xs font-bold">{t.imageUrl}</Label>
+        <div className="space-y-3">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{t.imageUrl}</Label>
           <div className="flex gap-2">
             <Input 
-              value={url.startsWith('data:') ? 'Imagen subida localmente' : url} 
+              value={url.startsWith('data:') ? 'Imagen cargada localmente' : url} 
               onChange={(e) => setUrl(e.target.value)} 
-              placeholder="URL de la imagen o sube un archivo"
-              className="text-xs bg-slate-50 flex-1"
+              placeholder="URL o sube un archivo"
+              className="text-xs bg-slate-50 border-none ring-1 ring-slate-100 rounded-xl h-12 font-medium"
               disabled={url.startsWith('data:')}
             />
-            <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} title="Subir archivo">
-              <Upload className="h-4 w-4" />
-            </Button>
           </div>
-          {url.startsWith('data:') && (
-            <p className="text-[10px] text-green-600 font-bold flex items-center gap-1">
-              <Star className="h-2 w-2" /> Imagen cargada desde tu dispositivo
-            </p>
-          )}
         </div>
         
-        <div className="space-y-2">
-          <Label className="text-xs font-bold flex items-center gap-2">
+        <div className="space-y-3">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
             <Wand2 className="h-3 w-3 text-primary" /> {t.imageHint}
           </Label>
           <Input 
             value={hint} 
             onChange={(e) => setHint(e.target.value)} 
-            placeholder="marketing analysis"
-            className="text-xs bg-slate-50"
+            placeholder="Ej: marketing professional"
+            className="text-xs bg-slate-50 border-none ring-1 ring-slate-100 rounded-xl h-12 font-medium"
           />
         </div>
       </CardContent>
-      <CardFooter className="border-t pt-4 bg-muted/20">
+      <CardFooter className="px-8 pb-8">
         <Button 
           onClick={() => onSave(id, url, hint)} 
-          className="w-full bg-primary font-bold shadow-lg h-11"
+          className="w-full bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl h-14 shadow-xl shadow-primary/20"
           disabled={isSaving}
         >
           {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
