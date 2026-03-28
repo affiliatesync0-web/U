@@ -167,6 +167,10 @@ export const translations = {
     salesLinkCopied: "Direct sales link copied!",
     affiliateGmailList: "Affiliate Gmail List",
     affiliateContacts: "Affiliate Contacts",
+    resetSystem: "Reset Sales System",
+    resetSystemDesc: "Delete all sales history and reset all affiliate balances to zero.",
+    confirmResetTitle: "Dangerous Action: Reset Sales?",
+    confirmResetDesc: "This will permanently delete ALL recorded sales and set every affiliate's balance back to $0.00. This action is IRREVERSIBLE.",
   },
   es: {
     brand: "Sync Connect",
@@ -335,5 +339,9 @@ export const translations = {
     salesLinkCopied: "¡Link de venta directa copiado!",
     affiliateGmailList: "Lista de Gmails",
     affiliateContacts: "Contactos de Afiliados",
+    resetSystem: "Reiniciar Sistema de Ventas",
+    resetSystemDesc: "Elimina todo el historial de ventas y resetea los saldos de los afiliados a cero.",
+    confirmResetTitle: "¿Reiniciar Ventas y Saldos?",
+    confirmResetDesc: "Esta acción eliminará PERMANENTEMENTE todas las ventas registradas y pondrá el saldo de todos los afiliados en $0.00. Esta acción NO se puede deshacer.",
   }
 };

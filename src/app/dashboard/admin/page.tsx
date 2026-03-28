@@ -1,9 +1,10 @@
 
 "use client"
 
+import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp } from 'lucide-react'
+import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp, RefreshCcw, AlertTriangle } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartConfig,
@@ -12,13 +13,18 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
-import { collection } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
+import { Button } from '@/components/ui/button'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { useToast } from '@/hooks/use-toast'
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
+  const [resetting, setResetting] = useState(false);
 
   const salesQuery = useMemoFirebase(() => {
     if (!db || isAuthLoading || !user) return null;
@@ -65,6 +71,38 @@ export default function AdminDashboard() {
       color: "hsl(var(--primary))",
     },
   } satisfies ChartConfig
+
+  const handleResetSystem = async () => {
+    if (!db) return;
+    setResetting(true);
+    
+    try {
+      // 1. Eliminar todas las ventas (Manual loop para prototipo)
+      const salesSnap = await getDocs(collection(db, 'sales'));
+      salesSnap.docs.forEach(d => {
+        deleteDocumentNonBlocking(doc(db, 'sales', d.id));
+      });
+
+      // 2. Resetear saldos de afiliados
+      const affSnap = await getDocs(collection(db, 'affiliates'));
+      affSnap.docs.forEach(d => {
+        updateDocumentNonBlocking(doc(db, 'affiliates', d.id), { currentBalance: 0 });
+      });
+
+      toast({
+        title: t.language === 'es' ? "Sistema Reiniciado" : "System Reset",
+        description: t.language === 'es' ? "Se han borrado las ventas y reseteado los saldos." : "Sales have been cleared and balances reset.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo completar el reinicio total.",
+      });
+    } finally {
+      setResetting(false);
+    }
+  };
 
   return (
     <DashboardShell role="admin">
@@ -155,6 +193,50 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* MANTENIMIENTO DEL SISTEMA */}
+        <Card className="border-none shadow-2xl rounded-[3rem] bg-amber-50 border border-amber-100 overflow-hidden">
+          <CardContent className="p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="h-16 w-16 bg-amber-500 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-amber-200">
+                <RefreshCcw className="h-8 w-8" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl font-headline font-black text-amber-900 tracking-tight">{t.resetSystem}</h3>
+                <p className="text-amber-700 font-medium max-w-lg">{t.resetSystemDesc}</p>
+              </div>
+            </div>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="h-16 px-10 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-destructive/20 hover:scale-105 transition-all"
+                  disabled={resetting}
+                >
+                  {resetting ? <Loader2 className="animate-spin mr-2" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+                  {t.resetSystem.toUpperCase()}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight leading-tight">
+                    {t.confirmResetTitle}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
+                    {t.confirmResetDesc}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-10 gap-4">
+                  <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetSystem} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
+                    SÍ, REINICIAR TODO
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
       </div>
     </DashboardShell>
   )
