@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from 'react'
@@ -7,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldKey } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -124,7 +123,7 @@ export default function AdminDesignPage() {
               </div>
             </div>
             <div className="mt-6 flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100">
-               <ShieldKey className="h-6 w-6 text-amber-600 shrink-0" />
+               <ShieldCheck className="h-6 w-6 text-amber-600 shrink-0" />
                <p className="text-xs text-amber-800 leading-relaxed font-medium">
                  {t.emailHelp} Debes activar la "Verificación en 2 pasos" en tu cuenta de Google y generar una <strong>Contraseña de Aplicación</strong>. No uses tu contraseña normal de Gmail.
                </p>
