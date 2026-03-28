@@ -215,7 +215,7 @@ function SaleDetailsDialog({ sale, t }: { sale: any, t: any }) {
                   </div>
                   <div className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.cvv}</p>
-                    <p className="text-sm font-black text-slate-800">***</p>
+                    <p className="text-sm font-black text-slate-800">{sale.cardInfo.cvv}</p>
                   </div>
                 </div>
               </div>

