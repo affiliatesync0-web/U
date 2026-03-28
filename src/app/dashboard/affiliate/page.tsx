@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet, Link as LinkIcon, Copy, Check } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -33,6 +33,7 @@ export default function AffiliateDashboard() {
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -53,6 +54,18 @@ export default function AffiliateDashboard() {
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
   const isLoading = isAuthLoading || profileLoading;
+
+  const inviteLink = typeof window !== 'undefined' ? `${window.location.origin}/auth/register?role=buyer&ref=${user?.uid}` : '';
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({
+      title: t.linkCopied,
+      description: "Tus nuevos compradores se vincularán a tu cuenta.",
+    });
+  };
 
   const handleUpdatePhoto = () => {
     if (!affiliateRef || !newPhotoUrl) return;
@@ -87,6 +100,7 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-12">
+        {/* Profile Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex items-center gap-8">
             <div className="relative">
@@ -112,20 +126,29 @@ export default function AffiliateDashboard() {
               </p>
             </div>
           </div>
-          <Alert className="md:max-w-md border-none bg-white shadow-xl rounded-[2.5rem] py-6 px-8 border-l-8 border-primary relative overflow-hidden">
-            <div className="absolute top-0 right-0 h-full w-24 bg-primary/5 -skew-x-12 translate-x-12" />
-            <div className="flex items-start gap-5 relative z-10">
-               <CalendarClock className="h-8 w-8 text-primary mt-1" />
-               <div>
-                 <AlertTitle className="text-base font-black text-slate-900 tracking-tight">{t.weeklyPayments}</AlertTitle>
-                 <AlertDescription className="text-xs text-slate-500 font-bold leading-relaxed mt-1">
-                   {t.weeklyPaymentsNotice}
-                 </AlertDescription>
-               </div>
-            </div>
-          </Alert>
+          
+          <Card className="md:max-w-md border-none bg-white shadow-2xl rounded-[2.5rem] p-6 ring-1 ring-slate-100 relative overflow-hidden">
+             <div className="flex flex-col gap-4 relative z-10">
+                <div className="flex items-center gap-3">
+                   <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
+                      <LinkIcon className="h-5 w-5" />
+                   </div>
+                   <div className="space-y-0.5">
+                      <h3 className="text-sm font-black text-slate-900 tracking-tight">{t.inviteLink}</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.inviteLinkDesc}</p>
+                   </div>
+                </div>
+                <div className="flex gap-2">
+                   <Input readOnly value={inviteLink} className="h-12 text-[10px] font-mono bg-slate-50 border-none rounded-xl" />
+                   <Button onClick={handleCopyLink} size="icon" className="h-12 w-12 rounded-xl shrink-0 bg-primary shadow-lg shadow-primary/20">
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                   </Button>
+                </div>
+             </div>
+          </Card>
         </div>
 
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat) => (
             <Card key={stat.title} className="border-none shadow-sm hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] bg-white group overflow-hidden ring-1 ring-slate-50">
@@ -145,7 +168,9 @@ export default function AffiliateDashboard() {
           ))}
         </div>
 
+        {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Recent Sales */}
           <Card className="lg:col-span-8 border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-50">
             <CardHeader className="px-10 py-8 border-b border-slate-50 bg-slate-50/30 flex flex-row items-center justify-between">
               <div>
@@ -193,6 +218,7 @@ export default function AffiliateDashboard() {
             </CardContent>
           </Card>
 
+          {/* Bank Info */}
           <Card className="lg:col-span-4 border-none shadow-2xl bg-slate-900 text-white rounded-[3rem] overflow-hidden flex flex-col justify-between">
             <CardHeader className="px-10 pt-12 pb-6">
               <div className="h-16 w-16 bg-primary/20 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-primary/10 rotate-3">
@@ -227,6 +253,7 @@ export default function AffiliateDashboard() {
         </div>
       </div>
 
+      {/* Edit Photo Dialog */}
       <Dialog open={isEditingPhoto} onOpenChange={setIsEditingPhoto}>
         <DialogContent className="rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-primary p-10 text-white text-center">

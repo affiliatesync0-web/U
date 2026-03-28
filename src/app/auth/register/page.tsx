@@ -1,8 +1,8 @@
 
 "use client"
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,8 +22,9 @@ import { getGoogleDriveDirectLink, cn } from '@/lib/utils'
 
 type UserRole = 'affiliate' | 'buyer'
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { t } = useLanguage()
   const auth = useAuth()
@@ -32,6 +33,15 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   
+  const referralId = searchParams.get('ref')
+  const initialRole = searchParams.get('role') as UserRole
+
+  useEffect(() => {
+    if (initialRole === 'buyer' || referralId) {
+      setRole('buyer')
+    }
+  }, [initialRole, referralId])
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -86,6 +96,7 @@ export default function RegisterPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
+          referredBy: referralId || null,
           registeredAt: new Date().toISOString()
         }
         const buyerRef = doc(db, 'buyers', user.uid)
@@ -135,73 +146,81 @@ export default function RegisterPage() {
         <h1 className="text-4xl md:text-5xl font-headline font-black text-slate-900 tracking-tight text-center">
           Crea tu cuenta en <span className="text-primary">Sync Connect</span>
         </h1>
+        {referralId && (
+          <div className="mt-4 px-6 py-2 bg-primary/10 rounded-full border border-primary/20 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Invitación Especial Activada</span>
+          </div>
+        )}
         <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-4">
           Únete a la nueva era del marketing digital
         </p>
       </div>
 
       {/* Role Selection - Hotmart Style */}
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <button 
-          onClick={() => setRole('buyer')}
-          className={cn(
-            "relative group overflow-hidden p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl hover:shadow-primary/10",
-            role === 'buyer' 
-              ? "bg-white border-primary scale-[1.02] ring-8 ring-primary/5" 
-              : "bg-white/50 border-white hover:border-slate-200 opacity-60 hover:opacity-100"
-          )}
-        >
-          <div className={cn(
-            "h-16 w-16 rounded-2xl flex items-center justify-center mb-6 transition-colors",
-            role === 'buyer' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
-          )}>
-            <ShoppingBag className="h-8 w-8" />
-          </div>
-          <h3 className="font-headline font-black text-2xl text-slate-900 leading-tight">
-            {t.iWantToBuy}
-          </h3>
-          <p className="text-sm font-medium text-slate-500 mt-2">
-            Accede a los mejores productos y servicios digitales del mercado.
-          </p>
-          <div className={cn(
-            "mt-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest",
-            role === 'buyer' ? "text-primary" : "text-slate-400"
-          )}>
-            {t.joinAs} Comprador <ChevronRight className="h-3 w-3" />
-          </div>
-          {role === 'buyer' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
-        </button>
+      {!referralId && (
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <button 
+            onClick={() => setRole('buyer')}
+            className={cn(
+              "relative group overflow-hidden p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl hover:shadow-primary/10",
+              role === 'buyer' 
+                ? "bg-white border-primary scale-[1.02] ring-8 ring-primary/5" 
+                : "bg-white/50 border-white hover:border-slate-200 opacity-60 hover:opacity-100"
+            )}
+          >
+            <div className={cn(
+              "h-16 w-16 rounded-2xl flex items-center justify-center mb-6 transition-colors",
+              role === 'buyer' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+            )}>
+              <ShoppingBag className="h-8 w-8" />
+            </div>
+            <h3 className="font-headline font-black text-2xl text-slate-900 leading-tight">
+              {t.iWantToBuy}
+            </h3>
+            <p className="text-sm font-medium text-slate-500 mt-2">
+              Accede a los mejores productos y servicios digitales del mercado.
+            </p>
+            <div className={cn(
+              "mt-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest",
+              role === 'buyer' ? "text-primary" : "text-slate-400"
+            )}>
+              {t.joinAs} Comprador <ChevronRight className="h-3 w-3" />
+            </div>
+            {role === 'buyer' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
+          </button>
 
-        <button 
-          onClick={() => setRole('affiliate')}
-          className={cn(
-            "relative group overflow-hidden p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl hover:shadow-primary/10",
-            role === 'affiliate' 
-              ? "bg-white border-primary scale-[1.02] ring-8 ring-primary/5" 
-              : "bg-white/50 border-white hover:border-slate-200 opacity-60 hover:opacity-100"
-          )}
-        >
-          <div className={cn(
-            "h-16 w-16 rounded-2xl flex items-center justify-center mb-6 transition-colors",
-            role === 'affiliate' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
-          )}>
-            <Target className="h-8 w-8" />
-          </div>
-          <h3 className="font-headline font-black text-2xl text-slate-900 leading-tight">
-            {t.iWantToSell}
-          </h3>
-          <p className="text-sm font-medium text-slate-500 mt-2">
-            Promociona productos ganadores y escala tus comisiones semanales.
-          </p>
-          <div className={cn(
-            "mt-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest",
-            role === 'affiliate' ? "text-primary" : "text-slate-400"
-          )}>
-            {t.joinAs} Afiliado <ChevronRight className="h-3 w-3" />
-          </div>
-          {role === 'affiliate' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
-        </button>
-      </div>
+          <button 
+            onClick={() => setRole('affiliate')}
+            className={cn(
+              "relative group overflow-hidden p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl hover:shadow-primary/10",
+              role === 'affiliate' 
+                ? "bg-white border-primary scale-[1.02] ring-8 ring-primary/5" 
+                : "bg-white/50 border-white hover:border-slate-200 opacity-60 hover:opacity-100"
+            )}
+          >
+            <div className={cn(
+              "h-16 w-16 rounded-2xl flex items-center justify-center mb-6 transition-colors",
+              role === 'affiliate' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+            )}>
+              <Target className="h-8 w-8" />
+            </div>
+            <h3 className="font-headline font-black text-2xl text-slate-900 leading-tight">
+              {t.iWantToSell}
+            </h3>
+            <p className="text-sm font-medium text-slate-500 mt-2">
+              Promociona productos ganadores y escala tus comisiones semanales.
+            </p>
+            <div className={cn(
+              "mt-6 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest",
+              role === 'affiliate' ? "text-primary" : "text-slate-400"
+            )}>
+              {t.joinAs} Afiliado <ChevronRight className="h-3 w-3" />
+            </div>
+            {role === 'affiliate' && <div className="absolute top-0 right-0 h-24 w-24 bg-primary/5 -skew-x-12 translate-x-12 -translate-y-8" />}
+          </button>
+        </div>
+      )}
 
       {/* Registration Form */}
       <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[3.5rem] overflow-hidden bg-white animate-in zoom-in-95 duration-500">
@@ -330,7 +349,7 @@ export default function RegisterPage() {
               className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[1.5rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95" 
               disabled={loading}
             >
-              {loading ? "PROCESANDO..." : "EMPEZAR AHORA"}
+              {loading ? "PROCESANDO..." : "EMPEATAR AHORA"}
             </Button>
           </form>
         </CardContent>
@@ -357,5 +376,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Sparkles className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <RegisterContent />
+    </Suspense>
   )
 }

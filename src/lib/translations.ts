@@ -152,6 +152,10 @@ export const translations = {
     buyNow: "Buy Now",
     buyerDashboard: "Buyer Dashboard",
     browseMarketplace: "Browse Marketplace",
+    inviteLink: "Recruitment Link",
+    copyLink: "Copy Link",
+    inviteLinkDesc: "Use this link to invite new customers. They will be automatically linked to your account.",
+    linkCopied: "Link copied to clipboard",
   },
   es: {
     brand: "Sync Connect",
@@ -305,5 +309,9 @@ export const translations = {
     buyNow: "Comprar Ahora",
     buyerDashboard: "Panel del Comprador",
     browseMarketplace: "Ver Catálogo",
+    inviteLink: "Link de Divulgación",
+    copyLink: "Copiar Link",
+    inviteLinkDesc: "Usa este enlace para invitar a nuevos clientes. Se vincularán automáticamente a tu cuenta.",
+    linkCopied: "Enlace copiado al portapapeles",
   }
 };

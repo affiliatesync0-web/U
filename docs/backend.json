@@ -198,6 +198,10 @@
           "description": "The email address.",
           "format": "email"
         },
+        "referredBy": {
+          "type": "string",
+          "description": "The ID of the affiliate who invited this buyer."
+        },
         "registeredAt": {
           "type": "string",
           "description": "Recording timestamp.",
