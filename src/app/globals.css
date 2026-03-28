@@ -74,3 +74,15 @@
     @apply font-headline font-black;
   }
 }
+
+/* Ocultar elementos de desarrollo del framework */
+nextjs-portal, 
+#-nextjs-build-indicator, 
+.nextjs-static-indicator, 
+[data-nextjs-toast], 
+[data-nextjs-dialog-overlay],
+[data-nextjs-scroll-focus-boundary] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

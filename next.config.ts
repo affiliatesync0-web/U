@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  devIndicators: {
+    appIsrStatus: false,
+    buildActivity: false,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'placehold.co' },
