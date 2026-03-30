@@ -20,6 +20,8 @@ import {
   Flame,
   ShoppingBasket,
   Mail,
+  Clock,
+  ShieldCheck,
 } from "lucide-react"
 import {
   Sidebar,
@@ -43,6 +45,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -110,6 +113,35 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
+  }
+
+  // Pantalla de "Esperando Aprobación" para afiliados
+  if (role === 'affiliate' && profile?.status === 'Pending') {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-8 animate-in zoom-in-95 duration-500">
+          <div className="relative inline-block">
+            <div className="h-24 w-24 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary shadow-inner">
+              <Clock className="h-12 w-12 animate-pulse" />
+            </div>
+            <div className="absolute -top-2 -right-2 bg-amber-500 h-8 w-8 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              {t.waitingApprovalMsg}
+            </p>
+          </div>
+          <div className="pt-4">
+            <Button asChild variant="outline" className="h-12 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
+              <a href="/">{t.logout}</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
