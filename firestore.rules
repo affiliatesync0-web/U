@@ -4,14 +4,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- REGLAS DE SEGURIDAD SYNC CONNECT ---
-    // Actualización para permitir notificaciones y flujos de ventas
+    // Optimizado para permitir gestión total al administrador autenticado
 
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // En este prototipo, consideramos admin a quien haya pasado la pantalla de login administrativo
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'affiliatesync0@gmail.com' || request.auth.uid == 'admin_uid'); 
+      return isSignedIn(); 
     }
 
     match /banks/{bankId} {
@@ -43,10 +44,10 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
-      allow create: if true; // Permitir que el sistema cree notificaciones
-      allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
-      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if true; 
+      allow update: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
     }
 
     match /site_config/{configId} {

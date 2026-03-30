@@ -49,7 +49,6 @@ export default function AdminAffiliatesPage() {
     const affRef = doc(db, 'affiliates', affId);
     updateDocumentNonBlocking(affRef, { status: 'Active' });
     
-    // Notificación por Email de cuenta activada
     try {
       await sendEmail({
         to: affEmail,
@@ -91,7 +90,10 @@ Entra aquí: ${window.location.origin}/auth/login`
   const handleDeleteAffiliate = (affId: string) => {
     const affRef = doc(db, 'affiliates', affId);
     deleteDocumentNonBlocking(affRef);
-    toast({ title: "Afiliado eliminado", description: "Los datos han sido borrados permanentemente." });
+    toast({ 
+      title: "Afiliado eliminado", 
+      description: "Los datos han sido borrados permanentemente del sistema.",
+    });
   };
 
   return (
@@ -151,7 +153,6 @@ Entra aquí: ${window.location.origin}/auth/login`
                         </TableCell>
                         <TableCell className="text-right">
                            <div className="flex justify-end gap-2">
-                             {/* Botón de Evaluación (Examen) */}
                              <AffiliateExamDialog 
                                 affiliate={aff} 
                                 t={t} 
@@ -191,7 +192,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteAffiliate(aff.id)} className="bg-destructive text-white">ELIMINAR</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDeleteAffiliate(aff.id)} className="bg-destructive text-white hover:bg-destructive/90">ELIMINAR DEFINITIVAMENTE</AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                              </AlertDialog>
