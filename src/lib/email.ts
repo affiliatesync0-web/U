@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -7,23 +6,22 @@ import { doc, getDoc } from 'firebase/firestore';
 
 /**
  * Servicio de envío de correos electrónicos vía Gmail SMTP.
- * Primero intenta obtener las credenciales de Firestore (configuradas por el admin).
- * Si no existen, cae de vuelta a las variables de entorno.
+ * Optimizado para funcionar en el servidor recuperando credenciales de Firestore.
  */
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
   try {
     const { firestore } = initializeFirebase();
     
-    // Obtener configuración dinámica desde Firestore
+    // Obtener configuración dinámica desde Firestore de forma segura en el servidor
     const userDoc = await getDoc(doc(firestore, 'site_config', 'gmail-user'));
     const passDoc = await getDoc(doc(firestore, 'site_config', 'gmail-pass'));
 
-    const user = userDoc.exists() ? userDoc.data().value : (process.env.GMAIL_USER || 'tu-gmail@gmail.com');
-    const pass = passDoc.exists() ? passDoc.data().value : (process.env.GMAIL_PASS || 'tu-password-de-aplicacion');
+    const user = userDoc.exists() ? userDoc.data().value : (process.env.GMAIL_USER || '');
+    const pass = passDoc.exists() ? passDoc.data().value : (process.env.GMAIL_PASS || '');
 
-    if (!user || user.includes('tu-gmail')) {
-      console.warn('Sync Connect: Gmail no está configurado correctamente en el panel administrativo.');
-      return { success: false, error: 'Gmail not configured' };
+    if (!user || !pass || user.includes('tu-gmail')) {
+      console.warn('Sync Connect: Credenciales de Gmail no encontradas o configuradas por defecto.');
+      return { success: false, error: 'Gmail credentials not configured in Admin Panel' };
     }
 
     // Configuración del transporte para Gmail
@@ -36,7 +34,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     });
 
     const info = await transporter.sendMail({
-      from: `"Sync Connect Notifications" <${user}>`,
+      from: `"Sync Connect" <${user}>`,
       to,
       subject,
       text,

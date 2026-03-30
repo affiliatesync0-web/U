@@ -1,5 +1,4 @@
-'use client';
-
+// Eliminamos 'use client' para que sea compatible con Server Actions y API Routes
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';

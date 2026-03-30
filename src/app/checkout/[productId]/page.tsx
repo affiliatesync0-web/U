@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
 import { doc, collection, increment } from 'firebase/firestore'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -124,10 +124,8 @@ Tu acceso será habilitado una vez que el administrador confirme la transferenci
         })
 
         const affiliateRef = doc(db, 'affiliates', affiliateId)
-        import('@/firebase/non-blocking-updates').then(({ updateDocumentNonBlocking }) => {
-          updateDocumentNonBlocking(affiliateRef, {
-            currentBalance: increment(commissionEarned)
-          })
+        updateDocumentNonBlocking(affiliateRef, {
+          currentBalance: increment(commissionEarned)
         })
       }
 
