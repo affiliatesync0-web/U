@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -17,6 +16,7 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/aut
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
+import { sendEmail } from '@/lib/email'
 
 export default function AffiliateLoginPage() {
   const router = useRouter()
@@ -44,9 +44,20 @@ export default function AffiliateLoginPage() {
     
     try {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
-      const userId = cred.user.uid;
+      const user = cred.user;
 
-      const affiliateSnap = await getDoc(doc(db, 'affiliates', userId));
+      // Envío de notificación de seguridad por inicio de sesión
+      if (user.email) {
+        sendEmail({
+          to: user.email,
+          subject: t.language === 'es' ? "Alerta de Seguridad: Inicio de Sesión" : "Security Alert: New Login",
+          text: t.language === 'es' 
+            ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, puedes ignorar este mensaje. Si no reconoces esta actividad, te recomendamos cambiar tu contraseña inmediatamente.`
+            : `Hello, we are informing you that a new login was detected on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, you can ignore this message. If you do not recognize this activity, we recommend changing your password immediately.`
+        });
+      }
+
+      const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       
       toast({
         title: t.language === 'es' ? "¡Hola de nuevo!" : "Welcome back!",
@@ -60,10 +71,19 @@ export default function AffiliateLoginPage() {
       }
       
     } catch (error: any) {
+      console.error("Login Error:", error.code);
+      let errorMsg = t.language === 'es' ? "Tus credenciales no coinciden con nuestros registros." : "Your credentials don't match our records.";
+      
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMsg = t.language === 'es' ? "El correo o la contraseña son incorrectos." : "Email or password incorrect.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMsg = t.language === 'es' ? "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada temporalmente. Intenta más tarde." : "Too many failed attempts. Your account is temporarily locked. Try again later.";
+      }
+
       toast({
         variant: "destructive",
         title: "Error de Acceso",
-        description: t.language === 'es' ? "Tus credenciales no coinciden con nuestros registros." : "Your credentials don't match our records.",
+        description: errorMsg,
       })
     } finally {
       setLoading(false)
@@ -109,7 +129,6 @@ export default function AffiliateLoginPage() {
         description: `${errorMsg} (${error.code})`,
       })
     } finally {
-      // Bloqueamos reenvío por 3 segundos para evitar clics dobles
       setTimeout(() => setResetLoading(false), 3000);
     }
   }
