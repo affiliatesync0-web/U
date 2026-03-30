@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase'
-import { collection, query, where, doc, orderBy } from 'firebase/firestore'
+import { collection, query, where, doc } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 export default function BuyerDashboard() {
@@ -38,14 +38,19 @@ export default function BuyerDashboard() {
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
+    // Quitamos orderBy para evitar errores de índices al inicio
     return query(
       collection(db, 'notifications'), 
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
   }, [db, user]);
 
-  const { data: notifications, isLoading: notificationsLoading } = useCollection(notificationsQuery);
+  const { data: notificationsData, isLoading: notificationsLoading } = useCollection(notificationsQuery);
+
+  // Ordenar en memoria para evitar errores de Firebase Index
+  const notifications = notificationsData
+    ? [...notificationsData].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : null;
 
   if (isUserLoading || profileLoading) {
     return (
@@ -175,7 +180,7 @@ export default function BuyerDashboard() {
            <div className="space-y-1">
              <h4 className="font-black text-amber-900">¿Cómo comprar un nuevo producto?</h4>
              <p className="text-sm text-amber-800 leading-relaxed font-medium">
-               Ve al mercado de productos, elige el que te interese y realiza el depósito bancario a la cuenta indicada. Luego, contacta al afiliado para que registre tu compra con el número de referencia del voucher.
+               Ve al mercado de productos, elige el que te interese y realiza el depósito bancario a la cuenta indicada. Luego, contacta al asesor que te refirió para que valide tu voucher.
              </p>
            </div>
         </div>

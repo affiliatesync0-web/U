@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -46,22 +47,22 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const user = cred.user;
 
-      // Envío de notificación de seguridad por inicio de sesión
+      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (SE EJECUTA EN SEGUNDO PLANO)
       if (user.email) {
         sendEmail({
           to: user.email,
-          subject: t.language === 'es' ? "Alerta de Seguridad: Inicio de Sesión" : "Security Alert: New Login",
+          subject: t.language === 'es' ? "Notificación de Seguridad: Nuevo Inicio de Sesión" : "Security Alert: New Login Detected",
           text: t.language === 'es' 
-            ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, puedes ignorar este mensaje. Si no reconoces esta actividad, te recomendamos cambiar tu contraseña inmediatamente.`
-            : `Hello, we are informing you that a new login was detected on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, you can ignore this message. If you do not recognize this activity, we recommend changing your password immediately.`
+            ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, no es necesario que realices ninguna acción. Si no reconoces esta actividad, te recomendamos cambiar tu contraseña inmediatamente.`
+            : `Hello, we are informing you that a new login was detected on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, no action is needed. If you do not recognize this activity, we recommend changing your password immediately.`
         });
       }
 
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       
       toast({
-        title: t.language === 'es' ? "¡Hola de nuevo!" : "Welcome back!",
-        description: t.language === 'es' ? "Has iniciado sesión correctamente." : "Logged in successfully.",
+        title: t.language === 'es' ? "Acceso Correcto" : "Login Successful",
+        description: t.language === 'es' ? "Bienvenido a Sync Connect." : "Welcome to Sync Connect.",
       })
 
       if (affiliateSnap.exists()) {
@@ -72,12 +73,12 @@ export default function AffiliateLoginPage() {
       
     } catch (error: any) {
       console.error("Login Error:", error.code);
-      let errorMsg = t.language === 'es' ? "Tus credenciales no coinciden con nuestros registros." : "Your credentials don't match our records.";
+      let errorMsg = t.language === 'es' ? "No pudimos validar tus datos." : "We couldn't validate your data.";
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMsg = t.language === 'es' ? "El correo o la contraseña son incorrectos." : "Email or password incorrect.";
       } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = t.language === 'es' ? "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada temporalmente. Intenta más tarde." : "Too many failed attempts. Your account is temporarily locked. Try again later.";
+        errorMsg = t.language === 'es' ? "Cuenta bloqueada temporalmente por seguridad. Intenta más tarde." : "Account temporarily locked for security. Try again later.";
       }
 
       toast({
@@ -107,29 +108,22 @@ export default function AffiliateLoginPage() {
     try {
       await sendPasswordResetEmail(auth, cleanEmail)
       toast({
-        title: "Enlace enviado",
+        title: "Correo Enviado",
         description: t.language === 'es' 
-          ? `Revisa ${cleanEmail}. Usa el mensaje más reciente de tu bandeja o SPAM.` 
-          : `Check ${cleanEmail}. Use the most recent message in your inbox or SPAM.`,
+          ? `Revisa tu bandeja de entrada o SPAM en ${cleanEmail}.` 
+          : `Check your inbox or SPAM folder at ${cleanEmail}.`,
       })
     } catch (error: any) {
-      let errorMsg = t.language === 'es' ? "No se pudo enviar el correo." : "Could not send email.";
+      let errorMsg = t.language === 'es' ? "Error en el envío." : "Send failed.";
+      if (error.code === 'auth/user-not-found') errorMsg = "No existe cuenta con este correo.";
       
-      if (error.code === 'auth/user-not-found') {
-        errorMsg = "No existe ninguna cuenta con este correo.";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = "Demasiados intentos. Espera un minuto antes de reintentar.";
-      } else if (error.code === 'auth/internal-error') {
-        errorMsg = "Error en el servidor SMTP de Firebase. Revisa el puerto 465 en la consola.";
-      }
-
       toast({
         variant: "destructive",
         title: "Error de Recuperación",
         description: `${errorMsg} (${error.code})`,
       })
     } finally {
-      setTimeout(() => setResetLoading(false), 3000);
+      setTimeout(() => setResetLoading(false), 2000);
     }
   }
 
@@ -162,7 +156,7 @@ export default function AffiliateLoginPage() {
           <CardHeader className="text-center p-0 mb-10">
             <CardTitle className="text-4xl font-headline font-black text-slate-900">{t.login}</CardTitle>
             <CardDescription className="font-bold text-slate-400 mt-2 uppercase text-[10px] tracking-widest">
-              Entra a tu universo de marketing
+              Gestiona tu ecosistema de ventas
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -174,7 +168,7 @@ export default function AffiliateLoginPage() {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com" 
+                  placeholder="ejemplo@gmail.com" 
                   required 
                   className="h-16 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-primary transition-all text-lg"
                 />
@@ -215,13 +209,13 @@ export default function AffiliateLoginPage() {
                 className="w-full bg-primary hover:bg-primary/90 font-black text-xl py-8 rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all mt-6" 
                 disabled={loading}
               >
-                {loading ? (t.language === 'es' ? "Entrando..." : "Entering...") : t.login}
+                {loading ? (t.language === 'es' ? "Autenticando..." : "Validating...") : t.login}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="justify-center p-0 mt-10">
             <p className="text-sm font-bold text-slate-400">
-              {t.language === 'es' ? "¿Eres nuevo?" : "New here?"} <Link href="/auth/register" className="text-primary hover:underline font-black ml-1 uppercase tracking-widest text-[11px]">{t.getStarted}</Link>
+              {t.language === 'es' ? "¿No tienes cuenta?" : "No account yet?"} <Link href="/auth/register" className="text-primary hover:underline font-black ml-1 uppercase tracking-widest text-[11px]">{t.getStarted}</Link>
             </p>
           </CardFooter>
         </div>
