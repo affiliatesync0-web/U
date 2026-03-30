@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -7,23 +8,24 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Componente que escucha errores de permisos de Firestore a nivel global.
- * En lugar de lanzar una excepción que active la pantalla técnica de error,
- * muestra una notificación visual amigable (Toast).
+ * Proporciona detalles técnicos para facilitar el soporte.
  */
 export function FirebaseErrorListener() {
   const { toast } = useToast();
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
-      // Mostramos el error de forma controlada sin romper la interfaz
+      // Extraemos información útil del error
+      const path = error.request?.path || "desconocida";
+      const method = error.request?.method || "operación";
+
       toast({
         variant: "destructive",
         title: "Error de Permisos",
-        description: "No tienes autorización para realizar esta operación o los datos son inválidos.",
+        description: `No se pudo realizar la acción [${method}] en [${path}]. Verifica tu sesión.`,
       });
       
-      // Log interno para depuración si fuera necesario
-      console.warn("Firestore Access Denied:", error.request.path, error.request.method);
+      console.warn("Firestore Access Denied:", path, method);
     };
 
     errorEmitter.on('permission-error', handleError);

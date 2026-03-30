@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -71,46 +71,46 @@ export default function AffiliateLoginPage() {
   }
 
   const handleForgotPassword = async () => {
-    if (!email || !email.includes('@')) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       toast({
         variant: "destructive",
         title: "Email Requerido",
-        description: t.language === 'es' ? "Por favor, escribe un correo válido arriba para enviarte el enlace." : "Please enter a valid email to receive the link.",
+        description: t.language === 'es' ? "Escribe tu correo arriba para enviarte el enlace de recuperación." : "Enter your email above to receive the recovery link.",
       })
       return
     }
 
     setResetLoading(true)
-    const cleanEmail = email.trim().toLowerCase();
 
     try {
       await sendPasswordResetEmail(auth, cleanEmail)
       toast({
         title: "Enlace enviado",
         description: t.language === 'es' 
-          ? `Revisa tu correo ${cleanEmail}. USA EL ENLACE MÁS RECIENTE. Si no lo ves, revisa SPAM.` 
-          : `Check your email ${cleanEmail}. USE THE MOST RECENT LINK. Check SPAM if not found.`,
+          ? `Revisa ${cleanEmail}. Usa el mensaje más reciente de tu bandeja o SPAM.` 
+          : `Check ${cleanEmail}. Use the most recent message in your inbox or SPAM.`,
       })
     } catch (error: any) {
-      let errorMsg = "";
+      let errorMsg = t.language === 'es' ? "No se pudo enviar el correo." : "Could not send email.";
+      
       if (error.code === 'auth/user-not-found') {
-        errorMsg = "No existe cuenta con este correo.";
+        errorMsg = "No existe ninguna cuenta con este correo.";
       } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = "Demasiados intentos. Espera unos minutos.";
+        errorMsg = "Demasiados intentos. Espera un minuto antes de reintentar.";
       } else if (error.code === 'auth/internal-error') {
-        errorMsg = "Error en el servidor SMTP de Firebase. Revisa puerto 465 y contraseña en la consola.";
-      } else {
-        errorMsg = `Error (${error.code}). Contacta al administrador.`;
+        errorMsg = "Error en el servidor SMTP de Firebase. Revisa el puerto 465 en la consola.";
       }
 
       toast({
         variant: "destructive",
-        title: "Fallo en Recuperación",
-        description: errorMsg,
+        title: "Error de Recuperación",
+        description: `${errorMsg} (${error.code})`,
       })
     } finally {
-      // Pequeño delay para evitar spam del botón
-      setTimeout(() => setResetLoading(false), 2000);
+      // Bloqueamos reenvío por 3 segundos para evitar clics dobles
+      setTimeout(() => setResetLoading(false), 3000);
     }
   }
 
