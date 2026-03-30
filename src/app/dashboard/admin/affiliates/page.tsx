@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
+import { sendEmail } from '@/lib/email'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
@@ -44,10 +45,25 @@ export default function AdminAffiliatesPage() {
     }
   }
 
-  const handleApprove = (affId: string) => {
+  const handleApprove = async (affId: string, affEmail: string, affName: string) => {
     const affRef = doc(db, 'affiliates', affId);
     updateDocumentNonBlocking(affRef, { status: 'Active' });
-    toast({ title: "Afiliado Aprobado", description: "El afiliado ya tiene acceso completo a la red." });
+    
+    // Notificación por Email de cuenta activada
+    try {
+      await sendEmail({
+        to: affEmail,
+        subject: `¡Cuenta Activada! - Sync Connect`,
+        text: `¡Felicidades ${affName}! Tu solicitud de afiliado ha sido revisada y aprobada por nuestro equipo. 
+        
+Ya puedes acceder a tu panel administrativo para obtener tus links de divulgación, configurar tu bot de WhatsApp y empezar a generar comisiones.
+
+Entra aquí: ${window.location.origin}/auth/login`
+      });
+      toast({ title: "Afiliado Aprobado", description: `Se ha notificado a ${affName} por correo.` });
+    } catch (error) {
+      toast({ title: "Afiliado Aprobado", description: "La cuenta está activa, pero no se pudo enviar el correo de aviso." });
+    }
   };
 
   const handleReject = (affId: string) => {
@@ -136,11 +152,16 @@ export default function AdminAffiliatesPage() {
                         <TableCell className="text-right">
                            <div className="flex justify-end gap-2">
                              {/* Botón de Evaluación (Examen) */}
-                             <AffiliateExamDialog affiliate={aff} t={t} onApprove={() => handleApprove(aff.id)} onReject={() => handleReject(aff.id)} />
+                             <AffiliateExamDialog 
+                                affiliate={aff} 
+                                t={t} 
+                                onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} 
+                                onReject={() => handleReject(aff.id)} 
+                             />
                              
                              {aff.status === 'Pending' ? (
                                <>
-                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => handleApprove(aff.id)} title="Aprobar">
+                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => handleApprove(aff.id, aff.email, aff.firstName)} title="Aprobar">
                                    <CheckCircle2 className="h-4 w-4" />
                                  </Button>
                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600" onClick={() => handleReject(aff.id)} title="Rechazar">
