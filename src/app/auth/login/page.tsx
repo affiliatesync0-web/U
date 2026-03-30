@@ -93,20 +93,20 @@ export default function AffiliateLoginPage() {
       
       let errorMsg = "";
       
-      // Mapeo ultra-detallado para que el usuario sepa qué pasó
+      // Mapeo detallado de errores para diagnosticar el SMTP
       if (error.code === 'auth/user-not-found') {
-        errorMsg = "No existe ninguna cuenta con este correo.";
+        errorMsg = "No existe ninguna cuenta registrada con este correo.";
       } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = "Demasiados intentos. Espera unos minutos.";
+        errorMsg = "Demasiados intentos. Espera unos minutos antes de probar de nuevo.";
       } else if (error.code === 'auth/invalid-email') {
-        errorMsg = "El formato del correo no es válido.";
+        errorMsg = "El formato del correo no es válido. Revisa que no tenga espacios.";
       } else if (error.code === 'auth/internal-error') {
-        errorMsg = "Error SMTP en Firebase Console. Revisa tu usuario/contraseña de 16 letras y puerto 465.";
+        errorMsg = "Fallo de comunicación SMTP en Firebase. Revisa que en la consola pusiste puerto 465 y la contraseña de 16 letras sin espacios.";
       } else if (error.code === 'auth/network-request-failed') {
-        errorMsg = "Problema de conexión a internet.";
+        errorMsg = "Error de red. Revisa tu conexión a internet.";
       } else {
         // Mostrar el error técnico exacto si no está en el mapa
-        errorMsg = `Error (${error.code}): ${error.message}`;
+        errorMsg = `Error Técnico (${error.code}): ${error.message}`;
       }
 
       toast({
