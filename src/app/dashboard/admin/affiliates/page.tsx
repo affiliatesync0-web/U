@@ -88,11 +88,15 @@ Entra aquí: ${window.location.origin}/auth/login`
   };
 
   const handleDeleteAffiliate = (affId: string) => {
+    if (!db) return;
     const affRef = doc(db, 'affiliates', affId);
+    
+    // Ejecutamos el borrado. Si falla por permisos, el error se capturará globalmente.
     deleteDocumentNonBlocking(affRef);
+    
     toast({ 
-      title: "Afiliado eliminado", 
-      description: "Los datos han sido borrados permanentemente del sistema.",
+      title: "Solicitud de borrado", 
+      description: "Se ha procesado la eliminación del afiliado.",
     });
   };
 

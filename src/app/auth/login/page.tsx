@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -45,7 +46,6 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const userId = cred.user.uid;
 
-      // Verificar si es afiliado o comprador para redireccionar correctamente
       const affiliateSnap = await getDoc(doc(db, 'affiliates', userId));
       
       toast({
@@ -71,11 +71,11 @@ export default function AffiliateLoginPage() {
   }
 
   const handleForgotPassword = async () => {
-    if (!email) {
+    if (!email || !email.includes('@')) {
       toast({
         variant: "destructive",
         title: "Email Requerido",
-        description: t.language === 'es' ? "Por favor, escribe tu correo electrónico arriba para poder enviarte el enlace." : t.enterEmailFirst,
+        description: t.language === 'es' ? "Por favor, escribe un correo válido arriba para enviarte el enlace." : "Please enter a valid email to receive the link.",
       })
       return
     }
@@ -88,27 +88,19 @@ export default function AffiliateLoginPage() {
       toast({
         title: "Enlace enviado",
         description: t.language === 'es' 
-          ? `Revisa tu correo ${cleanEmail}. Usa solo el enlace más reciente y revisa la carpeta de SPAM si no lo ves.` 
-          : `Check your email ${cleanEmail}. Use only the most recent link and check SPAM if not found.`,
+          ? `Revisa tu correo ${cleanEmail}. USA EL ENLACE MÁS RECIENTE. Si no lo ves, revisa SPAM.` 
+          : `Check your email ${cleanEmail}. USE THE MOST RECENT LINK. Check SPAM if not found.`,
       })
     } catch (error: any) {
-      console.error("DEBUG: Reset Error Code:", error.code);
-      
       let errorMsg = "";
-      
-      // Mapeo detallado de errores para diagnosticar la configuración SMTP en la consola
       if (error.code === 'auth/user-not-found') {
-        errorMsg = "No existe ninguna cuenta registrada con este correo.";
+        errorMsg = "No existe cuenta con este correo.";
       } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = "Demasiados intentos. Espera unos minutos antes de probar de nuevo.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMsg = "El formato del correo no es válido. Revisa que no tenga espacios.";
+        errorMsg = "Demasiados intentos. Espera unos minutos.";
       } else if (error.code === 'auth/internal-error') {
-        errorMsg = "Error de comunicación con el servidor SMTP de Firebase. Revisa en la consola que el puerto sea 465 y la contraseña sea de 16 letras sin espacios.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMsg = "Error de red. Revisa tu conexión a internet.";
+        errorMsg = "Error en el servidor SMTP de Firebase. Revisa puerto 465 y contraseña en la consola.";
       } else {
-        errorMsg = `Error Técnico (${error.code}): Por favor contacta al administrador.`;
+        errorMsg = `Error (${error.code}). Contacta al administrador.`;
       }
 
       toast({
@@ -117,7 +109,8 @@ export default function AffiliateLoginPage() {
         description: errorMsg,
       })
     } finally {
-      setResetLoading(false)
+      // Pequeño delay para evitar spam del botón
+      setTimeout(() => setResetLoading(false), 2000);
     }
   }
 
