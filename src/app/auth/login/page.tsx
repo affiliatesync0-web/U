@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -74,7 +74,7 @@ export default function AffiliateLoginPage() {
       toast({
         variant: "destructive",
         title: "Email Requerido",
-        description: t.enterEmailFirst,
+        description: t.language === 'es' ? "Por favor, escribe tu correo electrónico arriba para poder enviarte el enlace." : t.enterEmailFirst,
       })
       return
     }
@@ -85,20 +85,27 @@ export default function AffiliateLoginPage() {
       toast({
         title: "Enlace enviado",
         description: t.language === 'es' 
-          ? `Revisa tu correo ${email} para restablecer tu contraseña. Si no lo ves, revisa SPAM.` 
+          ? `Revisa tu correo ${email} para restablecer tu contraseña. Si no lo ves, revisa la carpeta de SPAM.` 
           : `Check your email ${email} to reset your password. Check SPAM if not found.`,
       })
     } catch (error: any) {
-      console.error("Error al enviar reset:", error.code);
-      let errorMsg = t.language === 'es' ? "No pudimos enviar el correo. Verifica el email." : "Could not send reset email. Check your email.";
+      console.error("Error en Password Reset:", error.code, error.message);
+      
+      let errorMsg = t.language === 'es' 
+        ? "Hubo un error al intentar enviar el correo. Por favor, intenta de nuevo en unos minutos." 
+        : "There was an error sending the reset email. Please try again in a few minutes.";
       
       if (error.code === 'auth/user-not-found') {
-        errorMsg = t.language === 'es' ? "No existe una cuenta con este correo." : "No account found with this email.";
+        errorMsg = t.language === 'es' ? "No hemos encontrado ninguna cuenta con este correo." : "No account found with this email.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMsg = t.language === 'es' ? "Has intentado esto demasiadas veces. Por favor, espera un momento." : "Too many requests. Please wait a moment.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMsg = t.language === 'es' ? "El formato del correo electrónico no es válido." : "Invalid email format.";
       }
 
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error de Recuperación",
         description: errorMsg,
       })
     } finally {
@@ -158,7 +165,7 @@ export default function AffiliateLoginPage() {
                   <button 
                     type="button" 
                     onClick={handleForgotPassword}
-                    className="text-[10px] text-primary font-black uppercase tracking-widest hover:underline"
+                    className="text-[10px] text-primary font-black uppercase tracking-widest hover:underline flex items-center gap-1"
                     disabled={resetLoading}
                   >
                     {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
