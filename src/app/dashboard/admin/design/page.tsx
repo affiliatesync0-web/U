@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -72,12 +72,7 @@ export default function AdminDesignPage() {
   };
 
   const handleTestEmail = async () => {
-    const gmailUser = overrides?.find(o => o.id === 'gmail-user')?.value;
-    if (!gmailUser) {
-      toast({ variant: "destructive", title: "Configuración incompleta", description: "Ingresa primero tu correo de Gmail y asegúrate de que se haya guardado." });
-      return;
-    }
-
+    const gmailUser = overrides?.find(o => o.id === 'gmail-user')?.value || 'affiliatesync0@gmail.com';
     setTestLoading(true);
     try {
       const result = await testEmailConfig(gmailUser);
@@ -103,7 +98,14 @@ export default function AdminDesignPage() {
     )
   }
 
-  const getVal = (id: string) => overrides?.find(o => o.id === id)?.value || "";
+  const getVal = (id: string) => {
+    const found = overrides?.find(o => o.id === id)?.value;
+    if (found) return found;
+    // Valores predeterminados si no están en DB
+    if (id === 'gmail-user') return 'affiliatesync0@gmail.com';
+    if (id === 'gmail-pass') return 'wagrmuphptnevpin';
+    return "";
+  };
 
   return (
     <DashboardShell role="admin">
@@ -123,7 +125,7 @@ export default function AdminDesignPage() {
                 </div>
                 <div>
                   <CardTitle className="text-2xl font-headline font-black text-white">{t.emailConfig}</CardTitle>
-                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Envío de links y comprobantes reales</CardDescription>
+                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Configuración actual: affiliatesync0@gmail.com</CardDescription>
                 </div>
               </div>
               <Button 
@@ -137,7 +139,7 @@ export default function AdminDesignPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-10">
+          <CardContent className="p-10 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.gmailUser}</Label>
@@ -159,16 +161,37 @@ export default function AdminDesignPage() {
                 />
               </div>
             </div>
-            <div className="mt-6 flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100">
-               <ShieldCheck className="h-6 w-6 text-amber-600 shrink-0" />
-               <div className="space-y-1">
-                 <p className="text-xs text-amber-800 leading-relaxed font-bold">
-                   {t.emailHelp}
-                 </p>
-                 <p className="text-[10px] text-amber-700 leading-relaxed">
-                   Debes activar la "Verificación en 2 pasos" en tu cuenta de Google y generar una <strong>Contraseña de Aplicación</strong>. No uses tu contraseña normal de Gmail.
-                 </p>
-               </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100">
+                 <ShieldCheck className="h-6 w-6 text-amber-600 shrink-0" />
+                 <div className="space-y-1">
+                   <p className="text-xs text-amber-800 leading-relaxed font-bold">
+                     {t.emailHelp}
+                   </p>
+                   <p className="text-[10px] text-amber-700 leading-relaxed">
+                     Para bienvenida y ventas, usamos SMTP. Para <strong>Recuperación de Contraseña</strong>, Firebase requiere configuración manual.
+                   </p>
+                 </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-6 bg-blue-50 rounded-3xl border border-blue-100">
+                 <Info className="h-6 w-6 text-blue-600 shrink-0" />
+                 <div className="space-y-2">
+                   <p className="text-xs text-blue-800 leading-relaxed font-bold">
+                     Configuración de Recuperación de Contraseña
+                   </p>
+                   <p className="text-[10px] text-blue-700 leading-relaxed">
+                     Para que los correos de "Olvidé mi contraseña" salgan desde <strong>affiliatesync0@gmail.com</strong>, debes ir a tu consola de Firebase:
+                   </p>
+                   <ol className="text-[10px] text-blue-700 list-decimal ml-4 space-y-1">
+                     <li>Ve a <strong>Authentication</strong> → <strong>Templates</strong>.</li>
+                     <li>Selecciona <strong>Password Reset</strong>.</li>
+                     <li>Haz clic en el icono de lápiz y luego en <strong>"Configure SMTP server"</strong>.</li>
+                     <li>Usa el servidor: <code>smtp.gmail.com</code>, puerto <code>465</code>, y tus credenciales de aplicación.</li>
+                   </ol>
+                 </div>
+              </div>
             </div>
           </CardContent>
         </Card>
