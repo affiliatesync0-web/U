@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from 'react'
@@ -7,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -118,108 +117,96 @@ export default function AdminDesignPage() {
           <p className="text-muted-foreground">Personaliza la imagen de marca, medios de contacto y servicios de Sync Connect.</p>
         </div>
 
-        {/* CONFIGURACIÓN DE GMAIL Y PREVENCIÓN DE SPAM */}
+        {/* GUÍA ANTI-SPAM Y CONFIGURACIÓN DE CORREO */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <Mail className="h-6 w-6" />
+                <div className="h-14 w-14 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-2xl">
+                  <Mail className="h-7 w-7" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-headline font-black text-white">{t.emailConfig}</CardTitle>
-                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Configuración actual: affiliatesync0@gmail.com</CardDescription>
+                  <CardTitle className="text-2xl font-headline font-black text-white">Configuración de Correo Premium</CardTitle>
+                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Evita que tus mensajes lleguen a SPAM</CardDescription>
                 </div>
               </div>
               <Button 
                 onClick={handleTestEmail} 
                 variant="outline" 
                 disabled={testLoading}
-                className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-12 rounded-xl"
+                className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl"
               >
                 {testLoading ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                Probar Conexión
+                Enviar Correo de Prueba
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-10 space-y-10">
+          <CardContent className="p-10 space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.gmailUser}</Label>
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Correo Gmail Oficial</Label>
                 <Input 
                   placeholder="tu-correo@gmail.com" 
                   defaultValue={getVal('gmail-user')}
                   onBlur={(e) => handleSaveValue('gmail-user', e.target.value)}
-                  className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
+                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.gmailPass}</Label>
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña de Aplicación (16 letras)</Label>
                 <Input 
                   type="password"
                   placeholder="•••• •••• •••• ••••" 
                   defaultValue={getVal('gmail-pass')}
                   onBlur={(e) => handleSaveValue('gmail-pass', e.target.value)}
-                  className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold"
+                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold"
                 />
               </div>
             </div>
 
-            {/* LISTA DE VERIFICACIÓN ANTI-SPAM */}
-            <div className="p-8 rounded-[2rem] bg-green-50 border border-green-100 space-y-6">
-               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
-                   <ShieldCheck className="h-6 w-6" />
+            {/* CHECKLIST DEFINITIVO ANTI-SPAM */}
+            <div className="p-10 rounded-[2.5rem] bg-green-50 border border-green-100 space-y-8">
+               <div className="flex items-center gap-4">
+                 <div className="h-12 w-12 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-green-200">
+                   <ShieldCheck className="h-7 w-7" />
                  </div>
-                 <h3 className="text-sm font-black text-green-900 uppercase tracking-widest">Guía para evitar la carpeta de SPAM</h3>
+                 <div>
+                   <h3 className="text-xl font-black text-green-900 tracking-tight">Guía Maestra: Adiós a la carpeta de SPAM</h3>
+                   <p className="text-xs text-green-700 font-bold uppercase tracking-widest">Sigue estos 3 pasos obligatorios en la Consola de Firebase</p>
+                 </div>
                </div>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-3">
-                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">1. Consola de Firebase (Clave)</p>
-                   <p className="text-xs text-green-800 leading-relaxed">
-                     Entra a la sección de <strong>Templates</strong> en Firebase. En "Password Reset", asegúrate de que el <strong>Sender Name</strong> (Nombre de remitente) sea <strong>"Sync Connect"</strong>. Si está vacío, Google lo marca como SPAM.
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
+                   <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">1</div>
+                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Nombre del Remitente</p>
+                   <p className="text-xs text-green-700 leading-relaxed">
+                     En Firebase Console → Templates → Password Reset, escribe <strong>"Sync Connect"</strong> en el campo "Nombre público". Si lo dejas vacío, Gmail lo marcará como sospechoso.
                    </p>
                  </div>
-                 <div className="space-y-3">
-                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">2. Asunto Profesional</p>
-                   <p className="text-xs text-green-800 leading-relaxed">
-                     No uses palabras como "Gratis", "Gana Dinero" o "Urgente" en los asuntos. El sistema ya está configurado para usar asuntos neutros como "[Sync Connect] Recuperación".
+                 <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
+                   <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">2</div>
+                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Asunto Profesional</p>
+                   <p className="text-xs text-green-700 leading-relaxed">
+                     Cambia el asunto predeterminado por: <strong>"[Sync Connect] Recupera tu acceso"</strong>. Los asuntos que usan prefijos de marca tienen un 90% más de éxito.
                    </p>
                  </div>
-                 <div className="space-y-3">
-                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">3. Verificación de Gmail</p>
-                   <p className="text-xs text-green-800 leading-relaxed">
-                     Asegúrate de que la cuenta <strong>affiliatesync0@gmail.com</strong> tenga la "Verificación en dos pasos" activa para que la contraseña de aplicación sea válida.
-                   </p>
-                 </div>
-                 <div className="space-y-3">
-                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">4. Identidad de Marca</p>
-                   <p className="text-xs text-green-800 leading-relaxed">
-                     El sistema añade automáticamente un pie de página profesional a todos los correos, lo que aumenta la confianza de los filtros de Gmail.
+                 <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
+                   <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">3</div>
+                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Puerto SSL (465)</p>
+                   <p className="text-xs text-green-700 leading-relaxed">
+                     Asegúrate de que el puerto configurado en Firebase sea el <strong>465</strong> con seguridad <strong>SSL</strong>. Es mucho más confiable que el puerto 587 (TLS) para Gmail.
                    </p>
                  </div>
                </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-6 bg-blue-50 rounded-3xl border border-blue-100">
-                 <Info className="h-6 w-6 text-blue-600 shrink-0" />
-                 <div className="space-y-4 flex-1">
-                   <p className="text-xs text-blue-800 leading-relaxed font-bold">
-                     Configuración de Recuperación de Contraseña (IMPORTANTE)
-                   </p>
-                   <p className="text-[10px] text-blue-700 leading-relaxed">
-                     Haz clic aquí para ir a Firebase y configurar el <strong>Nombre de Remitente</strong> y el <strong>Servidor SMTP</strong> para evitar el SPAM:
-                   </p>
-                   
-                   <Button asChild className="bg-[#2870A3] hover:bg-[#1e5a82] text-white font-black text-[10px] uppercase tracking-widest h-12 rounded-xl w-full sm:w-auto shadow-lg shadow-blue-200">
-                     <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
-                       <ExternalLink className="h-4 w-4 mr-2" /> IR A LA CONSOLA DE FIREBASE
-                     </a>
-                   </Button>
-                 </div>
-              </div>
+               <div className="pt-4">
+                 <Button asChild className="w-full h-16 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-green-200">
+                   <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
+                     <ExternalLink className="h-5 w-5 mr-3" /> IR A LA CONSOLA DE FIREBASE AHORA
+                   </a>
+                 </Button>
+               </div>
             </div>
           </CardContent>
         </Card>
