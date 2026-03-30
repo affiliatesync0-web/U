@@ -3,7 +3,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- REGLAS DE SEGURIDAD SYNC CONNECT (MODO PROTOTIPO) ---
+    // --- REGLAS DE SEGURIDAD SYNC CONNECT (MODO TOTAL) ---
+    // Sincronización forzada para asegurar acceso inmediato tras login.
     // Permitimos acceso total para asegurar que todas las funciones administrativas
     // y de usuario funcionen sin bloqueos de permisos durante la fase de despliegue.
 

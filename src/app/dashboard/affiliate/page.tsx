@@ -14,14 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase'
-import { collection, query, where, doc, orderBy } from 'firebase/firestore'
+import { collection, query, where, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -56,14 +55,19 @@ export default function AffiliateDashboard() {
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
+    // Eliminamos el orderBy para evitar errores de índices en Firebase durante el despliegue inicial
     return query(
       collection(db, 'notifications'), 
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
   }, [db, user]);
 
-  const { data: notifications, isLoading: notificationsLoading } = useCollection(notificationsQuery);
+  const { data: notificationsData, isLoading: notificationsLoading } = useCollection(notificationsQuery);
+
+  // Ordenamos en memoria para mayor seguridad y evitar errores de Firebase Index
+  const notifications = notificationsData 
+    ? [...notificationsData].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : null;
 
   const isLoading = isAuthLoading || profileLoading;
 

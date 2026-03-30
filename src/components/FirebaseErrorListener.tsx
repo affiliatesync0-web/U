@@ -14,18 +14,19 @@ export function FirebaseErrorListener() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const handleError = (error: FirestorePermissionError) => {
-      // Extraemos información útil del error
-      const path = error.request?.path || "desconocida";
+    const handleError = (error: any) => {
+      // Intentamos extraer información útil, manejando tanto el error personalizado como el de Firebase
+      const path = error.request?.path || "colección desconocida";
       const method = error.request?.method || "operación";
+      const technicalMsg = error.message || "Error desconocido en el servidor de datos.";
 
       toast({
         variant: "destructive",
-        title: "Error de Permisos",
-        description: `No se pudo realizar la acción [${method}] en [${path}]. Verifica tu sesión.`,
+        title: "Error de Datos",
+        description: `Error al [${method}] en [${path}]. Detalle: ${technicalMsg}`,
       });
       
-      console.warn("Firestore Access Denied:", path, method);
+      console.warn("Firestore access error context:", path, method, technicalMsg);
     };
 
     errorEmitter.on('permission-error', handleError);
