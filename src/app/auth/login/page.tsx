@@ -89,29 +89,29 @@ export default function AffiliateLoginPage() {
           : `Check your email ${email} to reset your password. Check SPAM if not found.`,
       })
     } catch (error: any) {
-      console.error("Error en Password Reset:", error.code, error.message);
+      console.error("CRITICAL DEBUG: Reset Error:", error.code, error.message);
       
       let errorMsg = "";
       
-      // Mapeo detallado de errores para depuración
+      // Mapeo ultra-detallado para que el usuario sepa qué pasó
       if (error.code === 'auth/user-not-found') {
-        errorMsg = t.language === 'es' ? "No hemos encontrado ninguna cuenta con este correo." : "No account found with this email.";
+        errorMsg = "No existe ninguna cuenta con este correo.";
       } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = t.language === 'es' ? "Has intentado esto demasiadas veces. Por favor, espera un momento." : "Too many requests. Please wait a moment.";
+        errorMsg = "Demasiados intentos. Espera unos minutos.";
       } else if (error.code === 'auth/invalid-email') {
-        errorMsg = t.language === 'es' ? "El formato del correo electrónico no es válido." : "Invalid email format.";
+        errorMsg = "El formato del correo no es válido.";
       } else if (error.code === 'auth/internal-error') {
-        errorMsg = t.language === 'es' ? "Error interno del servidor. Verifica la configuración SMTP en Firebase Console." : "Internal server error. Check SMTP settings in Firebase Console.";
+        errorMsg = "Error SMTP en Firebase Console. Revisa tu usuario/contraseña de 16 letras y puerto 465.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMsg = "Problema de conexión a internet.";
       } else {
-        // Mostrar el error técnico si es desconocido
-        errorMsg = t.language === 'es' 
-          ? `Error técnico (${error.code}): ${error.message}` 
-          : `Technical error (${error.code}): ${error.message}`;
+        // Mostrar el error técnico exacto si no está en el mapa
+        errorMsg = `Error (${error.code}): ${error.message}`;
       }
 
       toast({
         variant: "destructive",
-        title: "Error de Recuperación",
+        title: "Fallo en Recuperación",
         description: errorMsg,
       })
     } finally {
