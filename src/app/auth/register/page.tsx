@@ -126,12 +126,14 @@ function RegisterContent() {
         // EMAIL DE BIENVENIDA AFILIADO (AVISO DE REVISIÓN)
         await sendEmail({
           to: formData.email,
-          subject: `Solicitud de Afiliado Recibida - Sync Connect`,
-          text: `¡Hola ${formData.firstName}! Hemos recibido satisfactoriamente tu registro y las respuestas de tu evaluación estratégica.
-          
-Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Recibirás un correo de confirmación en cuanto tu cuenta sea activada para que puedas empezar a generar ingresos.
+          subject: `Confirmación de Registro de Afiliado`,
+          text: `Hola ${formData.firstName},
 
-¡Estamos ansiosos de trabajar contigo!`
+Gracias por tu interés en unirte a la red Sync Connect. Hemos recibido tus datos y las respuestas de tu evaluación estratégica correctamente.
+
+Nuestro equipo administrativo está revisando tu perfil para asegurar la calidad de la red. Este proceso suele tardar menos de 24 horas. Recibirás un correo electrónico en cuanto tu acceso sea habilitado.
+
+Estamos emocionados por la posibilidad de trabajar juntos.`
         });
 
       } else {
@@ -160,12 +162,16 @@ Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Rec
         // EMAIL DE BIENVENIDA COMPRADOR (ACCESO INMEDIATO)
         await sendEmail({
           to: formData.email,
-          subject: `Bienvenido a Sync Connect`,
-          text: `¡Hola ${formData.firstName}! Gracias por unirte a nuestra plataforma. 
-          
-Ya puedes acceder a tu panel de comprador para ver nuestro catálogo de soluciones digitales premium y gestionar tus adquisiciones futuras.
+          subject: `Bienvenido a la comunidad Sync Connect`,
+          text: `Hola ${formData.firstName},
 
-Accede aquí: ${window.location.origin}/auth/login`
+Es un placer darte la bienvenida a Sync Connect. Tu cuenta de comprador ha sido creada con éxito.
+
+Desde ahora, podrás acceder a nuestro catálogo de soluciones digitales premium y gestionar tus adquisiciones desde tu panel personal.
+
+Puedes entrar a tu cuenta aquí: ${window.location.origin}/auth/login
+
+Gracias por confiar en nosotros.`
         });
       }
       
