@@ -12,7 +12,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   try {
     const { firestore } = initializeFirebase();
     
-    // Obtener configuración dinámica desde Firestore de forma segura en el servidor
+    // Obtener configuración dinámica desde Firestore
     const userDoc = await getDoc(doc(firestore, 'site_config', 'gmail-user'));
     const passDoc = await getDoc(doc(firestore, 'site_config', 'gmail-pass'));
 
@@ -20,11 +20,10 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     const pass = passDoc.exists() ? passDoc.data().value : (process.env.GMAIL_PASS || '');
 
     if (!user || !pass || user.includes('tu-gmail')) {
-      console.warn('Sync Connect: Credenciales de Gmail no encontradas o configuradas por defecto.');
-      return { success: false, error: 'Gmail credentials not configured in Admin Panel' };
+      console.warn('Sync Connect: Credenciales de Gmail no configuradas.');
+      return { success: false, error: 'Configura tu Gmail en el Panel de Administración -> Diseño.' };
     }
 
-    // Configuración del transporte para Gmail
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -41,10 +40,20 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       html: html || text.replace(/\n/g, '<br>'),
     });
 
-    console.log('Sync Connect: Email enviado exitosamente a %s', to);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
-    console.error('CRITICAL ERROR: Error al enviar correo:', error);
+    console.error('Error al enviar correo:', error);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Función para probar la configuración de correo desde el panel.
+ */
+export async function testEmailConfig(targetEmail: string) {
+  return sendEmail({
+    to: targetEmail,
+    subject: "Sync Connect - Prueba de Conexión",
+    text: "¡Felicidades! Tu configuración de Gmail en Sync Connect funciona perfectamente. A partir de ahora, tus afiliados y compradores recibirán notificaciones automáticas desde esta cuenta."
+  });
 }

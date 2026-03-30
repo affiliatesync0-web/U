@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -14,6 +14,7 @@ import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
 import { getGoogleDriveDirectLink, cn } from '@/lib/utils'
+import { testEmailConfig } from '@/lib/email'
 
 export default function AdminDesignPage() {
   const { toast } = useToast()
@@ -21,6 +22,7 @@ export default function AdminDesignPage() {
   const db = useFirestore()
   const { user, isUserLoading } = useUser();
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [testLoading, setTestLoading] = useState(false)
 
   const configQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -69,6 +71,28 @@ export default function AdminDesignPage() {
     }, 1000);
   };
 
+  const handleTestEmail = async () => {
+    const gmailUser = overrides?.find(o => o.id === 'gmail-user')?.value;
+    if (!gmailUser) {
+      toast({ variant: "destructive", title: "Configuración incompleta", description: "Ingresa primero tu correo de Gmail y asegúrate de que se haya guardado." });
+      return;
+    }
+
+    setTestLoading(true);
+    try {
+      const result = await testEmailConfig(gmailUser);
+      if (result.success) {
+        toast({ title: "Correo Enviado", description: `Revisa la bandeja de entrada de ${gmailUser} para confirmar.` });
+      } else {
+        toast({ variant: "destructive", title: "Error en la prueba", description: result.error });
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error de conexión", description: "No se pudo contactar con el servidor de correos." });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   if (isUserLoading || isLoading) {
     return (
       <DashboardShell role="admin">
@@ -92,13 +116,26 @@ export default function AdminDesignPage() {
         {/* CONFIGURACIÓN DE GMAIL */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                <Mail className="h-6 w-6" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
+                  <Mail className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl font-headline font-black text-white">{t.emailConfig}</CardTitle>
+                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Envío de links y comprobantes reales</CardDescription>
+                </div>
               </div>
-              <CardTitle className="text-2xl font-headline font-black text-white">{t.emailConfig}</CardTitle>
+              <Button 
+                onClick={handleTestEmail} 
+                variant="outline" 
+                disabled={testLoading}
+                className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-12 rounded-xl"
+              >
+                {testLoading ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                Probar Conexión
+              </Button>
             </div>
-            <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Conecta tu Gmail para enviar links de divulgación y comprobantes</CardDescription>
           </CardHeader>
           <CardContent className="p-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -124,9 +161,14 @@ export default function AdminDesignPage() {
             </div>
             <div className="mt-6 flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100">
                <ShieldCheck className="h-6 w-6 text-amber-600 shrink-0" />
-               <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                 {t.emailHelp} Debes activar la "Verificación en 2 pasos" en tu cuenta de Google y generar una <strong>Contraseña de Aplicación</strong>. No uses tu contraseña normal de Gmail.
-               </p>
+               <div className="space-y-1">
+                 <p className="text-xs text-amber-800 leading-relaxed font-bold">
+                   {t.emailHelp}
+                 </p>
+                 <p className="text-[10px] text-amber-700 leading-relaxed">
+                   Debes activar la "Verificación en 2 pasos" en tu cuenta de Google y generar una <strong>Contraseña de Aplicación</strong>. No uses tu contraseña normal de Gmail.
+                 </p>
+               </div>
             </div>
           </CardContent>
         </Card>
