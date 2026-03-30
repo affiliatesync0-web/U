@@ -85,14 +85,21 @@ export default function AffiliateLoginPage() {
       toast({
         title: "Enlace enviado",
         description: t.language === 'es' 
-          ? `Revisa tu correo ${email} para restablecer tu contraseña.` 
-          : `Check your email ${email} to reset your password.`,
+          ? `Revisa tu correo ${email} para restablecer tu contraseña. Si no lo ves, revisa SPAM.` 
+          : `Check your email ${email} to reset your password. Check SPAM if not found.`,
       })
     } catch (error: any) {
+      console.error("Error al enviar reset:", error.code);
+      let errorMsg = t.language === 'es' ? "No pudimos enviar el correo. Verifica el email." : "Could not send reset email. Check your email.";
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMsg = t.language === 'es' ? "No existe una cuenta con este correo." : "No account found with this email.";
+      }
+
       toast({
         variant: "destructive",
         title: "Error",
-        description: t.language === 'es' ? "No pudimos enviar el correo. Verifica el email." : "Could not send reset email. Check your email.",
+        description: errorMsg,
       })
     } finally {
       setResetLoading(false)
