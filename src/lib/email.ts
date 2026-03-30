@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -12,7 +13,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   try {
     const { firestore } = initializeFirebase();
     
-    // Obtenemos credenciales dinámicas de la base de datos
+    // Obtenemos credenciales dinámicas de la base de datos (Colección site_config)
     const userDoc = await getDoc(doc(firestore, 'site_config', 'gmail-user'));
     const passDoc = await getDoc(doc(firestore, 'site_config', 'gmail-pass'));
 
@@ -65,6 +66,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       }
     });
 
+    console.log('Email sent successfully:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('CRITICAL ERROR: Email service failed:', error);

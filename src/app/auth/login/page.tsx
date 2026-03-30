@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -47,15 +47,19 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const user = cred.user;
 
-      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (SE EJECUTA EN SEGUNDO PLANO)
+      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (CRÍTICO: AWAITED PARA ASEGURAR ENVÍO)
       if (user.email) {
-        sendEmail({
-          to: user.email,
-          subject: t.language === 'es' ? "Notificación de Seguridad: Nuevo Inicio de Sesión" : "Security Alert: New Login Detected",
-          text: t.language === 'es' 
-            ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, no es necesario que realices ninguna acción. Si no reconoces esta actividad, te recomendamos cambiar tu contraseña inmediatamente.`
-            : `Hello, we are informing you that a new login was detected on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, no action is needed. If you do not recognize this activity, we recommend changing your password immediately.`
-        });
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: t.language === 'es' ? "Notificación de Seguridad: Nuevo Inicio de Sesión" : "Security Alert: New Login Detected",
+            text: t.language === 'es' 
+              ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, no es necesario que realices ninguna acción. Si no reconoces esta actividad, te recomendamos cambiar tu contraseña inmediatamente.`
+              : `Hello, we are informing you that a new login was detected on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, no action is needed. If you do not recognize this activity, we recommend changing your password immediately.`
+          });
+        } catch (emailError) {
+          console.warn("Email notification failed, but login proceeds:", emailError);
+        }
       }
 
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
@@ -98,7 +102,7 @@ export default function AffiliateLoginPage() {
       toast({
         variant: "destructive",
         title: "Email Requerido",
-        description: t.language === 'es' ? "Escribe tu correo arriba para enviarte el enlace de recuperación." : "Enter your email above to receive the recovery link.",
+        description: t.language === 'es' ? "Escribe tu correo arriba primero para enviarte el enlace." : "Enter your email above first to receive the link.",
       })
       return
     }
@@ -108,19 +112,23 @@ export default function AffiliateLoginPage() {
     try {
       await sendPasswordResetEmail(auth, cleanEmail)
       toast({
-        title: "Correo Enviado",
+        title: "Correo de Recuperación Enviado",
         description: t.language === 'es' 
-          ? `Revisa tu bandeja de entrada o SPAM en ${cleanEmail}.` 
-          : `Check your inbox or SPAM folder at ${cleanEmail}.`,
+          ? `Revisa tu Gmail (${cleanEmail}). Usa el enlace más reciente para evitar el error de expiración.` 
+          : `Check your Gmail (${cleanEmail}). Use the most recent link to avoid expiration errors.`,
       })
     } catch (error: any) {
-      let errorMsg = t.language === 'es' ? "Error en el envío." : "Send failed.";
-      if (error.code === 'auth/user-not-found') errorMsg = "No existe cuenta con este correo.";
+      let errorTitle = "Error de Recuperación";
+      let errorMsg = `Error técnico: ${error.code}. Asegúrate de que el SMTP esté configurado en la consola de Firebase con el puerto 465 (SSL).`;
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMsg = "Este correo no está registrado en nuestra plataforma.";
+      }
       
       toast({
         variant: "destructive",
-        title: "Error de Recuperación",
-        description: `${errorMsg} (${error.code})`,
+        title: errorTitle,
+        description: errorMsg,
       })
     } finally {
       setTimeout(() => setResetLoading(false), 2000);
