@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, User, Mail, ShieldCheck, ClipboardCheck, Loader2 } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -18,7 +18,7 @@ import { useAuth, useFirestore, setDocumentNonBlocking, useMemoFirebase, useDoc,
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, collection } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
-import { getGoogleDriveDirectLink, cn } from '@/lib/utils'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
 
 type UserRole = 'affiliate' | 'buyer'
@@ -83,7 +83,7 @@ function RegisterContent() {
     if (formData.password.length < 6) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Contraseña Corta",
         description: t.language === 'es' ? "La contraseña debe tener al menos 6 caracteres." : "Password must be at least 6 characters."
       })
       return
@@ -123,13 +123,13 @@ function RegisterContent() {
           isRead: false
         })
 
-        // EMAIL DE BIENVENIDA AFILIADO (REVISIÓN)
+        // EMAIL DE BIENVENIDA AFILIADO (AVISO DE REVISIÓN)
         await sendEmail({
           to: formData.email,
           subject: `Solicitud de Afiliado Recibida - Sync Connect`,
-          text: `¡Hola ${formData.firstName}! Hemos recibido satisfactoriamente tu registro y las respuestas de tu evaluación.
+          text: `¡Hola ${formData.firstName}! Hemos recibido satisfactoriamente tu registro y las respuestas de tu evaluación estratégica.
           
-Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Recibirás un correo de confirmación en cuanto tu cuenta sea activada para que puedas empezar a usar tu link de divulgación.
+Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Recibirás un correo de confirmación en cuanto tu cuenta sea activada para que puedas empezar a generar ingresos.
 
 ¡Estamos ansiosos de trabajar contigo!`
         });
@@ -157,7 +157,7 @@ Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Rec
           isRead: false
         })
 
-        // EMAIL DE BIENVENIDA COMPRADOR
+        // EMAIL DE BIENVENIDA COMPRADOR (ACCESO INMEDIATO)
         await sendEmail({
           to: formData.email,
           subject: `Bienvenido a Sync Connect`,
@@ -165,7 +165,7 @@ Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Rec
           
 Ya puedes acceder a tu panel de comprador para ver nuestro catálogo de soluciones digitales premium y gestionar tus adquisiciones futuras.
 
-Entra aquí: ${window.location.origin}/auth/login`
+Accede aquí: ${window.location.origin}/auth/login`
         });
       }
       
@@ -192,7 +192,6 @@ Entra aquí: ${window.location.origin}/auth/login`
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center py-12 px-4 md:py-24">
-      {/* Header & Logo */}
       <div className="w-full max-w-4xl flex flex-col items-center mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
         <Link href="/" className="group mb-8">
           <div className="relative h-20 w-20 shadow-2xl rounded-[1.5rem] overflow-hidden bg-white ring-8 ring-primary/5 transition-transform group-hover:scale-110 flex items-center justify-center">
@@ -217,7 +216,6 @@ Entra aquí: ${window.location.origin}/auth/login`
         </p>
       </div>
 
-      {/* Role Selection */}
       {step === 'role' && !referralId && (
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <button 
@@ -258,7 +256,6 @@ Entra aquí: ${window.location.origin}/auth/login`
         </div>
       )}
 
-      {/* Registration Form (Step Info) */}
       {step === 'info' && (
         <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[3.5rem] overflow-hidden bg-white animate-in zoom-in-95 duration-500">
           <CardHeader className="pt-16 pb-8 px-10 text-center">
@@ -275,7 +272,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.firstName}</Label>
                   <input 
-                    placeholder="Juan" 
+                    placeholder="Tu nombre" 
                     required 
                     className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                     value={formData.firstName}
@@ -285,7 +282,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.lastName}</Label>
                   <input 
-                    placeholder="Perez" 
+                    placeholder="Tu apellido" 
                     required 
                     className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                     value={formData.lastName}
@@ -296,7 +293,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.email}</Label>
                   <input 
                     type="email" 
-                    placeholder="juan.perez@email.com" 
+                    placeholder="correo@ejemplo.com" 
                     required 
                     className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                     value={formData.email}
@@ -361,7 +358,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                     <div className="md:col-span-2 space-y-2">
                       <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.accountHolder}</Label>
                       <input 
-                        placeholder="Nombre completo" 
+                        placeholder="Nombre completo del titular" 
                         required 
                         className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                         value={formData.accHolder}
@@ -395,7 +392,6 @@ Entra aquí: ${window.location.origin}/auth/login`
         </Card>
       )}
 
-      {/* Sales Exam (Step Exam) */}
       {step === 'exam' && (
         <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[3.5rem] overflow-hidden bg-white animate-in slide-in-from-right-4 duration-500">
           <CardHeader className="pt-16 pb-8 px-10 text-center bg-slate-900 text-white">
@@ -415,7 +411,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                 <Label className="text-xs font-black text-slate-700 uppercase tracking-widest">{t.question1}</Label>
                 <Textarea 
                   required 
-                  placeholder="Describe tus canales y métodos..."
+                  placeholder="Describe tus canales y métodos de promoción..."
                   value={examData.q1}
                   onChange={(e) => setExamData({...examData, q1: e.target.value})}
                   className="min-h-[100px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 p-6 text-sm font-bold"
@@ -425,7 +421,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                 <Label className="text-xs font-black text-slate-700 uppercase tracking-widest">{t.question2}</Label>
                 <Textarea 
                   required 
-                  placeholder="Cuéntanos tus logros previos..."
+                  placeholder="Cuéntanos tus logros previos en ventas digitales..."
                   value={examData.q2}
                   onChange={(e) => setExamData({...examData, q2: e.target.value})}
                   className="min-h-[100px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 p-6 text-sm font-bold"
@@ -435,7 +431,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                 <Label className="text-xs font-black text-slate-700 uppercase tracking-widest">{t.question3}</Label>
                 <Textarea 
                   required 
-                  placeholder="Escribe tu respuesta de cierre..."
+                  placeholder="Escribe cómo cerrarías una venta difícil..."
                   value={examData.q3}
                   onChange={(e) => setExamData({...examData, q3: e.target.value})}
                   className="min-h-[100px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 p-6 text-sm font-bold"
@@ -459,7 +455,6 @@ Entra aquí: ${window.location.origin}/auth/login`
         </Card>
       )}
 
-      {/* Trust Badges */}
       <div className="mt-16 flex flex-wrap justify-center gap-8 opacity-40">
         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-900">
           <ShieldCheck className="h-4 w-4" /> Pagos 100% Seguros

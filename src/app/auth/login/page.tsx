@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -44,7 +43,7 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, email, password)
       const userId = cred.user.uid;
 
-      // Verificar si es afiliado o comprador para redireccionar
+      // Verificar si es afiliado o comprador para redireccionar correctamente
       const affiliateSnap = await getDoc(doc(db, 'affiliates', userId));
       
       toast({
@@ -89,11 +88,11 @@ export default function AffiliateLoginPage() {
           : `Check your email ${email} to reset your password. Check SPAM if not found.`,
       })
     } catch (error: any) {
-      console.error("CRITICAL DEBUG: Reset Error:", error.code, error.message);
+      console.error("DEBUG: Reset Error Code:", error.code);
       
       let errorMsg = "";
       
-      // Mapeo detallado de errores para diagnosticar el SMTP
+      // Mapeo detallado de errores para diagnosticar la configuración SMTP en la consola
       if (error.code === 'auth/user-not-found') {
         errorMsg = "No existe ninguna cuenta registrada con este correo.";
       } else if (error.code === 'auth/too-many-requests') {
@@ -101,12 +100,11 @@ export default function AffiliateLoginPage() {
       } else if (error.code === 'auth/invalid-email') {
         errorMsg = "El formato del correo no es válido. Revisa que no tenga espacios.";
       } else if (error.code === 'auth/internal-error') {
-        errorMsg = "Fallo de comunicación SMTP en Firebase. Revisa que en la consola pusiste puerto 465 y la contraseña de 16 letras sin espacios.";
+        errorMsg = "Error de comunicación con el servidor SMTP de Firebase. Revisa en la consola que el puerto sea 465 y la contraseña sea de 16 letras sin espacios.";
       } else if (error.code === 'auth/network-request-failed') {
         errorMsg = "Error de red. Revisa tu conexión a internet.";
       } else {
-        // Mostrar el error técnico exacto si no está en el mapa
-        errorMsg = `Error Técnico (${error.code}): ${error.message}`;
+        errorMsg = `Error Técnico (${error.code}): Por favor contacta al administrador.`;
       }
 
       toast({
