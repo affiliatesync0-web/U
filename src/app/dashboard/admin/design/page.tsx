@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -118,7 +118,7 @@ export default function AdminDesignPage() {
           <p className="text-muted-foreground">Personaliza la imagen de marca, medios de contacto y servicios de Sync Connect.</p>
         </div>
 
-        {/* CONFIGURACIÓN DE GMAIL */}
+        {/* CONFIGURACIÓN DE GMAIL Y PREVENCIÓN DE SPAM */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
             <div className="flex items-center justify-between">
@@ -142,7 +142,7 @@ export default function AdminDesignPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-10 space-y-8">
+          <CardContent className="p-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.gmailUser}</Label>
@@ -165,44 +165,59 @@ export default function AdminDesignPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100">
-                 <ShieldCheck className="h-6 w-6 text-amber-600 shrink-0" />
-                 <div className="space-y-1">
-                   <p className="text-xs text-amber-800 leading-relaxed font-bold">
-                     {t.emailHelp}
-                   </p>
-                   <p className="text-[10px] text-amber-700 leading-relaxed">
-                     Para bienvenida y ventas, usamos SMTP. Para <strong>Recuperación de Contraseña</strong>, Firebase requiere configuración manual.
+            {/* LISTA DE VERIFICACIÓN ANTI-SPAM */}
+            <div className="p-8 rounded-[2rem] bg-green-50 border border-green-100 space-y-6">
+               <div className="flex items-center gap-3">
+                 <div className="h-10 w-10 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
+                   <ShieldCheck className="h-6 w-6" />
+                 </div>
+                 <h3 className="text-sm font-black text-green-900 uppercase tracking-widest">Guía para evitar la carpeta de SPAM</h3>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-3">
+                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">1. Consola de Firebase (Clave)</p>
+                   <p className="text-xs text-green-800 leading-relaxed">
+                     Entra a la sección de <strong>Templates</strong> en Firebase. En "Password Reset", asegúrate de que el <strong>Sender Name</strong> (Nombre de remitente) sea <strong>"Sync Connect"</strong>. Si está vacío, Google lo marca como SPAM.
                    </p>
                  </div>
-              </div>
+                 <div className="space-y-3">
+                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">2. Asunto Profesional</p>
+                   <p className="text-xs text-green-800 leading-relaxed">
+                     No uses palabras como "Gratis", "Gana Dinero" o "Urgente" en los asuntos. El sistema ya está configurado para usar asuntos neutros como "[Sync Connect] Recuperación".
+                   </p>
+                 </div>
+                 <div className="space-y-3">
+                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">3. Verificación de Gmail</p>
+                   <p className="text-xs text-green-800 leading-relaxed">
+                     Asegúrate de que la cuenta <strong>affiliatesync0@gmail.com</strong> tenga la "Verificación en dos pasos" activa para que la contraseña de aplicación sea válida.
+                   </p>
+                 </div>
+                 <div className="space-y-3">
+                   <p className="text-[10px] font-black text-green-700 uppercase tracking-widest px-1">4. Identidad de Marca</p>
+                   <p className="text-xs text-green-800 leading-relaxed">
+                     El sistema añade automáticamente un pie de página profesional a todos los correos, lo que aumenta la confianza de los filtros de Gmail.
+                   </p>
+                 </div>
+               </div>
+            </div>
 
+            <div className="space-y-4">
               <div className="flex items-start gap-4 p-6 bg-blue-50 rounded-3xl border border-blue-100">
                  <Info className="h-6 w-6 text-blue-600 shrink-0" />
                  <div className="space-y-4 flex-1">
                    <p className="text-xs text-blue-800 leading-relaxed font-bold">
-                     Configuración de Recuperación de Contraseña (CRÍTICO)
+                     Configuración de Recuperación de Contraseña (IMPORTANTE)
                    </p>
                    <p className="text-[10px] text-blue-700 leading-relaxed">
-                     Para que los correos de "Olvidé mi contraseña" funcionen, haz clic en el siguiente botón y configura el servidor SMTP en la pestaña <strong>"Password Reset"</strong>:
+                     Haz clic aquí para ir a Firebase y configurar el <strong>Nombre de Remitente</strong> y el <strong>Servidor SMTP</strong> para evitar el SPAM:
                    </p>
                    
-                   <Button asChild className="bg-[#2870A3] hover:bg-[#1e5a82] text-white font-black text-[10px] uppercase tracking-widest h-12 rounded-xl w-full sm:w-auto">
+                   <Button asChild className="bg-[#2870A3] hover:bg-[#1e5a82] text-white font-black text-[10px] uppercase tracking-widest h-12 rounded-xl w-full sm:w-auto shadow-lg shadow-blue-200">
                      <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
                        <ExternalLink className="h-4 w-4 mr-2" /> IR A LA CONSOLA DE FIREBASE
                      </a>
                    </Button>
-
-                   <div className="space-y-2 mt-4">
-                     <p className="text-[10px] font-black uppercase text-blue-800">Datos para la Consola:</p>
-                     <ul className="text-[10px] text-blue-700 list-disc ml-4 space-y-1">
-                       <li><strong>SMTP Server:</strong> <code>smtp.gmail.com</code></li>
-                       <li><strong>Port:</strong> <code>465</code> (SSL)</li>
-                       <li><strong>Username:</strong> <code>affiliatesync0@gmail.com</code></li>
-                       <li><strong>Password:</strong> <code>wagrmuphptnevpin</code></li>
-                     </ul>
-                   </div>
                  </div>
               </div>
             </div>
