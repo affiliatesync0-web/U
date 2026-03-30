@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -108,6 +108,8 @@ export default function AdminDesignPage() {
     return "";
   };
 
+  const firebaseConsoleLink = "https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/emails";
+
   return (
     <DashboardShell role="admin">
       <div className="space-y-12">
@@ -178,19 +180,29 @@ export default function AdminDesignPage() {
 
               <div className="flex items-start gap-4 p-6 bg-blue-50 rounded-3xl border border-blue-100">
                  <Info className="h-6 w-6 text-blue-600 shrink-0" />
-                 <div className="space-y-2">
+                 <div className="space-y-4 flex-1">
                    <p className="text-xs text-blue-800 leading-relaxed font-bold">
-                     Configuración de Recuperación de Contraseña
+                     Configuración de Recuperación de Contraseña (CRÍTICO)
                    </p>
                    <p className="text-[10px] text-blue-700 leading-relaxed">
-                     Para que los correos de "Olvidé mi contraseña" salgan desde <strong>affiliatesync0@gmail.com</strong>, debes ir a tu consola de Firebase:
+                     Para que los correos de "Olvidé mi contraseña" funcionen, haz clic en el siguiente botón y configura el servidor SMTP en la pestaña <strong>"Password Reset"</strong>:
                    </p>
-                   <ol className="text-[10px] text-blue-700 list-decimal ml-4 space-y-1">
-                     <li>Ve a <strong>Authentication</strong> → <strong>Templates</strong>.</li>
-                     <li>Selecciona <strong>Password Reset</strong>.</li>
-                     <li>Haz clic en el icono de lápiz y luego en <strong>"Configure SMTP server"</strong>.</li>
-                     <li>Usa el servidor: <code>smtp.gmail.com</code>, puerto <code>465</code>, y tus credenciales de aplicación.</li>
-                   </ol>
+                   
+                   <Button asChild className="bg-[#2870A3] hover:bg-[#1e5a82] text-white font-black text-[10px] uppercase tracking-widest h-12 rounded-xl w-full sm:w-auto">
+                     <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
+                       <ExternalLink className="h-4 w-4 mr-2" /> IR A LA CONSOLA DE FIREBASE
+                     </a>
+                   </Button>
+
+                   <div className="space-y-2 mt-4">
+                     <p className="text-[10px] font-black uppercase text-blue-800">Datos para la Consola:</p>
+                     <ul className="text-[10px] text-blue-700 list-disc ml-4 space-y-1">
+                       <li><strong>SMTP Server:</strong> <code>smtp.gmail.com</code></li>
+                       <li><strong>Port:</strong> <code>465</code> (SSL)</li>
+                       <li><strong>Username:</strong> <code>affiliatesync0@gmail.com</code></li>
+                       <li><strong>Password:</strong> <code>wagrmuphptnevpin</code></li>
+                     </ul>
+                   </div>
                  </div>
               </div>
             </div>
