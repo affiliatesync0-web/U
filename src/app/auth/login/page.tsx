@@ -39,8 +39,10 @@ export default function AffiliateLoginPage() {
     e.preventDefault()
     setLoading(true)
     
+    const cleanEmail = email.trim().toLowerCase();
+    
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password)
+      const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const userId = cred.user.uid;
 
       // Verificar si es afiliado o comprador para redireccionar correctamente
@@ -79,13 +81,15 @@ export default function AffiliateLoginPage() {
     }
 
     setResetLoading(true)
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
-      await sendPasswordResetEmail(auth, email)
+      await sendPasswordResetEmail(auth, cleanEmail)
       toast({
         title: "Enlace enviado",
         description: t.language === 'es' 
-          ? `Revisa tu correo ${email} para restablecer tu contraseña. Si no lo ves, revisa la carpeta de SPAM.` 
-          : `Check your email ${email} to reset your password. Check SPAM if not found.`,
+          ? `Revisa tu correo ${cleanEmail}. Usa solo el enlace más reciente y revisa la carpeta de SPAM si no lo ves.` 
+          : `Check your email ${cleanEmail}. Use only the most recent link and check SPAM if not found.`,
       })
     } catch (error: any) {
       console.error("DEBUG: Reset Error Code:", error.code);
