@@ -13,6 +13,7 @@ import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
 import { collection, query, where, getDocs, doc, increment } from 'firebase/firestore'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { sendEmail } from '@/lib/email'
 
 export default function RegisterSalePage() {
   const { toast } = useToast()
@@ -31,7 +32,6 @@ export default function RegisterSalePage() {
   const handleRegisterSale = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // VALIDACIÓN ESTRICTA: Si no hay voucher, no se permite continuar
     if (!voucherReference.trim()) {
       toast({
         variant: "destructive",
@@ -77,10 +77,11 @@ export default function RegisterSalePage() {
         firstName: buyerData.firstName,
         lastName: buyerData.lastName,
         email: buyerId,
+        referredBy: user.uid,
         registeredAt: new Date().toISOString()
       }, { merge: true });
 
-      // 4. Registrar venta con referencia de voucher
+      // 4. Registrar venta
       const saleData = {
         affiliateId: user.uid,
         productId: productDoc.id,
@@ -98,7 +99,24 @@ export default function RegisterSalePage() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 5. Crear Notificación Automática para el afiliado
+      // 5. EMAIL AL AFILIADO (CONFIRMACIÓN DE VENTA)
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: `¡Venta Registrada Exitosamente! - Sync Connect`,
+          text: `¡Hola! Has registrado correctamente una nueva venta.
+          
+Detalles:
+- Producto: ${product.name}
+- Cliente: ${buyerData.firstName} ${buyerData.lastName}
+- Voucher: ${voucherReference.trim()}
+- Comisión Ganada: $${commissionEarned.toFixed(2)}
+
+Tu saldo ha sido actualizado automáticamente.`
+        });
+      }
+
+      // 6. Notificación interna
       const notificationsRef = collection(db, 'notifications')
       addDocumentNonBlocking(notificationsRef, {
         userId: user.uid,
@@ -109,18 +127,17 @@ export default function RegisterSalePage() {
         isRead: false
       })
 
-      // 6. Actualizar saldo del afiliado (optimista con increment)
+      // 7. Actualizar saldo
       const affiliateRef = doc(db, 'affiliates', user.uid)
       updateDocumentNonBlocking(affiliateRef, {
         currentBalance: increment(commissionEarned)
       })
 
       toast({
-        title: t.language === 'es' ? "¡Venta Registrada Exitosamente!" : "Sale Registered Successfully!",
-        description: t.language === 'es' ? `Se han sumado $${commissionEarned.toFixed(2)} a tu saldo acumulado.` : `$${commissionEarned.toFixed(2)} has been added to your balance.`,
+        title: t.language === 'es' ? "¡Venta Registrada!" : "Sale Registered!",
+        description: t.language === 'es' ? `Comisión de $${commissionEarned.toFixed(2)} sumada. Revisa tu email.` : `Commission of $${commissionEarned.toFixed(2)} added. Check your email.`,
       })
       
-      // Limpiar formulario tras éxito
       setProductCode('')
       setVoucherReference('')
       setBuyerData({ firstName: '', lastName: '', email: '' })
@@ -128,8 +145,8 @@ export default function RegisterSalePage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: t.language === 'es' ? "Error de Registro" : "Registration Error",
-        description: t.language === 'es' ? "Hubo un problema técnico al procesar la venta. Inténtalo de nuevo." : "A technical problem occurred while processing the sale. Try again.",
+        title: "Error",
+        description: "No se pudo registrar la venta."
       })
     } finally {
       setLoading(false)

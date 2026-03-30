@@ -1,9 +1,10 @@
+
 "use client"
 
 import { useState, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { doc, collection, increment } from 'firebase/firestore'
+import { doc, collection, increment, getDoc } from 'firebase/firestore'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,7 +67,7 @@ function CheckoutContent() {
         registeredAt: new Date().toISOString()
       }, { merge: true })
 
-      // 2. Registrar la Venta
+      // 2. Calcular montos
       const saleAmount = product?.price || 0
       const commissionRate = product?.commissionRate || 0
       const commissionEarned = (saleAmount * commissionRate) / 100
@@ -86,10 +87,11 @@ function CheckoutContent() {
         voucherReference: formData.voucherRef.trim()
       }
 
+      // 3. Registrar la Venta
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 3. Crear Notificaciones internas
+      // 4. Crear Notificaciones internas
       const notificationsRef = collection(db, 'notifications')
       
       addDocumentNonBlocking(notificationsRef, {
@@ -101,32 +103,57 @@ function CheckoutContent() {
         isRead: false
       })
 
-      // 4. ENVÍO DE EMAIL DE CONFIRMACIÓN DE COMPRA
+      // 5. ENVÍO DE EMAIL AL COMPRADOR
       await sendEmail({
         to: formData.email,
         subject: `Compra Registrada - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos recibido tu registro de compra para "${product?.name}".
+        text: `¡Hola ${formData.firstName}! Hemos recibido tu registro de compra.
         
-Referencia de Pago: ${formData.voucherRef}
-Estado: Pendiente de validación.
+Producto: ${product?.name}
+Monto: $${product?.price}
+Referencia Bancaria: ${formData.voucherRef}
 
-Tu acceso será habilitado una vez que el administrador confirme la transferencia bancaria.`
+Tu acceso será habilitado una vez que el administrador valide tu depósito bancario.`
       });
 
+      // 6. NOTIFICACIÓN Y EMAIL AL AFILIADO
       if (affiliateId && affiliateId !== 'admin') {
-        addDocumentNonBlocking(notificationsRef, {
-          userId: affiliateId,
-          title: t.saleConfirmedTitle,
-          message: t.saleConfirmedMsg.replace('{ref}', formData.voucherRef),
-          type: 'sale',
-          createdAt: new Date().toISOString(),
-          isRead: false
-        })
+        const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
+        if (affiliateDoc.exists()) {
+          const affData = affiliateDoc.data();
+          
+          // Notificación interna
+          addDocumentNonBlocking(notificationsRef, {
+            userId: affiliateId,
+            title: t.saleConfirmedTitle,
+            message: `¡Felicidades! Se ha registrado una nueva venta de "${product?.name}". Voucher: ${formData.voucherRef}`,
+            type: 'sale',
+            createdAt: new Date().toISOString(),
+            isRead: false
+          });
 
-        const affiliateRef = doc(db, 'affiliates', affiliateId)
-        updateDocumentNonBlocking(affiliateRef, {
-          currentBalance: increment(commissionEarned)
-        })
+          // EMAIL AL AFILIADO
+          await sendEmail({
+            to: affData.email,
+            subject: `¡Nueva Venta Realizada! - Sync Connect`,
+            text: `¡Felicidades ${affData.firstName}! 
+            
+Un cliente (${formData.firstName} ${formData.lastName}) acaba de registrar una compra de "${product?.name}" a través de tu link.
+
+Detalles de la Venta:
+- Importe: $${saleAmount}
+- Tu Comisión: $${commissionEarned}
+- Referencia: ${formData.voucherRef}
+
+La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
+          });
+
+          // Actualizar saldo
+          const affiliateRef = doc(db, 'affiliates', affiliateId)
+          updateDocumentNonBlocking(affiliateRef, {
+            currentBalance: increment(commissionEarned)
+          })
+        }
       }
 
       toast({

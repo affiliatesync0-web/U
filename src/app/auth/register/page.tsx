@@ -97,8 +97,6 @@ function RegisterContent() {
       const user = cred.user
 
       if (role === 'affiliate') {
-        const inviteLink = `${window.location.origin}/auth/register?role=buyer&ref=${user.uid}`
-        
         const affiliateData = {
           id: user.uid,
           firstName: formData.firstName,
@@ -109,7 +107,7 @@ function RegisterContent() {
           bankAccountHolderName: formData.accHolder,
           currentBalance: 0,
           registeredAt: new Date().toISOString(),
-          status: 'Pending', // Requiere aprobación del admin
+          status: 'Pending', 
           examAnswers: examData
         }
         const affiliateRef = doc(db, 'affiliates', user.uid)
@@ -126,13 +124,15 @@ function RegisterContent() {
           isRead: false
         })
 
-        // Notificación al Admin (opcional, pero se guarda en DB)
-        
-        // Email de aviso
+        // EMAIL DE BIENVENIDA AFILIADO (REVISIÓN)
         await sendEmail({
           to: formData.email,
-          subject: t.language === 'es' ? `Solicitud Recibida - Sync Connect` : `Application Received - Sync Connect`,
-          text: `¡Hola ${formData.firstName}! Hemos recibido tu solicitud para ser afiliado. Nuestro equipo revisará tus respuestas al examen y activará tu cuenta en las próximas 24-48 horas.`
+          subject: `Solicitud de Afiliado Recibida - Sync Connect`,
+          text: `¡Hola ${formData.firstName}! Hemos recibido satisfactoriamente tu registro y las respuestas de tu evaluación.
+          
+Nuestro equipo administrativo revisará tu perfil en las próximas 24 horas. Recibirás un correo de confirmación en cuanto tu cuenta sea activada para que puedas empezar a usar tu link de divulgación.
+
+¡Estamos ansiosos de trabajar contigo!`
         });
 
       } else {
@@ -158,17 +158,21 @@ function RegisterContent() {
           isRead: false
         })
 
-        // Email de bienvenida para comprador
+        // EMAIL DE BIENVENIDA COMPRADOR
         await sendEmail({
           to: formData.email,
           subject: `Bienvenido a Sync Connect`,
-          text: `Hola ${formData.firstName}, gracias por registrarte. Explora nuestro catálogo y adquiere los mejores productos digitales.`
+          text: `¡Hola ${formData.firstName}! Gracias por unirte a nuestra plataforma. 
+          
+Ya puedes acceder a tu panel de comprador para ver nuestro catálogo de soluciones digitales premium y gestionar tus adquisiciones futuras.
+
+Entra aquí: ${window.location.origin}/auth/login`
         });
       }
       
       toast({
         title: t.language === 'es' ? "Registro exitoso" : "Registration successful",
-        description: t.language === 'es' ? `¡Bienvenido! Revisa tu correo electrónico.` : `Welcome! Check your email inbox.`,
+        description: t.language === 'es' ? `¡Bienvenido! Revisa tu correo ${formData.email}.` : `Welcome! Check your email ${formData.email}.`,
       })
       
       router.push(role === 'affiliate' ? '/dashboard/affiliate' : '/dashboard/buyer')
@@ -271,31 +275,31 @@ function RegisterContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.firstName}</Label>
-                  <Input 
+                  <input 
                     placeholder="Juan" 
                     required 
-                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                    className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                     value={formData.firstName}
                     onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.lastName}</Label>
-                  <Input 
+                  <input 
                     placeholder="Perez" 
                     required 
-                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                    className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                     value={formData.lastName}
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.email}</Label>
-                  <Input 
+                  <input 
                     type="email" 
                     placeholder="juan.perez@email.com" 
                     required 
-                    className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                    className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
@@ -303,11 +307,11 @@ function RegisterContent() {
                 <div className="md:col-span-2 space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.password}</Label>
                   <div className="relative">
-                    <Input 
+                    <input 
                       type={showPassword ? "text" : "password"} 
                       placeholder="••••••" 
                       required 
-                      className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold pr-12" 
+                      className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold pr-12" 
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                     />
@@ -347,20 +351,20 @@ function RegisterContent() {
                     </div>
                     <div className="space-y-2">
                       <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.accountNumber}</Label>
-                      <Input 
+                      <input 
                         placeholder="1234567890" 
                         required 
-                        className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold font-mono" 
+                        className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold font-mono" 
                         value={formData.accNumber}
                         onChange={(e) => setFormData({...formData, accNumber: e.target.value})}
                       />
                     </div>
                     <div className="md:col-span-2 space-y-2">
                       <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.accountHolder}</Label>
-                      <Input 
+                      <input 
                         placeholder="Nombre completo" 
                         required 
-                        className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
+                        className="flex h-14 w-full rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold" 
                         value={formData.accHolder}
                         onChange={(e) => setFormData({...formData, accHolder: e.target.value})}
                       />
