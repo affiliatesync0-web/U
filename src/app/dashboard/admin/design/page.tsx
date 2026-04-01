@@ -148,10 +148,12 @@ export default function AdminDesignPage() {
                  <Zap className="h-6 w-6" />
                </div>
                <div className="space-y-2">
-                 <h4 className="font-black text-slate-900 tracking-tight text-lg">¿Qué hace este vínculo?</h4>
+                 <h4 className="font-black text-slate-900 tracking-tight text-lg">¿Por qué configurar esto?</h4>
                  <p className="text-sm text-slate-600 leading-relaxed font-medium">
                    Al configurar tu Gmail aquí, la plataforma usará tu cuenta para enviar: 
-                   <strong> Bienvenidas, Avisos de Venta y Alertas de Seguridad</strong>. Esto hace que tus clientes reciban correos directamente de ti, aumentando tu autoridad y confianza.
+                   <strong> Bienvenidas, Avisos de Venta y Alertas de Seguridad</strong>. 
+                   <br/><br/>
+                   <span className="text-primary font-black">IMPORTANTE:</span> Para que los correos de <strong>recuperación de contraseña</strong> también salgan de tu cuenta, debes copiar estos mismos datos en la Consola de Firebase siguiendo la guía de abajo.
                  </p>
                </div>
             </div>
@@ -185,8 +187,8 @@ export default function AdminDesignPage() {
                    <ShieldCheck className="h-7 w-7" />
                  </div>
                  <div>
-                   <h3 className="text-xl font-black text-green-900 tracking-tight">Guía Maestra: Adiós a la carpeta de SPAM</h3>
-                   <p className="text-xs text-green-700 font-bold uppercase tracking-widest">Sigue estos 3 pasos obligatorios en la Consola de Firebase</p>
+                   <h3 className="text-xl font-black text-green-900 tracking-tight">Sincronización Total: Recuperación de Contraseña</h3>
+                   <p className="text-xs text-green-700 font-bold uppercase tracking-widest">Sigue estos 3 pasos para que TODO salga desde tu Gmail</p>
                  </div>
                </div>
                
@@ -195,21 +197,21 @@ export default function AdminDesignPage() {
                    <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">1</div>
                    <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Nombre del Remitente</p>
                    <p className="text-xs text-green-700 leading-relaxed">
-                     En Firebase Console → Templates → Password Reset, escribe <strong>"Sync Connect"</strong> en el campo "Nombre público". Si lo dejas vacío, Gmail lo marcará como sospechoso.
+                     En Firebase Console → Templates → Password Reset, escribe <strong>"Sync Connect"</strong> en "Nombre público". Así el usuario sabrá quién envía la clave.
                    </p>
                  </div>
                  <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
                    <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">2</div>
-                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Asunto Profesional</p>
+                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Usa los mismos datos</p>
                    <p className="text-xs text-green-700 leading-relaxed">
-                     Cambia el asunto predeterminado por: <strong>"[Sync Connect] Recupera tu acceso"</strong>. Los asuntos que usan prefijos de marca tienen un 90% más de éxito.
+                     Configura el servidor SMTP en Firebase con el mismo correo y contraseña de 16 letras que pusiste arriba. ¡Deben ser idénticos!
                    </p>
                  </div>
                  <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
                    <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">3</div>
-                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Puerto SSL (465)</p>
+                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Puerto y SSL</p>
                    <p className="text-xs text-green-700 leading-relaxed">
-                     Asegúrate de que el puerto configurado en Firebase sea el <strong>465</strong> con seguridad <strong>SSL</strong>. Es mucho más confiable que el puerto 587 (TLS) para Gmail.
+                     Asegúrate de usar puerto <strong>465</strong> y seguridad <strong>SSL</strong>. Es la única forma de que Gmail no bloquee los correos de recuperación.
                    </p>
                  </div>
                </div>
@@ -217,7 +219,7 @@ export default function AdminDesignPage() {
                <div className="pt-4">
                  <Button asChild className="w-full h-16 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-green-200">
                    <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
-                     <ExternalLink className="h-5 w-5 mr-3" /> IR A LA CONSOLA DE FIREBASE AHORA
+                     <ExternalLink className="h-5 w-5 mr-3" /> CONFIGURAR SMTP EN FIREBASE AHORA
                    </a>
                  </Button>
                </div>

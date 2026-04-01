@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -47,7 +47,7 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const user = cred.user;
 
-      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (CRÍTICO: AWAITED PARA ASEGURAR ENVÍO)
+      // NOTIFICACIÓN DE SEGURIDAD POR CORREO
       if (user.email) {
         try {
           await sendEmail({
@@ -114,14 +114,17 @@ export default function AffiliateLoginPage() {
       toast({
         title: "Correo de Recuperación Enviado",
         description: t.language === 'es' 
-          ? `Revisa tu Gmail (${cleanEmail}). Usa el enlace más reciente para evitar el error de expiración.` 
-          : `Check your Gmail (${cleanEmail}). Use the most recent link to avoid expiration errors.`,
+          ? `Revisa tu Gmail (${cleanEmail}). Si no llega, asegúrate de haber sincronizado el SMTP en el panel administrativo.` 
+          : `Check your Gmail (${cleanEmail}). If it doesn't arrive, ensure SMTP is synced in your admin panel.`,
       })
     } catch (error: any) {
+      console.error("Reset Error:", error.code, error.message);
       let errorTitle = "Error de Recuperación";
-      let errorMsg = `Error técnico: ${error.code}. Asegúrate de que el SMTP esté configurado en la consola de Firebase con el puerto 465 (SSL).`;
+      let errorMsg = `No se pudo enviar el correo. Código técnico: ${error.code}.`;
       
-      if (error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/internal-error') {
+        errorMsg = "Error crítico de conexión (SMTP). Asegúrate de haber copiado los datos de tu Gmail en la Consola de Firebase -> Autenticación -> Email -> SMTP.";
+      } else if (error.code === 'auth/user-not-found') {
         errorMsg = "Este correo no está registrado en nuestra plataforma.";
       }
       
