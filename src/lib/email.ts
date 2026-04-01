@@ -17,6 +17,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     const userDoc = await getDoc(doc(firestore, 'site_config', 'gmail-user'));
     const passDoc = await getDoc(doc(firestore, 'site_config', 'gmail-pass'));
 
+    // Si el usuario vincula su Gmail en el panel, usamos sus datos. Si no, usamos el respaldo.
     const gmailUser = userDoc.exists() && userDoc.data().value ? userDoc.data().value : 'affiliatesync0@gmail.com';
     const gmailPass = passDoc.exists() && passDoc.data().value ? passDoc.data().value : 'wagrmuphptnevpin';
 
@@ -56,20 +57,19 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       from: `"Sync Connect" <${gmailUser}>`,
       to,
       subject: `[Sync Connect] ${subject}`,
-      text, // Versión Texto Plano (Vital para evitar SPAM)
-      html: professionalHtml, // Versión HTML enriquecida
+      text, 
+      html: professionalHtml,
       headers: {
         'X-Entity-Ref-ID': Date.now().toString(),
-        'X-Priority': '1', // Alta prioridad
+        'X-Priority': '1',
         'List-Unsubscribe': `<mailto:${gmailUser}?subject=unsubscribe>`,
         'Importance': 'high'
       }
     });
 
-    console.log('Email sent successfully:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
-    console.error('CRITICAL ERROR: Email service failed:', error);
+    console.error('Email Error:', error.message);
     return { success: false, error: error.message };
   }
 }

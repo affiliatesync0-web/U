@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef } from 'react'
@@ -6,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2, ChevronRight, Zap } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -126,8 +127,8 @@ export default function AdminDesignPage() {
                   <Mail className="h-7 w-7" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-headline font-black text-white">Configuración de Correo Premium</CardTitle>
-                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Evita que tus mensajes lleguen a SPAM</CardDescription>
+                  <CardTitle className="text-2xl font-headline font-black text-white">Vincula tu Gmail Profesional</CardTitle>
+                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Activa las notificaciones automáticas desde tu cuenta</CardDescription>
                 </div>
               </div>
               <Button 
@@ -142,6 +143,19 @@ export default function AdminDesignPage() {
             </div>
           </CardHeader>
           <CardContent className="p-10 space-y-12">
+            <div className="p-8 rounded-[2rem] bg-primary/5 border border-primary/10 flex items-start gap-6">
+               <div className="h-12 w-12 rounded-2xl bg-primary text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                 <Zap className="h-6 w-6" />
+               </div>
+               <div className="space-y-2">
+                 <h4 className="font-black text-slate-900 tracking-tight text-lg">¿Qué hace este vínculo?</h4>
+                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                   Al configurar tu Gmail aquí, la plataforma usará tu cuenta para enviar: 
+                   <strong> Bienvenidas, Avisos de Venta y Alertas de Seguridad</strong>. Esto hace que tus clientes reciban correos directamente de ti, aumentando tu autoridad y confianza.
+                 </p>
+               </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Correo Gmail Oficial</Label>
