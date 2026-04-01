@@ -1,13 +1,13 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -27,6 +27,7 @@ export default function AffiliateLoginPage() {
   const db = useFirestore()
   const [loading, setLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [resetCooldown, setResetCooldown] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,6 +37,14 @@ export default function AffiliateLoginPage() {
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resetCooldown > 0) {
+      timer = setInterval(() => setResetCooldown(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resetCooldown]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +56,7 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const user = cred.user;
 
-      // NOTIFICACIÓN DE SEGURIDAD POR CORREO
+      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (Espera confirmación antes de seguir)
       if (user.email) {
         try {
           await sendEmail({
@@ -107,6 +116,14 @@ export default function AffiliateLoginPage() {
       return
     }
 
+    if (resetCooldown > 0) {
+      toast({
+        title: "Espera un momento",
+        description: `Podrás solicitar otro enlace en ${resetCooldown} segundos.`,
+      })
+      return
+    }
+
     setResetLoading(true)
 
     try {
@@ -114,18 +131,19 @@ export default function AffiliateLoginPage() {
       toast({
         title: "Correo de Recuperación Enviado",
         description: t.language === 'es' 
-          ? `Revisa tu Gmail (${cleanEmail}). Si no llega, asegúrate de haber sincronizado el SMTP en el panel administrativo.` 
-          : `Check your Gmail (${cleanEmail}). If it doesn't arrive, ensure SMTP is synced in your admin panel.`,
+          ? `Revisa tu Gmail (${cleanEmail}). Usa solo el ÚLTIMO correo recibido.` 
+          : `Check your Gmail (${cleanEmail}). Use only the LAST email received.`,
       })
+      setResetCooldown(60); // Cooldown para evitar saturación y links expirados
     } catch (error: any) {
-      console.error("Reset Error:", error.code, error.message);
+      console.error("Reset Error:", error.code);
       let errorTitle = "Error de Recuperación";
-      let errorMsg = `No se pudo enviar el correo. Código técnico: ${error.code}.`;
+      let errorMsg = "No se pudo enviar el correo.";
       
-      if (error.code === 'auth/internal-error') {
-        errorMsg = "Error crítico de conexión (SMTP). Asegúrate de haber copiado los datos de tu Gmail en la Consola de Firebase -> Autenticación -> Email -> SMTP.";
+      if (error.code === 'auth/internal-error' || error.code === 'auth/network-request-failed') {
+        errorMsg = "Error crítico de conexión (SMTP). El administrador debe sincronizar su Gmail en el panel administrativo -> Diseño.";
       } else if (error.code === 'auth/user-not-found') {
-        errorMsg = "Este correo no está registrado en nuestra plataforma.";
+        errorMsg = "Este correo no está registrado.";
       }
       
       toast({
@@ -134,7 +152,7 @@ export default function AffiliateLoginPage() {
         description: errorMsg,
       })
     } finally {
-      setTimeout(() => setResetLoading(false), 2000);
+      setResetLoading(false)
     }
   }
 
@@ -191,9 +209,9 @@ export default function AffiliateLoginPage() {
                     type="button" 
                     onClick={handleForgotPassword}
                     className="text-[10px] text-primary font-black uppercase tracking-widest hover:underline flex items-center gap-1"
-                    disabled={resetLoading}
+                    disabled={resetLoading || resetCooldown > 0}
                   >
-                    {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
+                    {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : (resetCooldown > 0 ? `Esperar ${resetCooldown}s` : t.forgotPassword)}
                   </button>
                 </div>
                 <div className="relative">

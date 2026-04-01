@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2, ChevronRight, Zap } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2, ChevronRight, Zap, Copy, Check } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -24,6 +24,7 @@ export default function AdminDesignPage() {
   const { user, isUserLoading } = useUser();
   const [savingId, setSavingId] = useState<string | null>(null)
   const [testLoading, setTestLoading] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const configQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -89,6 +90,13 @@ export default function AdminDesignPage() {
     }
   };
 
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+    toast({ title: "Copiado", description: `${field} listo para pegar en Firebase.` });
+  };
+
   if (isUserLoading || isLoading) {
     return (
       <DashboardShell role="admin">
@@ -102,12 +110,13 @@ export default function AdminDesignPage() {
   const getVal = (id: string) => {
     const found = overrides?.find(o => o.id === id)?.value;
     if (found) return found;
-    // Valores predeterminados si no están en DB
     if (id === 'gmail-user') return 'affiliatesync0@gmail.com';
     if (id === 'gmail-pass') return 'wagrmuphptnevpin';
     return "";
   };
 
+  const currentEmail = getVal('gmail-user');
+  const currentPass = getVal('gmail-pass');
   const firebaseConsoleLink = "https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/emails";
 
   return (
@@ -118,7 +127,7 @@ export default function AdminDesignPage() {
           <p className="text-muted-foreground">Personaliza la imagen de marca, medios de contacto y servicios de Sync Connect.</p>
         </div>
 
-        {/* GUÍA ANTI-SPAM Y CONFIGURACIÓN DE CORREO */}
+        {/* GUÍA DE SINCRONIZACIÓN TOTAL GMAIL */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -127,8 +136,8 @@ export default function AdminDesignPage() {
                   <Mail className="h-7 w-7" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-headline font-black text-white">Vincula tu Gmail Profesional</CardTitle>
-                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Activa las notificaciones automáticas desde tu cuenta</CardDescription>
+                  <CardTitle className="text-2xl font-headline font-black text-white">Centro de Comunicación Gmail</CardTitle>
+                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Conecta tu cuenta para enviar Bienvenidas y Recuperaciones</CardDescription>
                 </div>
               </div>
               <Button 
@@ -138,32 +147,19 @@ export default function AdminDesignPage() {
                 className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl"
               >
                 {testLoading ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                Enviar Correo de Prueba
+                Probar Conexión
               </Button>
             </div>
           </CardHeader>
           <CardContent className="p-10 space-y-12">
-            <div className="p-8 rounded-[2rem] bg-primary/5 border border-primary/10 flex items-start gap-6">
-               <div className="h-12 w-12 rounded-2xl bg-primary text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-                 <Zap className="h-6 w-6" />
-               </div>
-               <div className="space-y-2">
-                 <h4 className="font-black text-slate-900 tracking-tight text-lg">¿Por qué configurar esto?</h4>
-                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                   Al configurar tu Gmail aquí, la plataforma usará tu cuenta para enviar: 
-                   <strong> Bienvenidas, Avisos de Venta y Alertas de Seguridad</strong>. 
-                   <br/><br/>
-                   <span className="text-primary font-black">IMPORTANTE:</span> Para que los correos de <strong>recuperación de contraseña</strong> también salgan de tu cuenta, debes copiar estos mismos datos en la Consola de Firebase siguiendo la guía de abajo.
-                 </p>
-               </div>
-            </div>
-
+            
+            {/* INPUTS DE CONFIGURACIÓN */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Correo Gmail Oficial</Label>
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Correo Gmail Profesional</Label>
                 <Input 
                   placeholder="tu-correo@gmail.com" 
-                  defaultValue={getVal('gmail-user')}
+                  defaultValue={currentEmail}
                   onBlur={(e) => handleSaveValue('gmail-user', e.target.value)}
                   className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
                 />
@@ -173,55 +169,61 @@ export default function AdminDesignPage() {
                 <Input 
                   type="password"
                   placeholder="•••• •••• •••• ••••" 
-                  defaultValue={getVal('gmail-pass')}
+                  defaultValue={currentPass}
                   onBlur={(e) => handleSaveValue('gmail-pass', e.target.value)}
                   className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold"
                 />
               </div>
             </div>
 
-            {/* CHECKLIST DEFINITIVO ANTI-SPAM */}
-            <div className="p-10 rounded-[2.5rem] bg-green-50 border border-green-100 space-y-8">
-               <div className="flex items-center gap-4">
-                 <div className="h-12 w-12 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-green-200">
-                   <ShieldCheck className="h-7 w-7" />
+            {/* WIZARD DE SINCRONIZACIÓN CON FIREBASE */}
+            <div className="p-10 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-10">
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div className="flex items-center gap-4">
+                   <div className="h-12 w-12 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200">
+                     <RefreshCw className="h-7 w-7" />
+                   </div>
+                   <div>
+                     <h3 className="text-xl font-black text-blue-900 tracking-tight">Sincronizador: Recuperación de Contraseña</h3>
+                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Copia estos datos a tu consola para habilitar el envío desde tu Gmail</p>
+                   </div>
                  </div>
-                 <div>
-                   <h3 className="text-xl font-black text-green-900 tracking-tight">Sincronización Total: Recuperación de Contraseña</h3>
-                   <p className="text-xs text-green-700 font-bold uppercase tracking-widest">Sigue estos 3 pasos para que TODO salga desde tu Gmail</p>
-                 </div>
-               </div>
-               
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
-                   <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">1</div>
-                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Nombre del Remitente</p>
-                   <p className="text-xs text-green-700 leading-relaxed">
-                     En Firebase Console → Templates → Password Reset, escribe <strong>"Sync Connect"</strong> en "Nombre público". Así el usuario sabrá quién envía la clave.
-                   </p>
-                 </div>
-                 <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
-                   <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">2</div>
-                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Usa los mismos datos</p>
-                   <p className="text-xs text-green-700 leading-relaxed">
-                     Configura el servidor SMTP en Firebase con el mismo correo y contraseña de 16 letras que pusiste arriba. ¡Deben ser idénticos!
-                   </p>
-                 </div>
-                 <div className="space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-green-100">
-                   <div className="h-8 w-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-black text-xs">3</div>
-                   <p className="text-[11px] font-black text-green-800 uppercase tracking-widest">Puerto y SSL</p>
-                   <p className="text-xs text-green-700 leading-relaxed">
-                     Asegúrate de usar puerto <strong>465</strong> y seguridad <strong>SSL</strong>. Es la única forma de que Gmail no bloquee los correos de recuperación.
-                   </p>
-                 </div>
-               </div>
-
-               <div className="pt-4">
-                 <Button asChild className="w-full h-16 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-green-200">
+                 <Button asChild variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-100 font-black text-[10px] uppercase tracking-widest h-12 rounded-xl">
                    <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
-                     <ExternalLink className="h-5 w-5 mr-3" /> CONFIGURAR SMTP EN FIREBASE AHORA
+                     <ExternalLink className="h-4 w-4 mr-2" /> Abrir Consola Firebase
                    </a>
                  </Button>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 {[
+                   { label: "Servidor SMTP", value: "smtp.gmail.com" },
+                   { label: "Puerto / SSL", value: "465" },
+                   { label: "Usuario", value: currentEmail },
+                   { label: "Contraseña", value: currentPass },
+                 ].map((field) => (
+                   <div key={field.label} className="p-5 bg-white rounded-2xl border border-blue-100 shadow-sm flex flex-col justify-between group hover:border-blue-300 transition-colors">
+                     <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2">{field.label}</p>
+                     <div className="flex items-center justify-between gap-2">
+                       <code className="text-xs font-bold text-blue-900 truncate">{field.value}</code>
+                       <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8 shrink-0 hover:bg-blue-50 text-blue-500"
+                        onClick={() => copyToClipboard(field.value, field.label)}
+                       >
+                         {copiedField === field.label ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                       </Button>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+
+               <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
+                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                   <strong>Instrucción Vital:</strong> En la Consola de Firebase, asegúrate de seleccionar <strong>"SSL"</strong> (no TLS) para el puerto 465. Sin esto, Gmail bloqueará la conexión y los usuarios no recibirán sus links de recuperación.
+                 </p>
                </div>
             </div>
           </CardContent>
