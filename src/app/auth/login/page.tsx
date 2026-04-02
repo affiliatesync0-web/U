@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -60,7 +61,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     if (!auth || !db) {
-      toast({ variant: "destructive", title: "Error", description: "El servicio de autenticación no está listo." });
+      toast({ variant: "destructive", title: "Error", description: "Servicio de autenticación no inicializado." });
       return;
     }
     
@@ -72,8 +73,9 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      if (!user) throw new Error("No se pudo obtener la información del usuario");
+      if (!user) throw new Error("No se pudo obtener información del usuario.");
 
+      // Verificar si ya existe como afiliado o comprador
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
@@ -89,9 +91,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Si el usuario intenta hacer LOGIN con Google pero NO tiene cuenta,
-      // por defecto lo creamos como comprador (flujo estándar)
-      // Pero si quería ser afiliado, debió ir a la página de registro.
+      // Si no existe, lo creamos como comprador por defecto en el Login
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -107,9 +107,11 @@ export default function LoginPage() {
       
       let errorMessage = "Ocurrió un error al conectar con Google.";
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana de inicio de sesión se cerró antes de completar el proceso.";
+        errorMessage = "La ventana se cerró antes de completar el proceso. Asegúrate de no tener bloqueadores de popups.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "Ya hay una solicitud de autenticación en curso.";
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = "El inicio de sesión con Google no está habilitado en Firebase.";
+        errorMessage = "El inicio de sesión con Google no está habilitado en Firebase Console.";
       }
 
       toast({ 
@@ -124,7 +126,6 @@ export default function LoginPage() {
 
   const handlePostLogin = async (user: any) => {
     const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-    
     if (affiliateSnap.exists()) {
       router.push('/dashboard/affiliate');
     } else {
@@ -151,18 +152,17 @@ export default function LoginPage() {
       await sendEmail({
         to: cleanEmail,
         subject: "Instrucciones para restablecer tu contraseña",
-        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. \n\nA continuación recibirás un segundo correo oficial de seguridad de Google/Firebase con el enlace para cambiar tu contraseña. \n\nPor favor, revisa tu bandeja de entrada y sigue las instrucciones del correo oficial.`
+        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. \n\nA continuación recibirás un segundo correo oficial de seguridad de Google/Firebase con el enlace para cambiar tu contraseña. \n\nPor favor, revisa tu bandeja de entrada.`
       });
       
       await sendPasswordResetEmail(auth, cleanEmail)
       
       toast({ 
         title: "Correos enviados", 
-        description: "Hemos enviado las instrucciones y el link de recuperación a tu email." 
+        description: "Revisa tu bandeja de entrada para restablecer tu contraseña." 
       });
       setResetCooldown(60); 
     } catch (error: any) {
-      console.error("Reset error:", error);
       toast({ 
         variant: "destructive", 
         title: "Error", 

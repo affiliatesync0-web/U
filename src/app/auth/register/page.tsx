@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, Suspense } from 'react'
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2 } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -84,7 +85,7 @@ function RegisterContent() {
 
   const handleGoogleLogin = async () => {
     if (!auth || !db) {
-      toast({ variant: "destructive", title: "Error", description: "El servicio no está disponible." });
+      toast({ variant: "destructive", title: "Error", description: "El servicio no está disponible actualmente." });
       return;
     }
     setLoading(true);
@@ -95,23 +96,25 @@ function RegisterContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
+      if (!user) throw new Error("No se pudo obtener información de Google.");
+
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
-      // Si ya existe, simplemente redirigir
+      // Si el usuario ya tiene cuenta, redirigir según su rol existente
       if (affiliateSnap.exists()) {
-        toast({ title: "Bienvenido", description: "Accediendo como Afiliado..." });
+        toast({ title: "Bienvenido de nuevo", description: "Accediendo como Afiliado..." });
         router.push('/dashboard/affiliate');
         return;
       }
 
       if (buyerSnap.exists()) {
-        toast({ title: "Bienvenido", description: "Accediendo como Comprador..." });
+        toast({ title: "Bienvenido de nuevo", description: "Accediendo como Comprador..." });
         router.push('/dashboard/buyer');
         return;
       }
 
-      // Si no existe, crear con el ROL SELECCIONADO actualmente en la pantalla
+      // Si es un registro nuevo, usar el rol seleccionado en pantalla
       if (role === 'affiliate') {
         await setDoc(doc(db, 'affiliates', user.uid), {
           id: user.uid,
@@ -127,7 +130,7 @@ function RegisterContent() {
           examAnswers: null
         });
 
-        toast({ title: "Registro exitoso", description: "Te hemos registrado como Afiliado (Pendiente de aprobación)." });
+        toast({ title: "Registro exitoso", description: "Solicitud de Afiliado enviada (Pendiente de aprobación)." });
         router.push('/dashboard/affiliate');
       } else {
         await setDoc(doc(db, 'buyers', user.uid), {
@@ -143,20 +146,19 @@ function RegisterContent() {
         router.push('/dashboard/buyer');
       }
 
-      // Email de bienvenida genérico
       await sendEmail({
         to: user.email!,
         subject: "Bienvenido a Sync Connect",
-        text: `Hola ${user.displayName}, bienvenido a la plataforma.`
+        text: `Hola ${user.displayName}, gracias por registrarte en nuestra plataforma.`
       });
 
     } catch (error: any) {
       console.error("Google Auth Error:", error);
-      toast({ 
-        variant: "destructive", 
-        title: "Error de Registro", 
-        description: "No se pudo conectar con Google o hubo un problema al crear tu perfil." 
-      });
+      let msg = "No se pudo completar el registro con Google.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        msg = "La ventana se cerró antes de terminar. Si persiste, revisa si tienes bloqueadores de popups activos.";
+      }
+      toast({ variant: "destructive", title: "Error de Registro", description: msg });
     } finally {
       setLoading(false);
     }
@@ -166,11 +168,7 @@ function RegisterContent() {
     if (e) e.preventDefault()
     
     if (formData.password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Contraseña Corta",
-        description: "La contraseña debe tener al menos 6 caracteres."
-      })
+      toast({ variant: "destructive", title: "Contraseña Corta", description: "Mínimo 6 caracteres." })
       return
     }
 
@@ -207,7 +205,7 @@ function RegisterContent() {
         await sendEmail({
           to: formData.email,
           subject: `Confirmación de Registro - Sync Connect`,
-          text: `Hola ${formData.firstName}, gracias por postularte como afiliado en Sync Connect. \n\nTu solicitud está siendo revisada por nuestro equipo administrativo. Recibirás una notificación en este correo en cuanto seas aprobado.`
+          text: `Hola ${formData.firstName}, tu solicitud de afiliado está siendo revisada. Te avisaremos por este medio.`
         });
 
       } else {
@@ -232,15 +230,11 @@ function RegisterContent() {
         await sendEmail({
           to: formData.email,
           subject: `Bienvenido a Sync Connect`,
-          text: `Hola ${formData.firstName}, bienvenido a la plataforma de Sync Connect. \n\nYa puedes acceder a tu cuenta y explorar todos los productos digitales y servicios disponibles para ti.`
+          text: `Hola ${formData.firstName}, ya puedes acceder a tu cuenta de comprador.`
         });
       }
       
-      toast({
-        title: "Registro exitoso",
-        description: `Bienvenido a Sync Connect.`,
-      })
-      
+      toast({ title: "Registro exitoso", description: "Bienvenido a Sync Connect." });
       router.push(role === 'affiliate' ? '/dashboard/affiliate' : '/dashboard/buyer')
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message })
@@ -279,11 +273,11 @@ function RegisterContent() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
           </svg>
-          {role === 'affiliate' ? 'Registrarse como Afiliado con Google' : 'Registrarse como Comprador con Google'}
+          {role === 'affiliate' ? 'Registro Afiliado con Google' : 'Registro Comprador con Google'}
         </Button>
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200" /></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#F8FAFC] px-2 text-slate-500">O rellena el formulario</span></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#F8FAFC] px-2 text-slate-500">O usa el formulario</span></div>
         </div>
       </div>
 
