@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -32,7 +31,6 @@ export default function AffiliateLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  // Fetch Live Logo
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
@@ -49,9 +47,7 @@ export default function AffiliateLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
     const cleanEmail = email.trim().toLowerCase();
-    
     try {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       handlePostLogin(cred.user);
@@ -69,20 +65,19 @@ export default function AffiliateLoginPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Verificar si el usuario ya existe en alguna colección
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+      const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
+
       if (affiliateSnap.exists()) {
         router.push('/dashboard/affiliate');
         return;
       }
 
-      const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
       if (buyerSnap.exists()) {
         router.push('/dashboard/buyer');
         return;
       }
 
-      // Si es nuevo, lo creamos como comprador por defecto
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -91,11 +86,7 @@ export default function AffiliateLoginPage() {
         registeredAt: new Date().toISOString()
       });
 
-      toast({
-        title: "Cuenta creada",
-        description: "Te hemos registrado como comprador.",
-      });
-      
+      toast({ title: "Acceso con Google", description: "Bienvenido a Sync Connect." });
       router.push('/dashboard/buyer');
     } catch (error: any) {
       handleAuthError(error);
@@ -105,7 +96,6 @@ export default function AffiliateLoginPage() {
   };
 
   const handlePostLogin = async (user: any) => {
-    // NOTIFICACIÓN DE SEGURIDAD POR CORREO
     if (user.email) {
       try {
         await sendEmail({
@@ -119,7 +109,6 @@ export default function AffiliateLoginPage() {
     }
 
     const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-    
     toast({
       title: t.language === 'es' ? "Acceso Correcto" : "Login Successful",
       description: t.language === 'es' ? "Bienvenido a Sync Connect." : "Welcome to Sync Connect.",
@@ -133,7 +122,6 @@ export default function AffiliateLoginPage() {
   }
 
   const handleAuthError = (error: any) => {
-    console.error("Auth Error:", error.code);
     let errorMsg = t.language === 'es' ? "No pudimos validar tus datos." : "We couldn't validate your data.";
     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       errorMsg = t.language === 'es' ? "El correo o la contraseña son incorrectos." : "Email or password incorrect.";
@@ -151,14 +139,14 @@ export default function AffiliateLoginPage() {
     try {
       await sendEmail({
         to: cleanEmail,
-        subject: "Recuperación de Contraseña",
-        text: "Utiliza el siguiente enlace que recibirás de Google para cambiar tu contraseña."
+        subject: "Instrucciones de Recuperación de Contraseña",
+        text: "Hola, has solicitado recuperar tu contraseña. A continuación recibirás un correo oficial de Google Firebase con el enlace de restablecimiento. Por favor, revisa tu carpeta de spam si no lo ves en unos minutos."
       });
       await sendPasswordResetEmail(auth, cleanEmail)
-      toast({ title: "Email enviado", description: "Revisa tu bandeja de entrada." });
+      toast({ title: "Emails enviados", description: "Revisa tu bandeja de entrada (y spam)." });
       setResetCooldown(60); 
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Error al enviar el correo." });
+      toast({ variant: "destructive", title: "Error", description: "Error al procesar la solicitud de recuperación." });
     } finally {
       setResetLoading(false)
     }
@@ -215,7 +203,14 @@ export default function AffiliateLoginPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Contraseña</Label>
-                    <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:underline">¿Olvidaste tu contraseña?</button>
+                    <button 
+                      type="button" 
+                      onClick={handleForgotPassword} 
+                      disabled={resetLoading || resetCooldown > 0}
+                      className="text-xs text-primary hover:underline disabled:text-slate-400"
+                    >
+                      {resetCooldown > 0 ? `Esperar ${resetCooldown}s` : "¿Olvidaste tu contraseña?"}
+                    </button>
                   </div>
                   <div className="relative">
                     <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required className="h-12 rounded-xl" />

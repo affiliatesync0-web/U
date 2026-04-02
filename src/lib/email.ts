@@ -4,9 +4,6 @@ import nodemailer from 'nodemailer';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-/**
- * Obtiene la configuración SMTP desde la base de datos Firestore.
- */
 async function getTransporter() {
   const { firestore } = initializeFirebase();
   
@@ -14,7 +11,7 @@ async function getTransporter() {
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
     const config = configDoc.exists() ? configDoc.data() : {};
 
-    // Valores por defecto o los configurados en el panel
+    // Valores por defecto (los que proporcionaste) o los configurados en el panel
     const user = config.smtp_user || 'affiliatesync0@gmail.com';
     const pass = config.smtp_password || 'wagrmuphptnevpin';
     const host = config.smtp_host || 'smtp.gmail.com';
@@ -22,20 +19,19 @@ async function getTransporter() {
     const fromEmail = config.smtp_from_email || user;
     const fromName = config.smtp_from_name || 'Sync Connect';
 
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465, // true para puerto 465, false para otros como 587
-      auth: {
-        user,
-        pass,
-      },
-    });
-
-    return { transporter, fromEmail, fromName };
+    return {
+      transporter: nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+      }),
+      fromEmail,
+      fromName
+    };
   } catch (error) {
-    console.error('Error al obtener configuración SMTP desde Firestore:', error);
-    throw error;
+    console.error('Error al obtener configuración SMTP:', error);
+    throw new Error('Error al configurar el servidor de correo');
   }
 }
 
@@ -51,7 +47,6 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       html: html || text.replace(/\n/g, '<br>'),
     });
 
-    console.log('Email enviado: %s', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('Error enviando email:', error);
