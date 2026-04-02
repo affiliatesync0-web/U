@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, Suspense } from 'react'
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2, ShieldCheck } from 'lucide-center'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -79,6 +80,8 @@ function RegisterContent() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -87,11 +90,13 @@ function RegisterContent() {
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
       if (affiliateSnap.exists()) {
+        toast({ title: "Bienvenido", description: "Accediendo como Afiliado..." });
         router.push('/dashboard/affiliate');
         return;
       }
 
       if (buyerSnap.exists()) {
+        toast({ title: "Bienvenido", description: "Accediendo como Comprador..." });
         router.push('/dashboard/buyer');
         return;
       }
@@ -104,14 +109,17 @@ function RegisterContent() {
         registeredAt: new Date().toISOString()
       });
 
-      toast({ title: "Registro exitoso", description: "Te has registrado como comprador." });
+      toast({ title: "Registro exitoso", description: "Te hemos registrado como Comprador." });
       router.push('/dashboard/buyer');
     } catch (error: any) {
-      console.error(error);
+      console.error("Google Auth Error:", error);
+      let msg = "Error al conectar con Google. Por favor, inténtalo de nuevo.";
+      if (error.code === 'auth/popup-closed-by-user') msg = "Se cerró la ventana de acceso.";
+      
       toast({ 
         variant: "destructive", 
-        title: "Error de autenticación", 
-        description: error.message || "No se pudo iniciar sesión con Google. Verifica que esté habilitado en Firebase Console." 
+        title: "Error de Registro", 
+        description: msg 
       });
     } finally {
       setLoading(false);
@@ -312,10 +320,11 @@ function RegisterContent() {
   )
 }
 
-export default function RegisterPage() {
+export default function RegisterPageWrapper() {
   return (
     <Suspense fallback={<div>Cargando...</div>}>
       <RegisterContent />
     </Suspense>
   )
 }
+    

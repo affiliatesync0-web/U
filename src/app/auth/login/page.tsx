@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -61,6 +62,9 @@ export default function AffiliateLoginPage() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    // Forzamos la selección de cuenta para evitar errores de sesión persistente
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -69,15 +73,18 @@ export default function AffiliateLoginPage() {
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
       if (affiliateSnap.exists()) {
+        toast({ title: "Bienvenido", description: "Accediendo como Afiliado..." });
         router.push('/dashboard/affiliate');
         return;
       }
 
       if (buyerSnap.exists()) {
+        toast({ title: "Bienvenido", description: "Accediendo como Comprador..." });
         router.push('/dashboard/buyer');
         return;
       }
 
+      // Si no existe, crear como comprador por defecto
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -86,10 +93,23 @@ export default function AffiliateLoginPage() {
         registeredAt: new Date().toISOString()
       });
 
-      toast({ title: "Acceso con Google", description: "Bienvenido a Sync Connect." });
+      toast({ title: "Registro Exitoso", description: "Te hemos registrado como Comprador." });
       router.push('/dashboard/buyer');
     } catch (error: any) {
-      handleAuthError(error);
+      console.error("Google Login Error:", error);
+      let errorMessage = "Error al conectar con Google. Verifica que el servicio esté habilitado.";
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "La ventana de inicio de sesión fue cerrada.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "Operación cancelada.";
+      }
+      
+      toast({ 
+        variant: "destructive", 
+        title: "Error de Autenticación", 
+        description: errorMessage 
+      });
     } finally {
       setLoading(false);
     }
@@ -109,11 +129,7 @@ export default function AffiliateLoginPage() {
     }
 
     const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-    toast({
-      title: t.language === 'es' ? "Acceso Correcto" : "Login Successful",
-      description: t.language === 'es' ? "Bienvenido a Sync Connect." : "Welcome to Sync Connect.",
-    })
-
+    
     if (affiliateSnap.exists()) {
       router.push('/dashboard/affiliate');
     } else {
@@ -137,16 +153,28 @@ export default function AffiliateLoginPage() {
     }
     setResetLoading(true)
     try {
+      // Intentamos enviar el correo de instrucciones personalizado
       await sendEmail({
         to: cleanEmail,
         subject: "Instrucciones de Recuperación de Contraseña",
-        text: "Hola, has solicitado recuperar tu contraseña. A continuación recibirás un correo oficial de Google Firebase con el enlace de restablecimiento. Por favor, revisa tu carpeta de spam si no lo ves en unos minutos."
+        text: "Hola, has solicitado recuperar tu contraseña. A continuación recibirás un correo oficial de seguridad con el enlace de restablecimiento. Por favor, revisa tu carpeta de spam si no lo ves en unos minutos."
       });
+      
+      // Enviamos el correo oficial de Firebase
       await sendPasswordResetEmail(auth, cleanEmail)
-      toast({ title: "Emails enviados", description: "Revisa tu bandeja de entrada (y spam)." });
+      
+      toast({ 
+        title: "Correos enviados", 
+        description: "Revisa tu bandeja de entrada. Recibirás instrucciones y un enlace de seguridad." 
+      });
       setResetCooldown(60); 
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Error al procesar la solicitud de recuperación." });
+      console.error("Reset error:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: "No se pudo enviar el correo de recuperación. Verifica que la dirección sea correcta." 
+      });
     } finally {
       setResetLoading(false)
     }
@@ -233,3 +261,4 @@ export default function AffiliateLoginPage() {
     </div>
   )
 }
+    
