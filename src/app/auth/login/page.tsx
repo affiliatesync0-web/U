@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info, AlertTriangle, Send } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -56,15 +56,15 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const user = cred.user;
 
-      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (Espera confirmación antes de seguir)
+      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (Desde el Gmail del Admin)
       if (user.email) {
         try {
           await sendEmail({
             to: user.email,
-            subject: t.language === 'es' ? "Notificación de Seguridad: Nuevo Inicio de Sesión" : "Security Alert: New Login Detected",
+            subject: t.language === 'es' ? "Alerta de Seguridad: Inicio de Sesión" : "Security Alert: Login Detected",
             text: t.language === 'es' 
-              ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, no es necesario que realices ninguna acción. Si no reconoces esta actividad, te recomendamos cambiar tu contraseña inmediatamente.`
-              : `Hello, we are informing you that a new login was detected on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, no action is needed. If you do not recognize this activity, we recommend changing your password immediately.`
+              ? `Hola, te informamos que se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect hoy ${new Date().toLocaleString()}. Si has sido tú, no es necesario realizar ninguna acción. Si no reconoces esta actividad, cambia tu contraseña de inmediato en el panel.`
+              : `Hello, we detected a new login on your Sync Connect account today ${new Date().toLocaleString()}. If this was you, no action is needed. If you do not recognize this, change your password immediately.`
           });
         } catch (emailError) {
           console.warn("Email notification failed, but login proceeds:", emailError);
@@ -127,28 +127,42 @@ export default function AffiliateLoginPage() {
     setResetLoading(true)
 
     try {
+      // 1. Enviamos el correo oficial de Firebase (Link técnico)
       await sendPasswordResetEmail(auth, cleanEmail)
+
+      // 2. Enviamos un correo de cortesía desde el Gmail del Admin para dar identidad profesional
+      try {
+        await sendEmail({
+          to: cleanEmail,
+          subject: t.language === 'es' ? "Instrucciones de Recuperación - Sync Connect" : "Recovery Instructions - Sync Connect",
+          text: t.language === 'es' 
+            ? `Hola, hemos recibido una solicitud para restablecer tu contraseña. \n\nAcabamos de enviarte un segundo correo electrónico con un enlace de seguridad oficial de Google. Por favor, búscalo en tu bandeja de entrada (o en Spam) para completar el proceso. \n\nSi no has solicitado este cambio, puedes ignorar este mensaje.`
+            : `Hello, we received a request to reset your password. \n\nWe have just sent you a second email with an official security link. Please look for it in your inbox (or Spam) to complete the process. \n\nIf you did not request this, you can ignore this message.`
+        });
+      } catch (e) {
+        console.warn("Professional notification failed, but Firebase email was sent.");
+      }
+
       toast({
-        title: "Correo de Recuperación Enviado",
+        title: "Instrucciones Enviadas",
         description: t.language === 'es' 
-          ? `Revisa tu Gmail (${cleanEmail}). Si no llega, el administrador debe marcar "SSL" en la Consola Firebase.` 
-          : `Check your Gmail (${cleanEmail}). If it doesn't arrive, the admin must check "SSL" in Firebase Console.`,
+          ? `Revisa tu correo (${cleanEmail}). Hemos enviado el link de seguridad y una guía de pasos.` 
+          : `Check your email (${cleanEmail}). We've sent the security link and a step-by-step guide.`,
       })
-      setResetCooldown(60); // Cooldown para evitar saturación y links expirados
+      setResetCooldown(60); 
     } catch (error: any) {
       console.error("Reset Error:", error.code);
-      let errorTitle = "Error de Recuperación";
       let errorMsg = "No se pudo enviar el correo.";
       
       if (error.code === 'auth/internal-error' || error.code === 'auth/network-request-failed') {
-        errorMsg = "Error de conexión SMTP. El administrador debe sincronizar su Gmail y marcar 'SSL' en la Consola de Firebase.";
+        errorMsg = "Error de sincronización SMTP. El administrador debe activar el puerto 465 con SSL en la Consola Firebase.";
       } else if (error.code === 'auth/user-not-found') {
         errorMsg = "Este correo no está registrado en el sistema.";
       }
       
       toast({
         variant: "destructive",
-        title: errorTitle,
+        title: "Error de Recuperación",
         description: errorMsg,
       })
     } finally {

@@ -122,88 +122,99 @@ export default function AdminDesignPage() {
   return (
     <DashboardShell role="admin">
       <div className="space-y-12">
-        <div>
-          <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Configuración</h1>
-          <p className="text-muted-foreground">Personaliza la imagen de marca, medios de contacto y servicios de Sync Connect.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Configuración</h1>
+            <p className="text-muted-foreground">Víncula tu Gmail para enviar avisos de venta, bienvenidas y recuperaciones.</p>
+          </div>
+          <div className="flex items-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10">
+             <ShieldCheck className="h-5 w-5 text-primary" />
+             <span className="text-[10px] font-black text-primary uppercase tracking-widest">Conexión Segura de Marca</span>
+          </div>
         </div>
 
-        {/* GUÍA DE SINCRONIZACIÓN TOTAL GMAIL */}
+        {/* CENTRO DE MANDO GMAIL */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-2xl">
-                  <Mail className="h-7 w-7" />
+              <div className="flex items-center gap-6">
+                <div className="h-16 w-16 bg-primary/20 rounded-[1.5rem] flex items-center justify-center text-primary shadow-2xl rotate-3">
+                  <Mail className="h-8 w-8" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-headline font-black text-white">Centro de Comunicación Gmail</CardTitle>
-                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Conecta tu cuenta para enviar Bienvenidas y Recuperaciones</CardDescription>
+                  <CardTitle className="text-3xl font-headline font-black text-white">Centro de Identidad Gmail</CardTitle>
+                  <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
+                    Controla todas las comunicaciones desde tu propio correo
+                  </CardDescription>
                 </div>
               </div>
               <Button 
                 onClick={handleTestEmail} 
                 variant="outline" 
                 disabled={testLoading}
-                className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl"
+                className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl transition-all"
               >
                 {testLoading ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                Probar Conexión
+                Verificar Mi Gmail
               </Button>
             </div>
           </CardHeader>
           <CardContent className="p-10 space-y-12">
             
-            {/* INPUTS DE CONFIGURACIÓN */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Correo Gmail Profesional</Label>
+              <div className="space-y-3">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Gmail de Negocio</Label>
                 <Input 
-                  placeholder="tu-correo@gmail.com" 
+                  placeholder="tu-empresa@gmail.com" 
                   defaultValue={currentEmail}
                   onBlur={(e) => handleSaveValue('gmail-user', e.target.value)}
-                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
+                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold text-lg"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña de Aplicación (16 letras)</Label>
+              <div className="space-y-3">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña de Aplicación (16 caracteres)</Label>
                 <Input 
                   type="password"
                   placeholder="•••• •••• •••• ••••" 
                   defaultValue={currentPass}
                   onBlur={(e) => handleSaveValue('gmail-pass', e.target.value)}
-                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold"
+                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold text-lg"
                 />
               </div>
             </div>
 
-            {/* WIZARD DE SINCRONIZACIÓN CON FIREBASE */}
-            <div className="p-10 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-10">
-               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                 <div className="flex items-center gap-4">
-                   <div className="h-12 w-12 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200">
-                     <RefreshCw className="h-7 w-7" />
+            {/* ASISTENTE DE SINCRONIZACIÓN FIREBASE */}
+            <div className="p-10 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-10 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-8 opacity-5">
+                 <Zap className="h-40 w-40 text-blue-500" />
+               </div>
+               
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                 <div className="flex items-center gap-5">
+                   <div className="h-14 w-14 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 -rotate-3">
+                     <RefreshCw className="h-8 w-8" />
                    </div>
                    <div>
-                     <h3 className="text-xl font-black text-blue-900 tracking-tight">Sincronizador: Recuperación de Contraseña</h3>
-                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Copia estos datos a tu consola para habilitar el envío desde tu Gmail</p>
+                     <h3 className="text-2xl font-black text-blue-900 tracking-tight">Sincronizador: Recuperación de Clave</h3>
+                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Vincula estos datos en tu Consola Firebase para control total</p>
                    </div>
                  </div>
-                 <Button asChild variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-100 font-black text-[10px] uppercase tracking-widest h-12 rounded-xl">
+                 <Button asChild variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl shadow-xl shadow-blue-200">
                    <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
                      <ExternalLink className="h-4 w-4 mr-2" /> Abrir Consola Firebase
                    </a>
                  </Button>
                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
                  {[
                    { label: "Servidor SMTP", value: "smtp.gmail.com" },
                    { label: "Puerto / SSL", value: "465" },
-                   { label: "Usuario", value: currentEmail },
-                   { label: "Contraseña", value: currentPass },
+                   { label: "Usuario SMTP", value: currentEmail },
+                   { label: "Clave SMTP", value: currentPass },
                  ].map((field) => (
-                   <div key={field.label} className="p-5 bg-white rounded-2xl border border-blue-100 shadow-sm flex flex-col justify-between group hover:border-blue-300 transition-colors">
-                     <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2">{field.label}</p>
+                   <div key={field.label} className="p-6 bg-white rounded-[1.5rem] border border-blue-100 shadow-sm flex flex-col justify-between group hover:scale-[1.02] transition-all">
+                     <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-3">{field.label}</p>
                      <div className="flex items-center justify-between gap-2">
                        <code className="text-xs font-bold text-blue-900 truncate">{field.value}</code>
                        <Button 
@@ -219,12 +230,14 @@ export default function AdminDesignPage() {
                  ))}
                </div>
 
-               <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
-                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                 <div className="space-y-1">
-                   <p className="text-xs text-amber-800 font-bold uppercase tracking-widest">⚠️ Instrucción Vital para Gmail:</p>
-                   <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                     En la Consola de Firebase, asegúrate de seleccionar <strong>"SSL"</strong> (no TLS) para el puerto 465. Sin marcar esa casilla, Gmail bloqueará la conexión por seguridad y los usuarios no recibirán el correo de recuperación.
+               <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 flex items-start gap-5 relative z-10">
+                 <div className="h-10 w-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                   <AlertTriangle className="h-5 w-5" />
+                 </div>
+                 <div className="space-y-2">
+                   <p className="text-xs text-amber-800 font-black uppercase tracking-widest">⚠️ CONFIGURACIÓN VITAL (MODO SSL):</p>
+                   <p className="text-sm text-amber-800 font-medium leading-relaxed">
+                     En la Consola de Firebase, al configurar el servidor SMTP, asegúrate de marcar la casilla <strong>"SSL"</strong> (no TLS) y usar el puerto <strong>465</strong>. Sin esto, Google bloqueará el envío del link de recuperación por seguridad.
                    </p>
                  </div>
                </div>
@@ -232,8 +245,8 @@ export default function AdminDesignPage() {
           </CardContent>
         </Card>
 
-        {/* REDES SOCIALES Y WHATSAPP */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* WHATSAPP Y REDES */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 p-10">
               <div className="flex items-center gap-4 mb-2">
@@ -253,7 +266,7 @@ export default function AdminDesignPage() {
                   onBlur={(e) => handleSaveValue('site-whatsapp', e.target.value)}
                   className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-lg font-mono font-bold"
                 />
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1 italic">Este número se usará para el botón flotante en la web.</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1 italic">Este número activará el botón flotante en la web.</p>
               </div>
             </CardContent>
           </Card>
@@ -302,13 +315,13 @@ export default function AdminDesignPage() {
           </Card>
         </div>
 
-        {/* IMÁGENES DEL SITIO */}
+        {/* IMÁGENES */}
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-1 w-12 bg-primary rounded-full" />
             <h2 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Galería de Medios</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {images.map((img) => {
               const override = overrides?.find(o => o.id === img.id);
               const currentUrl = (override?.imageUrl || img.imageUrl || "").trim();
