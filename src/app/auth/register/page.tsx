@@ -24,6 +24,12 @@ import { sendEmail } from '@/lib/email'
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'info' | 'exam'
 
+interface ExamData {
+  q1: string;
+  q2: string;
+  q3: string;
+}
+
 function RegisterContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -56,7 +62,7 @@ function RegisterContent() {
     accHolder: ''
   })
 
-  const [examData, setExamData] = useState({
+  const [examData, setExamData] = useState<ExamData>({
     q1: '',
     q2: '',
     q3: ''
@@ -77,7 +83,10 @@ function RegisterContent() {
   }
 
   const handleGoogleLogin = async () => {
-    if (!auth || !db) return;
+    if (!auth || !db) {
+      toast({ variant: "destructive", title: "Error", description: "El servicio no está disponible." });
+      return;
+    }
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -109,6 +118,13 @@ function RegisterContent() {
         registeredAt: new Date().toISOString()
       });
 
+      // Email de bienvenida
+      await sendEmail({
+        to: user.email!,
+        subject: "Bienvenido a Sync Connect",
+        text: `Hola ${user.displayName}, bienvenido a la plataforma. Ya puedes explorar nuestros productos.`
+      });
+
       toast({ title: "Registro exitoso", description: "Te hemos registrado como Comprador." });
       router.push('/dashboard/buyer');
     } catch (error: any) {
@@ -116,7 +132,7 @@ function RegisterContent() {
       toast({ 
         variant: "destructive", 
         title: "Error de Registro", 
-        description: error.message || "Error al conectar con Google. Verifica que esté habilitado en Firebase Console." 
+        description: "Error al conectar con Google. Verifica que esté habilitado en Firebase." 
       });
     } finally {
       setLoading(false);
@@ -168,7 +184,7 @@ function RegisterContent() {
         await sendEmail({
           to: formData.email,
           subject: `Confirmación de Registro - Sync Connect`,
-          text: `Hola ${formData.firstName}, tu registro de afiliado está en revisión.`
+          text: `Hola ${formData.firstName}, gracias por postularte como afiliado en Sync Connect. \n\nTu solicitud está siendo revisada por nuestro equipo administrativo. Recibirás una notificación en este correo en cuanto seas aprobado.`
         });
 
       } else {
@@ -193,7 +209,7 @@ function RegisterContent() {
         await sendEmail({
           to: formData.email,
           subject: `Bienvenido a Sync Connect`,
-          text: `Hola ${formData.firstName}, bienvenido como comprador.`
+          text: `Hola ${formData.firstName}, bienvenido a la plataforma de Sync Connect. \n\nYa puedes acceder a tu cuenta y explorar todos los productos digitales y servicios disponibles para ti.`
         });
       }
       
@@ -216,7 +232,7 @@ function RegisterContent() {
         <Link href="/" className="group mb-8">
           <div className="relative h-20 w-20 shadow-2xl rounded-[1.5rem] overflow-hidden bg-white ring-8 ring-primary/5 transition-transform group-hover:scale-110 flex items-center justify-center">
             {displayLogoUrl ? (
-              <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-3" unoptimized />
+              <Image src={displayLogoUrl} alt="Logo" width={80} height={80} className="object-contain p-3" unoptimized />
             ) : (
               <Sparkles className="h-10 w-10 text-primary" />
             )}
@@ -250,13 +266,19 @@ function RegisterContent() {
 
       {step === 'role' && !referralId && (
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          <button onClick={() => { setRole('buyer'); setStep('info'); }} className="p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl bg-white border-white hover:border-slate-200">
-            <ShoppingBag className="h-8 w-8 mb-6" />
-            <h3 className="font-headline font-black text-2xl">{t.iWantToBuy}</h3>
+          <button onClick={() => { setRole('buyer'); setStep('info'); }} className="p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl bg-white border-white hover:border-slate-200 group">
+            <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors mb-6">
+              <ShoppingBag className="h-8 w-8" />
+            </div>
+            <h3 className="font-headline font-black text-2xl mb-2">{t.iWantToBuy}</h3>
+            <p className="text-slate-500">Accede a cursos, herramientas y servicios exclusivos.</p>
           </button>
-          <button onClick={() => { setRole('affiliate'); setStep('info'); }} className="p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl bg-white border-white hover:border-slate-200">
-            <Target className="h-8 w-8 mb-6" />
-            <h3 className="font-headline font-black text-2xl">{t.iWantToSell}</h3>
+          <button onClick={() => { setRole('affiliate'); setStep('info'); }} className="p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl bg-white border-white hover:border-slate-200 group">
+            <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors mb-6">
+              <Target className="h-8 w-8" />
+            </div>
+            <h3 className="font-headline font-black text-2xl mb-2">{t.iWantToSell}</h3>
+            <p className="text-slate-500">Gana dinero recomendando productos y creando tu red.</p>
           </button>
         </div>
       )}
@@ -266,27 +288,53 @@ function RegisterContent() {
           <CardContent className="p-10">
             <form onSubmit={handleNextStep} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
-                <Input placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
+                <div className="space-y-2">
+                  <Label>Nombre</Label>
+                  <Input placeholder="Tu nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required className="h-12 rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Apellido</Label>
+                  <Input placeholder="Tu apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required className="h-12 rounded-xl" />
+                </div>
               </div>
-              <Input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
-              <Input type="password" placeholder="Contraseña" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" placeholder="email@ejemplo.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="h-12 rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label>Contraseña</Label>
+                <div className="relative">
+                  <Input type={showPassword ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required className="h-12 rounded-xl" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
               
               {role === 'affiliate' && (
-                <div className="space-y-4 pt-4 border-t">
+                <div className="space-y-4 pt-6 border-t border-slate-100">
+                  <Label className="text-primary font-bold">Datos Bancarios para cobros</Label>
                   <Select onValueChange={(v) => setFormData({...formData, bank: v})}>
-                    <SelectTrigger><SelectValue placeholder="Banco" /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="Selecciona tu banco" />
+                    </SelectTrigger>
                     <SelectContent>
                       {NICA_BANKS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Input placeholder="Número de Cuenta" value={formData.accNumber} onChange={(e) => setFormData({...formData, accNumber: e.target.value})} required />
-                  <Input placeholder="Nombre del Titular" value={formData.accHolder} onChange={(e) => setFormData({...formData, accHolder: e.target.value})} required />
+                  <Input placeholder="Número de Cuenta" value={formData.accNumber} onChange={(e) => setFormData({...formData, accNumber: e.target.value})} required className="h-12 rounded-xl" />
+                  <Input placeholder="Nombre completo del titular" value={formData.accHolder} onChange={(e) => setFormData({...formData, accHolder: e.target.value})} required className="h-12 rounded-xl" />
                 </div>
               )}
-              <Button type="submit" className="w-full h-14 rounded-2xl font-bold" disabled={loading}>
-                {role === 'affiliate' ? "Siguiente" : "Registrarse"}
-              </Button>
+              
+              <div className="flex flex-col gap-4 pt-4">
+                <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : (role === 'affiliate' ? "Continuar al examen" : "Crear mi cuenta")}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setStep('role')} className="text-slate-400">
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Volver
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -294,21 +342,32 @@ function RegisterContent() {
 
       {step === 'exam' && (
         <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[3.5rem] bg-white">
+          <CardHeader className="text-center p-10 pb-0">
+            <CardTitle className="text-2xl font-headline font-black text-primary">Evaluación de Ingreso</CardTitle>
+            <p className="text-slate-500 mt-2">Responde brevemente para activar tu cuenta de afiliado.</p>
+          </CardHeader>
           <CardContent className="p-10">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label>{t.question1}</Label>
-                <Textarea required value={examData.q1} onChange={(e) => setExamData({...examData, q1: e.target.value})} />
+                <Label className="font-bold">{t.question1}</Label>
+                <Textarea required placeholder="Escribe tu respuesta..." value={examData.q1} onChange={(e) => setExamData({...examData, q1: e.target.value})} className="rounded-xl min-h-[80px]" />
               </div>
               <div className="space-y-2">
-                <Label>{t.question2}</Label>
-                <Textarea required value={examData.q2} onChange={(e) => setExamData({...examData, q2: e.target.value})} />
+                <Label className="font-bold">{t.question2}</Label>
+                <Textarea required placeholder="Escribe tu respuesta..." value={examData.q2} onChange={(e) => setExamData({...examData, q2: e.target.value})} className="rounded-xl min-h-[80px]" />
               </div>
               <div className="space-y-2">
-                <Label>{t.question3}</Label>
-                <Textarea required value={examData.q3} onChange={(e) => setExamData({...examData, q3: e.target.value})} />
+                <Label className="font-bold">{t.question3}</Label>
+                <Textarea required placeholder="Escribe tu respuesta..." value={examData.q3} onChange={(e) => setExamData({...examData, q3: e.target.value})} className="rounded-xl min-h-[80px]" />
               </div>
-              <Button type="submit" className="w-full h-14 rounded-2xl font-bold" disabled={loading}>Finalizar</Button>
+              <div className="flex flex-col gap-4 pt-4">
+                <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : "Finalizar registro"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setStep('info')} className="text-slate-400">
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Volver
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -317,7 +376,7 @@ function RegisterContent() {
   )
 }
 
-export default function RegisterPage() {
+export function RegisterPageWrapper() {
   return (
     <Suspense fallback={<div>Cargando...</div>}>
       <RegisterContent />
