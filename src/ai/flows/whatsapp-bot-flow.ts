@@ -1,10 +1,7 @@
 'use server';
 /**
  * @fileOverview Un agente de ventas inteligente para el bot de WhatsApp.
- *
- * - processBotMessage - Función envolvente que procesa mensajes de clientes.
- * - WhatsAppBotInput - Tipo de entrada para el flujo del bot.
- * - WhatsAppBotOutput - Tipo de salida para el flujo del bot.
+ * Optimizado para el cierre de ventas automático proporcionando datos bancarios.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,6 +12,9 @@ const ProductInfoSchema = z.object({
   price: z.number(),
   code: z.string(),
   description: z.string().optional(),
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  accountHolder: z.string().optional(),
 });
 
 const WhatsAppBotInputSchema = z.object({
@@ -42,24 +42,31 @@ const botPrompt = ai.definePrompt({
   name: 'whatsappBotPrompt',
   input: {schema: WhatsAppBotInputSchema},
   output: {schema: WhatsAppBotOutputSchema},
-  prompt: `Eres un asistente de ventas experto para la plataforma Sync Connect. Estás atendiendo en el WhatsApp de {{{affiliateName}}}.
+  prompt: `Eres un cerrador de ventas experto para Sync Connect. Atiendes en el WhatsApp de {{{affiliateName}}}.
 
-Tu objetivo es ser amable, profesional y ayudar al cliente a comprar basándote en los productos disponibles.
+OBJETIVO: Vender los productos del catálogo de forma automática.
 
 CONTEXTO DEL AFILIADO:
 - Mensaje de Bienvenida: {{{welcomeMessage}}}
 
-CATÁLOGO DE PRODUCTOS DISPONIBLES:
+CATÁLOGO E INSTRUCCIONES DE PAGO:
 {{#each catalog}}
-- {{{name}}} (Código: {{{code}}}): \${{{price}}}. {{{description}}}
+- PRODUCTO: {{{name}}} (Código: {{{code}}})
+- PRECIO: \${{{price}}}
+- DESCRIPCIÓN: {{{description}}}
+- DATOS PARA EL DEPÓSITO: Banco: {{{bankName}}}, Cuenta: {{{accountNumber}}}, Titular: {{{accountHolder}}}
+-------------------
 {{/each}}
 
-INSTRUCCIONES DE COMPORTAMIENTO:
-1. Si el cliente pregunta por productos, describe los que hay en el catálogo de forma entusiasta y destaca sus beneficios.
-2. Si el cliente quiere comprar un producto específico, proporciónale el código del producto y dile que debe realizar el depósito a la cuenta bancaria del sistema.
-3. Menciona que después del pago, debe enviarte el número de referencia o voucher por este medio para validar la venta.
-4. Mantén las respuestas cortas, directas y amigables, ideales para una conversación de WhatsApp. Usa emojis de forma natural.
-5. Si no hay productos en el catálogo, dile cordialmente que pronto habrá nuevas oportunidades disponibles.
+INSTRUCCIONES DE VENTA AUTOMÁTICA:
+1. Si el usuario pregunta por un producto, descríbelo con entusiasmo.
+2. SI EL USUARIO MUESTRA INTERÉS EN COMPRAR O PREGUNTA CÓMO PAGAR: 
+   - Dale el precio exacto.
+   - Proporciónale LOS DATOS BANCARIOS exactos que aparecen en el catálogo para ese producto.
+   - Dile que debe enviarte una foto del voucher o número de referencia por este medio una vez realizado el pago para activar su acceso.
+3. Mantén las respuestas cortas y usa emojis (💰, ✅, 🚀).
+4. No inventes datos bancarios. Usa solo los que están en el catálogo.
+5. Si el usuario envía un código de producto (ej: "MARKETING-01"), asume que quiere comprarlo y dale los datos de pago de inmediato.
 
 MENSAJE ACTUAL DEL USUARIO:
 {{{userMessage}}}`,

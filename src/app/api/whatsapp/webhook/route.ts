@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -6,14 +5,13 @@ import { processBotMessage } from '@/ai/flows/whatsapp-bot-flow';
 
 /**
  * Webhook universal para recibir mensajes de WhatsApp.
- * Optimizado para identificar al afiliado y procesar respuestas IA inmediatamente.
+ * Ahora incluye los datos bancarios de los productos para permitir la venta automática.
  */
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get('content-type');
     let body: any;
 
-    // Manejar formatos JSON (Meta/Gupshup) y Form URL Encoded (Twilio)
     if (contentType?.includes('application/json')) {
       body = await req.json();
     } else {
@@ -21,7 +19,6 @@ export async function POST(req: Request) {
       body = Object.fromEntries(formData.entries());
     }
 
-    // Extraer remitente y mensaje soportando múltiples proveedores
     const from = body.From || body.from || body.sender || (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from);
     const message = body.Body || body.message || body.text || (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body);
 
@@ -30,11 +27,8 @@ export async function POST(req: Request) {
     }
 
     const { firestore } = initializeFirebase();
-    
-    // Limpiar número: quitar '+', espacios y dejar solo dígitos para la búsqueda
     const cleanNumber = from.toString().replace(/\D/g, '');
     
-    // Buscar al afiliado con el bot activo para este número
     const affiliatesRef = collection(firestore, 'affiliates');
     const q = query(affiliatesRef, 
       where('whatsappNumber', '==', cleanNumber), 
@@ -53,17 +47,22 @@ export async function POST(req: Request) {
     const affiliateDoc = querySnapshot.docs[0];
     const affiliate = affiliateDoc.data();
 
-    // Obtener catálogo de productos en tiempo real
+    // Obtener catálogo con datos de pago para que la IA pueda "vender sola"
     const productsRef = collection(firestore, 'products');
     const productsSnapshot = await getDocs(productsRef);
-    const catalog = productsSnapshot.docs.map(doc => ({
-      name: doc.data().name,
-      price: doc.data().price,
-      code: doc.data().code,
-      description: doc.data().description
-    }));
+    const catalog = productsSnapshot.docs.map(doc => {
+      const p = doc.data();
+      return {
+        name: p.name,
+        price: p.price,
+        code: p.code,
+        description: p.description,
+        bankName: p.payoutBankId || 'Consultar',
+        accountNumber: p.payoutBankAccountNumber || 'Consultar',
+        accountHolder: p.payoutBankAccountHolderName || 'Administrador'
+      };
+    });
 
-    // Procesar con la Inteligencia Artificial de Sync Connect
     const aiResponse = await processBotMessage({
       userMessage: message.toString(),
       affiliateName: affiliate.firstName || 'Asistente Sync Connect',
@@ -72,7 +71,6 @@ export async function POST(req: Request) {
       history: []
     });
 
-    // Retornar la respuesta para que el proveedor de WhatsApp la envíe al cliente
     return NextResponse.json({ 
       success: true,
       reply: aiResponse.reply,
@@ -89,9 +87,6 @@ export async function POST(req: Request) {
   }
 }
 
-/**
- * Verificación del Webhook (Requerido por Meta Business y otros proveedores)
- */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get('hub.mode');
