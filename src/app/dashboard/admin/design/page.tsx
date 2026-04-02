@@ -196,7 +196,7 @@ export default function AdminDesignPage() {
                    </div>
                    <div>
                      <h3 className="text-2xl font-black text-blue-900 tracking-tight">Sincronizador: Recuperación de Clave</h3>
-                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Vincula estos datos en tu Consola Firebase para control total</p>
+                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Vincula estos datos en tu Consola Firebase para que el link salga de tu Gmail</p>
                    </div>
                  </div>
                  <Button asChild variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl shadow-xl shadow-blue-200">
@@ -235,9 +235,9 @@ export default function AdminDesignPage() {
                    <AlertTriangle className="h-5 w-5" />
                  </div>
                  <div className="space-y-2">
-                   <p className="text-xs text-amber-800 font-black uppercase tracking-widest">⚠️ CONFIGURACIÓN VITAL (MODO SSL):</p>
+                   <p className="text-xs text-amber-800 font-black uppercase tracking-widest">⚠️ REQUISITO DE SEGURIDAD (IMPORTANTE):</p>
                    <p className="text-sm text-amber-800 font-medium leading-relaxed">
-                     En la Consola de Firebase, al configurar el servidor SMTP, asegúrate de marcar la casilla <strong>"SSL"</strong> (no TLS) y usar el puerto <strong>465</strong>. Sin esto, Google bloqueará el envío del link de recuperación por seguridad.
+                     Para que Google permita enviar el link desde tu Gmail, debes marcar <strong>"SSL"</strong> y usar el puerto <strong>465</strong> en la consola de Firebase. Además, asegúrate de haber generado una <strong>Contraseña de Aplicación</strong> en tu cuenta de Google, de lo contrario la conexión será rechazada.
                    </p>
                  </div>
                </div>

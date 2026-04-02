@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info, AlertTriangle, Send } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, ShieldAlert, Info, AlertTriangle, Send, MailCheck } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -56,7 +56,7 @@ export default function AffiliateLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
       const user = cred.user;
 
-      // NOTIFICACIÓN DE SEGURIDAD POR CORREO (Desde el Gmail del Admin)
+      // NOTIFICACIÓN DE SEGURIDAD POR CORREO
       if (user.email) {
         try {
           await sendEmail({
@@ -127,35 +127,35 @@ export default function AffiliateLoginPage() {
     setResetLoading(true)
 
     try {
-      // 1. Enviamos el correo oficial de Firebase (Link técnico)
+      // 1. Enviamos el correo oficial de Firebase (Link técnico de seguridad)
       await sendPasswordResetEmail(auth, cleanEmail)
 
-      // 2. Enviamos un correo de cortesía desde el Gmail del Admin para dar identidad profesional
+      // 2. Enviamos simultáneamente el correo profesional con instrucciones desde el Gmail del Admin
       try {
         await sendEmail({
           to: cleanEmail,
           subject: t.language === 'es' ? "Instrucciones de Recuperación - Sync Connect" : "Recovery Instructions - Sync Connect",
           text: t.language === 'es' 
-            ? `Hola, hemos recibido una solicitud para restablecer tu contraseña. \n\nAcabamos de enviarte un segundo correo electrónico con un enlace de seguridad oficial de Google. Por favor, búscalo en tu bandeja de entrada (o en Spam) para completar el proceso. \n\nSi no has solicitado este cambio, puedes ignorar este mensaje.`
-            : `Hello, we received a request to reset your password. \n\nWe have just sent you a second email with an official security link. Please look for it in your inbox (or Spam) to complete the process. \n\nIf you did not request this, you can ignore this message.`
+            ? `Hola,\n\nHemos recibido una solicitud para restablecer tu contraseña. Para garantizar tu seguridad, hemos activado el protocolo de recuperación dual:\n\n1. Recibirás un segundo correo electrónico con un enlace de seguridad oficial de Google.\n2. Haz clic en ese enlace para elegir tu nueva contraseña.\n\nSi no has solicitado este cambio, por favor ignora este mensaje y tu cuenta permanecerá segura.`
+            : `Hello,\n\nWe received a request to reset your password. To ensure your security, we have activated the dual recovery protocol:\n\n1. You will receive a second email with an official security link from Google.\n2. Click that link to choose your new password.\n\nIf you did not request this, please ignore this message and your account will remain secure.`
         });
       } catch (e) {
-        console.warn("Professional notification failed, but Firebase email was sent.");
+        console.warn("Professional instructions notification failed, but Firebase email was sent.");
       }
 
       toast({
-        title: "Instrucciones Enviadas",
+        title: "Correos Enviados",
         description: t.language === 'es' 
-          ? `Revisa tu correo (${cleanEmail}). Hemos enviado el link de seguridad y una guía de pasos.` 
-          : `Check your email (${cleanEmail}). We've sent the security link and a step-by-step guide.`,
+          ? `Revisa tu correo (${cleanEmail}). Hemos enviado las instrucciones y el link de seguridad.` 
+          : `Check your email (${cleanEmail}). We've sent the instructions and the security link.`,
       })
       setResetCooldown(60); 
     } catch (error: any) {
       console.error("Reset Error:", error.code);
-      let errorMsg = "No se pudo enviar el correo.";
+      let errorMsg = "No se pudo enviar el correo de recuperación.";
       
       if (error.code === 'auth/internal-error' || error.code === 'auth/network-request-failed') {
-        errorMsg = "Error de sincronización SMTP. El administrador debe activar el puerto 465 con SSL en la Consola Firebase.";
+        errorMsg = "Error de sincronización SMTP. Asegúrate de que el administrador configuró el Puerto 465 con SSL en la Consola Firebase.";
       } else if (error.code === 'auth/user-not-found') {
         errorMsg = "Este correo no está registrado en el sistema.";
       }
