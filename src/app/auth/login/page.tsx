@@ -66,7 +66,6 @@ export default function AffiliateLoginPage() {
     
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    // Forzamos la selección de cuenta para evitar errores de sesión persistente
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
@@ -75,7 +74,6 @@ export default function AffiliateLoginPage() {
 
       if (!user) throw new Error("No se pudo obtener la información del usuario");
 
-      // Verificar si ya existe como afiliado o comprador
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
@@ -91,7 +89,6 @@ export default function AffiliateLoginPage() {
         return;
       }
 
-      // Si no existe, lo creamos como comprador por defecto
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -106,13 +103,10 @@ export default function AffiliateLoginPage() {
       console.error("Google Login Error:", error);
       
       let errorMessage = "Ocurrió un error al conectar con Google.";
-      
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "La ventana de inicio de sesión se cerró antes de completar el proceso.";
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = "El inicio de sesión con Google no está habilitado en Firebase. Por favor, avise al administrador.";
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado para el inicio de sesión con Google.";
+        errorMessage = "El inicio de sesión con Google no está habilitado en Firebase.";
       }
 
       toast({ 
@@ -126,19 +120,6 @@ export default function AffiliateLoginPage() {
   };
 
   const handlePostLogin = async (user: any) => {
-    // Intentar enviar email de seguridad (opcional, no bloquea el login)
-    if (user.email) {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: "Nuevo inicio de sesión detectado",
-          text: `Hola, se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect el ${new Date().toLocaleString()}. Si no fuiste tú, por favor contacta a soporte.`
-        });
-      } catch (e) {
-        console.error("Error enviando email de alerta:", e);
-      }
-    }
-
     const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
     
     if (affiliateSnap.exists()) {
@@ -164,14 +145,12 @@ export default function AffiliateLoginPage() {
     }
     setResetLoading(true)
     try {
-      // Primero enviamos nuestro correo de instrucciones personalizado
       await sendEmail({
         to: cleanEmail,
         subject: "Instrucciones para restablecer tu contraseña",
-        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. \n\nA continuación recibirás un segundo correo oficial de seguridad de Google/Firebase con el enlace para cambiar tu contraseña. \n\nPor favor, revisa tu bandeja de entrada (y la carpeta de spam) y sigue las instrucciones del correo oficial.`
+        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. \n\nA continuación recibirás un segundo correo oficial de seguridad de Google/Firebase con el enlace para cambiar tu contraseña. \n\nPor favor, revisa tu bandeja de entrada y sigue las instrucciones del correo oficial.`
       });
       
-      // Luego disparamos la función nativa de Firebase
       await sendPasswordResetEmail(auth, cleanEmail)
       
       toast({ 
@@ -184,7 +163,7 @@ export default function AffiliateLoginPage() {
       toast({ 
         variant: "destructive", 
         title: "Error", 
-        description: "No se pudo procesar la solicitud de recuperación. Verifica el correo." 
+        description: "No se pudo procesar la solicitud de recuperación." 
       });
     } finally {
       setResetLoading(false)

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Sparkles, ChevronRight, Landmark, ClipboardCheck, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -132,7 +132,7 @@ function RegisterContent() {
       toast({ 
         variant: "destructive", 
         title: "Error de Registro", 
-        description: "Error al conectar con Google. Verifica que esté habilitado en Firebase." 
+        description: "Error al conectar con Google. Verifica que esté habilitado en la consola de Firebase." 
       });
     } finally {
       setLoading(false);
@@ -234,7 +234,7 @@ function RegisterContent() {
             {displayLogoUrl ? (
               <Image src={displayLogoUrl} alt="Logo" width={80} height={80} className="object-contain p-3" unoptimized />
             ) : (
-              <Sparkles className="h-10 w-10 text-primary" />
+              <span className="text-primary text-2xl font-bold">SC</span>
             )}
           </div>
         </Link>
@@ -376,7 +376,7 @@ function RegisterContent() {
   )
 }
 
-export function RegisterPageWrapper() {
+export default function RegisterPageWrapper() {
   return (
     <Suspense fallback={<div>Cargando...</div>}>
       <RegisterContent />
