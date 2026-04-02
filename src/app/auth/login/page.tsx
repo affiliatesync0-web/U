@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, LogIn } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'image'
+import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
@@ -83,6 +84,7 @@ export default function AffiliateLoginPage() {
         return;
       }
 
+      // If neither exists, create as buyer
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -95,10 +97,16 @@ export default function AffiliateLoginPage() {
       router.push('/dashboard/buyer');
     } catch (error: any) {
       console.error("Google Login Error:", error);
+      let message = "Error al conectar con Google.";
+      if (error.code === 'auth/operation-not-allowed') {
+        message = "El inicio de sesión con Google no está habilitado en Firebase Console.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        message = "Cerraste la ventana de inicio de sesión.";
+      }
       toast({ 
         variant: "destructive", 
         title: "Error de Autenticación", 
-        description: error.message || "Error al conectar con Google. Verifica que el servicio esté habilitado en Firebase Console." 
+        description: message 
       });
     } finally {
       setLoading(false);
@@ -173,7 +181,7 @@ export default function AffiliateLoginPage() {
       <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
         <div className="relative h-20 w-20 shadow-2xl rounded-[2rem] overflow-hidden bg-white ring-8 ring-primary/5 group-hover:scale-110 transition-transform flex items-center justify-center">
            {displayLogoUrl ? (
-             <Image src={displayLogoUrl} alt="Sync Connect" fill className="object-contain p-3" unoptimized />
+             <Image src={displayLogoUrl} alt="Sync Connect" width={80} height={80} className="object-contain p-3" unoptimized />
            ) : (
              <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
            )}
