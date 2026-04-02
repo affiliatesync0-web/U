@@ -4,6 +4,10 @@ import nodemailer from 'nodemailer';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
+/**
+ * Función servidora para obtener la configuración SMTP desde Firestore.
+ * Importante: Se utiliza el SDK de cliente de Firebase pero ejecutado en entorno de servidor.
+ */
 async function getTransporter() {
   const { firestore } = initializeFirebase();
   
@@ -11,7 +15,7 @@ async function getTransporter() {
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
     const config = configDoc.exists() ? configDoc.data() : {};
 
-    // Valores por defecto (los que proporcionaste) o los configurados en el panel
+    // Credenciales por defecto si no hay configuración en DB
     const user = config.smtp_user || 'affiliatesync0@gmail.com';
     const pass = config.smtp_password || 'wagrmuphptnevpin';
     const host = config.smtp_host || 'smtp.gmail.com';
@@ -30,11 +34,24 @@ async function getTransporter() {
       fromName
     };
   } catch (error) {
-    console.error('Error al obtener configuración SMTP:', error);
-    throw new Error('Error al configurar el servidor de correo');
+    console.error('Error al obtener configuración SMTP desde Firestore:', error);
+    // Fallback a configuración hardcoded en caso de error de acceso a DB
+    return {
+      transporter: nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user: 'affiliatesync0@gmail.com', pass: 'wagrmuphptnevpin' },
+      }),
+      fromEmail: 'affiliatesync0@gmail.com',
+      fromName: 'Sync Connect'
+    };
   }
 }
 
+/**
+ * Envía un correo electrónico utilizando la configuración dinámica.
+ */
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
   try {
     const { transporter, fromEmail, fromName } = await getTransporter();
@@ -47,17 +64,21 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       html: html || text.replace(/\n/g, '<br>'),
     });
 
+    console.log('Email enviado correctamente:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
-    console.error('Error enviando email:', error);
+    console.error('Error detallado al enviar email:', error);
     return { success: false, error: error.message };
   }
 }
 
+/**
+ * Función para probar la conexión SMTP.
+ */
 export async function testEmailConfig(toEmail: string) {
   return await sendEmail({
     to: toEmail,
-    subject: 'Prueba de Configuración SMTP',
-    text: 'Si recibes este correo, la configuración de tu servidor de correo es correcta.'
+    subject: 'Prueba de Configuración SMTP - Sync Connect',
+    text: 'Esta es una prueba del sistema de correos de Sync Connect. Si recibes esto, tu configuración es correcta.'
   });
 }

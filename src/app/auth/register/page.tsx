@@ -77,6 +77,7 @@ function RegisterContent() {
   }
 
   const handleGoogleLogin = async () => {
+    if (!auth || !db) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -112,13 +113,10 @@ function RegisterContent() {
       router.push('/dashboard/buyer');
     } catch (error: any) {
       console.error("Google Auth Error:", error);
-      let msg = "Error al conectar con Google. Por favor, inténtalo de nuevo.";
-      if (error.code === 'auth/popup-closed-by-user') msg = "Se cerró la ventana de acceso.";
-      
       toast({ 
         variant: "destructive", 
         title: "Error de Registro", 
-        description: msg 
+        description: error.message || "Error al conectar con Google. Verifica que esté habilitado en Firebase Console." 
       });
     } finally {
       setLoading(false);

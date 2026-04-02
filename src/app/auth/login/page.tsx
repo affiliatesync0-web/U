@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, LogIn } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
+import Image from 'image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
@@ -60,9 +59,9 @@ export default function AffiliateLoginPage() {
   }
 
   const handleGoogleLogin = async () => {
+    if (!auth || !db) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    // Forzamos la selección de cuenta para evitar errores de sesión persistente
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
@@ -84,7 +83,6 @@ export default function AffiliateLoginPage() {
         return;
       }
 
-      // Si no existe, crear como comprador por defecto
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -97,18 +95,10 @@ export default function AffiliateLoginPage() {
       router.push('/dashboard/buyer');
     } catch (error: any) {
       console.error("Google Login Error:", error);
-      let errorMessage = "Error al conectar con Google. Verifica que el servicio esté habilitado.";
-      
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana de inicio de sesión fue cerrada.";
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        errorMessage = "Operación cancelada.";
-      }
-      
       toast({ 
         variant: "destructive", 
         title: "Error de Autenticación", 
-        description: errorMessage 
+        description: error.message || "Error al conectar con Google. Verifica que el servicio esté habilitado en Firebase Console." 
       });
     } finally {
       setLoading(false);
@@ -153,19 +143,17 @@ export default function AffiliateLoginPage() {
     }
     setResetLoading(true)
     try {
-      // Intentamos enviar el correo de instrucciones personalizado
       await sendEmail({
         to: cleanEmail,
         subject: "Instrucciones de Recuperación de Contraseña",
-        text: "Hola, has solicitado recuperar tu contraseña. A continuación recibirás un correo oficial de seguridad con el enlace de restablecimiento. Por favor, revisa tu carpeta de spam si no lo ves en unos minutos."
+        text: "Hola, has solicitado recuperar tu contraseña. Por favor, revisa tu correo para ver el mensaje oficial de restablecimiento que te acabamos de enviar desde el sistema de seguridad de Google / Firebase. Si no lo ves, revisa tu carpeta de SPAM."
       });
       
-      // Enviamos el correo oficial de Firebase
       await sendPasswordResetEmail(auth, cleanEmail)
       
       toast({ 
-        title: "Correos enviados", 
-        description: "Revisa tu bandeja de entrada. Recibirás instrucciones y un enlace de seguridad." 
+        title: "Correo enviado", 
+        description: "Se han enviado instrucciones a tu correo." 
       });
       setResetCooldown(60); 
     } catch (error: any) {
@@ -173,7 +161,7 @@ export default function AffiliateLoginPage() {
       toast({ 
         variant: "destructive", 
         title: "Error", 
-        description: "No se pudo enviar el correo de recuperación. Verifica que la dirección sea correcta." 
+        description: "No se pudo enviar el correo de recuperación." 
       });
     } finally {
       setResetLoading(false)
@@ -261,4 +249,3 @@ export default function AffiliateLoginPage() {
     </div>
   )
 }
-    
