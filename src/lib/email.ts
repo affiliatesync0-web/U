@@ -5,9 +5,10 @@ import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 /**
- * Función para obtener la configuración SMTP desde la base de datos
+ * Obtiene la configuración SMTP desde la colección site_config en Firestore.
+ * Se espera un documento con ID 'settings'.
  */
-async function getEmailConfig() {
+async function getSmtpConfig() {
   const { firestore } = initializeFirebase();
   try {
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
@@ -15,41 +16,26 @@ async function getEmailConfig() {
       return configDoc.data();
     }
   } catch (error) {
-    console.error("Error al obtener config de correo:", error);
+    console.error("Error al obtener la configuración de correo:", error);
   }
   return null;
 }
 
 /**
- * Función para obtener el logo del sitio
+ * Envía un correo electrónico utilizando la configuración SMTP guardada.
  */
-async function getSiteLogo() {
-  const { firestore } = initializeFirebase();
-  try {
-    const logoDoc = await getDoc(doc(firestore, 'site_config', 'site-logo'));
-    if (logoDoc.exists()) {
-      return logoDoc.data().imageUrl;
-    }
-  } catch (error) {
-    console.error("Error al obtener logo:", error);
-  }
-  return null;
-}
-
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
-  const config = await getEmailConfig();
-  const siteLogo = await getSiteLogo();
+  const config = await getSmtpConfig();
 
-  // Si no hay configuración, no podemos enviar
-  if (!config || !config.smtp_user) {
-    console.error("Configuración de correo no encontrada en la base de datos.");
-    return { success: false, error: "Configuración de correo no disponible" };
+  if (!config || !config.smtp_user || !config.smtp_password) {
+    console.error("Configuración SMTP no encontrada o incompleta.");
+    return { success: false, error: "Configuración de correo no disponible." };
   }
 
   const transporter = nodemailer.createTransport({
     host: config.smtp_host || 'smtp.gmail.com',
     port: parseInt(config.smtp_port) || 465,
-    secure: config.smtp_port === '465', // true for 465, false for other ports
+    secure: config.smtp_port == '465', // true para puerto 465 (SSL)
     auth: {
       user: config.smtp_user,
       pass: config.smtp_password,
@@ -59,18 +45,18 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   const fromName = config.smtp_from_name || 'Sync Connect';
   const fromEmail = config.smtp_from_email || config.smtp_user;
 
-  // Si no se proporciona HTML, creamos uno básico pero elegante
+  // Diseño de correo electrónico profesional
   const emailHtml = html || `
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-      <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-bottom: 1px solid #eee;">
-        ${siteLogo ? `<img src="${siteLogo}" alt="Logo" style="max-height: 50px; margin-bottom: 10px;">` : ''}
-        <h1 style="margin: 0; color: #1e293b; font-size: 20px;">${fromName}</h1>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+      <div style="background-color: #ff5d1b; padding: 30px; text-align: center;">
+        <h1 style="margin: 0; color: #ffffff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Sync Connect</h1>
       </div>
-      <div style="padding: 30px; line-height: 1.6; color: #334155;">
-        ${text.split('\n').map(line => `<p>${line}</p>`).join('')}
+      <div style="padding: 40px; line-height: 1.6; color: #1e293b; font-size: 16px;">
+        ${text.split('\n').map(line => `<p style="margin-bottom: 15px;">${line}</p>`).join('')}
       </div>
-      <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #eee;">
-        &copy; ${new Date().getFullYear()} ${fromName}. Todos los derechos reservados.
+      <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${fromName}. Todos los derechos reservados.</p>
+        <p style="margin: 5px 0 0;">Este es un correo automático, por favor no respondas a este mensaje.</p>
       </div>
     </div>
   `;
@@ -79,13 +65,12 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to,
-      subject: `[${fromName}] ${subject}`,
-      text, // Versión en texto plano
-      html: emailHtml, // Versión en HTML
+      subject: `${subject}`,
+      text,
+      html: emailHtml,
     });
 
-    console.log('Email enviado:', info.messageId);
-    return { success: true };
+    return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('Error al enviar email:', error);
     return { success: false, error: error.message };
@@ -93,15 +78,12 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
 }
 
 /**
- * Función para probar la configuración desde el panel
+ * Función para probar la configuración SMTP desde el panel.
  */
-export async function testEmailConfig() {
-  const config = await getEmailConfig();
-  if (!config) return { success: false, error: "No hay configuración" };
-  
+export async function testEmailConfig(email: string) {
   return await sendEmail({
-    to: config.smtp_user,
-    subject: 'Prueba de configuración',
-    text: 'Si recibes este correo, la configuración de tu servidor SMTP funciona correctamente.'
+    to: email,
+    subject: 'Prueba de configuración de correo - Sync Connect',
+    text: 'Felicidades, la configuración de tu servidor SMTP funciona correctamente y estás listo para enviar notificaciones desde el sistema.'
   });
 }

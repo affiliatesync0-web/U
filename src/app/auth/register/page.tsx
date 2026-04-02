@@ -110,6 +110,7 @@ function RegisterContent() {
         return;
       }
 
+      // Si no existe, crear como comprador por defecto
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -132,7 +133,7 @@ function RegisterContent() {
       toast({ 
         variant: "destructive", 
         title: "Error de Registro", 
-        description: "Error al conectar con Google. Verifica que esté habilitado en la consola de Firebase." 
+        description: "No se pudo conectar con Google. Asegúrate de que esté habilitado en la consola de Firebase." 
       });
     } finally {
       setLoading(false);
@@ -376,7 +377,7 @@ function RegisterContent() {
   )
 }
 
-export default function RegisterPageWrapper() {
+export default function RegisterPage() {
   return (
     <Suspense fallback={<div>Cargando...</div>}>
       <RegisterContent />

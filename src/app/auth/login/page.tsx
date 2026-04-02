@@ -18,7 +18,7 @@ import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
 
-export default function AffiliateLoginPage() {
+export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { t } = useLanguage()
@@ -89,6 +89,7 @@ export default function AffiliateLoginPage() {
         return;
       }
 
+      // Si es un usuario nuevo vía Google, lo registramos como comprador
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
