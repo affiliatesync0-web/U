@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, setDocumentNonBlocking, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
@@ -247,7 +247,6 @@ function RegisterContent() {
         </div>
       </div>
 
-      {/* El resto de la UI del formulario permanece igual */}
       {step === 'role' && !referralId && (
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <button onClick={() => { setRole('buyer'); setStep('info'); }} className="p-8 rounded-[2.5rem] border-4 transition-all text-left shadow-2xl bg-white border-white hover:border-slate-200">

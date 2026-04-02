@@ -1,48 +1,53 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-const { firestore } = initializeFirebase();
-
+/**
+ * Obtiene la configuración SMTP desde la base de datos Firestore.
+ * Se espera que exista un documento en 'site_config/settings' con los campos:
+ * smtp_host, smtp_port, smtp_user, smtp_password, smtp_from_email, smtp_from_name
+ */
 async function getTransporter() {
+  const { firestore } = initializeFirebase();
   try {
-    // Obtenemos la configuración desde la colección site_config
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
     
-    if (!configDoc.exists()) {
-      throw new Error('Configuración SMTP no encontrada en la base de datos.');
-    }
+    // Si no existe configuración en la BD, usamos valores por defecto (deberías configurarlos en el panel)
+    const config = configDoc.exists() ? configDoc.data() : {
+      smtp_host: 'smtp.gmail.com',
+      smtp_port: 465,
+      smtp_user: 'affiliatesync0@gmail.com',
+      smtp_password: 'wagrmuphptnevpin',
+      smtp_from_email: 'affiliatesync0@gmail.com',
+      smtp_from_name: 'Sync Connect'
+    };
 
-    const config = configDoc.data();
-
-    return nodemailer.createTransport({
-      host: config.smtp_host || 'smtp.gmail.com',
-      port: parseInt(config.smtp_port) || 465,
-      secure: parseInt(config.smtp_port) === 465, // true para 465, false para otros como 587
-      auth: {
-        user: config.smtp_user,
-        pass: config.smtp_password,
-      },
-    });
+    return {
+      transporter: nodemailer.createTransport({
+        host: config.smtp_host || 'smtp.gmail.com',
+        port: parseInt(config.smtp_port) || 465,
+        secure: parseInt(config.smtp_port) === 465,
+        auth: {
+          user: config.smtp_user,
+          pass: config.smtp_password,
+        },
+      }),
+      fromEmail: config.smtp_from_email || config.smtp_user,
+      fromName: config.smtp_from_name || 'Sync Connect'
+    };
   } catch (error) {
-    console.error('Error al configurar el transportador:', error);
+    console.error('Error al obtener configuración SMTP:', error);
     throw error;
   }
 }
 
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
   try {
-    const transporter = await getTransporter();
+    const { transporter, fromEmail, fromName } = await getTransporter();
     
-    // Obtenemos los datos de remitente de la misma configuración
-    const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
-    const config = configDoc.data() || {};
-    
-    const fromEmail = config.smtp_from_email || config.smtp_user;
-    const fromName = config.smtp_from_name || 'Sync Connect';
-
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to,

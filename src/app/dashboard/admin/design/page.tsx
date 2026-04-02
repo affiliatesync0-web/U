@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, Info, ExternalLink, AlertTriangle, CheckCircle2, ChevronRight, Zap, Copy, Check } from 'lucide-react'
+import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, ExternalLink, AlertTriangle, Check, Copy } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -73,13 +73,41 @@ export default function AdminDesignPage() {
     }, 1000);
   };
 
+  const handleSaveSmtp = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      smtp_host: formData.get('smtp_host'),
+      smtp_port: formData.get('smtp_port'),
+      smtp_user: formData.get('smtp_user'),
+      smtp_password: formData.get('smtp_password'),
+      smtp_from_email: formData.get('smtp_from_email'),
+      smtp_from_name: formData.get('smtp_from_name'),
+      updatedAt: new Date().toISOString()
+    };
+
+    const configRef = doc(db, 'site_config', 'settings');
+    setSavingId('smtp');
+    setDocumentNonBlocking(configRef, data, { merge: true });
+
+    setTimeout(() => {
+      setSavingId(null);
+      toast({
+        title: "Configuración Guardada",
+        description: "Los ajustes de correo han sido actualizados.",
+      });
+    }, 1000);
+  };
+
   const handleTestEmail = async () => {
-    const gmailUser = overrides?.find(o => o.id === 'gmail-user')?.value || 'affiliatesync0@gmail.com';
+    const settings = overrides?.find(o => o.id === 'settings');
+    const emailToTest = settings?.smtp_user || 'affiliatesync0@gmail.com';
+    
     setTestLoading(true);
     try {
-      const result = await testEmailConfig(gmailUser);
+      const result = await testEmailConfig(emailToTest);
       if (result.success) {
-        toast({ title: "Correo Enviado", description: `Revisa la bandeja de entrada de ${gmailUser} para confirmar.` });
+        toast({ title: "Correo Enviado", description: `Revisa la bandeja de entrada de ${emailToTest} para confirmar.` });
       } else {
         toast({ variant: "destructive", title: "Error en la prueba", description: result.error });
       }
@@ -107,16 +135,7 @@ export default function AdminDesignPage() {
     )
   }
 
-  const getVal = (id: string) => {
-    const found = overrides?.find(o => o.id === id)?.value;
-    if (found) return found;
-    if (id === 'gmail-user') return 'affiliatesync0@gmail.com';
-    if (id === 'gmail-pass') return 'wagrmuphptnevpin';
-    return "";
-  };
-
-  const currentEmail = getVal('gmail-user');
-  const currentPass = getVal('gmail-pass');
+  const settings = overrides?.find(o => o.id === 'settings') || {};
   const firebaseConsoleLink = "https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/emails";
 
   return (
@@ -125,15 +144,15 @@ export default function AdminDesignPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Configuración</h1>
-            <p className="text-muted-foreground">Víncula tu Gmail para enviar avisos de venta, bienvenidas y recuperaciones.</p>
+            <p className="text-muted-foreground">Personaliza tu marca y configura las comunicaciones del sistema.</p>
           </div>
           <div className="flex items-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10">
              <ShieldCheck className="h-5 w-5 text-primary" />
-             <span className="text-[10px] font-black text-primary uppercase tracking-widest">Conexión Segura de Marca</span>
+             <span className="text-[10px] font-black text-primary uppercase tracking-widest">Conexión Segura</span>
           </div>
         </div>
 
-        {/* CENTRO DE MANDO GMAIL */}
+        {/* CONFIGURACIÓN SMTP / GMAIL */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -142,9 +161,9 @@ export default function AdminDesignPage() {
                   <Mail className="h-8 w-8" />
                 </div>
                 <div>
-                  <CardTitle className="text-3xl font-headline font-black text-white">Centro de Identidad Gmail</CardTitle>
+                  <CardTitle className="text-3xl font-headline font-black text-white">Configuración de Correo (SMTP)</CardTitle>
                   <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
-                    Controla todas las comunicaciones desde tu propio correo
+                    Define la cuenta que enviará todos los correos del sistema
                   </CardDescription>
                 </div>
               </div>
@@ -155,36 +174,45 @@ export default function AdminDesignPage() {
                 className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl transition-all"
               >
                 {testLoading ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                Verificar Mi Gmail
+                Probar Configuración
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-10 space-y-12">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Gmail de Negocio</Label>
-                <Input 
-                  placeholder="tu-empresa@gmail.com" 
-                  defaultValue={currentEmail}
-                  onBlur={(e) => handleSaveValue('gmail-user', e.target.value)}
-                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold text-lg"
-                />
+          <CardContent className="p-10">
+            <form onSubmit={handleSaveSmtp} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Servidor SMTP</Label>
+                  <Input name="smtp_host" defaultValue={settings.smtp_host || 'smtp.gmail.com'} className="h-12 rounded-xl" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Puerto</Label>
+                  <Input name="smtp_port" defaultValue={settings.smtp_port || '465'} className="h-12 rounded-xl" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Usuario (Email)</Label>
+                  <Input name="smtp_user" defaultValue={settings.smtp_user || 'affiliatesync0@gmail.com'} className="h-12 rounded-xl" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña de Aplicación</Label>
+                  <Input name="smtp_password" type="password" defaultValue={settings.smtp_password || 'wagrmuphptnevpin'} className="h-12 rounded-xl" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Email Remitente (De:)</Label>
+                  <Input name="smtp_from_email" defaultValue={settings.smtp_from_email || 'affiliatesync0@gmail.com'} className="h-12 rounded-xl" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre Remitente</Label>
+                  <Input name="smtp_from_name" defaultValue={settings.smtp_from_name || 'Sync Connect'} className="h-12 rounded-xl" required />
+                </div>
               </div>
-              <div className="space-y-3">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña de Aplicación (16 caracteres)</Label>
-                <Input 
-                  type="password"
-                  placeholder="•••• •••• •••• ••••" 
-                  defaultValue={currentPass}
-                  onBlur={(e) => handleSaveValue('gmail-pass', e.target.value)}
-                  className="h-16 rounded-[1.25rem] bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-mono font-bold text-lg"
-                />
-              </div>
-            </div>
+              <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={savingId === 'smtp'}>
+                {savingId === 'smtp' ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : "Guardar Cambios SMTP"}
+              </Button>
+            </form>
 
             {/* ASISTENTE DE SINCRONIZACIÓN FIREBASE */}
-            <div className="p-10 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-10 relative overflow-hidden">
+            <div className="mt-12 p-8 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-8 relative overflow-hidden">
                <div className="absolute top-0 right-0 p-8 opacity-5">
                  <Zap className="h-40 w-40 text-blue-500" />
                </div>
@@ -195,8 +223,8 @@ export default function AdminDesignPage() {
                      <RefreshCw className="h-8 w-8" />
                    </div>
                    <div>
-                     <h3 className="text-2xl font-black text-blue-900 tracking-tight">Sincronizador: Recuperación de Clave</h3>
-                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Vincula estos datos en tu Consola Firebase para que el link salga de tu Gmail</p>
+                     <h3 className="text-2xl font-black text-blue-900 tracking-tight">Sincronizador de Firebase</h3>
+                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Configura la recuperación de contraseña en la consola de Firebase</p>
                    </div>
                  </div>
                  <Button asChild variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl shadow-xl shadow-blue-200">
@@ -210,8 +238,8 @@ export default function AdminDesignPage() {
                  {[
                    { label: "Servidor SMTP", value: "smtp.gmail.com" },
                    { label: "Puerto / SSL", value: "465" },
-                   { label: "Usuario SMTP", value: currentEmail },
-                   { label: "Clave SMTP", value: currentPass },
+                   { label: "Usuario SMTP", value: settings.smtp_user || 'affiliatesync0@gmail.com' },
+                   { label: "Clave SMTP", value: settings.smtp_password || 'wagrmuphptnevpin' },
                  ].map((field) => (
                    <div key={field.label} className="p-6 bg-white rounded-[1.5rem] border border-blue-100 shadow-sm flex flex-col justify-between group hover:scale-[1.02] transition-all">
                      <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-3">{field.label}</p>
@@ -235,9 +263,9 @@ export default function AdminDesignPage() {
                    <AlertTriangle className="h-5 w-5" />
                  </div>
                  <div className="space-y-2">
-                   <p className="text-xs text-amber-800 font-black uppercase tracking-widest">⚠️ REQUISITO DE SEGURIDAD (IMPORTANTE):</p>
+                   <p className="text-xs text-amber-800 font-black uppercase tracking-widest">⚠️ REQUISITO DE SEGURIDAD:</p>
                    <p className="text-sm text-amber-800 font-medium leading-relaxed">
-                     Para que Google permita enviar el link desde tu Gmail, debes marcar <strong>"SSL"</strong> y usar el puerto <strong>465</strong> en la consola de Firebase. Además, asegúrate de haber generado una <strong>Contraseña de Aplicación</strong> en tu cuenta de Google, de lo contrario la conexión será rechazada.
+                     Para que Google permita enviar el link desde tu Gmail, debes marcar <strong>"SSL"</strong> y usar el puerto <strong>465</strong> en la consola de Firebase. Además, asegúrate de haber generado una <strong>Contraseña de Aplicación</strong> en tu cuenta de Google.
                    </p>
                  </div>
                </div>
@@ -245,7 +273,7 @@ export default function AdminDesignPage() {
           </CardContent>
         </Card>
 
-        {/* WHATSAPP Y REDES */}
+        {/* CONFIGURACIÓN DE REDES SOCIALES Y OTROS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 p-10">
@@ -253,20 +281,18 @@ export default function AdminDesignPage() {
                 <div className="h-12 w-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 shadow-inner">
                   <Smartphone className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-black text-slate-900">{t.whatsappConfig}</CardTitle>
+                <CardTitle className="text-2xl font-headline font-black text-slate-900">WhatsApp de Soporte</CardTitle>
               </div>
-              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Número oficial para soporte y consultas</CardDescription>
             </CardHeader>
             <CardContent className="p-10 space-y-6">
               <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.whatsappNumberLabel}</Label>
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Número de WhatsApp</Label>
                 <Input 
                   placeholder="50588888888" 
-                  defaultValue={getVal('site-whatsapp')}
+                  defaultValue={overrides?.find(o => o.id === 'site-whatsapp')?.value}
                   onBlur={(e) => handleSaveValue('site-whatsapp', e.target.value)}
                   className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-lg font-mono font-bold"
                 />
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1 italic">Este número activará el botón flotante en la web.</p>
               </div>
             </CardContent>
           </Card>
@@ -277,36 +303,26 @@ export default function AdminDesignPage() {
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
                   <Star className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-black text-white">{t.socialLinks}</CardTitle>
+                <CardTitle className="text-2xl font-headline font-black text-white">Redes Sociales</CardTitle>
               </div>
-              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-500">Enlaces a tus perfiles oficiales</CardDescription>
             </CardHeader>
             <CardContent className="p-10 space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Facebook className="h-3 w-3" /> {t.facebook}</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Facebook className="h-3 w-3" /> Facebook URL</Label>
                   <Input 
                     placeholder="https://facebook.com/tu-pagina" 
-                    defaultValue={getVal('social-facebook')}
+                    defaultValue={overrides?.find(o => o.id === 'social-facebook')?.value}
                     onBlur={(e) => handleSaveValue('social-facebook', e.target.value)}
                     className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Instagram className="h-3 w-3" /> {t.instagram}</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Instagram className="h-3 w-3" /> Instagram URL</Label>
                   <Input 
                     placeholder="https://instagram.com/tu-perfil" 
-                    defaultValue={getVal('social-instagram')}
+                    defaultValue={overrides?.find(o => o.id === 'social-instagram')?.value}
                     onBlur={(e) => handleSaveValue('social-instagram', e.target.value)}
-                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Music2 className="h-3 w-3" /> {t.tiktok}</Label>
-                  <Input 
-                    placeholder="https://tiktok.com/@tu-cuenta" 
-                    defaultValue={getVal('social-tiktok')}
-                    onBlur={(e) => handleSaveValue('social-tiktok', e.target.value)}
                     className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
                   />
                 </div>
@@ -319,7 +335,7 @@ export default function AdminDesignPage() {
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-1 w-12 bg-primary rounded-full" />
-            <h2 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Galería de Medios</h2>
+            <h2 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Galería de Imágenes</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {images.map((img) => {
@@ -344,118 +360,5 @@ export default function AdminDesignPage() {
         </div>
       </div>
     </DashboardShell>
-  )
-}
-
-function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isSaving, t }: any) {
-  const [url, setUrl] = useState(defaultUrl);
-  const [hint, setHint] = useState(defaultHint);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const isLogo = id === 'site-logo';
-  const displayUrl = getGoogleDriveDirectLink(url);
-  const hasValidUrl = displayUrl && displayUrl.trim().length > 0;
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 800000) {
-        alert("La imagen es demasiado grande. Máximo 800KB.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  return (
-    <Card className={cn("border-none shadow-xl rounded-[2.5rem] overflow-hidden flex flex-col transition-all hover:shadow-2xl group bg-white ring-1 ring-slate-100", isLogo && "ring-2 ring-primary/20")}>
-      <div className={cn("relative h-56 w-full bg-slate-50 flex items-center justify-center overflow-hidden", isLogo && "p-10")}>
-        {hasValidUrl ? (
-          <Image 
-            src={displayUrl} 
-            alt={description} 
-            fill={!isLogo}
-            width={isLogo ? 180 : undefined}
-            height={isLogo ? 180 : undefined}
-            className={cn("transition-transform duration-1000 group-hover:scale-110", isLogo ? "object-contain" : "object-cover")}
-            unoptimized={true}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-slate-300">
-            <ImageIcon className="h-16 w-16 mb-2 opacity-20" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Sin Multimedia</span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 gap-3 backdrop-blur-sm">
-           <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} className="font-black text-[10px] uppercase tracking-widest rounded-xl h-12 px-6">
-             <Upload className="h-4 w-4 mr-2" /> {t.updateImage}
-           </Button>
-           {hasValidUrl && (
-             <Button variant="destructive" size="icon" onClick={() => setUrl("")} className="h-12 w-12 rounded-xl">
-               <Trash2 className="h-5 w-5" />
-             </Button>
-           )}
-        </div>
-        {isLogo && (
-          <div className="absolute top-6 right-6 bg-primary text-white text-[9px] font-black px-4 py-1.5 rounded-full flex items-center gap-2 shadow-2xl uppercase tracking-widest">
-            <Star className="h-3 w-3 fill-white" /> Branding
-          </div>
-        )}
-      </div>
-      <CardHeader className="px-8 pt-8 pb-4">
-        <CardTitle className="text-lg font-headline font-black text-slate-900 group-hover:text-primary transition-colors">
-          {description}
-        </CardTitle>
-        <CardDescription className="font-mono text-[9px] uppercase font-bold text-slate-400">ID: {id}</CardDescription>
-      </CardHeader>
-      <CardContent className="px-8 pb-8 space-y-6 flex-1">
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleFileChange} 
-          accept="image/*" 
-          className="hidden" 
-        />
-        
-        <div className="space-y-3">
-          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{t.imageUrl}</Label>
-          <div className="flex gap-2">
-            <Input 
-              value={url.startsWith('data:') ? 'Imagen cargada localmente' : url} 
-              onChange={(e) => setUrl(e.target.value)} 
-              placeholder="URL o sube un archivo"
-              className="text-xs bg-slate-50 border-none ring-1 ring-slate-100 rounded-xl h-12 font-medium"
-              disabled={url.startsWith('data:')}
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
-            <Wand2 className="h-3 w-3 text-primary" /> {t.imageHint}
-          </Label>
-          <Input 
-            value={hint} 
-            onChange={(e) => setHint(e.target.value)} 
-            placeholder="Ej: marketing professional"
-            className="text-xs bg-slate-50 border-none ring-1 ring-slate-100 rounded-xl h-12 font-medium"
-          />
-        </div>
-      </CardContent>
-      <CardFooter className="px-8 pb-8">
-        <Button 
-          onClick={() => onSave(id, url, hint)} 
-          className="w-full bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl h-14 shadow-xl shadow-primary/20"
-          disabled={isSaving}
-        >
-          {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          {t.saveChanges}
-        </Button>
-      </CardFooter>
-    </Card>
   )
 }
