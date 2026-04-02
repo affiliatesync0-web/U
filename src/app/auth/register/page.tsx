@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, Suspense } from 'react'
@@ -21,6 +20,9 @@ import { doc, getDoc, setDoc, collection } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
+
+type UserRole = 'affiliate' | 'buyer'
+type RegStep = 'role' | 'info' | 'exam'
 
 function RegisterContent() {
   const router = useRouter()
@@ -94,7 +96,7 @@ function RegisterContent() {
         return;
       }
 
-      // Registro nuevo desde Google siempre es comprador (a menos que elija ser afiliado después)
+      // Registro nuevo desde Google siempre es comprador
       await setDoc(doc(db, 'buyers', user.uid), {
         id: user.uid,
         firstName: user.displayName?.split(' ')[0] || 'Usuario',
@@ -106,7 +108,12 @@ function RegisterContent() {
       toast({ title: "Registro exitoso", description: "Te has registrado como comprador." });
       router.push('/dashboard/buyer');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Ocurrió un error al registrarse con Google." });
+      console.error(error);
+      let message = "Ocurrió un error al registrarse con Google.";
+      if (error.code === 'auth/operation-not-allowed') {
+        message = "El inicio de sesión con Google no está habilitado en Firebase Console.";
+      }
+      toast({ variant: "destructive", title: "Error", description: message });
     } finally {
       setLoading(false);
     }
@@ -309,9 +316,6 @@ function RegisterContent() {
     </div>
   )
 }
-
-type UserRole = 'affiliate' | 'buyer'
-type RegStep = 'role' | 'info' | 'exam'
 
 export default function RegisterPage() {
   return (

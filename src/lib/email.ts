@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -7,39 +6,35 @@ import { doc, getDoc } from 'firebase/firestore';
 
 /**
  * Obtiene la configuración SMTP desde la base de datos Firestore.
- * Se espera que exista un documento en 'site_config/settings' con los campos:
- * smtp_host, smtp_port, smtp_user, smtp_password, smtp_from_email, smtp_from_name
  */
 async function getTransporter() {
   const { firestore } = initializeFirebase();
+  
   try {
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
-    
-    // Si no existe configuración en la BD, usamos valores por defecto (deberías configurarlos en el panel)
-    const config = configDoc.exists() ? configDoc.data() : {
-      smtp_host: 'smtp.gmail.com',
-      smtp_port: 465,
-      smtp_user: 'affiliatesync0@gmail.com',
-      smtp_password: 'wagrmuphptnevpin',
-      smtp_from_email: 'affiliatesync0@gmail.com',
-      smtp_from_name: 'Sync Connect'
-    };
+    const config = configDoc.exists() ? configDoc.data() : {};
 
-    return {
-      transporter: nodemailer.createTransport({
-        host: config.smtp_host || 'smtp.gmail.com',
-        port: parseInt(config.smtp_port) || 465,
-        secure: parseInt(config.smtp_port) === 465,
-        auth: {
-          user: config.smtp_user,
-          pass: config.smtp_password,
-        },
-      }),
-      fromEmail: config.smtp_from_email || config.smtp_user,
-      fromName: config.smtp_from_name || 'Sync Connect'
-    };
+    // Valores por defecto o los configurados en el panel
+    const user = config.smtp_user || 'affiliatesync0@gmail.com';
+    const pass = config.smtp_password || 'wagrmuphptnevpin';
+    const host = config.smtp_host || 'smtp.gmail.com';
+    const port = parseInt(config.smtp_port) || 465;
+    const fromEmail = config.smtp_from_email || user;
+    const fromName = config.smtp_from_name || 'Sync Connect';
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465, // true para puerto 465, false para otros como 587
+      auth: {
+        user,
+        pass,
+      },
+    });
+
+    return { transporter, fromEmail, fromName };
   } catch (error) {
-    console.error('Error al obtener configuración SMTP:', error);
+    console.error('Error al obtener configuración SMTP desde Firestore:', error);
     throw error;
   }
 }
@@ -56,6 +51,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       html: html || text.replace(/\n/g, '<br>'),
     });
 
+    console.log('Email enviado: %s', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('Error enviando email:', error);
