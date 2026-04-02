@@ -131,8 +131,8 @@ export default function AffiliateLoginPage() {
       toast({
         title: "Correo de Recuperación Enviado",
         description: t.language === 'es' 
-          ? `Revisa tu Gmail (${cleanEmail}). Usa solo el ÚLTIMO correo recibido.` 
-          : `Check your Gmail (${cleanEmail}). Use only the LAST email received.`,
+          ? `Revisa tu Gmail (${cleanEmail}). Si no llega, el administrador debe marcar "SSL" en la Consola Firebase.` 
+          : `Check your Gmail (${cleanEmail}). If it doesn't arrive, the admin must check "SSL" in Firebase Console.`,
       })
       setResetCooldown(60); // Cooldown para evitar saturación y links expirados
     } catch (error: any) {
@@ -141,9 +141,9 @@ export default function AffiliateLoginPage() {
       let errorMsg = "No se pudo enviar el correo.";
       
       if (error.code === 'auth/internal-error' || error.code === 'auth/network-request-failed') {
-        errorMsg = "Error crítico de conexión (SMTP). El administrador debe sincronizar su Gmail en el panel administrativo -> Diseño.";
+        errorMsg = "Error de conexión SMTP. El administrador debe sincronizar su Gmail y marcar 'SSL' en la Consola de Firebase.";
       } else if (error.code === 'auth/user-not-found') {
-        errorMsg = "Este correo no está registrado.";
+        errorMsg = "Este correo no está registrado en el sistema.";
       }
       
       toast({

@@ -221,9 +221,12 @@ export default function AdminDesignPage() {
 
                <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                   <strong>Instrucción Vital:</strong> En la Consola de Firebase, asegúrate de seleccionar <strong>"SSL"</strong> (no TLS) para el puerto 465. Sin esto, Gmail bloqueará la conexión y los usuarios no recibirán sus links de recuperación.
-                 </p>
+                 <div className="space-y-1">
+                   <p className="text-xs text-amber-800 font-bold uppercase tracking-widest">⚠️ Instrucción Vital para Gmail:</p>
+                   <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                     En la Consola de Firebase, asegúrate de seleccionar <strong>"SSL"</strong> (no TLS) para el puerto 465. Sin marcar esa casilla, Gmail bloqueará la conexión por seguridad y los usuarios no recibirán el correo de recuperación.
+                   </p>
+                 </div>
                </div>
             </div>
           </CardContent>
