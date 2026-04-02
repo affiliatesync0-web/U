@@ -98,6 +98,7 @@ function RegisterContent() {
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
+      // Si ya existe, simplemente redirigir
       if (affiliateSnap.exists()) {
         toast({ title: "Bienvenido", description: "Accediendo como Afiliado..." });
         router.push('/dashboard/affiliate');
@@ -110,30 +111,51 @@ function RegisterContent() {
         return;
       }
 
-      // Si no existe, crear como comprador por defecto
-      await setDoc(doc(db, 'buyers', user.uid), {
-        id: user.uid,
-        firstName: user.displayName?.split(' ')[0] || 'Usuario',
-        lastName: user.displayName?.split(' ').slice(1).join(' ') || 'Google',
-        email: user.email,
-        registeredAt: new Date().toISOString()
-      });
+      // Si no existe, crear con el ROL SELECCIONADO actualmente en la pantalla
+      if (role === 'affiliate') {
+        await setDoc(doc(db, 'affiliates', user.uid), {
+          id: user.uid,
+          firstName: user.displayName?.split(' ')[0] || 'Usuario',
+          lastName: user.displayName?.split(' ').slice(1).join(' ') || 'Google',
+          email: user.email,
+          bankId: '',
+          bankAccountNumber: '',
+          bankAccountHolderName: '',
+          currentBalance: 0,
+          registeredAt: new Date().toISOString(),
+          status: 'Pending', 
+          examAnswers: null
+        });
 
-      // Email de bienvenida
+        toast({ title: "Registro exitoso", description: "Te hemos registrado como Afiliado (Pendiente de aprobación)." });
+        router.push('/dashboard/affiliate');
+      } else {
+        await setDoc(doc(db, 'buyers', user.uid), {
+          id: user.uid,
+          firstName: user.displayName?.split(' ')[0] || 'Usuario',
+          lastName: user.displayName?.split(' ').slice(1).join(' ') || 'Google',
+          email: user.email,
+          referredBy: referralId || null,
+          registeredAt: new Date().toISOString()
+        });
+
+        toast({ title: "Registro exitoso", description: "Te hemos registrado como Comprador." });
+        router.push('/dashboard/buyer');
+      }
+
+      // Email de bienvenida genérico
       await sendEmail({
         to: user.email!,
         subject: "Bienvenido a Sync Connect",
-        text: `Hola ${user.displayName}, bienvenido a la plataforma. Ya puedes explorar nuestros productos.`
+        text: `Hola ${user.displayName}, bienvenido a la plataforma.`
       });
 
-      toast({ title: "Registro exitoso", description: "Te hemos registrado como Comprador." });
-      router.push('/dashboard/buyer');
     } catch (error: any) {
       console.error("Google Auth Error:", error);
       toast({ 
         variant: "destructive", 
         title: "Error de Registro", 
-        description: "No se pudo conectar con Google. Asegúrate de que esté habilitado en la consola de Firebase." 
+        description: "No se pudo conectar con Google o hubo un problema al crear tu perfil." 
       });
     } finally {
       setLoading(false);
@@ -257,7 +279,7 @@ function RegisterContent() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
           </svg>
-          Registrarse con Google
+          {role === 'affiliate' ? 'Registrarse como Afiliado con Google' : 'Registrarse como Comprador con Google'}
         </Button>
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200" /></div>
