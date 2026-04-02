@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -22,6 +21,8 @@ import {
   Mail,
   Clock,
   ShieldCheck,
+  Sparkles,
+  Settings
 } from "lucide-react"
 import {
   Sidebar,
@@ -58,7 +59,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const router = useRouter();
   const db = useFirestore();
 
-  // Fetch Live Logo
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
@@ -91,9 +91,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "Sales Copilot IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: t.botSettings, url: "/dashboard/affiliate/bot-settings", icon: MessageSquare },
+    { title: t.botSettings, url: "/dashboard/affiliate/bot-settings", icon: Settings },
   ]
 
   const buyerItems = [
@@ -115,7 +116,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     )
   }
 
-  // Pantalla de "Esperando Aprobación" para afiliados
   if (role === 'affiliate' && profile?.status === 'Pending') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
