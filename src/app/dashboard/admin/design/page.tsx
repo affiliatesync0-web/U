@@ -1,20 +1,34 @@
-
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Image as ImageIcon, Save, RefreshCw, Wand2, Loader2, Star, Upload, Trash2, Smartphone, Facebook, Instagram, Music2, Mail, ShieldCheck, Send, ExternalLink, AlertTriangle, Check, Copy } from 'lucide-react'
-import Image from 'next/image'
+import { 
+  Mail, 
+  ShieldCheck, 
+  Send, 
+  ExternalLink, 
+  AlertTriangle, 
+  Check, 
+  Copy, 
+  RefreshCw, 
+  Loader2, 
+  Zap, 
+  Smartphone, 
+  Facebook, 
+  Instagram, 
+  Star,
+  Image as ImageIcon
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
-import { getGoogleDriveDirectLink, cn } from '@/lib/utils'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { testEmailConfig } from '@/lib/email'
 
 export default function AdminDesignPage() {
@@ -152,7 +166,6 @@ export default function AdminDesignPage() {
           </div>
         </div>
 
-        {/* CONFIGURACIÓN SMTP / GMAIL */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -211,7 +224,6 @@ export default function AdminDesignPage() {
               </Button>
             </form>
 
-            {/* ASISTENTE DE SINCRONIZACIÓN FIREBASE */}
             <div className="mt-12 p-8 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-8 relative overflow-hidden">
                <div className="absolute top-0 right-0 p-8 opacity-5">
                  <Zap className="h-40 w-40 text-blue-500" />
@@ -273,7 +285,6 @@ export default function AdminDesignPage() {
           </CardContent>
         </Card>
 
-        {/* CONFIGURACIÓN DE REDES SOCIALES Y OTROS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 p-10">
@@ -331,7 +342,6 @@ export default function AdminDesignPage() {
           </Card>
         </div>
 
-        {/* IMÁGENES */}
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-1 w-12 bg-primary rounded-full" />
@@ -361,4 +371,56 @@ export default function AdminDesignPage() {
       </div>
     </DashboardShell>
   )
+}
+
+function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isSaving, t }: any) {
+  const [url, setUrl] = useState(defaultUrl);
+  const [hint, setHint] = useState(defaultHint);
+
+  return (
+    <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden group hover:scale-[1.02] transition-all duration-500 ring-1 ring-slate-100">
+      <div className="relative h-48 w-full overflow-hidden bg-slate-100 flex items-center justify-center">
+        {url ? (
+          <img src={getGoogleDriveDirectLink(url)} alt={description} className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+        ) : (
+          <ImageIcon className="h-12 w-12 text-slate-300 opacity-50" />
+        )}
+        <div className="absolute top-4 left-4">
+          <div className="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-primary shadow-xl">
+            {id}
+          </div>
+        </div>
+      </div>
+      <CardContent className="p-8 space-y-6">
+        <p className="text-[11px] font-bold text-slate-400 leading-relaxed min-h-[3rem]">{description}</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">URL de la Imagen</Label>
+            <Input 
+              value={url} 
+              onChange={(e) => setUrl(e.target.value)} 
+              placeholder="https://..." 
+              className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Concepto IA</Label>
+            <Input 
+              value={hint} 
+              onChange={(e) => setHint(e.target.value)} 
+              placeholder="Ej: network business" 
+              className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
+            />
+          </div>
+        </div>
+        <Button 
+          onClick={() => onSave(id, url, hint)} 
+          className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all"
+          disabled={isSaving}
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar Identidad"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }

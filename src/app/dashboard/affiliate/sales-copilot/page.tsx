@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
   MessageSquare, 
   Send, 
@@ -25,7 +24,8 @@ import {
   Check,
   ExternalLink,
   Zap,
-  MousePointer2
+  MousePointer2,
+  BadgeDollarSign
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -33,7 +33,6 @@ import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, where } from 'firebase/firestore'
 import { processAssistantMessage } from '@/ai/flows/sales-assistant-flow'
 import { cn } from '@/lib/utils'
-import Link from 'next/link'
 
 interface ChatMessage {
   role: 'user' | 'bot'
@@ -129,7 +128,6 @@ export default function SalesCopilotPage() {
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-140px)] flex flex-col gap-6">
         
-        {/* CABECERA ESTRATÉGICA */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
           <div className="flex items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -155,7 +153,6 @@ export default function SalesCopilotPage() {
 
         <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
           
-          {/* LADO IZQUIERDO: DIRECTORIO DE PROSPECTOS */}
           <div className="w-full lg:w-[350px] flex flex-col h-full overflow-hidden">
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
@@ -227,7 +224,6 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL CENTRAL: COPILOTO IA ESTRATÉGICO */}
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[3rem] flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
@@ -347,7 +343,6 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* LADO DERECHO: HERRAMIENTAS DE TRABAJO */}
           <div className="hidden xl:flex w-[280px] flex-col gap-6">
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-slate-100">
               <CardHeader className="bg-green-600 text-white p-6">
