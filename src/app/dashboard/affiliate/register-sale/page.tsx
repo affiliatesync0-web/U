@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -7,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { BadgeDollarSign, User, Mail, Tag, Landmark, AlertCircle } from 'lucide-react'
+import { BadgeDollarSign, User, Mail, Tag, Landmark, AlertCircle, Phone } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
@@ -26,7 +25,8 @@ export default function RegisterSalePage() {
   const [buyerData, setBuyerData] = useState({
     firstName: '',
     lastName: '',
-    email: ''
+    email: '',
+    phone: ''
   })
 
   const handleRegisterSale = async (e: React.FormEvent) => {
@@ -35,8 +35,8 @@ export default function RegisterSalePage() {
     if (!voucherReference.trim()) {
       toast({
         variant: "destructive",
-        title: t.language === 'es' ? "Campo Obligatorio" : "Required Field",
-        description: t.language === 'es' ? "Debes ingresar el número de referencia del voucher para registrar la venta." : "You must enter the voucher reference number to register the sale.",
+        title: "Campo Obligatorio",
+        description: "Debes ingresar el número de referencia del voucher para registrar la venta.",
       })
       return
     }
@@ -54,8 +54,8 @@ export default function RegisterSalePage() {
       if (querySnapshot.empty) {
         toast({
           variant: "destructive",
-          title: t.language === 'es' ? "Error de Código" : "Code Error",
-          description: t.language === 'es' ? "El código de producto no existe en nuestro catálogo." : "The product code does not exist in our catalog."
+          title: "Error de Código",
+          description: "El código de producto no existe en nuestro catálogo."
         })
         setLoading(false)
         return
@@ -69,7 +69,7 @@ export default function RegisterSalePage() {
       const commissionRate = product.commissionRate || 0
       const commissionEarned = (saleAmount * commissionRate) / 100
 
-      // 3. Registrar/Actualizar Comprador
+      // 3. Registrar/Actualizar Comprador con Teléfono
       const buyerId = buyerData.email.toLowerCase().trim();
       const buyerRef = doc(db, 'buyers', buyerId);
       setDocumentNonBlocking(buyerRef, {
@@ -77,6 +77,7 @@ export default function RegisterSalePage() {
         firstName: buyerData.firstName,
         lastName: buyerData.lastName,
         email: buyerId,
+        phone: buyerData.phone.trim(),
         referredBy: user.uid,
         registeredAt: new Date().toISOString()
       }, { merge: true });
@@ -99,7 +100,7 @@ export default function RegisterSalePage() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 5. EMAIL AL AFILIADO (CONFIRMACIÓN DE VENTA)
+      // 5. EMAIL AL AFILIADO
       if (user.email) {
         await sendEmail({
           to: user.email,
@@ -134,13 +135,13 @@ Tu saldo ha sido actualizado automáticamente.`
       })
 
       toast({
-        title: t.language === 'es' ? "¡Venta Registrada!" : "Sale Registered!",
-        description: t.language === 'es' ? `Comisión de $${commissionEarned.toFixed(2)} sumada. Revisa tu email.` : `Commission of $${commissionEarned.toFixed(2)} added. Check your email.`,
+        title: "¡Venta Registrada!",
+        description: `Comisión de $${commissionEarned.toFixed(2)} sumada. Revisa tu email.`,
       })
       
       setProductCode('')
       setVoucherReference('')
-      setBuyerData({ firstName: '', lastName: '', email: '' })
+      setBuyerData({ firstName: '', lastName: '', email: '', phone: '' })
       
     } catch (error) {
       toast({
@@ -222,7 +223,7 @@ Tu saldo ha sido actualizado automáticamente.`
               <CardHeader>
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <User className="h-5 w-5 text-[#A37EDC]" />
-                  Paso 3: {t.buyerInfo}
+                  Paso 3: Datos del Comprador (Prospecto)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -259,6 +260,18 @@ Tu saldo ha sido actualizado automáticamente.`
                     required 
                     value={buyerData.email}
                     onChange={(e) => setBuyerData({...buyerData, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="buyerPhone" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" /> WhatsApp / Teléfono <span className="text-destructive">*</span>
+                  </Label>
+                  <Input 
+                    id="buyerPhone" 
+                    placeholder="50588888888" 
+                    required 
+                    value={buyerData.phone}
+                    onChange={(e) => setBuyerData({...buyerData, phone: e.target.value})}
                   />
                 </div>
               </CardContent>

@@ -1,17 +1,16 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
 import { doc, collection, increment, getDoc } from 'firebase/firestore'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle } from 'lucide-react'
+import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle, Phone } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -36,6 +35,7 @@ function CheckoutContent() {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     voucherRef: ''
   })
 
@@ -56,13 +56,14 @@ function CheckoutContent() {
     try {
       const buyerId = formData.email.toLowerCase().trim()
       
-      // 1. Registrar/Actualizar Comprador
+      // 1. Registrar/Actualizar Comprador con Teléfono
       const buyerRef = doc(db, 'buyers', buyerId)
       setDocumentNonBlocking(buyerRef, {
         id: buyerId,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: buyerId,
+        phone: formData.phone.trim(),
         referredBy: affiliateId,
         registeredAt: new Date().toISOString()
       }, { merge: true })
@@ -282,6 +283,19 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
                         onChange={e => setFormData({...formData, email: e.target.value})}
                         className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
                       />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">WhatsApp / Teléfono <span className="text-destructive">*</span></Label>
+                      <div className="relative">
+                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input 
+                          required 
+                          placeholder="50588888888"
+                          value={formData.phone}
+                          onChange={e => setFormData({...formData, phone: e.target.value})}
+                          className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all pl-12 pr-6 font-bold"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -13,20 +13,17 @@ import {
   User, 
   Loader2, 
   ExternalLink, 
-  ShoppingBag, 
   Sparkles, 
-  Target, 
-  Zap, 
   Smartphone,
   Copy,
-  Check,
   Search,
-  Users2
+  Users2,
+  Phone
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase'
-import { doc, collection } from 'firebase/firestore'
+import { doc, collection, query, where } from 'firebase/firestore'
 import { processAssistantMessage } from '@/ai/flows/sales-assistant-flow'
 import { cn } from '@/lib/utils'
 
@@ -45,7 +42,7 @@ export default function SalesCopilotPage() {
     { role: 'bot', content: '¡Hola! Soy tu Copiloto de Ventas. ¿Tienes algún cliente difícil o necesitas un script persuasivo para algún producto?' }
   ])
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isAiLoading, setIsAiLoading] = useState(false)
   const [searchBuyer, setSearchBuyer] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -55,23 +52,28 @@ export default function SalesCopilotPage() {
   const productsRef = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: products } = useCollection(productsRef);
 
-  const buyersRef = useMemoFirebase(() => collection(db, 'buyers'), [db]);
-  const { data: buyers } = useCollection(buyersRef);
+  // Filtrar prospectos por el ID del afiliado actual
+  const buyersQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'buyers'), where('referredBy', '==', user.uid));
+  }, [db, user]);
+  
+  const { data: buyers, isLoading: buyersLoading } = useCollection(buyersQuery);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages, isLoading])
+  }, [messages, isAiLoading])
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isAiLoading) return
 
     const userMsg = input.trim()
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setInput('')
-    setIsLoading(true)
+    setIsAiLoading(true)
 
     try {
       const response = await processAssistantMessage({
@@ -93,11 +95,15 @@ export default function SalesCopilotPage() {
     } catch (error) {
       setMessages(prev => [...prev, { role: 'bot', content: "Hubo un error al conectar con mis neuronas de venta. ¿Podrías repetir?" }])
     } finally {
-      setIsLoading(false)
+      setIsAiLoading(false)
     }
   }
 
   const openWhatsAppChat = (phoneNumber: string = '', message: string = '') => {
+    if (!phoneNumber) {
+      toast({ variant: "destructive", title: "Sin número", description: "Este prospecto no tiene un número de teléfono registrado." });
+      return;
+    }
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -137,14 +143,21 @@ export default function SalesCopilotPage() {
             <CardContent className="flex-1 p-0 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="p-6 space-y-4">
-                  {!buyers || buyers.length === 0 ? (
+                  {buyersLoading ? (
+                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary opacity-20" /></div>
+                  ) : !buyers || buyers.length === 0 ? (
                     <div className="text-center py-20 opacity-20 space-y-4">
                       <Users2 className="h-12 w-12 mx-auto" />
-                      <p className="text-xs font-black uppercase tracking-widest">Sin prospectos registrados</p>
+                      <p className="text-xs font-black uppercase tracking-widest">Sin prospectos vinculados</p>
+                      <p className="text-[10px] max-w-[200px] mx-auto leading-relaxed">Comparte tu link de divulgación para que tus clientes aparezcan aquí.</p>
                     </div>
                   ) : (
                     buyers
-                      .filter(b => b.firstName?.toLowerCase().includes(searchBuyer.toLowerCase()) || b.email?.toLowerCase().includes(searchBuyer.toLowerCase()))
+                      .filter(b => 
+                        b.firstName?.toLowerCase().includes(searchBuyer.toLowerCase()) || 
+                        b.email?.toLowerCase().includes(searchBuyer.toLowerCase()) ||
+                        b.phone?.includes(searchBuyer)
+                      )
                       .map((buyer) => (
                       <div key={buyer.id} className="p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 group hover:bg-primary/5 hover:border-primary/10 transition-all">
                         <div className="flex items-center justify-between mb-4">
@@ -154,13 +167,16 @@ export default function SalesCopilotPage() {
                             </div>
                             <div>
                               <h4 className="text-sm font-black text-slate-800 tracking-tight">{buyer.firstName} {buyer.lastName}</h4>
-                              <p className="text-[10px] text-slate-400 font-bold tracking-tight uppercase">{buyer.email}</p>
+                              <p className="text-[10px] text-slate-400 font-bold tracking-tight uppercase flex items-center gap-1">
+                                <Phone className="h-2 w-2" /> {buyer.phone || 'Sin teléfono'}
+                              </p>
                             </div>
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <Button 
-                            onClick={() => openWhatsAppChat('', `¡Hola ${buyer.firstName}! Soy ${profile?.firstName} de Sync Connect. Me gustaría darte seguimiento sobre tu interés en nuestros productos...`)}
+                            onClick={() => openWhatsAppChat(buyer.phone, `¡Hola ${buyer.firstName}! Soy ${profile?.firstName} de Sync Connect. Me gustaría darte seguimiento sobre tu interés en nuestros productos...`)}
+                            disabled={!buyer.phone}
                             className="flex-1 h-10 rounded-xl bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg shadow-green-200"
                           >
                             <MessageSquare className="h-3 w-3" /> Contactar
@@ -242,7 +258,7 @@ export default function SalesCopilotPage() {
                       </div>
                     </div>
                   ))}
-                  {isLoading && (
+                  {isAiLoading && (
                     <div className="flex items-end gap-4 animate-pulse">
                       <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center">
                         <Bot className="h-5 w-5" />
@@ -296,7 +312,7 @@ export default function SalesCopilotPage() {
                       type="submit" 
                       size="icon" 
                       className="h-16 w-16 rounded-2xl bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/30 shrink-0 transition-all active:scale-90"
-                      disabled={!input.trim() || isLoading}
+                      disabled={!input.trim() || isAiLoading}
                     >
                       <Send className="h-6 w-6" />
                     </Button>
