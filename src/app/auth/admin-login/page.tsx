@@ -111,13 +111,13 @@ export default function AdminLoginPage() {
             </Alert>
 
             {/* Diagnóstico de Error */}
-            {(authErrorCode === 'auth/unauthorized-domain' || authErrorCode === 'auth/network-request-failed') && (
+            {(authErrorCode === 'auth/unauthorized-domain' || authErrorCode === 'auth/network-request-failed' || authErrorCode === 'auth/popup-closed-by-user') && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                 <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
+                  <AlertTitle className="text-xs font-black uppercase">Bloqueo de Seguridad Detectado</AlertTitle>
                   <AlertDescription className="text-[10px] mt-2 font-bold text-red-900 leading-relaxed">
-                    Firebase bloqueó la conexión. Debes agregar este dominio en tu consola:
+                    Firebase no permite la entrada desde este dominio. Debes agregarlo a la lista blanca:
                   </AlertDescription>
                 </Alert>
                 
