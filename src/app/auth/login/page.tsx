@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn, ArrowLeft, AlertCircle, ExternalLink } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, AlertCircle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -111,9 +111,9 @@ export default function LoginPage() {
       let errorMessage = "Ocurrió un error al conectar con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de elegir cuenta. Intenta de nuevo.";
+        errorMessage = "La ventana se cerró antes de elegir cuenta. Intenta de nuevo rápidamente.";
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana emergente.";
+        errorMessage = "El navegador bloqueó la ventana emergente. Por favor habilita los pop-ups.";
       } else if (error.code === 'auth/unauthorized-domain') {
         errorMessage = "Este dominio no está autorizado en Firebase.";
       }
@@ -176,13 +176,22 @@ export default function LoginPage() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle className="text-xs font-black">DOMINIO NO AUTORIZADO</AlertTitle>
                   <AlertDescription className="text-[10px] font-bold mt-1 space-y-2">
-                    <p>Agrega el dominio actual en tu Consola de Firebase > Authentication > Settings.</p>
+                    <p>Agrega el dominio actual en tu Consola de Firebase &gt; Authentication &gt; Settings.</p>
                     <a href="https://console.firebase.google.com/" target="_blank" className="flex items-center gap-1 underline">Abrir Consola <ExternalLink className="h-3 w-3" /></a>
                   </AlertDescription>
                 </Alert>
               )}
 
-              {authError && authErrorCode !== 'auth/unauthorized-domain' && (
+              {authErrorCode === 'auth/popup-closed-by-user' && (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs font-bold">
+                    La ventana se cerró antes de completar. Asegúrate de elegir tu cuenta rápidamente y no tener bloqueadores de pop-ups activos.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {authError && authErrorCode !== 'auth/unauthorized-domain' && authErrorCode !== 'auth/popup-closed-by-user' && (
                 <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>
@@ -192,7 +201,7 @@ export default function LoginPage() {
               <Button 
                 variant="outline" 
                 onClick={handleGoogleLogin}
-                className="w-full h-14 rounded-2xl border-slate-200 bg-white hover:bg-slate-50 font-bold gap-3"
+                className="w-full h-14 rounded-2xl border-slate-200 bg-white hover:bg-slate-50 font-bold gap-3 shadow-sm"
                 disabled={loading}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
