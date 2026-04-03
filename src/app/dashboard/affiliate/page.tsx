@@ -36,6 +36,7 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
 
+  // Hydration fix: Window-dependent logic only runs on client mount
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -92,6 +93,7 @@ export default function AffiliateDashboard() {
     { title: "Estado", value: profile?.status === 'Blocked' ? t.blockedStatus : (profile?.status || t.active), icon: Users, color: profile?.status === 'Blocked' ? "text-red-500" : "text-slate-500", bg: "bg-slate-50" },
   ]
 
+  // Evitar renderizado de contenido dinámico hasta que el cliente esté montado
   if (!isMounted || isLoading) {
     return (
       <DashboardShell role="affiliate">

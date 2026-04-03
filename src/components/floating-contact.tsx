@@ -8,7 +8,7 @@ import { collection } from 'firebase/firestore'
 
 /**
  * Componente de botón flotante para contacto rápido por WhatsApp.
- * Ahora es movible (arrastrable) para que el usuario pueda apartarlo si bloquea algo.
+ * Ahora es movible (arrastrable) y persiste su posición en el navegador.
  */
 export function FloatingContact() {
   const db = useFirestore();
@@ -25,7 +25,22 @@ export function FloatingContact() {
   const phoneNumber = whatsappConfig?.value || "";
 
   useEffect(() => {
-    // Posición inicial: Abajo a la derecha
+    // Intentar recuperar posición guardada
+    const savedPos = localStorage.getItem('whatsapp-btn-pos');
+    if (savedPos) {
+      try {
+        const parsed = JSON.parse(savedPos);
+        // Validar que la posición esté dentro de la pantalla actual
+        if (parsed.x < window.innerWidth && parsed.y < window.innerHeight) {
+          setPosition(parsed);
+          return;
+        }
+      } catch (e) {
+        console.warn("Error cargando posición de botón");
+      }
+    }
+    
+    // Posición inicial por defecto: Abajo a la derecha
     setPosition({
       x: window.innerWidth - 84,
       y: window.innerHeight - 100
@@ -71,7 +86,11 @@ export function FloatingContact() {
       newX = Math.max(margin, Math.min(window.innerWidth - 74, newX));
       newY = Math.max(margin, Math.min(window.innerHeight - 74, newY));
 
-      setPosition({ x: newX, y: newY });
+      const newPos = { x: newX, y: newY };
+      setPosition(newPos);
+      
+      // Guardar posición para persistencia
+      localStorage.setItem('whatsapp-btn-pos', JSON.stringify(newPos));
     };
 
     const onEnd = () => {
@@ -117,12 +136,11 @@ export function FloatingContact() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => {
-          // Si el botón se movió, evitamos que abra el link (fue un drag, no un click)
           if (hasMoved) {
             e.preventDefault();
           }
         }}
-        className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-[0_10px_40px_rgba(37,211,102,0.4)] transition-all hover:scale-110 active:scale-95"
+        className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-[0_10px_40px_rgba(37,211,102,0.4)] transition-all hover:scale-110 active:scale-95 border-2 border-white/20"
         title="Arrastra para mover, clic para contactar"
       >
         <MessageCircle className="h-8 w-8 fill-current" />

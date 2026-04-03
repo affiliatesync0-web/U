@@ -13,6 +13,10 @@ import { useAuth } from '@/firebase'
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+/**
+ * Página de Acceso Administrativo restringida.
+ * Solo permite la entrada al correo oficial del sistema.
+ */
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -31,15 +35,17 @@ export default function AdminLoginPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // RESTRICCIÓN ESTRICTA: Solo este correo puede entrar al panel admin
-      if (user?.email === 'affiliatesync0@gmail.com') {
+      // RESTRICCIÓN ESTRICTA: Solo este correo puede entrar al panel admin (Case insensitive)
+      const allowedEmail = 'affiliatesync0@gmail.com';
+      
+      if (user?.email?.toLowerCase() === allowedEmail.toLowerCase()) {
         toast({
           title: "Acceso concedido",
           description: "Bienvenido al panel administrativo central.",
         });
         router.push('/dashboard/admin');
       } else {
-        // Si intenta entrar con cualquier otro correo, cerramos la sesión inmediatamente
+        // Bloqueo inmediato y cierre de sesión si no es el administrador
         await signOut(auth);
         toast({
           variant: "destructive",
@@ -52,13 +58,9 @@ export default function AdminLoginPage() {
       let errorMessage = "No pudimos conectar con Google. Por favor, intenta de nuevo.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Se cerró la ventana de Google antes de terminar. Asegúrate de elegir tu cuenta y no cerrar la ventana emergente.";
+        errorMessage = "Se cerró la ventana antes de terminar. Asegúrate de elegir tu cuenta y permitir ventanas emergentes.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado. Agrega esta URL en la Consola de Firebase > Authentication > Settings > Authorized domains.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = "El método de Google no está habilitado. Actívalo en la Consola de Firebase > Authentication > Sign-in method.";
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana emergente. Por favor, permite los popups para este sitio.";
+        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en la consola de administración.";
       }
       
       toast({
@@ -73,22 +75,22 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
-      <Link href="/" className="mb-8 flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest">
-        <ArrowLeft className="h-4 w-4" />
+      <Link href="/" className="mb-8 flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
+        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
         <span>Volver al inicio</span>
       </Link>
 
-      <Card className="w-full max-w-md shadow-2xl border-none rounded-[3rem] overflow-hidden bg-white p-2">
-        <div className="bg-slate-50/50 rounded-[2.5rem] p-10 md:p-12">
+      <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border-none rounded-[3.5rem] overflow-hidden bg-white p-2">
+        <div className="bg-slate-50/50 rounded-[3rem] p-10 md:p-12">
           <CardHeader className="text-center space-y-4 p-0 mb-10">
             <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-[2rem] bg-slate-900 flex items-center justify-center text-primary shadow-2xl rotate-3">
+              <div className="h-20 w-20 rounded-[2.2rem] bg-slate-900 flex items-center justify-center text-primary shadow-2xl rotate-3">
                 <ShieldAlert className="h-10 w-10" />
               </div>
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight leading-none">
-                {t.adminTitle}
+                Acceso Administrativo
               </CardTitle>
               <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">
                 Solo Personal Autorizado
@@ -97,17 +99,17 @@ export default function AdminLoginPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="space-y-6">
-              <Alert className="bg-blue-50 border-blue-100 rounded-2xl">
+              <Alert className="bg-blue-50 border-blue-100 rounded-[1.5rem] border-2">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-[10px] font-black uppercase text-blue-800">Seguridad Activa</AlertTitle>
-                <AlertDescription className="text-xs text-blue-700 font-medium">
-                  Solo se permite el acceso a <strong>affiliatesync0@gmail.com</strong> vía Google.
+                <AlertTitle className="text-[10px] font-black uppercase text-blue-800 tracking-widest">Seguridad Activa</AlertTitle>
+                <AlertDescription className="text-xs text-blue-700 font-bold leading-relaxed">
+                  Solo se permite el acceso a <span className="text-blue-900">affiliatesync0@gmail.com</span> vía Google.
                 </AlertDescription>
               </Alert>
               
               <Button 
                 onClick={handleGoogleAdminLogin}
-                className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-200 transition-all flex items-center justify-center gap-3" 
+                className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-200 transition-all flex items-center justify-center gap-3 active:scale-95" 
                 disabled={loading}
               >
                 {loading ? (
@@ -126,7 +128,7 @@ export default function AdminLoginPage() {
               </Button>
 
               <div className="pt-6 border-t border-slate-100 flex items-center justify-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Conexión Encriptada SSL</span>
               </div>
             </div>
