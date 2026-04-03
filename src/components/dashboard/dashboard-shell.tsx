@@ -91,10 +91,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: "Sales Copilot IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: t.botSettings, url: "/dashboard/affiliate/bot-settings", icon: Settings },
   ]
 
   const buyerItems = [
