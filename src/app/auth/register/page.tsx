@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,17 +10,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ArrowLeft, Eye, EyeOff, ShoppingBag, Target, Loader2 } from 'lucide-react'
+import { ShoppingBag, Target, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { sendEmail } from '@/lib/email'
 
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'info' | 'exam'
@@ -33,7 +32,6 @@ function RegisterContent() {
   const auth = useAuth()
   const db = useFirestore()
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
   
@@ -71,6 +69,7 @@ function RegisterContent() {
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
+      // Si ya existe, redirigir según su colección
       if (affiliateSnap.exists()) {
         router.push('/dashboard/affiliate');
         return;
@@ -80,7 +79,7 @@ function RegisterContent() {
         return;
       }
 
-      // Registro nuevo respetando el rol visual
+      // Registro nuevo respetando el ROL SELECCIONADO EN PANTALLA
       if (role === 'affiliate') {
         await setDoc(doc(db, 'affiliates', user.uid), {
           id: user.uid,
@@ -109,9 +108,10 @@ function RegisterContent() {
 
       toast({ title: "Registro exitoso", description: "Bienvenido a Sync Connect." });
     } catch (error: any) {
+      console.error("Error Google Auth:", error);
       let msg = "No se pudo completar el registro.";
       if (error.code === 'auth/popup-closed-by-user') {
-        msg = "La ventana se cerró. Asegúrate de permitir las ventanas emergentes en tu navegador.";
+        msg = "La ventana se cerró o fue bloqueada. Revisa tus bloqueadores de popups y asegúrate de que el dominio esté autorizado en la consola de Firebase.";
       }
       toast({ variant: "destructive", title: "Error", description: msg });
     } finally {

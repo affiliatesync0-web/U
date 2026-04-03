@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { ArrowLeft, Eye, EyeOff, Loader2, Image as ImageIcon, Sparkles, LogIn } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -100,18 +100,19 @@ export default function LoginPage() {
       }
 
       // IMPORTANTE: En el Login NO creamos cuentas nuevas automáticamente
-      // para evitar que un afiliado entre como comprador por error.
       toast({ 
         variant: "destructive", 
         title: "Cuenta no encontrada", 
-        description: "No encontramos una cuenta vinculada a este Google. Por favor, ve a Registro primero." 
+        description: "No encontramos una cuenta vinculada. Por favor, ve a Registro primero para elegir si quieres ser Afiliado o Comprador." 
       });
       
     } catch (error: any) {
       console.error("Google Login Error:", error);
       let errorMessage = "Ocurrió un error al conectar con Google.";
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de completar. Asegúrate de permitir las ventanas emergentes (popups) en tu navegador.";
+        errorMessage = "La ventana se cerró o fue bloqueada. Asegúrate de permitir popups y de que este dominio esté en 'Authorized Domains' en la consola de Firebase.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en Authentication > Settings > Authorized domains.";
       }
       toast({ variant: "destructive", title: "Error de Conexión", description: errorMessage });
     } finally {
