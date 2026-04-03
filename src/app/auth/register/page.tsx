@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ShoppingBag, Target, Loader2, ArrowLeft, Eye, EyeOff, Sparkles, ChevronRight, Landmark, ClipboardCheck, ShieldCheck, AlertCircle } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, ArrowLeft, Eye, EyeOff, Sparkles, ChevronRight, Landmark, ClipboardCheck, ShieldCheck, AlertCircle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -20,7 +20,7 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } f
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'info' | 'exam'
@@ -36,6 +36,7 @@ function RegisterContent() {
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
   const [authError, setAuthError] = useState<string | null>(null)
+  const [authErrorCode, setAuthErrorCode] = useState<string | null>(null)
   
   const referralId = searchParams.get('ref')
 
@@ -60,6 +61,7 @@ function RegisterContent() {
     if (!auth || !db) return;
     setLoading(true);
     setAuthError(null);
+    setAuthErrorCode(null);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
@@ -109,11 +111,12 @@ function RegisterContent() {
 
     } catch (error: any) {
       console.error("Error Google Auth:", error);
+      setAuthErrorCode(error.code);
       let msg = "No se pudo completar el registro.";
       if (error.code === 'auth/popup-closed-by-user') {
         msg = "La ventana se cerró antes de tiempo. No la cierres hasta terminar.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        msg = "Dominio no autorizado. Verifica la configuración de Firebase.";
+        msg = "Dominio no autorizado en Firebase.";
       }
       setAuthError(msg)
       toast({ variant: "destructive", title: "Error", description: msg });
@@ -180,7 +183,27 @@ function RegisterContent() {
         <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Únete a Sync Connect</h1>
       </div>
 
-      {authError && (
+      {authErrorCode === 'auth/unauthorized-domain' && (
+        <Alert variant="destructive" className="max-w-md rounded-2xl border-2 bg-red-50 mb-6 animate-in slide-in-from-top-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
+          <AlertDescription className="text-[10px] font-bold mt-2 space-y-3 text-red-900 leading-relaxed">
+            <p>Debes autorizar este dominio en tu Consola de Firebase para permitir el registro con Google:</p>
+            <p className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center select-all shadow-inner overflow-hidden truncate">
+              {typeof window !== 'undefined' ? window.location.hostname : '...'}
+            </p>
+            <a 
+              href="https://console.firebase.google.com/" 
+              target="_blank" 
+              className="flex items-center justify-center gap-2 bg-red-600 text-white p-3 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest"
+            >
+              Ir a Firebase <ExternalLink className="h-3 w-3" />
+            </a>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {authError && authErrorCode !== 'auth/unauthorized-domain' && (
         <Alert className="max-w-md bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>

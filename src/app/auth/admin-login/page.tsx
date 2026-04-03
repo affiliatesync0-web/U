@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
         <span>Volver al inicio</span>
       </Link>
 
-      <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border-none rounded-[3.5rem] overflow-hidden bg-white p-2">
+      <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] border-none rounded-[3.5rem] overflow-hidden bg-white p-2">
         <div className="bg-slate-50/50 rounded-[3rem] p-10 md:p-12">
           <CardHeader className="text-center space-y-4 p-0 mb-10">
             <div className="flex justify-center">
@@ -106,32 +106,30 @@ export default function AdminLoginPage() {
                 </AlertDescription>
               </Alert>
 
-              {/* DETECTOR DE ERRORES CRÍTICOS */}
+              {/* DETECTOR DE ERRORES CRÍTICOS (DIAGNÓSTICO) */}
               {authErrorCode && (
-                <Alert variant="destructive" className="rounded-2xl border-2 animate-in fade-in slide-in-from-top-2">
+                <Alert variant="destructive" className="rounded-2xl border-2 animate-in fade-in slide-in-from-top-2 bg-red-50">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle className="text-xs font-black uppercase">
                     {authErrorCode === 'auth/unauthorized-domain' ? 'Dominio No Autorizado' : 'Error de Conexión'}
                   </AlertTitle>
-                  <AlertDescription className="text-[10px] mt-2 space-y-3 font-bold leading-relaxed">
+                  <AlertDescription className="text-[10px] mt-2 space-y-3 font-bold leading-relaxed text-red-900">
                     {authErrorCode === 'auth/unauthorized-domain' ? (
                       <>
-                        <p>Debes agregar este dominio en la Consola de Firebase para que el login funcione.</p>
-                        <p className="p-2 bg-white/50 rounded-lg border border-destructive/20 font-mono text-center overflow-hidden truncate">
+                        <p>Debes agregar este dominio en tu Consola de Firebase para que el login funcione:</p>
+                        <p className="p-3 bg-white rounded-xl border border-destructive/20 font-mono text-center overflow-hidden truncate select-all shadow-inner">
                           {typeof window !== 'undefined' ? window.location.hostname : 'tu-dominio.com'}
                         </p>
                         <a 
                           href="https://console.firebase.google.com/project/_/authentication/providers" 
                           target="_blank" 
-                          className="flex items-center justify-center gap-2 bg-destructive text-white p-3 rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                          className="flex items-center justify-center gap-2 bg-destructive text-white p-4 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest"
                         >
                           Configurar en Firebase <ExternalLink className="h-3 w-3" />
                         </a>
                       </>
-                    ) : authErrorCode === 'auth/popup-closed-by-user' ? (
-                      <p>La ventana se cerró. Por favor, selecciona tu cuenta sin cerrar el cuadro de diálogo de Google.</p>
                     ) : (
-                      <p>Código de error: {authErrorCode}. Por favor, verifica que los pop-ups estén permitidos.</p>
+                      <p>La ventana se cerró o fue bloqueada. Verifica que permitas pop-ups en tu navegador e intenta nuevamente.</p>
                     )}
                   </AlertDescription>
                 </Alert>

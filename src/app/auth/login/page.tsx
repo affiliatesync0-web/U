@@ -171,13 +171,23 @@ export default function LoginPage() {
           <CardContent className="p-0">
             <div className="space-y-4">
               
+              {/* DIAGNÓSTICO DE DOMINIO NO AUTORIZADO */}
               {authErrorCode === 'auth/unauthorized-domain' && (
-                <Alert variant="destructive" className="rounded-xl border-2 bg-red-50 mb-4">
+                <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 mb-4 animate-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black">DOMINIO NO AUTORIZADO</AlertTitle>
-                  <AlertDescription className="text-[10px] font-bold mt-1 space-y-2">
-                    <p>Agrega el dominio actual en tu Consola de Firebase &gt; Authentication &gt; Settings.</p>
-                    <a href="https://console.firebase.google.com/" target="_blank" className="flex items-center gap-1 underline">Abrir Consola <ExternalLink className="h-3 w-3" /></a>
+                  <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
+                  <AlertDescription className="text-[10px] font-bold mt-2 space-y-3 text-red-900 leading-relaxed">
+                    <p>Copia y agrega este dominio en tu Consola de Firebase &gt; Authentication &gt; Settings &gt; Authorized Domains:</p>
+                    <p className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center select-all shadow-inner overflow-hidden truncate">
+                      {typeof window !== 'undefined' ? window.location.hostname : '...'}
+                    </p>
+                    <a 
+                      href="https://console.firebase.google.com/" 
+                      target="_blank" 
+                      className="flex items-center justify-center gap-2 bg-red-600 text-white p-3 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest"
+                    >
+                      Abrir Consola Firebase <ExternalLink className="h-3 w-3" />
+                    </a>
                   </AlertDescription>
                 </Alert>
               )}
@@ -185,8 +195,8 @@ export default function LoginPage() {
               {authErrorCode === 'auth/popup-closed-by-user' && (
                 <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs font-bold">
-                    La ventana se cerró antes de completar. Asegúrate de elegir tu cuenta rápidamente y no tener bloqueadores de pop-ups activos.
+                  <AlertDescription className="text-xs font-bold leading-relaxed">
+                    La ventana se cerró antes de completar. Asegúrate de elegir tu cuenta rápidamente y habilitar los pop-ups en tu navegador.
                   </AlertDescription>
                 </Alert>
               )}
