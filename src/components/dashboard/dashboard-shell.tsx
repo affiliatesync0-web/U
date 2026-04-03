@@ -75,7 +75,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       if (!user) {
         router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
       } else if (role === 'admin' && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        // Redirección forzada si no es el admin correcto
+        // Redirección forzada si no es el admin correcto para evitar loops
         router.push('/auth/admin-login');
       }
     }

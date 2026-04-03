@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
         }
       });
 
-      // Capturar resultados de redirección si existen
+      // Capturar resultados de redirección si existen (Fix para error 403 en popups)
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
