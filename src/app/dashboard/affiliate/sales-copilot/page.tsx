@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -18,14 +19,14 @@ import {
   Search,
   Users2,
   CheckCircle2,
-  Settings,
-  X,
-  Layout,
   Check,
   ExternalLink,
   Zap,
-  MousePointer2,
-  BadgeDollarSign
+  BadgeDollarSign,
+  MonitorSmartphone,
+  ShieldAlert,
+  PanelRightClose,
+  PanelRightOpen
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -46,12 +47,14 @@ export default function SalesCopilotPage() {
   const { user } = useUser()
   
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'bot', content: '¡Hola! Soy tu Copiloto de Ventas. ¿Tienes algún cliente difícil o necesitas un script persuasivo para algún producto? Estoy listo para ayudarte a cerrar tratos.' }
+    { role: 'bot', content: '¡Hola! Soy tu Copiloto de Ventas. ¿Tienes algún cliente difícil o necesitas un script persuasivo? Estoy listo para ayudarte a cerrar tratos en WhatsApp.' }
   ])
   const [input, setInput] = useState('')
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [searchBuyer, setSearchBuyer] = useState('')
   const [copiedIndex, setCopiedId] = useState<number | null>(null);
+  const [showWhatsApp, setShowWhatsApp] = useState(true);
+  const [iframeError, setIframeError] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const profileRef = useMemoFirebase(() => (user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
@@ -110,78 +113,81 @@ export default function SalesCopilotPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(index);
     setTimeout(() => setCopiedId(null), 2000);
-    toast({ title: "Script Copiado", description: "Pégalo en tu chat de WhatsApp." });
+    toast({ title: "Script Copiado", description: "Pégalo ahora en tu panel de WhatsApp." });
   };
 
-  const openWhatsApp = (phoneNumber: string = '', message: string = '') => {
-    if (!phoneNumber) {
-      window.open('https://web.whatsapp.com', '_blank');
-      return;
-    }
+  const openExternalWhatsApp = (phoneNumber: string = '', message: string = '') => {
     const cleanNumber = phoneNumber.replace(/\D/g, '');
-    const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-    toast({ title: "Abriendo WhatsApp", description: "Conectando con el prospecto..." });
+    const url = `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'width=1000,height=800');
   };
 
   return (
     <DashboardShell role="affiliate">
-      <div className="h-[calc(100vh-140px)] flex flex-col gap-6">
+      <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+        {/* Header Superior */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-              <Zap className="h-8 w-8 fill-primary" />
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+              <Zap className="h-6 w-6 fill-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Sales Command <span className="text-primary">Center</span></h1>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Sincronizado con IA & WhatsApp
+              <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Command Center</span></h1>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> IA & WhatsApp en una sola pantalla
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button onClick={() => openWhatsApp()} variant="outline" className="h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest border-slate-200 hover:bg-slate-50 gap-2">
-              <ExternalLink className="h-4 w-4" /> Abrir WhatsApp Web
+            <Button 
+              onClick={() => setShowWhatsApp(!showWhatsApp)} 
+              variant={showWhatsApp ? "default" : "outline"}
+              className="h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 transition-all"
+            >
+              {showWhatsApp ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              {showWhatsApp ? "Ocultar WhatsApp" : "Mostrar WhatsApp"}
             </Button>
-            <div className="h-12 px-6 bg-green-50 rounded-xl border border-green-100 flex items-center gap-3">
+            <div className="h-10 px-5 bg-green-50 rounded-xl border border-green-100 flex items-center gap-3">
               <Smartphone className="h-4 w-4 text-green-600" />
               <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">+{profile?.whatsappNumber || 'Sin vincular'}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
+        {/* Cuerpo Principal: 3 Columnas */}
+        <div className="flex-1 flex gap-4 overflow-hidden">
           
-          <div className="w-full lg:w-[350px] flex flex-col h-full overflow-hidden">
+          {/* Panel 1: Prospectos (Izquierda) */}
+          <div className="w-[300px] flex flex-col shrink-0 overflow-hidden">
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
+              <CardHeader className="bg-slate-900 text-white p-5 space-y-4 shrink-0">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-headline font-black tracking-tight text-white flex items-center gap-2">
-                    <Users2 className="h-5 w-5 text-primary" /> Mis Prospectos
+                  <h3 className="text-sm font-headline font-black tracking-tight text-white flex items-center gap-2">
+                    <Users2 className="h-4 w-4 text-primary" /> Prospectos
                   </h3>
-                  <BadgeDollarSign className="h-5 w-5 text-primary opacity-50" />
+                  <BadgeDollarSign className="h-4 w-4 text-primary opacity-50" />
                 </div>
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <Input 
-                    placeholder="Buscar por nombre o número..." 
+                    placeholder="Buscar..." 
                     value={searchBuyer}
                     onChange={(e) => setSearchBuyer(e.target.value)}
-                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-11 pl-11 rounded-xl text-xs font-medium focus:ring-primary placeholder:text-slate-600"
+                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-9 pl-9 rounded-xl text-[10px] font-medium focus:ring-primary placeholder:text-slate-600"
                   />
                 </div>
               </CardHeader>
               
               <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/50">
                 <ScrollArea className="h-full">
-                  <div className="p-4 space-y-3">
+                  <div className="p-3 space-y-2">
                     {buyersLoading ? (
-                      <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary opacity-20" /></div>
+                      <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary opacity-20" /></div>
                     ) : !buyers || buyers.length === 0 ? (
-                      <div className="text-center py-24 opacity-20 space-y-4">
-                        <Users2 className="h-12 w-12 mx-auto mb-2" />
-                        <p className="text-[9px] font-black uppercase tracking-widest">Lista vacía</p>
+                      <div className="text-center py-10 opacity-20 space-y-2">
+                        <Users2 className="h-8 w-8 mx-auto" />
+                        <p className="text-[8px] font-black uppercase tracking-widest">Sin datos</p>
                       </div>
                     ) : (
                       buyers
@@ -190,30 +196,26 @@ export default function SalesCopilotPage() {
                           b.phone?.includes(searchBuyer)
                         )
                         .map((buyer) => (
-                        <div key={buyer.id} className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm group hover:shadow-md transition-all">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-black text-xs shadow-inner group-hover:bg-primary group-hover:text-white transition-all">
-                                {buyer.firstName?.charAt(0)}
-                              </div>
-                              <div className="min-w-0">
-                                <h4 className="text-xs font-black text-slate-800 truncate">{buyer.firstName}</h4>
-                                <p className="text-[8px] text-slate-400 font-black uppercase tracking-tight">
-                                  {buyer.phone || 'Sin número'}
-                                </p>
-                              </div>
+                        <div key={buyer.id} className="p-3 rounded-2xl bg-white border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-black text-[10px] shadow-inner group-hover:bg-primary group-hover:text-white transition-all">
+                              {buyer.firstName?.charAt(0)}
                             </div>
-                            <CheckCircle2 className={cn("h-3 w-3", buyer.phone ? "text-green-500" : "text-slate-200")} />
+                            <div className="min-w-0">
+                              <h4 className="text-[10px] font-black text-slate-800 truncate">{buyer.firstName}</h4>
+                              <p className="text-[8px] text-slate-400 font-bold tracking-tight">
+                                {buyer.phone || 'Sin número'}
+                              </p>
+                            </div>
                           </div>
                           <Button 
                             onClick={() => {
-                              setInput(`Genera un script de seguimiento para ${buyer.firstName} que mostró interés en nuestros productos.`);
-                              openWhatsApp(buyer.phone, `¡Hola ${buyer.firstName}! Soy ${profile?.firstName} de Sync Connect...`);
+                              setInput(`Genera un script persuasivo para ${buyer.firstName} que está interesado en comprar.`);
+                              toast({ title: "Contexto Cargado", description: "La IA ahora sabe a quién te diriges." });
                             }}
-                            disabled={!buyer.phone}
-                            className="w-full h-9 rounded-lg bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-sm transition-all"
+                            className="w-full h-7 rounded-lg bg-green-600 hover:bg-green-700 text-white font-black text-[8px] uppercase tracking-widest gap-2"
                           >
-                            <MessageSquare className="h-3 w-3" /> Chatear
+                            <MonitorSmartphone className="h-3 w-3" /> Preparar Cierre
                           </Button>
                         </div>
                       ))
@@ -224,48 +226,40 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
+          {/* Panel 2: Sales Copilot IA (Centro) */}
           <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[3rem] flex flex-col h-full ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3">
-                      <Bot className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-headline font-black tracking-tight flex items-center gap-2 text-primary">
-                        Sales Copilot AI <Sparkles className="h-3 w-3 fill-primary" />
-                      </CardTitle>
-                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Mentor de Ventas Digitales</p>
-                    </div>
+            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
+              <CardHeader className="bg-slate-900 text-white p-5 shrink-0 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3">
+                    <Bot className="h-5 w-5" />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setMessages([{ role: 'bot', content: 'Chat reiniciado. ¿En qué venta te ayudo ahora?' }])} className="text-white/40 hover:text-white h-8 px-3 rounded-lg text-[9px] uppercase font-black tracking-widest">
-                      Limpiar
-                    </Button>
+                  <div>
+                    <CardTitle className="text-lg font-headline font-black tracking-tight text-primary flex items-center gap-2">
+                      Sales Copilot AI <Sparkles className="h-3 w-3 fill-primary" />
+                    </CardTitle>
+                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Mentor de Ventas 24/7</p>
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="flex-1 overflow-hidden p-0 bg-[#F8FAFC] flex flex-col relative">
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://plus.unsplash.com/premium_photo-1661601633190-7d72111c6d1d?auto=format&fit=crop&q=80&w=400')] bg-repeat" />
-                
-                <ScrollArea className="flex-1 p-6 relative z-10">
-                  <div className="space-y-6 max-w-3xl mx-auto">
+                <ScrollArea className="flex-1 p-5 relative z-10">
+                  <div className="space-y-5">
                     {messages.map((msg, i) => (
                       <div key={i} className={cn(
-                        "flex items-end gap-3 max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-500",
+                        "flex items-end gap-3 max-w-[90%] animate-in fade-in slide-in-from-bottom-2",
                         msg.role === 'user' ? "ml-auto flex-row-reverse" : ""
                       )}>
                         <div className={cn(
-                          "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all",
+                          "h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg",
                           msg.role === 'user' ? "bg-white text-slate-600 border border-slate-100" : "bg-primary text-white rotate-3"
                         )}>
-                          {msg.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                          {msg.role === 'user' ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
                         </div>
                         <div className="space-y-2 group">
                           <div className={cn(
-                            "p-5 rounded-2xl text-xs font-bold shadow-sm leading-relaxed whitespace-pre-wrap transition-all",
+                            "p-4 rounded-2xl text-[11px] font-bold shadow-sm leading-relaxed whitespace-pre-wrap transition-all",
                             msg.role === 'user' ? "bg-white text-slate-800 rounded-br-none border border-slate-100" : "bg-slate-900 text-white rounded-bl-none"
                           )}>
                             {msg.content}
@@ -275,10 +269,10 @@ export default function SalesCopilotPage() {
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-[8px] font-black uppercase text-primary tracking-widest gap-2 bg-white/80 backdrop-blur rounded-full px-3 h-7 shadow-sm border border-primary/10"
+                                className="text-[7px] font-black uppercase text-primary tracking-widest gap-2 bg-white/80 backdrop-blur rounded-full px-2 h-6 shadow-sm border border-primary/10"
                                 onClick={() => handleCopyScript(msg.content, i)}
                               >
-                                {copiedIndex === i ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                {copiedIndex === i ? <Check className="h-2 w-2" /> : <Copy className="h-2 w-2" />}
                                 {copiedIndex === i ? "Copiado" : "Copiar Script"}
                               </Button>
                             </div>
@@ -288,11 +282,9 @@ export default function SalesCopilotPage() {
                     ))}
                     {isAiLoading && (
                       <div className="flex items-end gap-3 animate-pulse">
-                        <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center shadow-lg">
-                          <Bot className="h-4 w-4" />
-                        </div>
-                        <div className="bg-slate-900 text-white p-5 rounded-2xl rounded-bl-none shadow-sm min-w-[80px]">
-                           <div className="flex gap-1.5">
+                        <div className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center shadow-lg"><Bot className="h-3 w-3" /></div>
+                        <div className="bg-slate-900 text-white p-4 rounded-2xl rounded-bl-none shadow-sm min-w-[60px]">
+                           <div className="flex gap-1">
                              <div className="h-1 w-1 bg-white/40 rounded-full animate-bounce" />
                              <div className="h-1 w-1 bg-white/40 rounded-full animate-bounce [animation-delay:0.2s]" />
                              <div className="h-1 w-1 bg-white/40 rounded-full animate-bounce [animation-delay:0.4s]" />
@@ -304,94 +296,88 @@ export default function SalesCopilotPage() {
                   </div>
                 </ScrollArea>
 
-                <div className="p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100 shrink-0 relative z-10">
-                  <div className="max-w-3xl mx-auto flex flex-col gap-4">
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { label: "Manejo de Objeciones", text: "Ayúdame a responder a un cliente que dice que no tiene dinero ahora." },
-                        { label: "Script de Cierre", text: "Dame un mensaje matador para cerrar la venta de un curso premium." },
-                        { label: "Bienvenida", text: "Redacta un mensaje de bienvenida cálido y persuasivo para un nuevo lead." }
-                      ].map((btn) => (
-                        <button 
-                          key={btn.label}
-                          onClick={() => setInput(btn.text)}
-                          className="h-7 rounded-full px-3 text-[7px] font-black uppercase border border-slate-200 text-slate-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all"
-                        >
-                          {btn.label}
-                        </button>
-                      ))}
-                    </div>
-                    <form onSubmit={handleSendMessage} className="flex gap-3">
-                      <Input 
-                        placeholder="Pregunta a tu mentor de ventas..." 
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        className="h-12 rounded-xl px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 shadow-inner focus:ring-4 focus:ring-primary/10 transition-all text-xs"
-                      />
-                      <Button 
-                        type="submit" 
-                        size="icon" 
-                        className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 shrink-0 transition-all active:scale-90"
-                        disabled={!input.trim() || isAiLoading}
-                      >
-                        <Send className="h-5 w-5 text-white" />
-                      </Button>
-                    </form>
+                <div className="p-5 bg-white/80 backdrop-blur-xl border-t border-slate-100 shrink-0">
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <Input 
+                      placeholder="Pide un script de venta..." 
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      className="h-10 rounded-xl px-4 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 text-[10px]"
+                    />
+                    <Button 
+                      type="submit" 
+                      size="icon" 
+                      className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
+                      disabled={!input.trim() || isAiLoading}
+                    >
+                      <Send className="h-4 w-4 text-white" />
+                    </Button>
+                  </form>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Panel 3: WhatsApp Web Real (Derecha) */}
+          {showWhatsApp && (
+            <div className="flex-1 flex flex-col h-full overflow-hidden animate-in slide-in-from-right-4 duration-500">
+              <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
+                <CardHeader className="bg-[#25D366] text-white p-5 shrink-0 flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="h-5 w-5 fill-white" />
+                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">WhatsApp Web</CardTitle>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="hidden xl:flex w-[280px] flex-col gap-6">
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-slate-100">
-              <CardHeader className="bg-green-600 text-white p-6">
-                <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                  <MousePointer2 className="h-4 w-4" /> Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Flujo de Trabajo</p>
-                  <ol className="space-y-3">
-                    <li className="flex gap-3 text-[10px] font-bold text-slate-600">
-                      <span className="h-5 w-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 font-black">1</span>
-                      Elige un prospecto a la izquierda.
-                    </li>
-                    <li className="flex gap-3 text-[10px] font-bold text-slate-600">
-                      <span className="h-5 w-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 font-black">2</span>
-                      Pide a la IA un script persuasivo.
-                    </li>
-                    <li className="flex gap-3 text-[10px] font-bold text-slate-600">
-                      <span className="h-5 w-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 font-black">3</span>
-                      Copia el script y pégalo en WhatsApp.
-                    </li>
-                  </ol>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Conexión Segura</span>
+                  </div>
+                </CardHeader>
                 
-                <div className="space-y-3">
-                  <Button onClick={() => openWhatsApp()} className="w-full bg-slate-900 hover:bg-black text-white h-12 rounded-xl font-black text-[10px] uppercase tracking-widest">
-                    Lanzar WhatsApp Web
-                  </Button>
-                  <p className="text-[8px] text-slate-400 text-center font-bold px-2 italic">
-                    Tip: Coloca la ventana de WhatsApp al lado de esta pestaña para vender más rápido.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                <CardContent className="flex-1 p-0 relative bg-slate-100">
+                  {/* El iframe de WhatsApp Web */}
+                  {!iframeError ? (
+                    <iframe 
+                      src="https://web.whatsapp.com/"
+                      className="w-full h-full border-none"
+                      title="WhatsApp Web"
+                      onLoad={() => console.log("Intento de carga de WhatsApp...")}
+                      onError={() => setIframeError(true)}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-10 text-center bg-white">
+                      <div className="h-20 w-20 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-500 mb-6">
+                        <ShieldAlert className="h-10 w-10" />
+                      </div>
+                      <h3 className="text-lg font-black text-slate-900 mb-2">Bloqueo de Seguridad</h3>
+                      <p className="text-xs text-slate-500 font-medium mb-8 leading-relaxed max-w-xs">
+                        Tu navegador o WhatsApp bloquean la visualización interna. Haz clic abajo para abrirlo en una ventana lateral sincronizada.
+                      </p>
+                      <Button 
+                        onClick={() => openExternalWhatsApp()} 
+                        className="bg-[#25D366] hover:bg-[#1da853] h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl shadow-green-200"
+                      >
+                        <ExternalLink className="h-4 w-4" /> Abrir WhatsApp Lateral
+                      </Button>
+                    </div>
+                  )}
 
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-slate-900 text-white overflow-hidden ring-1 ring-white/10">
-              <CardContent className="p-6 space-y-4">
-                <div className="h-10 w-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary shadow-xl">
-                  <Layout className="h-5 w-5" />
-                </div>
-                <h4 className="text-xs font-black uppercase tracking-widest">Vista Multitarea</h4>
-                <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-                  Sync Connect está diseñado para ser tu escritorio de ventas. No necesitas cerrar nada, solo copiar, pegar y cerrar ventas.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+                  {/* Capa de aviso por si el iframe falla silenciosamente */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/10">
+                    <p className="text-[9px] text-white/70 font-bold leading-tight">
+                      Si el panel superior aparece en blanco, usa el botón de emergencia:
+                    </p>
+                    <Button 
+                      size="sm"
+                      onClick={() => openExternalWhatsApp()}
+                      className="bg-white text-black hover:bg-slate-200 h-8 px-4 rounded-lg font-black text-[8px] uppercase tracking-widest shrink-0"
+                    >
+                      Abrir afuera
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </DashboardShell>
