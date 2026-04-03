@@ -4,11 +4,11 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Tag, DollarSign, Percent, TrendingUp, Loader2, Target, Landmark, User, Info, Flame, Star, Sparkles, Link as LinkIcon, Check, Copy, MessageSquare } from 'lucide-react'
+import { Search, Tag, Loader2, Landmark, User, Info, Flame, Link as LinkIcon, Check } from 'lucide-react'
 import Image from 'next/image'
 import placeholderData from '@/app/lib/placeholder-images.json'
-import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase'
-import { collection, doc } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
+import { collection } from 'firebase/firestore'
 import { useLanguage } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -25,9 +25,6 @@ export default function AffiliateProductsPage() {
   const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  const affiliateRef = useMemoFirebase(() => (user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
-  const { data: profile } = useDoc(affiliateRef);
-
   const handleCopyLink = (productId: string) => {
     const link = `${window.location.origin}/checkout/${productId}?ref=${user?.uid}`;
     navigator.clipboard.writeText(link);
@@ -36,24 +33,6 @@ export default function AffiliateProductsPage() {
     toast({
       title: t.salesLinkCopied,
       description: "Usa este enlace para enviarlo a tus clientes y cerrar ventas directas.",
-    });
-  };
-
-  const handleCopyWhatsAppLink = (productCode: string) => {
-    if (!profile?.whatsappNumber) {
-      toast({
-        variant: "destructive",
-        title: "WhatsApp no vinculado",
-        description: "Primero vincula tu número en la sección de 'Configuración de Bot'.",
-      });
-      return;
-    }
-    const message = encodeURIComponent(`Hola, me interesa el producto ${productCode}. ¿Cómo puedo adquirirlo?`);
-    const link = `https://wa.me/${profile.whatsappNumber}?text=${message}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link de Venta WhatsApp Copiado",
-      description: "Este link activará tu bot de ventas automáticamente para este producto.",
     });
   };
 
@@ -80,7 +59,7 @@ export default function AffiliateProductsPage() {
               <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Sync Connect Marketplace</span>
             </div>
             <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Mercado de <span className="text-primary">Afiliación</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Encuentra productos ganadores y usa el **Bot de Venta Automática** para cerrar tratos mientras duermes.</p>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Encuentra productos ganadores y obtén tus links de divulgación para empezar a generar comisiones.</p>
           </div>
           <div className="relative w-full md:w-[450px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
@@ -147,18 +126,11 @@ export default function AffiliateProductsPage() {
 
                     <div className="flex flex-col gap-3">
                       <Button 
-                        onClick={() => handleCopyWhatsAppLink(product.code)}
-                        className="w-full h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest gap-3 shadow-xl shadow-green-200"
-                      >
-                        <MessageSquare className="h-4 w-4" /> Link Venta WhatsApp IA
-                      </Button>
-                      <Button 
                         onClick={() => handleCopyLink(product.id)}
-                        variant="outline"
-                        className="w-full h-14 rounded-2xl border-2 border-slate-100 font-black text-[10px] uppercase tracking-widest gap-3 hover:bg-slate-50"
+                        className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest gap-3 shadow-2xl shadow-primary/20"
                       >
-                        {copiedId === product.id ? <Check className="h-4 w-4 text-green-600" /> : <LinkIcon className="h-4 w-4 text-primary" />}
-                        Copiar Link de Pago Directo
+                        {copiedId === product.id ? <Check className="h-5 w-5" /> : <LinkIcon className="h-5 w-5" />}
+                        Copiar Link de Divulgación
                       </Button>
                       <AffiliateDialog product={product} t={t} />
                     </div>
