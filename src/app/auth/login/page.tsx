@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -99,7 +99,7 @@ export default function LoginPage() {
         return;
       }
 
-      // IMPORTANTE: En el Login NO creamos cuentas nuevas automáticamente
+      // IMPORTANTE: En el Login NO creamos cuentas nuevas automáticamente para evitar errores de rol
       toast({ 
         variant: "destructive", 
         title: "Cuenta no encontrada", 
@@ -109,11 +109,15 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Google Login Error:", error);
       let errorMessage = "Ocurrió un error al conectar con Google.";
+      
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró o fue bloqueada. Asegúrate de permitir popups y de que este dominio esté en 'Authorized Domains' en la consola de Firebase.";
+        errorMessage = "La ventana se cerró antes de terminar. Asegúrate de permitir las ventanas emergentes (popups) en tu navegador.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en Authentication > Settings > Authorized domains.";
+        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en Authentication > Settings > Authorized domains en tu consola de Firebase.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "El navegador bloqueó la ventana de Google. Por favor, habilita los popups para este sitio.";
       }
+      
       toast({ variant: "destructive", title: "Error de Conexión", description: errorMessage });
     } finally {
       setLoading(false);
@@ -131,13 +135,13 @@ export default function LoginPage() {
       await sendEmail({
         to: cleanEmail,
         subject: "Instrucciones para restablecer tu contraseña",
-        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. Revisa tu bandeja de entrada para el link oficial.`
+        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. Revisa tu bandeja de entrada para el link oficial de recuperación.`
       });
       await sendPasswordResetEmail(auth, cleanEmail)
       toast({ title: "Correos enviados", description: "Revisa tu bandeja de entrada." });
       setResetCooldown(60); 
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar la recuperación." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar la recuperación en este momento." });
     } finally {
       setResetLoading(false)
     }
@@ -217,7 +221,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="justify-center mt-6 p-0">
-            <p className="text-sm text-slate-500">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-bold">Regístrate</Link></p>
+            <p className="text-sm text-slate-500">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-bold">Regístrate ahora</Link></p>
           </CardFooter>
         </div>
       </Card>
