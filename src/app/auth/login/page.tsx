@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
@@ -51,19 +51,27 @@ export default function LoginPage() {
     const cleanEmail = email.trim().toLowerCase();
     try {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
-      handlePostLogin(cred.user);
+      const user = cred.user;
+      
+      const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+      if (affiliateSnap.exists()) {
+        router.push('/dashboard/affiliate');
+      } else {
+        router.push('/dashboard/buyer');
+      }
     } catch (error: any) {
-      handleAuthError(error);
+      let errorMsg = "No pudimos validar tus datos.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMsg = "El correo o la contraseña son incorrectos.";
+      }
+      toast({ variant: "destructive", title: "Error", description: errorMsg });
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleLogin = async () => {
-    if (!auth || !db) {
-      toast({ variant: "destructive", title: "Error", description: "Servicio de autenticación no inicializado." });
-      return;
-    }
+    if (!auth || !db) return;
     
     setLoading(true);
     const provider = new GoogleAuthProvider();
@@ -91,55 +99,25 @@ export default function LoginPage() {
         return;
       }
 
-      // Si no existe, lo creamos como comprador por defecto en el Login
-      await setDoc(doc(db, 'buyers', user.uid), {
-        id: user.uid,
-        firstName: user.displayName?.split(' ')[0] || 'Usuario',
-        lastName: user.displayName?.split(' ').slice(1).join(' ') || 'Google',
-        email: user.email,
-        registeredAt: new Date().toISOString()
-      });
-
-      toast({ title: "Cuenta creada", description: "Se ha creado tu perfil de Comprador." });
-      router.push('/dashboard/buyer');
-    } catch (error: any) {
-      console.error("Google Login Error:", error);
-      
-      let errorMessage = "Ocurrió un error al conectar con Google.";
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de completar el proceso. Asegúrate de no tener bloqueadores de popups.";
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        errorMessage = "Ya hay una solicitud de autenticación en curso.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = "El inicio de sesión con Google no está habilitado en Firebase Console.";
-      }
-
+      // IMPORTANTE: En el Login NO creamos cuentas nuevas automáticamente
+      // para evitar que un afiliado entre como comprador por error.
       toast({ 
         variant: "destructive", 
-        title: "Error de Autenticación", 
-        description: errorMessage 
+        title: "Cuenta no encontrada", 
+        description: "No encontramos una cuenta vinculada a este Google. Por favor, ve a Registro primero." 
       });
+      
+    } catch (error: any) {
+      console.error("Google Login Error:", error);
+      let errorMessage = "Ocurrió un error al conectar con Google.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "La ventana se cerró antes de completar. Asegúrate de permitir las ventanas emergentes (popups) en tu navegador.";
+      }
+      toast({ variant: "destructive", title: "Error de Conexión", description: errorMessage });
     } finally {
       setLoading(false);
     }
   };
-
-  const handlePostLogin = async (user: any) => {
-    const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-    if (affiliateSnap.exists()) {
-      router.push('/dashboard/affiliate');
-    } else {
-      router.push('/dashboard/buyer');
-    }
-  }
-
-  const handleAuthError = (error: any) => {
-    let errorMsg = "No pudimos validar tus datos.";
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-      errorMsg = "El correo o la contraseña son incorrectos.";
-    }
-    toast({ variant: "destructive", title: "Error", description: errorMsg });
-  }
 
   const handleForgotPassword = async () => {
     const cleanEmail = email.trim().toLowerCase();
@@ -152,22 +130,13 @@ export default function LoginPage() {
       await sendEmail({
         to: cleanEmail,
         subject: "Instrucciones para restablecer tu contraseña",
-        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. \n\nA continuación recibirás un segundo correo oficial de seguridad de Google/Firebase con el enlace para cambiar tu contraseña. \n\nPor favor, revisa tu bandeja de entrada.`
+        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. Revisa tu bandeja de entrada para el link oficial.`
       });
-      
       await sendPasswordResetEmail(auth, cleanEmail)
-      
-      toast({ 
-        title: "Correos enviados", 
-        description: "Revisa tu bandeja de entrada para restablecer tu contraseña." 
-      });
+      toast({ title: "Correos enviados", description: "Revisa tu bandeja de entrada." });
       setResetCooldown(60); 
     } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: "No se pudo procesar la solicitud de recuperación." 
-      });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar la recuperación." });
     } finally {
       setResetLoading(false)
     }
