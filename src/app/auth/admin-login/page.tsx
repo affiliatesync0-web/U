@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -15,55 +15,53 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 /**
  * Página de Acceso Administrativo restringida.
- * Solo permite la entrada al correo oficial del sistema.
  */
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { t } = useLanguage()
   const auth = useAuth()
   const [loading, setLoading] = useState(false)
+  const [authErrorCode, setAuthErrorCode] = useState<string | null>(null)
 
   const handleGoogleAdminLogin = async () => {
     if (!auth) return;
     
     setLoading(true);
+    setAuthErrorCode(null);
     const provider = new GoogleAuthProvider();
-    // Forzamos a que siempre pida elegir cuenta para evitar errores de autologin
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // RESTRICCIÓN ESTRICTA: Solo este correo puede entrar al panel admin
       const allowedEmail = 'affiliatesync0@gmail.com';
       
       if (user?.email?.toLowerCase() === allowedEmail.toLowerCase()) {
         toast({
           title: "Acceso concedido",
-          description: "Bienvenido al panel administrativo central.",
+          description: "Bienvenido al panel administrativo.",
         });
         router.push('/dashboard/admin');
       } else {
-        // Bloqueo inmediato y cierre de sesión si no es el administrador
         await signOut(auth);
         toast({
           variant: "destructive",
           title: "Acceso denegado",
-          description: "Esta cuenta de Google no tiene permisos de administrador.",
+          description: "Esta cuenta no tiene permisos de administrador.",
         });
       }
     } catch (error: any) {
       console.error("Admin Login Error:", error);
-      let errorMessage = "No pudimos conectar con Google. Por favor, intenta de nuevo.";
+      setAuthErrorCode(error.code);
       
+      let errorMessage = "Ocurrió un problema al conectar con Google.";
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Se cerró la ventana antes de terminar. Asegúrate de elegir tu cuenta.";
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana de Google. Por favor, permite las ventanas emergentes (popups).";
+        errorMessage = "La ventana se cerró. Asegúrate de elegir tu cuenta de Google rápidamente.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en la consola de Firebase.";
+        errorMessage = "Este dominio no está autorizado en Firebase. Debes agregarlo en la consola.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "Tu navegador bloqueó la ventana. Por favor, habilita los pop-ups.";
       }
       
       toast({
@@ -93,7 +91,7 @@ export default function AdminLoginPage() {
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight leading-none">
-                Acceso Administrativo
+                Acceso Admin
               </CardTitle>
               <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">
                 Solo Personal Autorizado
@@ -104,15 +102,31 @@ export default function AdminLoginPage() {
             <div className="space-y-6">
               <Alert className="bg-blue-50 border-blue-100 rounded-[1.5rem] border-2">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-[10px] font-black uppercase text-blue-800 tracking-widest">Seguridad Activa</AlertTitle>
-                <AlertDescription className="text-xs text-blue-700 font-bold leading-relaxed">
-                  Solo se permite el acceso a <span className="text-blue-900">affiliatesync0@gmail.com</span> vía Google.
+                <AlertDescription className="text-xs text-blue-700 font-bold">
+                  Acceso exclusivo para: <span className="text-blue-900 block mt-1">affiliatesync0@gmail.com</span>
                 </AlertDescription>
               </Alert>
+
+              {authErrorCode === 'auth/unauthorized-domain' && (
+                <Alert variant="destructive" className="rounded-2xl border-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
+                  <AlertDescription className="text-[10px] mt-2 space-y-2">
+                    <p>Debes agregar este dominio en la Consola de Firebase para que el login funcione.</p>
+                    <a 
+                      href="https://console.firebase.google.com/" 
+                      target="_blank" 
+                      className="flex items-center gap-1 font-black underline"
+                    >
+                      Abrir Consola Firebase <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </AlertDescription>
+                </Alert>
+              )}
               
               <Button 
                 onClick={handleGoogleAdminLogin}
-                className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-200 transition-all flex items-center justify-center gap-3 active:scale-95" 
+                className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95" 
                 disabled={loading}
               >
                 {loading ? (
@@ -125,14 +139,21 @@ export default function AdminLoginPage() {
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                     </svg>
-                    Entrar con Cuenta Administrativa
+                    Entrar con Google
                   </>
                 )}
               </Button>
 
-              <div className="pt-6 border-t border-slate-100 flex items-center justify-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Conexión Encriptada SSL</span>
+              <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Seguridad SSL Activa</span>
+                </div>
+                {authErrorCode === 'auth/popup-closed-by-user' && (
+                  <p className="text-[9px] text-amber-600 font-bold text-center">
+                    Tip: No cierres la ventana de Google hasta elegir tu cuenta.
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

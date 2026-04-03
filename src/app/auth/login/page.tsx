@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn, ArrowLeft, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -18,6 +18,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState<string | null>(null)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -48,6 +50,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setAuthError(null)
     const cleanEmail = email.trim().toLowerCase();
     try {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
@@ -64,6 +67,7 @@ export default function LoginPage() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMsg = "El correo o la contraseña son incorrectos.";
       }
+      setAuthError(errorMsg)
       toast({ variant: "destructive", title: "Error", description: errorMsg });
     } finally {
       setLoading(false)
@@ -74,6 +78,7 @@ export default function LoginPage() {
     if (!auth || !db) return;
     
     setLoading(true);
+    setAuthError(null)
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
@@ -81,41 +86,36 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      if (!user) throw new Error("No se pudo obtener información del usuario.");
+      if (!user) throw new Error("No se pudo obtener información.");
 
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
       if (affiliateSnap.exists()) {
-        toast({ title: "Bienvenido", description: "Accediendo como Afiliado..." });
         router.push('/dashboard/affiliate');
         return;
       }
 
       if (buyerSnap.exists()) {
-        toast({ title: "Bienvenido", description: "Accediendo como Comprador..." });
         router.push('/dashboard/buyer');
         return;
       }
 
-      toast({ 
-        variant: "destructive", 
-        title: "Cuenta no encontrada", 
-        description: "No encontramos una cuenta vinculada. Por favor, ve a Registro primero para elegir tu rol." 
-      });
+      setAuthError("No encontramos una cuenta vinculada. Regístrate primero.")
       
     } catch (error: any) {
       console.error("Google Login Error:", error);
       let errorMessage = "Ocurrió un error al conectar con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de elegir cuenta. Inténtalo de nuevo.";
+        errorMessage = "Se cerró la ventana antes de elegir cuenta. Por favor, intenta de nuevo sin cerrarla.";
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana de Google. Por favor, permite los popups.";
+        errorMessage = "El navegador bloqueó la ventana emergente. Habilita los pop-ups.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Dominio no autorizado en Firebase. Revisa la configuración del proyecto.";
+        errorMessage = "Dominio no autorizado en Firebase. Verifica la consola.";
       }
       
+      setAuthError(errorMessage)
       toast({ variant: "destructive", title: "Error de Conexión", description: errorMessage });
     } finally {
       setLoading(false);
@@ -132,14 +132,14 @@ export default function LoginPage() {
     try {
       await sendEmail({
         to: cleanEmail,
-        subject: "Instrucciones para restablecer tu contraseña",
-        text: `Hola, has solicitado recuperar tu contraseña en Sync Connect. Revisa tu bandeja de entrada para el link oficial de recuperación.`
+        subject: "Instrucciones de recuperación",
+        text: `Has solicitado recuperar tu contraseña en Sync Connect. Revisa tu correo.`
       });
       await sendPasswordResetEmail(auth, cleanEmail)
-      toast({ title: "Correos enviados", description: "Revisa tu bandeja de entrada." });
+      toast({ title: "Enlace enviado", description: "Revisa tu bandeja de entrada." });
       setResetCooldown(60); 
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar la recuperación en este momento." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar." });
     } finally {
       setResetLoading(false)
     }
@@ -148,7 +148,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
-        <div className="relative h-20 w-20 shadow-2xl rounded-[2rem] overflow-hidden bg-white ring-8 ring-primary/5 group-hover:scale-110 transition-transform flex items-center justify-center">
+        <div className="relative h-20 w-20 shadow-2xl rounded-[2rem] overflow-hidden bg-white ring-8 ring-primary/5 flex items-center justify-center">
            {displayLogoUrl ? (
              <Image src={displayLogoUrl} alt="Sync Connect" width={80} height={80} className="object-contain p-3" unoptimized />
            ) : (
@@ -157,7 +157,6 @@ export default function LoginPage() {
         </div>
         <div className="flex flex-col items-center text-center">
            <span className="font-headline font-black text-4xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
-           <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mt-1">Premium Network</span>
         </div>
       </Link>
 
@@ -168,6 +167,13 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="space-y-4">
+              {authError && (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>
+                </Alert>
+              )}
+
               <Button 
                 variant="outline" 
                 onClick={handleGoogleLogin}

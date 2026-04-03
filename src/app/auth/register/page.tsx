@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ShoppingBag, Target, Loader2, ArrowLeft, Eye, EyeOff, Sparkles, ChevronRight, Landmark, ClipboardCheck, ShieldCheck } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, ArrowLeft, Eye, EyeOff, Sparkles, ChevronRight, Landmark, ClipboardCheck, ShieldCheck, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -20,6 +20,7 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } f
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'info' | 'exam'
@@ -34,6 +35,7 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
+  const [authError, setAuthError] = useState<string | null>(null)
   
   const referralId = searchParams.get('ref')
 
@@ -57,6 +59,7 @@ function RegisterContent() {
   const handleGoogleLogin = async () => {
     if (!auth || !db) return;
     setLoading(true);
+    setAuthError(null);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
@@ -64,24 +67,20 @@ function RegisterContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      if (!user) throw new Error("No se pudo obtener información de Google.");
+      if (!user) throw new Error("No info");
 
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
-      // Si ya existe, redirigir según su rol guardado
       if (affiliateSnap.exists()) {
-        toast({ title: "Cuenta detectada", description: "Accediendo como Afiliado..." });
         router.push('/dashboard/affiliate');
         return;
       }
       if (buyerSnap.exists()) {
-        toast({ title: "Cuenta detectada", description: "Accediendo como Comprador..." });
         router.push('/dashboard/buyer');
         return;
       }
 
-      // Registro nuevo respetando el ROL SELECCIONADO EN PANTALLA
       if (role === 'affiliate') {
         await setDoc(doc(db, 'affiliates', user.uid), {
           id: user.uid,
@@ -93,9 +92,8 @@ function RegisterContent() {
           bankAccountHolderName: '',
           currentBalance: 0,
           registeredAt: new Date().toISOString(),
-          status: 'Pending' // Los nuevos afiliados requieren aprobación
+          status: 'Pending'
         });
-        toast({ title: "Registro exitoso", description: "Tu solicitud de afiliado está pendiente de revisión." });
         router.push('/dashboard/affiliate');
       } else {
         await setDoc(doc(db, 'buyers', user.uid), {
@@ -106,7 +104,6 @@ function RegisterContent() {
           referredBy: referralId || null,
           registeredAt: new Date().toISOString()
         });
-        toast({ title: "Registro exitoso", description: "Bienvenido a Sync Connect." });
         router.push('/dashboard/buyer');
       }
 
@@ -114,11 +111,12 @@ function RegisterContent() {
       console.error("Error Google Auth:", error);
       let msg = "No se pudo completar el registro.";
       if (error.code === 'auth/popup-closed-by-user') {
-        msg = "La ventana se cerró. Por favor, permite los popups y asegúrate de que el dominio esté autorizado en la consola de Firebase.";
+        msg = "La ventana se cerró antes de tiempo. No la cierres hasta terminar.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        msg = "Este dominio no está autorizado. Añádelo en la configuración de Firebase Console.";
+        msg = "Dominio no autorizado. Verifica la configuración de Firebase.";
       }
-      toast({ variant: "destructive", title: "Error de Conexión", description: msg });
+      setAuthError(msg)
+      toast({ variant: "destructive", title: "Error", description: msg });
     } finally {
       setLoading(false);
     }
@@ -127,6 +125,7 @@ function RegisterContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setAuthError(null);
     try {
       const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
       const user = cred.user
@@ -157,8 +156,8 @@ function RegisterContent() {
         });
         router.push('/dashboard/buyer');
       }
-      toast({ title: "Cuenta creada", description: "Bienvenido a bordo." });
     } catch (error: any) {
+      setAuthError(error.message);
       toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
       setLoading(false);
@@ -179,8 +178,14 @@ function RegisterContent() {
 
       <div className="w-full max-w-md text-center mb-10">
         <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Únete a Sync Connect</h1>
-        <p className="text-slate-500 mt-2 font-medium">Selecciona tu rol y crea tu cuenta profesional.</p>
       </div>
+
+      {authError && (
+        <Alert className="max-w-md bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>
+        </Alert>
+      )}
 
       {step === 'role' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
@@ -192,7 +197,6 @@ function RegisterContent() {
               <ShoppingBag className="h-8 w-8" />
             </div>
             <h3 className="text-2xl font-black text-slate-900">Quiero comprar</h3>
-            <p className="text-slate-500 text-sm mt-2 font-medium">Accede a productos digitales exclusivos y gestiona tus accesos.</p>
           </button>
           <button 
             onClick={() => { setRole('affiliate'); setStep('info'); }} 
@@ -202,7 +206,6 @@ function RegisterContent() {
               <Target className="h-8 w-8" />
             </div>
             <h3 className="text-2xl font-black text-slate-900">Quiero vender</h3>
-            <p className="text-slate-500 text-sm mt-2 font-medium">Gana comisiones recomendando productos y usa nuestro Bot IA.</p>
           </button>
         </div>
       )}
@@ -222,19 +225,8 @@ function RegisterContent() {
               </div>
               <Input type="email" placeholder="tu@correo.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-12 rounded-xl" />
               <Input type="password" placeholder="Contraseña (mín. 6 caracteres)" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required className="h-12 rounded-xl" />
-              {role === 'affiliate' && (
-                <div className="space-y-4 pt-4 border-t">
-                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Datos para tus pagos</Label>
-                  <Select onValueChange={v => setFormData({...formData, bank: v})}>
-                    <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Selecciona tu banco" /></SelectTrigger>
-                    <SelectContent>{NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                  </Select>
-                  <Input placeholder="Número de Cuenta" value={formData.accNumber} onChange={e => setFormData({...formData, accNumber: e.target.value})} required className="h-12 rounded-xl" />
-                  <Input placeholder="Nombre completo del titular" value={formData.accHolder} onChange={e => setFormData({...formData, accHolder: e.target.value})} required className="h-12 rounded-xl" />
-                </div>
-              )}
               <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin" /> : (role === 'affiliate' ? "Continuar al examen" : "Crear mi cuenta de comprador")}
+                {loading ? <Loader2 className="animate-spin" /> : (role === 'affiliate' ? "Continuar al examen" : "Crear mi cuenta")}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setStep('role')} className="w-full text-slate-400">Volver atrás</Button>
             </form>
@@ -246,14 +238,13 @@ function RegisterContent() {
         <Card className="w-full max-w-xl border-none shadow-2xl rounded-[3rem] p-10">
           <CardHeader className="p-0 mb-8">
             <CardTitle className="text-2xl font-headline font-black text-primary">Evaluación de Afiliado</CardTitle>
-            <p className="text-sm text-slate-500 font-medium mt-1">Responde estas breves preguntas para activar tu acceso.</p>
           </CardHeader>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2"><Label className="font-bold">{t.question1}</Label><Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="rounded-xl min-h-[80px]" /></div>
             <div className="space-y-2"><Label className="font-bold">{t.question2}</Label><Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-xl min-h-[80px]" /></div>
             <div className="space-y-2"><Label className="font-bold">{t.question3}</Label><Textarea required value={examData.q3} onChange={e => setExamData({...examData, q3: e.target.value})} className="rounded-xl min-h-[80px]" /></div>
-            <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : "Finalizar y enviar registro"}</Button>
-            <Button type="button" variant="ghost" onClick={() => setStep('info')} className="w-full text-slate-400">Volver a mis datos</Button>
+            <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : "Finalizar y enviar"}</Button>
+            <Button type="button" variant="ghost" onClick={() => setStep('info')} className="w-full text-slate-400">Volver</Button>
           </form>
         </Card>
       )}
