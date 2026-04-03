@@ -52,11 +52,13 @@ export default function AdminLoginPage() {
       let errorMessage = "No pudimos conectar con Google. Por favor, intenta de nuevo.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Se cerró la ventana de Google antes de terminar.";
+        errorMessage = "Se cerró la ventana de Google antes de terminar. Asegúrate de elegir tu cuenta y no cerrar la ventana emergente.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en Auth > Settings > Authorized domains.";
+        errorMessage = "Este dominio no está autorizado. Agrega esta URL en la Consola de Firebase > Authentication > Settings > Authorized domains.";
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = "Debes habilitar el método de inicio de sesión con Google en tu Consola de Firebase.";
+        errorMessage = "El método de Google no está habilitado. Actívalo en la Consola de Firebase > Authentication > Sign-in method.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "El navegador bloqueó la ventana emergente. Por favor, permite los popups para este sitio.";
       }
       
       toast({

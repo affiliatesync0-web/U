@@ -1,9 +1,10 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet, Link as LinkIcon, Copy, Check, Smartphone } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -16,12 +17,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase'
 import { collection, query, where, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
@@ -33,10 +34,17 @@ export default function AffiliateDashboard() {
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isMounted && user?.uid) {
+      setInviteLink(`${window.location.origin}/auth/register?role=buyer&ref=${user.uid}`);
+    }
+  }, [isMounted, user]);
 
   const affiliateRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -54,9 +62,8 @@ export default function AffiliateDashboard() {
 
   const isLoading = isAuthLoading || profileLoading;
 
-  const inviteLink = typeof window !== 'undefined' ? `${window.location.origin}/auth/register?role=buyer&ref=${user?.uid}` : '';
-
   const handleCopyLink = () => {
+    if (!inviteLink) return;
     navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -68,7 +75,6 @@ export default function AffiliateDashboard() {
 
   const handleUpdatePhoto = () => {
     if (!affiliateRef || !newPhotoUrl) return;
-    
     updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl });
     toast({
       title: t.language === 'es' ? "Perfil actualizado" : "Profile updated",
@@ -99,12 +105,11 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-12">
-        {/* Profile Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex items-center gap-8">
             <div className="relative">
               <Avatar className="h-28 w-28 border-8 border-white shadow-2xl rotate-3 transition-transform hover:rotate-0">
-                <AvatarImage src={profile?.photoUrl} className="object-cover" />
+                <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} className="object-cover" />
                 <AvatarFallback className="bg-primary text-white text-4xl font-black">
                   {profile?.firstName?.charAt(0)}
                 </AvatarFallback>
@@ -147,14 +152,13 @@ export default function AffiliateDashboard() {
                 <div className="flex gap-2">
                    <Input readOnly value={inviteLink} className="h-12 text-[10px] font-mono bg-slate-50 border-none rounded-xl" />
                    <Button onClick={handleCopyLink} size="icon" className="h-12 w-12 rounded-xl shrink-0 bg-primary shadow-lg shadow-primary/20">
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copied ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
                    </Button>
                 </div>
              </div>
           </Card>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat) => (
             <Card key={stat.title} className="border-none shadow-sm hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] bg-white group overflow-hidden ring-1 ring-slate-50">
