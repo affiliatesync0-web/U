@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NICA_BANKS } from '@/lib/constants'
-import { ShoppingBag, Target, Loader2, ArrowLeft, Eye, EyeOff, Sparkles, ChevronRight, Landmark, ClipboardCheck, ShieldCheck, AlertCircle, ExternalLink } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, ArrowLeft, Eye, EyeOff, Sparkles, ChevronRight, Landmark, ClipboardCheck, ShieldCheck, AlertCircle, ExternalLink, Globe } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -114,7 +114,7 @@ function RegisterContent() {
       setAuthErrorCode(error.code);
       let msg = "No se pudo completar el registro.";
       if (error.code === 'auth/popup-closed-by-user') {
-        msg = "La ventana se cerró antes de tiempo. No la cierres hasta terminar.";
+        msg = "La ventana se cerró antes de tiempo.";
       } else if (error.code === 'auth/unauthorized-domain') {
         msg = "Dominio no autorizado en Firebase.";
       }
@@ -183,15 +183,18 @@ function RegisterContent() {
         <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Únete a Sync Connect</h1>
       </div>
 
-      {authErrorCode === 'auth/unauthorized-domain' && (
+      {authErrorCode && (
         <Alert variant="destructive" className="max-w-md rounded-2xl border-2 bg-red-50 mb-6 animate-in slide-in-from-top-2">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
           <AlertDescription className="text-[10px] font-bold mt-2 space-y-3 text-red-900 leading-relaxed">
-            <p>Debes autorizar este dominio en tu Consola de Firebase para permitir el registro con Google:</p>
-            <p className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center select-all shadow-inner overflow-hidden truncate">
-              {typeof window !== 'undefined' ? window.location.hostname : '...'}
-            </p>
+            <p>Para registrarte con Google, agrega este dominio en tu Consola de Firebase &gt; Authentication &gt; Settings:</p>
+            <div className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center flex items-center justify-between gap-2 shadow-inner">
+              <Globe className="h-3 w-3 text-red-200" />
+              <span className="truncate select-all">
+                {typeof window !== 'undefined' ? window.location.hostname : '...'}
+              </span>
+            </div>
             <a 
               href="https://console.firebase.google.com/" 
               target="_blank" 
@@ -203,7 +206,7 @@ function RegisterContent() {
         </Alert>
       )}
 
-      {authError && authErrorCode !== 'auth/unauthorized-domain' && (
+      {authError && !authErrorCode && (
         <Alert className="max-w-md bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, AlertCircle, ExternalLink } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, AlertCircle, ExternalLink, Globe } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -17,7 +17,6 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider,
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { sendEmail } from '@/lib/email'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
@@ -111,11 +110,13 @@ export default function LoginPage() {
       let errorMessage = "Ocurrió un error al conectar con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de elegir cuenta. Intenta de nuevo rápidamente.";
+        errorMessage = "La ventana se cerró. Intenta de nuevo rápidamente.";
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana emergente. Por favor habilita los pop-ups.";
+        errorMessage = "El navegador bloqueó la ventana emergente.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en Firebase.";
+        errorMessage = "Dominio no autorizado en Firebase.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Error de red. Revisa tu conexión.";
       }
       
       setAuthError(errorMessage)
@@ -133,11 +134,6 @@ export default function LoginPage() {
     }
     setResetLoading(true)
     try {
-      await sendEmail({
-        to: cleanEmail,
-        subject: "Instrucciones de recuperación",
-        text: `Has solicitado recuperar tu contraseña en Sync Connect. Revisa tu correo.`
-      });
       await sendPasswordResetEmail(auth, cleanEmail)
       toast({ title: "Enlace enviado", description: "Revisa tu bandeja de entrada." });
       setResetCooldown(60); 
@@ -171,16 +167,18 @@ export default function LoginPage() {
           <CardContent className="p-0">
             <div className="space-y-4">
               
-              {/* DIAGNÓSTICO DE DOMINIO NO AUTORIZADO */}
-              {authErrorCode === 'auth/unauthorized-domain' && (
+              {authErrorCode && (
                 <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 mb-4 animate-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
+                  <AlertTitle className="text-xs font-black uppercase">Diagnóstico de Conexión</AlertTitle>
                   <AlertDescription className="text-[10px] font-bold mt-2 space-y-3 text-red-900 leading-relaxed">
-                    <p>Copia y agrega este dominio en tu Consola de Firebase &gt; Authentication &gt; Settings &gt; Authorized Domains:</p>
-                    <p className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center select-all shadow-inner overflow-hidden truncate">
-                      {typeof window !== 'undefined' ? window.location.hostname : '...'}
-                    </p>
+                    <p>Agrega este dominio en tu Consola de Firebase &gt; Authentication &gt; Settings &gt; Authorized Domains:</p>
+                    <div className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center flex items-center justify-between gap-2 shadow-inner">
+                      <Globe className="h-3 w-3 text-red-200" />
+                      <span className="truncate select-all">
+                        {typeof window !== 'undefined' ? window.location.hostname : '...'}
+                      </span>
+                    </div>
                     <a 
                       href="https://console.firebase.google.com/" 
                       target="_blank" 
@@ -192,16 +190,7 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              {authErrorCode === 'auth/popup-closed-by-user' && (
-                <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs font-bold leading-relaxed">
-                    La ventana se cerró antes de completar. Asegúrate de elegir tu cuenta rápidamente y habilitar los pop-ups en tu navegador.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {authError && authErrorCode !== 'auth/unauthorized-domain' && authErrorCode !== 'auth/popup-closed-by-user' && (
+              {authError && !authErrorCode && (
                 <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>

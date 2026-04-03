@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
@@ -56,11 +56,11 @@ export default function AdminLoginPage() {
       
       let errorMessage = "Ocurrió un problema al conectar con Google.";
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de terminar. Asegúrate de elegir tu cuenta rápidamente.";
+        errorMessage = "La ventana se cerró antes de elegir cuenta.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio NO está autorizado en tu consola de Firebase.";
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "Tu navegador bloqueó la ventana emergente. Por favor, habilita los pop-ups.";
+        errorMessage = "Este dominio NO está autorizado en Firebase.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Error de conexión. Revisa tu internet o los dominios de Firebase.";
       }
       
       toast({
@@ -106,31 +106,34 @@ export default function AdminLoginPage() {
                 </AlertDescription>
               </Alert>
 
-              {/* DETECTOR DE ERRORES CRÍTICOS (DIAGNÓSTICO) */}
               {authErrorCode && (
                 <Alert variant="destructive" className="rounded-2xl border-2 animate-in fade-in slide-in-from-top-2 bg-red-50">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">
-                    {authErrorCode === 'auth/unauthorized-domain' ? 'Dominio No Autorizado' : 'Error de Conexión'}
-                  </AlertTitle>
-                  <AlertDescription className="text-[10px] mt-2 space-y-3 font-bold leading-relaxed text-red-900">
-                    {authErrorCode === 'auth/unauthorized-domain' ? (
-                      <>
-                        <p>Debes agregar este dominio en tu Consola de Firebase para que el login funcione:</p>
-                        <p className="p-3 bg-white rounded-xl border border-destructive/20 font-mono text-center overflow-hidden truncate select-all shadow-inner">
-                          {typeof window !== 'undefined' ? window.location.hostname : 'tu-dominio.com'}
-                        </p>
-                        <a 
-                          href="https://console.firebase.google.com/project/_/authentication/providers" 
-                          target="_blank" 
-                          className="flex items-center justify-center gap-2 bg-destructive text-white p-4 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest"
-                        >
-                          Configurar en Firebase <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </>
-                    ) : (
-                      <p>La ventana se cerró o fue bloqueada. Verifica que permitas pop-ups en tu navegador e intenta nuevamente.</p>
-                    )}
+                  <AlertTitle className="text-xs font-black uppercase">Diagnóstico de Error</AlertTitle>
+                  <AlertDescription className="text-[10px] mt-2 space-y-4 font-bold leading-relaxed text-red-900">
+                    <p>Para que el login funcione, debes agregar el dominio de abajo en tu Consola de Firebase:</p>
+                    <div className="p-3 bg-white rounded-xl border border-red-200 flex items-center justify-between gap-2 shadow-inner group">
+                      <Globe className="h-3 w-3 text-red-300 group-hover:text-red-500 transition-colors" />
+                      <code className="font-mono text-center overflow-hidden truncate select-all">
+                        {typeof window !== 'undefined' ? window.location.hostname : '...'}
+                      </code>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[9px] uppercase tracking-widest text-red-400">Pasos a seguir:</p>
+                      <ol className="list-decimal list-inside space-y-1 text-[9px]">
+                        <li>Copia el dominio blanco de arriba.</li>
+                        <li>Haz clic en el botón rojo de abajo.</li>
+                        <li>Ve a <b>Settings &gt; Authorized Domains</b>.</li>
+                        <li>Haz clic en <b>Add Domain</b> y pégalo.</li>
+                      </ol>
+                    </div>
+                    <a 
+                      href="https://console.firebase.google.com/project/_/authentication/providers" 
+                      target="_blank" 
+                      className="flex items-center justify-center gap-2 bg-red-600 text-white p-4 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest w-full"
+                    >
+                      Configurar en Firebase <ExternalLink className="h-3 w-3" />
+                    </a>
                   </AlertDescription>
                 </Alert>
               )}
@@ -160,9 +163,6 @@ export default function AdminLoginPage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Seguridad Sync Connect Activa</span>
                 </div>
-                <p className="text-[9px] text-slate-400 font-bold max-w-[200px]">
-                  Si el problema persiste, revisa tu conexión a internet o intenta desde una ventana de incógnito.
-                </p>
               </div>
             </div>
           </CardContent>
