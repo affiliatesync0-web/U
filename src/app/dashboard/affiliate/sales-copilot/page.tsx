@@ -20,11 +20,11 @@ import {
   Copy,
   Search,
   Users2,
-  Phone,
   CheckCircle2,
   Settings,
   X,
-  Layout
+  Layout,
+  Check
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -55,6 +55,7 @@ export default function SalesCopilotPage() {
   const [searchBuyer, setSearchBuyer] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('ai')
   const [whatsappUrl, setWhatsappUrl] = useState('https://web.whatsapp.com')
+  const [copiedIndex, setCopiedId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const profileRef = useMemoFirebase(() => (user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
@@ -109,6 +110,13 @@ export default function SalesCopilotPage() {
     }
   }
 
+  const handleCopyScript = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(index);
+    setTimeout(() => setCopiedId(null), 2000);
+    toast({ title: "Script Copiado", description: "Pégalo en tu chat de WhatsApp." });
+  };
+
   const activateWhatsAppView = (phoneNumber: string = '', message: string = '') => {
     let url = 'https://web.whatsapp.com';
     if (phoneNumber) {
@@ -117,7 +125,7 @@ export default function SalesCopilotPage() {
     }
     setWhatsappUrl(url);
     setViewMode('whatsapp');
-    toast({ title: "Modo WhatsApp", description: "Conectando con tu panel de chat..." });
+    toast({ title: "Cargando WhatsApp", description: "Conectando con tu mesa de trabajo..." });
   };
 
   return (
@@ -125,7 +133,7 @@ export default function SalesCopilotPage() {
       <div className="h-[calc(100vh-180px)] flex flex-col lg:flex-row gap-6">
         
         {/* LADO IZQUIERDO: CENTRO DE CONTACTO */}
-        <div className="w-full lg:w-[450px] flex flex-col gap-6 h-full overflow-hidden">
+        <div className="w-full lg:w-[400px] flex flex-col gap-6 h-full overflow-hidden">
           <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-8 space-y-6 shrink-0">
               <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/10">
@@ -139,7 +147,7 @@ export default function SalesCopilotPage() {
                   <div className="flex items-center gap-2 mt-1">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest">
-                      {profile?.whatsappNumber ? `+${profile.whatsappNumber}` : 'WhatsApp no vinculado'}
+                      {profile?.whatsappNumber ? `+${profile.whatsappNumber}` : 'Sin WhatsApp'}
                     </p>
                   </div>
                 </div>
@@ -152,19 +160,16 @@ export default function SalesCopilotPage() {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl font-headline font-black tracking-tight">Mis Prospectos</CardTitle>
-                    <CardDescription className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">Cartera de clientes vinculados</CardDescription>
-                  </div>
-                  <Smartphone className="h-6 w-6 text-primary opacity-50" />
+                  <h3 className="text-xl font-headline font-black tracking-tight text-white">Mis Prospectos</h3>
+                  <Smartphone className="h-5 w-5 text-primary opacity-50" />
                 </div>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <Input 
-                    placeholder="Buscar por nombre o número..." 
+                    placeholder="Buscar cliente..." 
                     value={searchBuyer}
                     onChange={(e) => setSearchBuyer(e.target.value)}
-                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-12 pl-11 rounded-xl text-sm font-medium focus:ring-primary placeholder:text-slate-600"
+                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-12 pl-11 rounded-xl text-xs font-medium focus:ring-primary placeholder:text-slate-600"
                   />
                 </div>
               </div>
@@ -177,11 +182,10 @@ export default function SalesCopilotPage() {
                     <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary opacity-20" /></div>
                   ) : !buyers || buyers.length === 0 ? (
                     <div className="text-center py-24 opacity-20 space-y-4">
-                      <div className="h-20 w-20 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Users2 className="h-10 w-10" />
+                      <div className="h-16 w-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users2 className="h-8 w-8" />
                       </div>
-                      <p className="text-xs font-black uppercase tracking-widest">Sin prospectos registrados</p>
-                      <p className="text-[10px] max-w-[200px] mx-auto leading-relaxed">Usa tu link de divulgación para que tus clientes aparezcan en esta lista.</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest">Sin prospectos</p>
                     </div>
                   ) : (
                     buyers
@@ -194,32 +198,25 @@ export default function SalesCopilotPage() {
                       <div key={buyer.id} className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm group hover:shadow-xl hover:ring-2 hover:ring-primary/5 transition-all duration-500">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-black shadow-inner group-hover:bg-primary group-hover:text-white transition-all">
+                            <div className="h-10 w-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-black shadow-inner group-hover:bg-primary group-hover:text-white transition-all">
                               {buyer.firstName?.charAt(0)}
                             </div>
                             <div>
-                              <h4 className="text-base font-black text-slate-800 tracking-tight">{buyer.firstName} {buyer.lastName}</h4>
-                              <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                <p className="text-[10px] text-slate-400 font-black tracking-tight uppercase">
-                                  {buyer.phone || 'Sin número'}
-                                </p>
-                              </div>
+                              <h4 className="text-sm font-black text-slate-800 tracking-tight">{buyer.firstName}</h4>
+                              <p className="text-[9px] text-slate-400 font-black tracking-tight uppercase">
+                                {buyer.phone || 'Sin número'}
+                              </p>
                             </div>
                           </div>
-                          {buyer.phone && (
-                            <div className="h-8 w-8 bg-green-50 text-green-600 rounded-full flex items-center justify-center border border-green-100">
-                              <CheckCircle2 className="h-4 w-4" />
-                            </div>
-                          )}
+                          {buyer.phone && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                         </div>
                         <div className="flex gap-2">
                           <Button 
                             onClick={() => activateWhatsAppView(buyer.phone, `¡Hola ${buyer.firstName}! Soy ${profile?.firstName} de Sync Connect. Te contacto para darte seguimiento...`)}
                             disabled={!buyer.phone}
-                            className="flex-1 h-12 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl shadow-green-200 transition-all hover:scale-[1.02]"
+                            className="flex-1 h-10 rounded-xl bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-xl shadow-green-200 transition-all"
                           >
-                            <MessageSquare className="h-4 w-4" /> Contactar
+                            <MessageSquare className="h-3 w-3" /> Contactar
                           </Button>
                           <Button 
                             variant="outline"
@@ -227,9 +224,9 @@ export default function SalesCopilotPage() {
                               navigator.clipboard.writeText(buyer.email);
                               toast({ title: "Email Copiado" });
                             }}
-                            className="h-12 w-12 rounded-2xl border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm"
+                            className="h-10 w-10 rounded-xl border-slate-100 text-slate-400 hover:text-primary transition-all"
                           >
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -240,8 +237,8 @@ export default function SalesCopilotPage() {
             </CardContent>
             
             <div className="p-6 bg-white border-t border-slate-100 shrink-0">
-              <Button onClick={() => activateWhatsAppView()} variant="default" className="w-full h-14 bg-slate-900 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:bg-primary transition-all">
-                Abrir mi Panel WhatsApp <Layout className="ml-2 h-4 w-4" />
+              <Button onClick={() => activateWhatsAppView()} variant="default" className="w-full h-12 bg-slate-900 text-white font-black text-[9px] uppercase tracking-[0.2em] rounded-xl shadow-2xl hover:bg-primary transition-all">
+                Abrir Panel WhatsApp <Layout className="ml-2 h-3 w-3" />
               </Button>
             </div>
           </Card>
@@ -254,34 +251,34 @@ export default function SalesCopilotPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-5">
                   <div className={cn(
-                    "h-16 w-16 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl rotate-3 ring-4 transition-all",
+                    "h-14 w-14 rounded-[1.25rem] flex items-center justify-center text-white shadow-2xl rotate-3 ring-4 transition-all",
                     viewMode === 'ai' ? "bg-primary ring-primary/20" : "bg-green-500 ring-green-500/20"
                   )}>
-                    {viewMode === 'ai' ? <Bot className="h-8 w-8" /> : <MessageSquare className="h-8 w-8" />}
+                    {viewMode === 'ai' ? <Bot className="h-7 w-7" /> : <MessageSquare className="h-7 w-7" />}
                   </div>
                   <div>
-                    <CardTitle className="text-3xl font-headline font-black tracking-tight flex items-center gap-3">
+                    <CardTitle className="text-2xl font-headline font-black tracking-tight flex items-center gap-3">
                       {viewMode === 'ai' ? "Sales Copilot" : "WhatsApp Web"} 
-                      {viewMode === 'ai' && <Sparkles className="h-5 w-5 text-primary fill-primary" />}
+                      {viewMode === 'ai' && <Sparkles className="h-4 w-4 text-primary fill-primary" />}
                     </CardTitle>
-                    <div className="flex gap-4 mt-1.5">
+                    <div className="flex gap-4 mt-1">
                       <button 
                         onClick={() => setViewMode('ai')}
                         className={cn(
-                          "text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 transition-opacity",
+                          "text-[9px] font-black uppercase tracking-[0.3em] flex items-center gap-2 transition-opacity",
                           viewMode === 'ai' ? "text-primary" : "text-slate-500 opacity-50 hover:opacity-100"
                         )}
                       >
-                        <span className={cn("h-2 w-2 rounded-full", viewMode === 'ai' ? "bg-primary animate-pulse" : "bg-slate-700")} /> Asistente IA
+                        <span className={cn("h-1.5 w-1.5 rounded-full", viewMode === 'ai' ? "bg-primary animate-pulse" : "bg-slate-700")} /> Asistente IA
                       </button>
                       <button 
                         onClick={() => setViewMode('whatsapp')}
                         className={cn(
-                          "text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 transition-opacity",
+                          "text-[9px] font-black uppercase tracking-[0.3em] flex items-center gap-2 transition-opacity",
                           viewMode === 'whatsapp' ? "text-green-500" : "text-slate-500 opacity-50 hover:opacity-100"
                         )}
                       >
-                        <span className={cn("h-2 w-2 rounded-full", viewMode === 'whatsapp' ? "bg-green-500 animate-pulse" : "bg-slate-700")} /> WhatsApp
+                        <span className={cn("h-1.5 w-1.5 rounded-full", viewMode === 'whatsapp' ? "bg-green-500 animate-pulse" : "bg-slate-700")} /> WhatsApp
                       </button>
                     </div>
                   </div>
@@ -305,37 +302,52 @@ export default function SalesCopilotPage() {
                 <>
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://plus.unsplash.com/premium_photo-1661601633190-7d72111c6d1d?auto=format&fit=crop&q=80&w=400')] bg-repeat" />
                   
-                  <ScrollArea className="flex-1 p-10 relative z-10">
+                  <ScrollArea className="flex-1 p-8 relative z-10">
                     <div className="space-y-8 max-w-4xl mx-auto">
                       {messages.map((msg, i) => (
                         <div key={i} className={cn(
-                          "flex items-end gap-5 max-w-[85%] animate-in fade-in slide-in-from-bottom-4 duration-700",
+                          "flex items-end gap-4 max-w-[85%] animate-in fade-in slide-in-from-bottom-4 duration-700",
                           msg.role === 'user' ? "ml-auto flex-row-reverse" : ""
                         )}>
                           <div className={cn(
-                            "h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-2xl transition-all hover:scale-110",
+                            "h-10 w-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-2xl transition-all",
                             msg.role === 'user' ? "bg-white text-slate-600 ring-1 ring-slate-100" : "bg-primary text-white rotate-3"
                           )}>
-                            {msg.role === 'user' ? <User className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+                            {msg.role === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
                           </div>
-                          <div className={cn(
-                            "p-8 rounded-[2.5rem] text-sm font-bold shadow-sm leading-relaxed whitespace-pre-wrap transition-all",
-                            msg.role === 'user' ? "bg-white text-slate-800 rounded-br-none" : "bg-slate-900 text-white rounded-bl-none"
-                          )}>
-                            {msg.content}
+                          <div className="space-y-2 group">
+                            <div className={cn(
+                              "p-6 rounded-[2rem] text-sm font-bold shadow-sm leading-relaxed whitespace-pre-wrap transition-all",
+                              msg.role === 'user' ? "bg-white text-slate-800 rounded-br-none" : "bg-slate-900 text-white rounded-bl-none"
+                            )}>
+                              {msg.content}
+                            </div>
+                            {msg.role === 'bot' && i !== 0 && (
+                              <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-[9px] font-black uppercase text-primary tracking-widest gap-2 bg-white/50 backdrop-blur rounded-full px-4 h-8"
+                                  onClick={() => handleCopyScript(msg.content, i)}
+                                >
+                                  {copiedIndex === i ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                  {copiedIndex === i ? "Copiado" : "Copiar Script"}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                       {isAiLoading && (
-                        <div className="flex items-end gap-5 animate-pulse">
-                          <div className="h-12 w-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl">
-                            <Bot className="h-6 w-6" />
+                        <div className="flex items-end gap-4 animate-pulse">
+                          <div className="h-10 w-10 rounded-2xl bg-primary text-white flex items-center justify-center">
+                            <Bot className="h-5 w-5" />
                           </div>
-                          <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] rounded-bl-none shadow-sm min-w-[120px]">
+                          <div className="bg-slate-900 text-white p-6 rounded-[2rem] rounded-bl-none shadow-sm min-w-[100px]">
                              <div className="flex gap-2">
-                               <div className="h-2 w-2 bg-white/40 rounded-full animate-bounce" />
-                               <div className="h-2 w-2 bg-white/40 rounded-full animate-bounce [animation-delay:0.2s]" />
-                               <div className="h-2 w-2 bg-white/40 rounded-full animate-bounce [animation-delay:0.4s]" />
+                               <div className="h-1.5 w-1.5 bg-white/40 rounded-full animate-bounce" />
+                               <div className="h-1.5 w-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0.2s]" />
+                               <div className="h-1.5 w-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0.4s]" />
                              </div>
                           </div>
                         </div>
@@ -344,18 +356,18 @@ export default function SalesCopilotPage() {
                     </div>
                   </ScrollArea>
 
-                  <div className="p-10 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shrink-0 relative z-10">
-                    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+                  <div className="p-8 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shrink-0 relative z-10">
+                    <div className="max-w-4xl mx-auto flex flex-col gap-4">
                       <div className="flex flex-wrap gap-2">
                         {[
                           { label: "Manejo de Precio", text: "Genera un script persuasivo para un cliente que dice que el producto está caro." },
                           { label: "Seguimiento", text: "Redacta un mensaje de WhatsApp para dar seguimiento a un prospecto que no respondió hace 2 días." },
-                          { label: "Copy para Ads", text: "Necesito un copy corto y matador para vender este catálogo en Instagram Stories." }
+                          { label: "Cierre Directo", text: "Dame una frase matadora para cerrar la venta ahora mismo por transferencia." }
                         ].map((btn) => (
                           <button 
                             key={btn.label}
                             onClick={() => setInput(btn.text)}
-                            className="h-9 rounded-full px-5 text-[9px] font-black uppercase border border-slate-100 text-slate-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all"
+                            className="h-8 rounded-full px-4 text-[8px] font-black uppercase border border-slate-100 text-slate-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all"
                           >
                             {btn.label}
                           </button>
@@ -366,15 +378,15 @@ export default function SalesCopilotPage() {
                           placeholder="Escribe tu consulta de ventas..." 
                           value={input}
                           onChange={(e) => setInput(e.target.value)}
-                          className="h-20 rounded-[1.5rem] px-10 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 shadow-inner focus:ring-4 focus:ring-primary/10 transition-all text-base"
+                          className="h-16 rounded-2xl px-8 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 shadow-inner focus:ring-4 focus:ring-primary/10 transition-all text-sm"
                         />
                         <Button 
                           type="submit" 
                           size="icon" 
-                          className="h-20 w-20 rounded-[1.5rem] bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/30 shrink-0 transition-all active:scale-90"
+                          className="h-16 w-16 rounded-2xl bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/30 shrink-0 transition-all active:scale-90"
                           disabled={!input.trim() || isAiLoading}
                         >
-                          <Send className="h-8 w-8" />
+                          <Send className="h-6 w-6" />
                         </Button>
                       </form>
                     </div>
@@ -382,17 +394,33 @@ export default function SalesCopilotPage() {
                 </>
               ) : (
                 <div className="h-full w-full flex flex-col relative bg-slate-100">
-                  <div className="absolute top-0 left-0 right-0 z-20 bg-amber-50 border-b border-amber-100 p-4 text-center">
-                    <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest flex items-center justify-center gap-2">
-                      Si WhatsApp Web no carga aquí dentro, es por la seguridad de tu navegador. 
-                      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="underline flex items-center gap-1">
-                        Haz clic aquí para abrirlo afuera <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </p>
+                  <div className="absolute inset-0 z-20 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-10 text-center">
+                    <div className="max-w-md space-y-8 animate-in zoom-in-95 duration-500">
+                       <div className="h-20 w-20 bg-green-500 text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-green-500/20 rotate-3">
+                         <Smartphone className="h-10 w-10" />
+                       </div>
+                       <div className="space-y-3">
+                         <h3 className="text-3xl font-headline font-black text-white tracking-tight">Estación de Trabajo WhatsApp</h3>
+                         <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                           Por razones de seguridad, WhatsApp Web requiere abrirse en su propia ventana dedicada para funcionar correctamente.
+                         </p>
+                       </div>
+                       <div className="pt-4 space-y-4">
+                         <Button asChild size="lg" className="w-full h-16 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-2xl shadow-green-500/30">
+                           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                             Conectar WhatsApp Ahora <ExternalLink className="ml-2 h-4 w-4" />
+                           </a>
+                         </Button>
+                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                           Usa el Copiloto IA al lado para generar tus respuestas.
+                         </p>
+                       </div>
+                    </div>
                   </div>
+                  {/* Iframe invisible para intentar precargar si el navegador lo permite */}
                   <iframe 
                     src={whatsappUrl} 
-                    className="w-full h-full border-none relative z-10 pt-14"
+                    className="w-full h-full border-none opacity-0"
                     allow="camera; microphone; clipboard-read; clipboard-write"
                     title="WhatsApp Web Interface"
                   />
