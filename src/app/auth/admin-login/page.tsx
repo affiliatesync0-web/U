@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, Globe, UserX, Copy, Check, Info } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, UserX, Copy, Check, Info, Cookie, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth'
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminLoginPage() {
@@ -23,11 +23,23 @@ export default function AdminLoginPage() {
   const [copied, setCopied] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
 
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setCurrentHostname(window.location.hostname)
     }
-  }, [])
+    
+    // Limpieza automática de sesiones de afiliado al entrar a esta página
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+          signOut(auth);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [auth]);
 
   const handleCopyDomain = () => {
     if (typeof navigator !== 'undefined') {
@@ -48,13 +60,13 @@ export default function AdminLoginPage() {
     
     try {
       const provider = new GoogleAuthProvider();
+      // 'select_account' es vital para que Google no use la sesión guardada de afiliado
       provider.setCustomParameters({ prompt: 'select_account' });
       
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      const allowedEmail = 'affiliatesync0@gmail.com';
       
-      if (user?.email?.toLowerCase() === allowedEmail.toLowerCase()) {
+      if (user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         toast({ title: "Acceso concedido", description: "Bienvenido, Administrador." });
         router.push('/dashboard/admin');
       } else {
@@ -70,13 +82,13 @@ export default function AdminLoginPage() {
     } catch (error: any) {
       console.error("Admin Login Error:", error);
       setAuthErrorCode(error.code);
-      setShowHelp(true); // Mostrar ayuda siempre que haya un error
+      setShowHelp(true);
       
       let errorMessage = "Ocurrió un problema al conectar con Google.";
       if (error.code === 'auth/unauthorized-domain') {
         errorMessage = "Dominio no autorizado en Firebase.";
       } else if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró. Revisa tus bloqueadores de pop-ups o el dominio.";
+        errorMessage = "La ventana se cerró solo. Revisa bloqueadores de pop-ups.";
       }
       
       toast({ 
@@ -120,11 +132,21 @@ export default function AdminLoginPage() {
 
             {showHelp && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="p-5 bg-amber-50 rounded-2xl border-2 border-amber-100 space-y-3">
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <Cookie className="h-4 w-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Tip de Solución</span>
+                  </div>
+                  <p className="text-[10px] font-bold text-amber-900 leading-relaxed">
+                    Si el dominio ya está autorizado en Firebase, el error suele ser porque el navegador bloquea <b>Cookies de Terceros</b> o estás en <b>Modo Incógnito</b>. Prueba abrir el sitio en una pestaña normal.
+                  </p>
+                </div>
+
                 <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 border-red-100">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase tracking-tighter">¿Problemas de conexión?</AlertTitle>
+                  <AlertTitle className="text-xs font-black uppercase tracking-tighter">¿Sigue fallando?</AlertTitle>
                   <AlertDescription className="text-[10px] mt-2 font-bold text-red-900 leading-relaxed">
-                    Asegúrate de haber agregado este dominio exacto (puerto 9002) en tu Consola de Firebase:
+                    Verifica que este dominio exacto esté en tu lista de Firebase:
                   </AlertDescription>
                 </Alert>
                 
@@ -180,7 +202,7 @@ export default function AdminLoginPage() {
                   onClick={() => setShowHelp(true)}
                   className="w-full text-center text-slate-400 hover:text-slate-600 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
                 >
-                  <Info className="h-3 w-3" /> Ver ayuda de dominio
+                  <Info className="h-3 w-3" /> Ver ayuda de conexión
                 </button>
               )}
             </div>
