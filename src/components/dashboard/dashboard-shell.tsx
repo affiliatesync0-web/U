@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -20,7 +21,7 @@ import {
   Mail,
   Clock,
   ShieldCheck,
-  Settings,
+  UserCircle,
 } from "lucide-react"
 import {
   Sidebar,
@@ -91,6 +92,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
+    { title: "Mi Perfil / Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
   const buyerItems = [

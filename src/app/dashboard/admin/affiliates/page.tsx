@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -55,7 +55,7 @@ export default function AdminAffiliatesPage() {
         subject: `¡Cuenta Activada! - Sync Connect`,
         text: `¡Felicidades ${affName}! Tu solicitud de afiliado ha sido revisada y aprobada por nuestro equipo. 
         
-Ya puedes acceder a tu panel administrativo para obtener tus links de divulgación, configurar tu bot de WhatsApp y empezar a generar comisiones.
+Ya puedes acceder a tu panel administrativo para obtener tus links de divulgación y empezar a generar comisiones.
 
 Entra aquí: ${window.location.origin}/auth/login`
       });
@@ -90,10 +90,7 @@ Entra aquí: ${window.location.origin}/auth/login`
   const handleDeleteAffiliate = (affId: string) => {
     if (!db) return;
     const affRef = doc(db, 'affiliates', affId);
-    
-    // Ejecutamos el borrado. Si falla por permisos, el error se capturará globalmente.
     deleteDocumentNonBlocking(affRef);
-    
     toast({ 
       title: "Solicitud de borrado", 
       description: "Se ha procesado la eliminación del afiliado.",
@@ -157,7 +154,7 @@ Entra aquí: ${window.location.origin}/auth/login`
                         </TableCell>
                         <TableCell className="text-right">
                            <div className="flex justify-end gap-2">
-                             <AffiliateExamDialog 
+                             <AffiliateDetailsDialog 
                                 affiliate={aff} 
                                 t={t} 
                                 onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} 
@@ -175,9 +172,31 @@ Entra aquí: ${window.location.origin}/auth/login`
                                </>
                              ) : (
                                <>
-                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" disabled={aff.currentBalance === 0} onClick={() => handleMarkAsPaid(aff.id)} title="Pagar">
-                                   <Banknote className="h-4 w-4" />
-                                 </Button>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" disabled={aff.currentBalance === 0} title="Marcar como Pagado">
+                                        <Banknote className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Confirmar Pago a {aff.firstName}?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Esto reseteará el saldo acumulado de <strong>${aff.currentBalance?.toFixed(2)}</strong> a cero. Realiza esta acción solo después de haber transferido el dinero a su cuenta bancaria.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <div className="bg-slate-50 p-4 rounded-xl space-y-2 border">
+                                         <p className="text-[10px] font-black uppercase text-slate-400">Datos del Afiliado:</p>
+                                         <p className="text-xs font-bold">Banco: {aff.bankId || 'No definido'}</p>
+                                         <p className="text-xs font-bold">Cuenta: {aff.bankAccountNumber || 'No definida'}</p>
+                                         <p className="text-xs font-bold">Titular: {aff.bankAccountHolderName || 'No definido'}</p>
+                                      </div>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleMarkAsPaid(aff.id)} className="bg-green-600">CONFIRMAR PAGO</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                 </AlertDialog>
                                  <Button size="icon" variant="ghost" className={`h-8 w-8 ${aff.status === 'Blocked' ? 'text-green-600' : 'text-amber-600'}`} onClick={() => handleToggleBlock(aff.id, aff.status)}>
                                    {aff.status === 'Blocked' ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                                  </Button>
@@ -215,46 +234,77 @@ Entra aquí: ${window.location.origin}/auth/login`
   )
 }
 
-function AffiliateExamDialog({ affiliate, t, onApprove, onReject }: any) {
+function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
   const answers = affiliate.examAnswers;
   
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 px-2 text-primary border-primary/20">
-          <ClipboardCheck className="mr-2 h-4 w-4" /> {t.review} Examen
+          <Info className="mr-2 h-4 w-4" /> Ver Detalles
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-headline font-black text-primary">Revisión de Evaluación</DialogTitle>
-          <p className="text-sm text-muted-foreground">{affiliate.firstName} {affiliate.lastName} - {affiliate.email}</p>
-        </DialogHeader>
-        
-        <div className="space-y-6 py-6">
-          {!answers ? (
-            <p className="text-center py-10 text-muted-foreground">Este afiliado no completó el examen técnico.</p>
-          ) : (
-            <>
-              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border">
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest">{t.question1}</p>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed italic">"{answers.q1}"</p>
-              </div>
-              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border">
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest">{t.question2}</p>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed italic">"{answers.q2}"</p>
-              </div>
-              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border">
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest">{t.question3}</p>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed italic">"{answers.q3}"</p>
-              </div>
-            </>
-          )}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-0 border-none shadow-2xl">
+        <div className="bg-slate-900 p-8 text-white">
+           <DialogHeader>
+             <DialogTitle className="text-2xl font-headline font-black text-primary">Perfil del Afiliado</DialogTitle>
+             <p className="text-slate-400 font-bold">{affiliate.firstName} {affiliate.lastName}</p>
+           </DialogHeader>
         </div>
+        
+        <div className="p-8 space-y-8 bg-white">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Contacto</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-600"><Mail className="h-4 w-4 opacity-40" /> {affiliate.email}</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-green-600">
+                  <Smartphone className="h-4 w-4" /> 
+                  <a href={`https://wa.me/${affiliate.whatsappNumber?.replace(/\D/g, '')}`} target="_blank" className="hover:underline">
+                    +{affiliate.whatsappNumber || 'Sin número'}
+                  </a>
+                </div>
+              </div>
+            </div>
 
-        <div className="flex gap-4 border-t pt-6">
-          <Button className="flex-1 bg-green-600 hover:bg-green-700 font-bold" onClick={onApprove}>APROBAR AFILIADO</Button>
-          <Button variant="destructive" className="flex-1 font-bold" onClick={onReject}>RECHAZAR SOLICITUD</Button>
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-2">Datos Bancarios para Pago</h4>
+              <div className="bg-primary/5 p-4 rounded-xl space-y-2">
+                <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Banco:</span> {affiliate.bankId || 'N/A'}</p>
+                <p className="text-xs font-black text-primary"><span className="text-slate-400 uppercase text-[9px]">Cuenta:</span> {affiliate.bankAccountNumber || 'N/A'}</p>
+                <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Titular:</span> {affiliate.bankAccountHolderName || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Respuestas de Evaluación</h4>
+            {!answers ? (
+              <p className="text-xs text-muted-foreground italic">No completó el examen técnico.</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-slate-50 border">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Estrategia:</p>
+                  <p className="text-xs font-medium text-slate-700 italic">"{answers.q1}"</p>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 border">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Experiencia:</p>
+                  <p className="text-xs font-medium text-slate-700 italic">"{answers.q2}"</p>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 border">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Objeciones:</p>
+                  <p className="text-xs font-medium text-slate-700 italic">"{answers.q3}"</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {affiliate.status === 'Pending' && (
+            <div className="flex gap-4 border-t pt-6">
+              <Button className="flex-1 bg-green-600 hover:bg-green-700 font-bold" onClick={onApprove}>APROBAR AHORA</Button>
+              <Button variant="destructive" className="flex-1 font-bold" onClick={onReject}>RECHAZAR</Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

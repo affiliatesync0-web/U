@@ -1,9 +1,10 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Calendar, Filter, Loader2, ShoppingBag, Landmark, Info, Eye, CheckCircle2 } from 'lucide-react'
+import { Search, Calendar, Filter, Loader2, ShoppingBag, Landmark, Info, Eye, CheckCircle2, Phone, Mail, User } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -154,7 +155,7 @@ function SaleDetailsDialog({ sale, t }: { sale: any, t: any }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="font-black text-[10px] uppercase tracking-widest text-primary gap-2">
-          <Eye className="h-4 w-4" /> Ver Comprobante
+          <Eye className="h-4 w-4" /> Ver Detalles
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
@@ -163,48 +164,54 @@ function SaleDetailsDialog({ sale, t }: { sale: any, t: any }) {
              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
                <Landmark className="h-6 w-6" />
              </div>
-             <Badge className="bg-primary/20 text-primary border-none font-black text-[10px] tracking-widest uppercase">Validación Bancaria</Badge>
+             <Badge className="bg-primary/20 text-primary border-none font-black text-[10px] tracking-widest uppercase">Auditoría Real</Badge>
            </div>
            <DialogHeader>
-             <DialogTitle className="text-2xl font-headline font-black tracking-tight">Detalles de la Transferencia</DialogTitle>
-             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">ID Operación: {sale.id}</p>
+             <DialogTitle className="text-2xl font-headline font-black tracking-tight">Comprobante de Pago</DialogTitle>
+             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Ref Bancaria: {sale.voucherReference || 'N/A'}</p>
            </DialogHeader>
         </div>
         <div className="p-10 space-y-8 bg-white">
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Información del Comprador</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nombre</p>
-                <p className="text-sm font-black text-slate-800">{sale.buyerName}</p>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border">
+               <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                 <User className="h-5 w-5 text-slate-400" />
+               </div>
+               <div>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Comprador</p>
+                 <p className="text-sm font-black text-slate-800">{sale.buyerName}</p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-primary/40" />
+                <span className="text-sm font-bold text-slate-600">{sale.buyerId}</span>
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Email</p>
-                <p className="text-sm font-bold text-slate-600">{sale.buyerId}</p>
-              </div>
+              {sale.buyerPhone && (
+                <div className="flex items-center gap-3 text-green-600">
+                  <Phone className="h-4 w-4" />
+                  <a href={`https://wa.me/${sale.buyerPhone.replace(/\D/g, '')}`} target="_blank" className="text-sm font-black hover:underline">
+                    +{sale.buyerPhone} (WhatsApp)
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="p-8 rounded-[2rem] bg-purple-50 border border-purple-100 space-y-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-purple-500" />
-              <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Referencia del Depósito</h4>
-            </div>
-            
-            <div className="p-6 bg-white rounded-2xl border border-purple-100 shadow-sm text-center">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Número de Voucher</p>
-              <p className="text-4xl font-black font-mono tracking-widest text-purple-600">{sale.voucherReference || 'N/A'}</p>
-            </div>
+          <div className="p-8 rounded-[2.5rem] bg-purple-50 border border-purple-100 text-center space-y-3">
+            <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Número de Voucher</p>
+            <p className="text-4xl font-black font-mono tracking-widest text-purple-600">{sale.voucherReference || 'N/A'}</p>
           </div>
 
-          <div className="pt-4 border-t flex justify-between items-center">
+          <div className="pt-6 border-t flex justify-between items-center">
             <div>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Monto Recibido</p>
-              <p className="text-2xl font-black text-slate-900">${sale.saleAmount?.toFixed(2)}</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Pagado</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tighter">${sale.saleAmount?.toFixed(2)}</p>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Comisión Afiliado</p>
-              <p className="text-2xl font-black text-green-600">${sale.commissionEarned?.toFixed(2)}</p>
+              <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Comisión</p>
+              <p className="text-3xl font-black text-green-600 tracking-tighter">${sale.commissionEarned?.toFixed(2)}</p>
             </div>
           </div>
         </div>
