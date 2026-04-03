@@ -18,7 +18,6 @@ import {
   Copy,
   Search,
   Users2,
-  CheckCircle2,
   Check,
   ExternalLink,
   Zap,
@@ -26,7 +25,8 @@ import {
   MonitorSmartphone,
   ShieldAlert,
   PanelRightClose,
-  PanelRightOpen
+  PanelRightOpen,
+  ArrowRight
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -119,14 +119,14 @@ export default function SalesCopilotPage() {
   const openExternalWhatsApp = (phoneNumber: string = '', message: string = '') => {
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     const url = `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'width=1000,height=800');
+    window.open(url, '_blank', 'width=1200,height=800');
   };
 
   return (
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
         
-        {/* Header Superior */}
+        {/* Barra de Estado Superior */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -135,7 +135,7 @@ export default function SalesCopilotPage() {
             <div>
               <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Command Center</span></h1>
               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> IA & WhatsApp en una sola pantalla
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> IA & WhatsApp Integrado
               </p>
             </div>
           </div>
@@ -146,24 +146,24 @@ export default function SalesCopilotPage() {
               className="h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 transition-all"
             >
               {showWhatsApp ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-              {showWhatsApp ? "Ocultar WhatsApp" : "Mostrar WhatsApp"}
+              {showWhatsApp ? "Ocultar WhatsApp" : "Ver WhatsApp Web"}
             </Button>
             <div className="h-10 px-5 bg-green-50 rounded-xl border border-green-100 flex items-center gap-3">
               <Smartphone className="h-4 w-4 text-green-600" />
-              <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">+{profile?.whatsappNumber || 'Sin vincular'}</span>
+              <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">+{profile?.whatsappNumber || 'Configurar'}</span>
             </div>
           </div>
         </div>
 
-        {/* Cuerpo Principal: 3 Columnas */}
+        {/* Estación de Trabajo: 3 Paneles */}
         <div className="flex-1 flex gap-4 overflow-hidden">
           
-          {/* Panel 1: Prospectos (Izquierda) */}
-          <div className="w-[300px] flex flex-col shrink-0 overflow-hidden">
+          {/* PANEL 1: Prospectos (Izquierda) */}
+          <div className="w-[280px] flex flex-col shrink-0 overflow-hidden">
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-5 space-y-4 shrink-0">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-headline font-black tracking-tight text-white flex items-center gap-2">
+                  <h3 className="text-xs font-headline font-black tracking-tight text-white flex items-center gap-2">
                     <Users2 className="h-4 w-4 text-primary" /> Prospectos
                   </h3>
                   <BadgeDollarSign className="h-4 w-4 text-primary opacity-50" />
@@ -171,7 +171,7 @@ export default function SalesCopilotPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <Input 
-                    placeholder="Buscar..." 
+                    placeholder="Buscar cliente..." 
                     value={searchBuyer}
                     onChange={(e) => setSearchBuyer(e.target.value)}
                     className="bg-white/5 border-none ring-1 ring-white/10 text-white h-9 pl-9 rounded-xl text-[10px] font-medium focus:ring-primary placeholder:text-slate-600"
@@ -187,7 +187,7 @@ export default function SalesCopilotPage() {
                     ) : !buyers || buyers.length === 0 ? (
                       <div className="text-center py-10 opacity-20 space-y-2">
                         <Users2 className="h-8 w-8 mx-auto" />
-                        <p className="text-[8px] font-black uppercase tracking-widest">Sin datos</p>
+                        <p className="text-[8px] font-black uppercase tracking-widest">Sin prospectos</p>
                       </div>
                     ) : (
                       buyers
@@ -202,16 +202,16 @@ export default function SalesCopilotPage() {
                               {buyer.firstName?.charAt(0)}
                             </div>
                             <div className="min-w-0">
-                              <h4 className="text-[10px] font-black text-slate-800 truncate">{buyer.firstName}</h4>
+                              <h4 className="text-[10px] font-black text-slate-800 truncate uppercase">{buyer.firstName}</h4>
                               <p className="text-[8px] text-slate-400 font-bold tracking-tight">
-                                {buyer.phone || 'Sin número'}
+                                {buyer.phone || 'Sin WhatsApp'}
                               </p>
                             </div>
                           </div>
                           <Button 
                             onClick={() => {
-                              setInput(`Genera un script persuasivo para ${buyer.firstName} que está interesado en comprar.`);
-                              toast({ title: "Contexto Cargado", description: "La IA ahora sabe a quién te diriges." });
+                              setInput(`Ayúdame a cerrar una venta con ${buyer.firstName}. ¿Qué script puedo usar para convencerlo?`);
+                              toast({ title: "Cliente Seleccionado", description: `Cargando contexto para ${buyer.firstName}` });
                             }}
                             className="w-full h-7 rounded-lg bg-green-600 hover:bg-green-700 text-white font-black text-[8px] uppercase tracking-widest gap-2"
                           >
@@ -226,7 +226,7 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* Panel 2: Sales Copilot IA (Centro) */}
+          {/* PANEL 2: Sales Copilot IA (Centro) */}
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-5 shrink-0 border-b border-white/5">
@@ -236,9 +236,9 @@ export default function SalesCopilotPage() {
                   </div>
                   <div>
                     <CardTitle className="text-lg font-headline font-black tracking-tight text-primary flex items-center gap-2">
-                      Sales Copilot AI <Sparkles className="h-3 w-3 fill-primary" />
+                      IA Sales Copilot <Sparkles className="h-3 w-3 fill-primary" />
                     </CardTitle>
-                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Mentor de Ventas 24/7</p>
+                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Mentor Digital 24/7</p>
                   </div>
                 </div>
               </CardHeader>
@@ -299,7 +299,7 @@ export default function SalesCopilotPage() {
                 <div className="p-5 bg-white/80 backdrop-blur-xl border-t border-slate-100 shrink-0">
                   <form onSubmit={handleSendMessage} className="flex gap-2">
                     <Input 
-                      placeholder="Pide un script de venta..." 
+                      placeholder="Ej: Dame un script para manejar la objeción 'está caro'" 
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       className="h-10 rounded-xl px-4 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 text-[10px]"
@@ -318,18 +318,18 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* Panel 3: WhatsApp Web Real (Derecha) */}
+          {/* PANEL 3: WHATSAPP WEB REAL (Derecha) */}
           {showWhatsApp && (
-            <div className="flex-1 flex flex-col h-full overflow-hidden animate-in slide-in-from-right-4 duration-500">
+            <div className="flex-[1.2] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-4 duration-500">
               <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
                 <CardHeader className="bg-[#25D366] text-white p-5 shrink-0 flex flex-row items-center justify-between">
                   <div className="flex items-center gap-3">
                     <MessageSquare className="h-5 w-5 fill-white" />
-                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">WhatsApp Web</CardTitle>
+                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">WhatsApp Web Real</CardTitle>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Conexión Segura</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Sync Activo</span>
                   </div>
                 </CardHeader>
                 
@@ -340,7 +340,6 @@ export default function SalesCopilotPage() {
                       src="https://web.whatsapp.com/"
                       className="w-full h-full border-none"
                       title="WhatsApp Web"
-                      onLoad={() => console.log("Intento de carga de WhatsApp...")}
                       onError={() => setIframeError(true)}
                     />
                   ) : (
@@ -350,7 +349,7 @@ export default function SalesCopilotPage() {
                       </div>
                       <h3 className="text-lg font-black text-slate-900 mb-2">Bloqueo de Seguridad</h3>
                       <p className="text-xs text-slate-500 font-medium mb-8 leading-relaxed max-w-xs">
-                        Tu navegador o WhatsApp bloquean la visualización interna. Haz clic abajo para abrirlo en una ventana lateral sincronizada.
+                        Tu navegador bloquea la vista interna por seguridad. Haz clic abajo para abrir WhatsApp en una ventana sincronizada a tu lado.
                       </p>
                       <Button 
                         onClick={() => openExternalWhatsApp()} 
@@ -361,11 +360,14 @@ export default function SalesCopilotPage() {
                     </div>
                   )}
 
-                  {/* Capa de aviso por si el iframe falla silenciosamente */}
+                  {/* Capa de aviso inferior */}
                   <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/10">
-                    <p className="text-[9px] text-white/70 font-bold leading-tight">
-                      Si el panel superior aparece en blanco, usa el botón de emergencia:
-                    </p>
+                    <div className="flex items-center gap-3">
+                       <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center"><Smartphone className="h-4 w-4 text-white" /></div>
+                       <p className="text-[9px] text-white/70 font-bold leading-tight max-w-[180px]">
+                         Usa el botón derecho si ves la pantalla en blanco por seguridad.
+                       </p>
+                    </div>
                     <Button 
                       size="sm"
                       onClick={() => openExternalWhatsApp()}
