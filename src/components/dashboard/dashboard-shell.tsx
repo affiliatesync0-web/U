@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
@@ -57,6 +57,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const db = useFirestore();
+  const [mounted, setMounted] = useState(false);
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -66,16 +67,19 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   useEffect(() => {
-    if (!isUserLoading) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isUserLoading && mounted) {
       if (!user) {
-        // Si no hay usuario, redirigir al login correspondiente
         router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
       } else if (role === 'admin' && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        // Si intenta entrar al admin con cuenta de afiliado, enviarlo a login de admin
+        // Redirección forzada si no es el admin correcto
         router.push('/auth/admin-login');
       }
     }
-  }, [user, isUserLoading, router, role]);
+  }, [user, isUserLoading, router, role, mounted]);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -114,46 +118,38 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     return affiliateItems;
   }
 
-  if (isUserLoading) {
+  if (!mounted || isUserLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Credenciales...</p>
+        </div>
       </div>
     )
   }
 
-  // Si es un intento de acceso administrativo con correo incorrecto, no renderizamos nada (el useEffect redirigirá)
+  // Protección visual adicional
   if (role === 'admin' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return null; 
   }
 
   if (role === 'affiliate' && profile?.status === 'Pending') {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-8 animate-in zoom-in-95 duration-500">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
+        <div className="max-w-md space-y-8 animate-in zoom-in-95 duration-500">
           <div className="relative inline-block">
-            <div className="h-24 w-24 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary shadow-inner">
+            <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary shadow-inner">
               <Clock className="h-12 w-12 animate-pulse" />
-            </div>
-            <div className="absolute -top-2 -right-2 bg-amber-500 h-8 w-8 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
-              <ShieldCheck className="h-4 w-4" />
             </div>
           </div>
           <div className="space-y-3">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
-            <p className="text-slate-500 font-medium leading-relaxed">
-              {t.waitingApprovalMsg}
-            </p>
+            <p className="text-slate-500 font-medium leading-relaxed">{t.waitingApprovalMsg}</p>
           </div>
-          <div className="pt-4">
-            <Button asChild variant="outline" className="h-12 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
-              <a href="/">{t.logout}</a>
-            </Button>
-          </div>
+          <Button asChild variant="outline" className="h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
+            <Link href="/">{t.logout}</Link>
+          </Button>
         </div>
       </div>
     );
@@ -166,13 +162,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <div className="flex items-center gap-4 px-3 py-8">
             <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white shadow-xl shadow-primary/5 ring-1 ring-slate-100 flex items-center justify-center">
               {displayLogoUrl ? (
-                <Image 
-                  src={displayLogoUrl} 
-                  alt="Logo" 
-                  fill 
-                  className="object-contain p-2"
-                  unoptimized
-                />
+                <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
                 <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
               )}
@@ -194,22 +184,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </SidebarContent>
         <SidebarFooter className="bg-white border-t border-slate-50 p-4">
           <SidebarMenu>
-            {profile && (
-              <SidebarMenuItem className="group-data-[collapsible=icon]:hidden mb-4">
-                <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100">
-                  <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                    <AvatarImage src={getGoogleDriveDirectLink(profile.photoUrl)} className="object-cover" />
-                    <AvatarFallback className="bg-primary text-xs text-white font-black">
-                      {profile.firstName?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col truncate">
-                    <span className="text-xs font-black truncate text-slate-900 uppercase tracking-tight">{profile.firstName} {profile.lastName}</span>
-                    <span className="text-[10px] text-slate-400 font-bold truncate lowercase">{profile.email}</span>
-                  </div>
-                </div>
-              </SidebarMenuItem>
-            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild className="h-12 rounded-xl text-slate-500 hover:text-primary transition-colors">
                 <a href="/">
