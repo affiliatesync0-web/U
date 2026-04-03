@@ -1,15 +1,17 @@
+
 "use client"
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth } from '@/firebase'
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -29,7 +31,7 @@ export default function AdminLoginPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // RESTRICCIÓN DE SEGURIDAD: Solo este correo puede entrar al panel admin
+      // RESTRICCIÓN ESTRICTA: Solo este correo puede entrar al panel admin
       if (user?.email === 'affiliatesync0@gmail.com') {
         toast({
           title: "Acceso concedido",
@@ -37,20 +39,30 @@ export default function AdminLoginPage() {
         });
         router.push('/dashboard/admin');
       } else {
-        // Si es otro correo, cerramos la sesión inmediatamente
+        // Si intenta entrar con cualquier otro correo, cerramos la sesión inmediatamente
         await signOut(auth);
         toast({
           variant: "destructive",
           title: "Acceso denegado",
-          description: "Tu cuenta de Google no tiene permisos administrativos en Sync Connect.",
+          description: "Esta cuenta de Google no tiene permisos de super-administrador.",
         });
       }
     } catch (error: any) {
       console.error("Admin Login Error:", error);
+      let errorMessage = "No pudimos conectar con Google. Por favor, intenta de nuevo.";
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Se cerró la ventana de Google antes de terminar.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en Auth > Settings > Authorized domains.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = "Debes habilitar el método de inicio de sesión con Google en tu Consola de Firebase.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Error de autenticación",
-        description: "No pudimos conectar con Google. Por favor, intenta de nuevo.",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -83,9 +95,13 @@ export default function AdminLoginPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="space-y-6">
-              <p className="text-sm text-slate-500 text-center font-medium leading-relaxed">
-                Para gestionar la red de Sync Connect, debes iniciar sesión con la cuenta de Google principal de la plataforma.
-              </p>
+              <Alert className="bg-blue-50 border-blue-100 rounded-2xl">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertTitle className="text-[10px] font-black uppercase text-blue-800">Seguridad Activa</AlertTitle>
+                <AlertDescription className="text-xs text-blue-700 font-medium">
+                  Solo se permite el acceso a <strong>affiliatesync0@gmail.com</strong> vía Google.
+                </AlertDescription>
+              </Alert>
               
               <Button 
                 onClick={handleGoogleAdminLogin}
@@ -102,7 +118,7 @@ export default function AdminLoginPage() {
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                     </svg>
-                    Entrar como Administrador
+                    Entrar con Cuenta Administrativa
                   </>
                 )}
               </Button>
