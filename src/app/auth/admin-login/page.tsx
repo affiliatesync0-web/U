@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, UserX, Copy, Check, Info, Cookie, Lock } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, UserX, Copy, Check, Info, Cookie, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth'
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInWithRedirect, getRedirectResult } from 'firebase/auth'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminLoginPage() {
@@ -22,6 +22,7 @@ export default function AdminLoginPage() {
   const [currentHostname, setCurrentHostname] = useState("")
   const [copied, setCopied] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [useRedirect, setUseRedirect] = useState(false)
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
@@ -30,74 +31,76 @@ export default function AdminLoginPage() {
       setCurrentHostname(window.location.hostname)
     }
     
-    // Limpieza automática de sesiones de afiliado al entrar a esta página
     if (auth) {
+      // 1. Verificar si ya estamos logueados con la cuenta correcta
       const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-          signOut(auth);
+        if (user) {
+          if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            router.push('/dashboard/admin');
+          }
         }
       });
+
+      // 2. Revisar si venimos de un redirect exitoso
+      getRedirectResult(auth).then((result) => {
+        if (result?.user) {
+          if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            router.push('/dashboard/admin');
+          } else {
+            signOut(auth);
+            setWrongEmail(result.user.email);
+          }
+        }
+      }).catch((error) => {
+        console.error("Redirect Result Error:", error);
+        setAuthErrorCode(error.code);
+      });
+
       return () => unsubscribe();
     }
-  }, [auth]);
+  }, [auth, router]);
 
   const handleCopyDomain = () => {
     if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(currentHostname)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-      toast({ title: "Dominio copiado", description: "Pégalo ahora en tu consola de Firebase." })
+      toast({ title: "Dominio copiado" })
     }
   }
 
-  const handleGoogleAdminLogin = async () => {
+  const handleGoogleAdminLogin = async (method: 'popup' | 'redirect' = 'popup') => {
     if (!auth) return;
     
     setLoading(true);
     setAuthErrorCode(null);
     setWrongEmail(null);
-    setShowHelp(false);
+    
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      const provider = new GoogleAuthProvider();
-      // 'select_account' es vital para que Google no use la sesión guardada de afiliado
-      provider.setCustomParameters({ prompt: 'select_account' });
-      
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      if (user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        toast({ title: "Acceso concedido", description: "Bienvenido, Administrador." });
-        router.push('/dashboard/admin');
+      if (method === 'popup') {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          router.push('/dashboard/admin');
+        } else {
+          await signOut(auth);
+          setWrongEmail(result.user.email);
+          toast({ variant: "destructive", title: "Email Incorrecto" });
+        }
       } else {
-        const attemptedEmail = user?.email;
-        await signOut(auth);
-        setWrongEmail(attemptedEmail || "desconocido");
-        toast({ 
-          variant: "destructive", 
-          title: "Email Incorrecto", 
-          description: `La cuenta ${attemptedEmail} no es la del administrador.` 
-        });
+        await signInWithRedirect(auth, provider);
       }
     } catch (error: any) {
-      console.error("Admin Login Error:", error);
+      console.error("Login Error:", error);
       setAuthErrorCode(error.code);
       setShowHelp(true);
-      
-      let errorMessage = "Ocurrió un problema al conectar con Google.";
-      if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Dominio no autorizado en Firebase.";
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró solo. Revisa bloqueadores de pop-ups.";
+      if (error.code === 'auth/popup-blocked') {
+        setUseRedirect(true);
       }
-      
-      toast({ 
-        variant: "destructive", 
-        title: "Error de autenticación", 
-        description: errorMessage 
-      });
     } finally {
-      setLoading(false);
+      if (method === 'popup') setLoading(false);
     }
   }
 
@@ -118,7 +121,7 @@ export default function AdminLoginPage() {
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">Panel Admin</CardTitle>
-              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Solo cuenta autorizada</CardDescription>
+              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Acceso exclusivo</CardDescription>
             </div>
           </CardHeader>
 
@@ -130,57 +133,57 @@ export default function AdminLoginPage() {
               </AlertDescription>
             </Alert>
 
-            {showHelp && (
+            {authErrorCode && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="p-5 bg-amber-50 rounded-2xl border-2 border-amber-100 space-y-3">
                   <div className="flex items-center gap-2 text-amber-800">
                     <Cookie className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Tip de Solución</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Solución de Navegador</span>
                   </div>
                   <p className="text-[10px] font-bold text-amber-900 leading-relaxed">
-                    Si el dominio ya está autorizado en Firebase, el error suele ser porque el navegador bloquea <b>Cookies de Terceros</b> o estás en <b>Modo Incógnito</b>. Prueba abrir el sitio en una pestaña normal.
+                    Si la ventana se cierra sola, usa el método de <b>Redirección</b> o revisa que las <b>Cookies de Terceros</b> estén permitidas.
                   </p>
+                  <Button 
+                    onClick={() => handleGoogleAdminLogin('redirect')}
+                    variant="outline" 
+                    className="w-full h-12 rounded-xl border-amber-200 text-amber-800 font-black text-[9px] uppercase tracking-widest bg-white hover:bg-amber-100"
+                  >
+                    <Zap className="h-3 w-3 mr-2" /> Intentar modo Redirección
+                  </Button>
                 </div>
 
-                <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 border-red-100">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase tracking-tighter">¿Sigue fallando?</AlertTitle>
-                  <AlertDescription className="text-[10px] mt-2 font-bold text-red-900 leading-relaxed">
-                    Verifica que este dominio exacto esté en tu lista de Firebase:
-                  </AlertDescription>
-                </Alert>
-                
                 <div className="p-4 bg-white rounded-2xl border-2 border-red-100 shadow-inner flex flex-col gap-3">
+                  <p className="text-[9px] font-black uppercase text-red-600 text-center">Verifica tu dominio en Firebase:</p>
                   <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <code className="flex-1 text-[10px] font-mono font-bold text-red-600 truncate">{currentHostname}</code>
+                    <code className="flex-1 text-[10px] font-mono font-bold text-slate-600 truncate">{currentHostname}</code>
                     <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={handleCopyDomain}>
                       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                   <a 
-                    href="https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/providers" 
+                    href="https://console.firebase.google.com/" 
                     target="_blank" 
                     className="w-full h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg"
                   >
-                    <ExternalLink className="h-3 w-3" /> Abrir Consola Firebase
+                    <ExternalLink className="h-3 w-3" /> Configurar en Firebase
                   </a>
                 </div>
               </div>
             )}
 
             {wrongEmail && (
-              <Alert variant="destructive" className="rounded-2xl border-2 bg-amber-50 border-amber-100">
-                <UserX className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-xs font-black uppercase text-amber-900">Cuenta Incorrecta</AlertTitle>
-                <AlertDescription className="text-[10px] mt-1 font-bold text-amber-800">
-                  Intentaste con: <b className="underline">{wrongEmail}</b>. Usa el Gmail administrativo.
+              <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 border-red-100">
+                <UserX className="h-4 w-4 text-red-600" />
+                <AlertTitle className="text-xs font-black uppercase text-red-900">Cuenta Incorrecta</AlertTitle>
+                <AlertDescription className="text-[10px] mt-1 font-bold text-red-800">
+                  Entraste con {wrongEmail}. Usa el Gmail administrativo.
                 </AlertDescription>
               </Alert>
             )}
             
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4">
               <Button 
-                onClick={handleGoogleAdminLogin}
+                onClick={() => handleGoogleAdminLogin('popup')}
                 className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95" 
                 disabled={loading}
               >
@@ -192,19 +195,14 @@ export default function AdminLoginPage() {
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                     </svg>
-                    Entrar con Google
+                    Entrar como Administrador
                   </>
                 )}
               </Button>
 
-              {!showHelp && (
-                <button 
-                  onClick={() => setShowHelp(true)}
-                  className="w-full text-center text-slate-400 hover:text-slate-600 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
-                >
-                  <Info className="h-3 w-3" /> Ver ayuda de conexión
-                </button>
-              )}
+              <p className="text-center text-slate-400 text-[9px] font-bold leading-relaxed">
+                Si el botón no abre la ventana, usa el modo de redirección que aparecerá al fallar.
+              </p>
             </div>
           </CardContent>
         </div>
