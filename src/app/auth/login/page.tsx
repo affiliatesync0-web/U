@@ -83,7 +83,6 @@ export default function LoginPage() {
 
       if (!user) throw new Error("No se pudo obtener información del usuario.");
 
-      // Verificar si ya existe como afiliado o comprador
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
@@ -99,11 +98,10 @@ export default function LoginPage() {
         return;
       }
 
-      // IMPORTANTE: En el Login NO creamos cuentas nuevas automáticamente para evitar errores de rol
       toast({ 
         variant: "destructive", 
         title: "Cuenta no encontrada", 
-        description: "No encontramos una cuenta vinculada. Por favor, ve a Registro primero para elegir si quieres ser Afiliado o Comprador." 
+        description: "No encontramos una cuenta vinculada. Por favor, ve a Registro primero para elegir tu rol." 
       });
       
     } catch (error: any) {
@@ -111,11 +109,11 @@ export default function LoginPage() {
       let errorMessage = "Ocurrió un error al conectar con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró antes de terminar. Asegúrate de permitir las ventanas emergentes (popups) en tu navegador.";
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en Authentication > Settings > Authorized domains en tu consola de Firebase.";
+        errorMessage = "La ventana se cerró antes de elegir cuenta. Inténtalo de nuevo.";
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana de Google. Por favor, habilita los popups para este sitio.";
+        errorMessage = "El navegador bloqueó la ventana de Google. Por favor, permite los popups.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "Dominio no autorizado en Firebase. Revisa la configuración del proyecto.";
       }
       
       toast({ variant: "destructive", title: "Error de Conexión", description: errorMessage });

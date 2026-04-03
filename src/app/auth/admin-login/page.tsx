@@ -29,13 +29,14 @@ export default function AdminLoginPage() {
     
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    // Forzamos a que siempre pida elegir cuenta para evitar errores de autologin
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // RESTRICCIÓN ESTRICTA: Solo este correo puede entrar al panel admin (Case insensitive)
+      // RESTRICCIÓN ESTRICTA: Solo este correo puede entrar al panel admin
       const allowedEmail = 'affiliatesync0@gmail.com';
       
       if (user?.email?.toLowerCase() === allowedEmail.toLowerCase()) {
@@ -50,7 +51,7 @@ export default function AdminLoginPage() {
         toast({
           variant: "destructive",
           title: "Acceso denegado",
-          description: "Esta cuenta de Google no tiene permisos de super-administrador.",
+          description: "Esta cuenta de Google no tiene permisos de administrador.",
         });
       }
     } catch (error: any) {
@@ -58,9 +59,11 @@ export default function AdminLoginPage() {
       let errorMessage = "No pudimos conectar con Google. Por favor, intenta de nuevo.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Se cerró la ventana antes de terminar. Asegúrate de elegir tu cuenta y permitir ventanas emergentes.";
+        errorMessage = "Se cerró la ventana antes de terminar. Asegúrate de elegir tu cuenta.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "El navegador bloqueó la ventana de Google. Por favor, permite las ventanas emergentes (popups).";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en Firebase. Añádelo en la consola de administración.";
+        errorMessage = "Este dominio no está autorizado en la consola de Firebase.";
       }
       
       toast({
