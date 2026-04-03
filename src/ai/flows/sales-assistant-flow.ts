@@ -1,7 +1,8 @@
+
 'use server';
 /**
- * @fileOverview Un Asistente de Ventas IA (Coach) para el afiliado.
- * Ayuda al afiliado a crear cierres de ventas, manejar objeciones y generar copy.
+ * @fileOverview Un Asistente de Ventas IA (Cerrador Experto).
+ * Optimizado para generar scripts de alta conversión y manejar objeciones técnicas.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,9 +16,9 @@ const ProductInfoSchema = z.object({
 });
 
 const SalesAssistantInputSchema = z.object({
-  userMessage: z.string().describe('La consulta del afiliado.'),
-  affiliateName: z.string().describe('Nombre del afiliado.'),
-  catalog: z.array(ProductInfoSchema).describe('Productos que el afiliado puede vender.'),
+  userMessage: z.string().describe('La consulta del afiliado o mensaje a analizar.'),
+  affiliateName: z.string().describe('Nombre del afiliado que solicita la ayuda.'),
+  catalog: z.array(ProductInfoSchema).describe('Catálogo de productos cargado en tiempo real.'),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     content: z.string()
@@ -26,7 +27,7 @@ const SalesAssistantInputSchema = z.object({
 export type SalesAssistantInput = z.infer<typeof SalesAssistantInputSchema>;
 
 const SalesAssistantOutputSchema = z.object({
-  reply: z.string().describe('La respuesta del coach de ventas.'),
+  reply: z.string().describe('La respuesta estratégica del mentor de ventas.'),
 });
 export type SalesAssistantOutput = z.infer<typeof SalesAssistantOutputSchema>;
 
@@ -35,31 +36,26 @@ export async function processAssistantMessage(input: SalesAssistantInput): Promi
 }
 
 const assistantPrompt = ai.definePrompt({
-  name: 'salesAssistantPrompt',
+  name: 'salesAssistantExpertPrompt',
   input: {schema: SalesAssistantInputSchema},
   output: {schema: SalesAssistantOutputSchema},
-  prompt: `Eres el "Copiloto de Ventas de Sync Connect". Tu misión es ayudar al afiliado {{{affiliateName}}} a CERRAR VENTAS reales.
+  prompt: `Eres el "Director de Ventas de Sync Connect". Tu única misión es que el afiliado {{{affiliateName}}} CIERRE LA VENTA hoy mismo.
 
-TU ROL:
-- Eres un mentor experto en ventas por WhatsApp y cierre de ventas de infoproductos.
-- Ayudas al afiliado a redactar mensajes persuasivos.
-- Ayudas a manejar objeciones difíciles (ej: "está muy caro", "lo voy a pensar", "es una estafa").
-- Sugieres estrategias basadas en el catálogo disponible.
-
-CONTEXTO DEL CATÁLOGO:
+CONTEXTO DEL CATÁLOGO (Usa estos datos exactos):
 {{#each catalog}}
-- PRODUCTO: {{{name}}} (Código: {{{code}}}) - Precio: \${{{price}}}
-  Descripción: {{{description}}}
+- PRODUCTO: {{{name}}} | Código: {{{code}}} | Precio: \${{{price}}}
+  Características: {{{description}}}
 -------------------
 {{/each}}
 
-REGLAS DE RESPUESTA:
-1. Sé motivador y profesional.
-2. Proporciona "Scripts de WhatsApp" listos para copiar y pegar.
-3. Usa técnicas de escasez y urgencia cuando sea apropiado.
-4. Si el afiliado pregunta algo que no es de ventas, recuérdale con humor que tu especialidad es el dinero y las ventas.
+TU COMPORTAMIENTO:
+1. Analiza la intención del mensaje. Si es sobre un producto específico, destaca sus beneficios ÚNICOS.
+2. Si el afiliado pide un script para WhatsApp, dale un bloque de texto LISTO PARA COPIAR.
+3. Usa psicología de ventas: Escasez, Urgencia, Reciprocidad y Autoridad.
+4. Mantén las respuestas profesionales pero con energía ganadora.
+5. SIEMPRE incluye una pregunta de cierre al final del script sugerido (ej: "¿Te parece bien si te envío los datos para el depósito ahora mismo?").
 
-CONSULTA DEL AFILIADO:
+CONSULTA ACTUAL:
 {{{userMessage}}}`,
 });
 
