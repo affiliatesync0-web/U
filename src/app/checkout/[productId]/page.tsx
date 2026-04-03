@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
 import { doc, collection, increment, getDoc } from 'firebase/firestore'
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle, Phone } from 'lucide-react'
+import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle, Phone, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -29,6 +29,10 @@ function CheckoutContent() {
 
   const productRef = useMemoFirebase(() => doc(db, 'products', productId), [db, productId])
   const { data: product, isLoading: productLoading } = useDoc(productRef)
+
+  // Obtener datos del afiliado para el botón de contacto
+  const affiliateRef = useMemoFirebase(() => affiliateId !== 'admin' ? doc(db, 'affiliates', affiliateId) : null, [db, affiliateId])
+  const { data: affiliateData } = useDoc(affiliateRef)
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -56,7 +60,6 @@ function CheckoutContent() {
     try {
       const buyerId = formData.email.toLowerCase().trim()
       
-      // 1. Registrar/Actualizar Comprador con Teléfono
       const buyerRef = doc(db, 'buyers', buyerId)
       setDocumentNonBlocking(buyerRef, {
         id: buyerId,
@@ -68,7 +71,6 @@ function CheckoutContent() {
         registeredAt: new Date().toISOString()
       }, { merge: true })
 
-      // 2. Calcular montos
       const saleAmount = product?.price || 0
       const commissionRate = product?.commissionRate || 0
       const commissionEarned = (saleAmount * commissionRate) / 100
@@ -88,11 +90,9 @@ function CheckoutContent() {
         voucherReference: formData.voucherRef.trim()
       }
 
-      // 3. Registrar la Venta
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // 4. Crear Notificaciones internas
       const notificationsRef = collection(db, 'notifications')
       
       addDocumentNonBlocking(notificationsRef, {
@@ -104,7 +104,6 @@ function CheckoutContent() {
         isRead: false
       })
 
-      // 5. ENVÍO DE EMAIL AL COMPRADOR
       await sendEmail({
         to: formData.email,
         subject: `Compra Registrada - ${product?.name}`,
@@ -117,13 +116,11 @@ Referencia Bancaria: ${formData.voucherRef}
 Tu acceso será habilitado una vez que el administrador valide tu depósito bancario.`
       });
 
-      // 6. NOTIFICACIÓN Y EMAIL AL AFILIADO
       if (affiliateId && affiliateId !== 'admin') {
         const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
         if (affiliateDoc.exists()) {
           const affData = affiliateDoc.data();
           
-          // Notificación interna
           addDocumentNonBlocking(notificationsRef, {
             userId: affiliateId,
             title: t.saleConfirmedTitle,
@@ -133,7 +130,6 @@ Tu acceso será habilitado una vez que el administrador valide tu depósito banc
             isRead: false
           });
 
-          // EMAIL AL AFILIADO
           await sendEmail({
             to: affData.email,
             subject: `¡Nueva Venta Realizada! - Sync Connect`,
@@ -149,9 +145,8 @@ Detalles de la Venta:
 La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
           });
 
-          // Actualizar saldo
-          const affiliateRef = doc(db, 'affiliates', affiliateId)
-          updateDocumentNonBlocking(affiliateRef, {
+          const affiliateRefUpdate = doc(db, 'affiliates', affiliateId)
+          updateDocumentNonBlocking(affiliateRefUpdate, {
             currentBalance: increment(commissionEarned)
           })
         }
@@ -182,11 +177,28 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
     return <div className="min-h-screen flex items-center justify-center">Producto no encontrado</div>
   }
 
+  const affiliateWhatsApp = affiliateData?.whatsappNumber;
+
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4">
+    <div className="min-h-screen bg-slate-50 py-12 px-4 relative">
+      {/* Botón de Ayuda WhatsApp del Afiliado */}
+      {affiliateWhatsApp && (
+        <a 
+          href={`https://wa.me/${affiliateWhatsApp}?text=${encodeURIComponent(`Hola, estoy en el checkout del producto ${product.name} y tengo una duda...`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-green-500 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-105 transition-transform animate-in fade-in slide-in-from-bottom-4"
+        >
+          <MessageCircle className="h-6 w-6" />
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-80">¿Necesitas ayuda?</span>
+            <span className="text-sm font-black">Habla con un asesor</span>
+          </div>
+        </a>
+      )}
+
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
         
-        {/* Left Column: Order Summary */}
         <div className="lg:col-span-5 space-y-8">
           <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
             <ChevronLeft className="h-4 w-4" /> Volver
@@ -238,7 +250,6 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
           </Card>
         </div>
 
-        {/* Right Column: Checkout Form */}
         <div className="lg:col-span-7">
           <form onSubmit={handlePurchase} className="space-y-8">
             <Card className="border-none shadow-2xl rounded-[3.5rem] bg-white p-2">

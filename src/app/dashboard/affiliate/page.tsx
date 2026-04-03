@@ -1,10 +1,9 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet, Link as LinkIcon, Copy, Check, MessageSquare, Bell } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet, Link as LinkIcon, Copy, Check, MessageSquare, Bell, Smartphone } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -55,7 +54,6 @@ export default function AffiliateDashboard() {
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // Eliminamos el orderBy para evitar errores de índices en Firebase durante el despliegue inicial
     return query(
       collection(db, 'notifications'), 
       where('userId', '==', user.uid)
@@ -64,7 +62,6 @@ export default function AffiliateDashboard() {
 
   const { data: notificationsData, isLoading: notificationsLoading } = useCollection(notificationsQuery);
 
-  // Ordenamos en memoria para mayor seguridad y evitar errores de Firebase Index
   const notifications = notificationsData 
     ? [...notificationsData].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : null;
@@ -133,13 +130,20 @@ export default function AffiliateDashboard() {
                 <Camera className="h-5 w-5" />
               </button>
             </div>
-            <div>
+            <div className="space-y-2">
               <h1 className="text-4xl font-headline font-black text-slate-900 leading-tight tracking-tight">
                 {t.welcomeBack}, {profile?.firstName || 'Campeón'} 👋
               </h1>
-              <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.4em] flex items-center gap-3 mt-2">
-                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Partner Verificado Sync
-              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.4em] flex items-center gap-3">
+                   <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Partner Verificado Sync
+                </p>
+                {profile?.whatsappNumber && (
+                  <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1 rounded-full border border-green-100 text-[10px] font-black uppercase tracking-widest">
+                    <Smartphone className="h-3 w-3" /> WhatsApp: +{profile.whatsappNumber}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
@@ -185,7 +189,6 @@ export default function AffiliateDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Notifications Section */}
           <Card className="lg:col-span-4 border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden ring-1 ring-white/5">
             <CardHeader className="px-10 pt-12 pb-6">
               <div className="flex items-center gap-4">
@@ -228,7 +231,6 @@ export default function AffiliateDashboard() {
             </CardContent>
           </Card>
 
-          {/* Recent Sales */}
           <Card className="lg:col-span-8 border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-50">
             <CardHeader className="px-10 py-8 border-b border-slate-50 bg-slate-50/30 flex flex-row items-center justify-between">
               <div>
@@ -278,7 +280,6 @@ export default function AffiliateDashboard() {
         </div>
       </div>
 
-      {/* Edit Photo Dialog */}
       <Dialog open={isEditingPhoto} onOpenChange={setIsEditingPhoto}>
         <DialogContent className="rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-primary p-10 text-white text-center">
