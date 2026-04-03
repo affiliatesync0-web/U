@@ -63,9 +63,17 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
+    if (!isUserLoading) {
+      if (!user) {
+        // Si no hay usuario, redirigir al login correspondiente
+        router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
+      } else if (role === 'admin' && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        // Si intenta entrar al admin con cuenta de afiliado, enviarlo a login de admin
+        router.push('/auth/admin-login');
+      }
     }
   }, [user, isUserLoading, router, role]);
 
@@ -112,6 +120,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
+  }
+
+  // Si es un intento de acceso administrativo con correo incorrecto, no renderizamos nada (el useEffect redirigirá)
+  if (role === 'admin' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   if (role === 'affiliate' && profile?.status === 'Pending') {
@@ -164,7 +181,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <span className="font-headline font-black text-lg tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
               <div className="flex items-center gap-1 mt-0.5">
                 <Flame className="h-2 w-2 text-primary" />
-                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">{role === 'buyer' ? 'CLIENT' : 'PLATINUM'}</span>
+                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">{role === 'buyer' ? 'CLIENT' : (role === 'admin' ? 'SYSTEM' : 'PLATINUM')}</span>
               </div>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, Globe } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, Globe, UserX } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 /**
  * Página de Acceso Administrativo restringida.
+ * Solo permite el acceso al correo: affiliatesync0@gmail.com
  */
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -21,13 +22,17 @@ export default function AdminLoginPage() {
   const auth = useAuth()
   const [loading, setLoading] = useState(false)
   const [authErrorCode, setAuthErrorCode] = useState<string | null>(null)
+  const [wrongEmail, setWrongEmail] = useState<string | null>(null)
 
   const handleGoogleAdminLogin = async () => {
     if (!auth) return;
     
     setLoading(true);
     setAuthErrorCode(null);
+    setWrongEmail(null);
+    
     const provider = new GoogleAuthProvider();
+    // Forzamos a Google a mostrar el selector de cuentas para que el usuario pueda elegir la correcta
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
@@ -39,15 +44,19 @@ export default function AdminLoginPage() {
       if (user?.email?.toLowerCase() === allowedEmail.toLowerCase()) {
         toast({
           title: "Acceso concedido",
-          description: "Bienvenido al panel administrativo.",
+          description: "Bienvenido al panel administrativo de Sync Connect.",
         });
         router.push('/dashboard/admin');
       } else {
+        // Si el correo no es el correcto, cerramos sesión inmediatamente
+        const attemptedEmail = user?.email;
         await signOut(auth);
+        setWrongEmail(attemptedEmail || "desconocido");
+        
         toast({
           variant: "destructive",
           title: "Acceso denegado",
-          description: "Esta cuenta no tiene permisos de administrador.",
+          description: "Esta cuenta no tiene permisos de administración.",
         });
       }
     } catch (error: any) {
@@ -58,9 +67,9 @@ export default function AdminLoginPage() {
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "La ventana se cerró antes de elegir cuenta.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio NO está autorizado en Firebase.";
+        errorMessage = "Este dominio NO está autorizado en tu consola de Firebase.";
       } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Error de conexión. Revisa tu internet o los dominios de Firebase.";
+        errorMessage = "Error de conexión. Revisa tu internet o los dominios autorizados.";
       }
       
       toast({
@@ -106,29 +115,31 @@ export default function AdminLoginPage() {
                 </AlertDescription>
               </Alert>
 
+              {wrongEmail && (
+                <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 animate-in shake">
+                  <UserX className="h-4 w-4" />
+                  <AlertTitle className="text-xs font-black uppercase">Email Incorrecto</AlertTitle>
+                  <AlertDescription className="text-[10px] mt-1 font-bold text-red-900">
+                    Has intentado entrar con: <b className="block mt-1 underline">{wrongEmail}</b>
+                    <p className="mt-2 text-red-600">Por favor, usa el botón de abajo y elige la cuenta de administrador oficial.</p>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {authErrorCode && (
                 <Alert variant="destructive" className="rounded-2xl border-2 animate-in fade-in slide-in-from-top-2 bg-red-50">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">Diagnóstico de Error</AlertTitle>
+                  <AlertTitle className="text-xs font-black uppercase">Diagnóstico de Conexión</AlertTitle>
                   <AlertDescription className="text-[10px] mt-2 space-y-4 font-bold leading-relaxed text-red-900">
-                    <p>Para que el login funcione, debes agregar el dominio de abajo en tu Consola de Firebase:</p>
+                    <p>Si el error persiste, copia este dominio y agrégalo en tu <b>Consola de Firebase &gt; Auth &gt; Settings &gt; Authorized Domains</b>:</p>
                     <div className="p-3 bg-white rounded-xl border border-red-200 flex items-center justify-between gap-2 shadow-inner group">
-                      <Globe className="h-3 w-3 text-red-300 group-hover:text-red-500 transition-colors" />
+                      <Globe className="h-3 w-3 text-red-300" />
                       <code className="font-mono text-center overflow-hidden truncate select-all">
                         {typeof window !== 'undefined' ? window.location.hostname : '...'}
                       </code>
                     </div>
-                    <div className="space-y-2">
-                      <p className="text-[9px] uppercase tracking-widest text-red-400">Pasos a seguir:</p>
-                      <ol className="list-decimal list-inside space-y-1 text-[9px]">
-                        <li>Copia el dominio blanco de arriba.</li>
-                        <li>Haz clic en el botón rojo de abajo.</li>
-                        <li>Ve a <b>Settings &gt; Authorized Domains</b>.</li>
-                        <li>Haz clic en <b>Add Domain</b> y pégalo.</li>
-                      </ol>
-                    </div>
                     <a 
-                      href="https://console.firebase.google.com/project/_/authentication/providers" 
+                      href="https://console.firebase.google.com/" 
                       target="_blank" 
                       className="flex items-center justify-center gap-2 bg-red-600 text-white p-4 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest w-full"
                     >
