@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -11,7 +12,7 @@ import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Bot, Send, CheckCircle2, Loader2, User, Copy, Check, Settings2, ExternalLink, Zap, MessageSquare, ShoppingBag, Target } from 'lucide-react'
+import { Bot, Send, CheckCircle2, Loader2, User, Copy, Check, Settings2, ExternalLink, Zap, MessageSquare, ShoppingBag, Target, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, setDocumentNonBlocking, useCollection } from '@/firebase'
@@ -33,8 +34,6 @@ export default function BotSettingsPage() {
   const [isTyping, setIsTyping] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
-  const [copied, setCopied] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const profileRef = useMemoFirebase(() => (user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
@@ -55,12 +54,11 @@ export default function BotSettingsPage() {
       setFormData({
         whatsappNumber: profile.whatsappNumber || '',
         botEnabled: profile.botEnabled || false,
-        botWelcomeMessage: profile.botWelcomeMessage || '¡Hola! Soy tu asistente de ventas. ¿Listo para adquirir nuestro mejor producto?',
+        botWelcomeMessage: profile.botWelcomeMessage || '¡Hola! Soy tu asistente de ventas experto. ¿Listo para escalar tus resultados con nuestro mejor producto?',
         targetProductId: profile.targetProductId || ''
       })
-      if (profile.whatsappNumber) setCurrentStep(3);
       if (messages.length === 0) {
-        setMessages([{ role: 'bot', content: profile.botWelcomeMessage || '¡Hola! Soy tu bot de ventas configurado.' }])
+        setMessages([{ role: 'bot', content: profile.botWelcomeMessage || '¡Hola! Soy tu bot de ventas. Elige un producto arriba y dime "Hola" para probar cómo lo vendo.' }])
       }
     }
   }, [profile])
@@ -83,7 +81,7 @@ export default function BotSettingsPage() {
 
     setTimeout(() => {
       setIsSaving(false)
-      toast({ title: t.saveChanges, description: "Tu Bot ha sido configurado con el producto seleccionado." })
+      toast({ title: "Configuración Aplicada", description: "Tu Bot de Ventas ahora está especializado en el producto seleccionado." })
     }, 1000)
   }
 
@@ -93,7 +91,7 @@ export default function BotSettingsPage() {
 
     const selectedProduct = products?.find(p => p.id === formData.targetProductId);
     if (!selectedProduct) {
-      toast({ variant: "destructive", title: "Error", description: "Elige un producto objetivo primero para que el bot sepa qué vender." });
+      toast({ variant: "destructive", title: "Producto no seleccionado", description: "Selecciona el producto que el bot debe vender antes de simular." });
       return;
     }
 
@@ -123,13 +121,11 @@ export default function BotSettingsPage() {
       })
       setMessages(prev => [...prev, { role: 'bot', content: response.reply }])
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'bot', content: "Error en el simulador." }])
+      setMessages(prev => [...prev, { role: 'bot', content: "Error al conectar con el cerebro de IA." }])
     } finally {
       setIsTyping(false)
     }
   }
-
-  const webhookUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp/webhook` : '';
 
   if (profileLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
@@ -140,8 +136,8 @@ export default function BotSettingsPage() {
       <div className="max-w-7xl mx-auto space-y-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-4xl font-headline font-black text-primary">Bot de <span className="text-slate-900">Ventas Automático</span></h1>
-            <p className="text-slate-500 font-medium">Configura el cerebro de tu asistente para que venda por ti 24/7.</p>
+            <h1 className="text-4xl font-headline font-black text-primary uppercase italic tracking-tighter">Asistente de <span className="text-slate-900">Ventas IA</span></h1>
+            <p className="text-slate-500 font-medium">Configura el bot que cerrará tus ventas por WhatsApp automáticamente.</p>
           </div>
         </div>
 
@@ -153,35 +149,32 @@ export default function BotSettingsPage() {
                    <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                      <Target className="h-6 w-6" />
                    </div>
-                   <CardTitle className="text-2xl font-headline font-black">Estrategia del Bot</CardTitle>
+                   <CardTitle className="text-2xl font-headline font-black">Especialización</CardTitle>
                  </div>
                </CardHeader>
                
                <CardContent className="p-10 space-y-8">
                   <div className="space-y-4">
-                    <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">1. ¿Qué producto debe vender el Bot?</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Producto que el Bot debe vender</Label>
                     <Select 
                       value={formData.targetProductId} 
                       onValueChange={(val) => setFormData({...formData, targetProductId: val})}
                     >
-                      <SelectTrigger className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200">
-                        <SelectValue placeholder="Selecciona un producto del catálogo" />
+                      <SelectTrigger className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold">
+                        <SelectValue placeholder="Selecciona del catálogo..." />
                       </SelectTrigger>
                       <SelectContent>
                         {products?.map((p) => (
                           <SelectItem key={p.id} value={p.id} className="font-bold">
-                            {p.name} - ${p.price}
+                            {p.name} (USD {p.price})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">
-                      El Bot usará los datos bancarios de este producto para cerrar la venta.
-                    </p>
                   </div>
 
                   <div className="space-y-4">
-                    <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">2. Tu número de WhatsApp Business</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Tu número de WhatsApp (Sin +)</Label>
                     <Input 
                       placeholder="50588888888" 
                       value={formData.whatsappNumber}
@@ -190,59 +183,40 @@ export default function BotSettingsPage() {
                     />
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-6 bg-primary/5 rounded-2xl border border-primary/10">
-                      <div className="space-y-1">
-                        <Label className="font-black text-slate-900">Estado del Bot</Label>
-                        <p className="text-[10px] text-slate-500 font-black uppercase">Activar para recibir mensajes</p>
-                      </div>
-                      <Switch checked={formData.botEnabled} onCheckedChange={(val) => setFormData({...formData, botEnabled: val})} />
+                  <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-black text-slate-900">Estado del Bot</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Activar para responder clientes</p>
                     </div>
+                    <Switch checked={formData.botEnabled} onCheckedChange={(v) => setFormData({...formData, botEnabled: v})} />
                   </div>
 
                   <div className="space-y-4">
-                    <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">3. Mensaje de Bienvenida</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Mensaje de Saludo</Label>
                     <Textarea 
                       value={formData.botWelcomeMessage}
                       onChange={(e) => setFormData({...formData, botWelcomeMessage: e.target.value})}
-                      className="min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-6 text-sm font-bold"
+                      className="min-h-[100px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-6 text-sm font-bold"
                     />
                   </div>
 
-                  <Button onClick={handleSave} className="w-full h-20 rounded-[2rem] bg-primary text-white font-black text-xl shadow-2xl shadow-primary/20" disabled={isSaving}>
-                    {isSaving ? <Loader2 className="animate-spin" /> : "Guardar y Lanzar Bot"}
+                  <Button onClick={handleSave} className="w-full h-20 rounded-[2.5rem] bg-primary text-white font-black text-xl shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all" disabled={isSaving}>
+                    {isSaving ? <Loader2 className="animate-spin" /> : <><Zap className="mr-2 h-6 w-6" /> GUARDAR E INICIAR BOT</>}
                   </Button>
-
-                  <div className="pt-6 border-t">
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value="api" className="border-none">
-                        <AccordionTrigger className="text-xs font-black uppercase text-slate-400">Configuración API Avanzada</AccordionTrigger>
-                        <AccordionContent className="pt-4 space-y-4">
-                           <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                             <p className="text-[9px] font-black text-slate-400 uppercase">Webhook URL (Meta/Gateway)</p>
-                             <div className="flex gap-2">
-                               <Input readOnly value={webhookUrl} className="h-10 text-[10px] bg-white" />
-                               <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(webhookUrl); toast({ title: "Copiado" }) }}><Copy className="h-4 w-4" /></Button>
-                             </div>
-                           </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </div>
                </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-7">
-            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[3.5rem] flex flex-col h-[850px] ring-1 ring-slate-100">
+            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[3.5rem] flex flex-col h-[800px] ring-1 ring-slate-100">
                <CardHeader className="bg-slate-900 text-white p-10">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl rotate-3">
                       <MessageSquare className="h-6 w-6" />
                     </div>
                     <div>
-                      <CardTitle className="text-2xl font-headline font-black text-primary">Simulador del Bot</CardTitle>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Prueba cómo vende tu Bot el producto seleccionado</p>
+                      <CardTitle className="text-2xl font-headline font-black text-primary">Simulador IA</CardTitle>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Prueba la capacidad de cierre de tu bot</p>
                     </div>
                   </div>
                </CardHeader>
@@ -257,7 +231,7 @@ export default function BotSettingsPage() {
                         )}>
                           <div className={cn(
                             "h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg",
-                            msg.role === 'user' ? "bg-white text-slate-400 border" : "bg-primary text-white rotate-3"
+                            msg.role === 'user' ? "bg-white text-slate-400 border" : "bg-slate-900 text-white rotate-3"
                           )}>
                             {msg.role === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
                           </div>
@@ -288,7 +262,7 @@ export default function BotSettingsPage() {
                   <div className="p-8 bg-white border-t border-slate-100">
                     <form onSubmit={handleSimulateChat} className="flex gap-4">
                        <Input 
-                        placeholder="Escribe como si fueras un cliente..." 
+                        placeholder="Escribe como si fueras un cliente interesado..." 
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         className="h-16 rounded-2xl px-8 bg-slate-50 border-none ring-1 ring-slate-100 flex-1 font-bold text-slate-800"
@@ -296,15 +270,12 @@ export default function BotSettingsPage() {
                        <Button 
                         type="submit" 
                         size="icon" 
-                        className="h-16 w-16 rounded-2xl bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 shrink-0"
+                        className="h-16 w-16 rounded-2xl bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/30 shrink-0"
                         disabled={!chatInput.trim() || isTyping || !formData.targetProductId}
                        >
                          <Send className="h-6 w-6" />
                        </Button>
                     </form>
-                    {!formData.targetProductId && (
-                      <p className="text-[10px] text-red-500 font-bold uppercase mt-3 text-center">⚠️ Debes seleccionar un producto arriba para simular la venta.</p>
-                    )}
                   </div>
                </CardContent>
             </Card>

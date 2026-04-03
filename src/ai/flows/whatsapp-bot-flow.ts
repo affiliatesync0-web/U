@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Un agente de ventas inteligente para el bot de WhatsApp.
@@ -48,7 +49,7 @@ Tu misión es CERRAR LA VENTA del producto: {{{targetProduct.name}}}.
 DETALLES DEL PRODUCTO OBJETIVO:
 - Nombre: {{{targetProduct.name}}}
 - Código: {{{targetProduct.code}}}
-- Precio: \${{{targetProduct.price}}}
+- Precio: USD {{{targetProduct.price}}}
 
 DATOS BANCARIOS PARA EL PAGO (SOLO ENTREGAR CUANDO EL CLIENTE ESTÉ LISTO):
 - Banco: {{{targetProduct.bankName}}}
@@ -59,7 +60,7 @@ INSTRUCCIONES DE VENTA:
 1. Sé extremadamente persuasivo y amable. Usa emojis (🚀, ✅, 💰).
 2. Si el cliente tiene dudas, explica los beneficios de este producto específico.
 3. Si el cliente pregunta cómo comprar o muestra interés claro:
-   - Confirma el precio de \${{{targetProduct.price}}}.
+   - Confirma el precio de USD {{{targetProduct.price}}}.
    - Dale los DATOS BANCARIOS arriba mencionados de forma clara.
    - Pídele que envíe el comprobante por este medio para activar su acceso.
 4. Mantén el foco SIEMPRE en este producto. Si pregunta por otros, dile que este es la mejor solución ahora mismo.

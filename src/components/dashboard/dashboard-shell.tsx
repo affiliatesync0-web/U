@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,7 +23,8 @@ import {
   Clock,
   ShieldCheck,
   Sparkles,
-  Settings
+  Settings,
+  Bot
 } from "lucide-react"
 import {
   Sidebar,
@@ -91,6 +93,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "Bot de Ventas (IA)", url: "/dashboard/affiliate/bot-settings", icon: Bot },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
   ]
