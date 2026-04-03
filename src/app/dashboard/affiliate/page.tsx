@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet, Link as LinkIcon, Copy, Check, MessageSquare, Bell, Smartphone } from 'lucide-react'
+import { BadgeDollarSign, ShoppingBag, TrendingUp, Users, Loader2, Landmark, CalendarClock, Camera, ArrowUpRight, Wallet, Link as LinkIcon, Copy, Check, Smartphone } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -51,20 +51,6 @@ export default function AffiliateDashboard() {
   }, [db, user]);
   
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
-
-  const notificationsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'notifications'), 
-      where('userId', '==', user.uid)
-    );
-  }, [db, user]);
-
-  const { data: notificationsData, isLoading: notificationsLoading } = useCollection(notificationsQuery);
-
-  const notifications = notificationsData 
-    ? [...notificationsData].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    : null;
 
   const isLoading = isAuthLoading || profileLoading;
 
@@ -188,50 +174,8 @@ export default function AffiliateDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <Card className="lg:col-span-4 border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden ring-1 ring-white/5">
-            <CardHeader className="px-10 pt-12 pb-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <Bell className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl font-headline font-black tracking-tight">{t.platformMessages}</CardTitle>
-                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Notificaciones Directas</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-6 pb-12">
-              <div className="space-y-4">
-                {notificationsLoading ? (
-                  <div className="flex justify-center py-10"><Loader2 className="animate-spin h-6 w-6 text-primary" /></div>
-                ) : !notifications || notifications.length === 0 ? (
-                  <div className="text-center py-10 opacity-30">
-                    <MessageSquare className="h-10 w-10 mx-auto mb-2" />
-                    <p className="text-xs uppercase font-black tracking-widest">Sin mensajes</p>
-                  </div>
-                ) : (
-                  notifications.slice(0, 5).map((n) => (
-                    <div key={n.id} className="p-5 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={cn(
-                          "text-[9px] font-black uppercase px-2 py-0.5 rounded-full",
-                          n.type === 'welcome' ? "bg-blue-500/20 text-blue-400" : "bg-primary/20 text-primary"
-                        )}>
-                          {n.type || 'SYSTEM'}
-                        </span>
-                        <span className="text-[8px] font-bold text-slate-600">{n.createdAt ? new Date(n.createdAt).toLocaleDateString() : ''}</span>
-                      </div>
-                      <h4 className="text-sm font-black text-white mb-1 group-hover:text-primary transition-colors">{n.title}</h4>
-                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{n.message}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-8 border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-50">
+        <div className="grid grid-cols-1 gap-10">
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-50">
             <CardHeader className="px-10 py-8 border-b border-slate-50 bg-slate-50/30 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-2xl font-headline font-black text-slate-900 tracking-tight">Ventas Recientes</CardTitle>
