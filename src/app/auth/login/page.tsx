@@ -110,13 +110,9 @@ export default function LoginPage() {
       let errorMessage = "Ocurrió un error al conectar con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró. Intenta de nuevo rápidamente.";
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana emergente.";
+        errorMessage = "La ventana se cerró. Intenta de nuevo.";
       } else if (error.code === 'auth/unauthorized-domain') {
         errorMessage = "Dominio no autorizado en Firebase.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Error de red. Revisa tu conexión.";
       }
       
       setAuthError(errorMessage)
@@ -167,22 +163,22 @@ export default function LoginPage() {
           <CardContent className="p-0">
             <div className="space-y-4">
               
-              {authErrorCode && (
+              {authErrorCode === 'auth/unauthorized-domain' && (
                 <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 mb-4 animate-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">Diagnóstico de Conexión</AlertTitle>
+                  <AlertTitle className="text-xs font-black uppercase">DOMINIO NO AUTORIZADO</AlertTitle>
                   <AlertDescription className="text-[10px] font-bold mt-2 space-y-3 text-red-900 leading-relaxed">
-                    <p>Agrega este dominio en tu Consola de Firebase &gt; Authentication &gt; Settings &gt; Authorized Domains:</p>
+                    <p>Agrega este dominio exacto en tu Consola de Firebase &gt; Authentication &gt; Settings:</p>
                     <div className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center flex items-center justify-between gap-2 shadow-inner">
                       <Globe className="h-3 w-3 text-red-200" />
-                      <span className="truncate select-all">
+                      <span className="truncate select-all font-black">
                         {typeof window !== 'undefined' ? window.location.hostname : '...'}
                       </span>
                     </div>
                     <a 
                       href="https://console.firebase.google.com/" 
                       target="_blank" 
-                      className="flex items-center justify-center gap-2 bg-red-600 text-white p-3 rounded-xl shadow-lg hover:scale-[1.02] transition-transform font-black uppercase text-[9px] tracking-widest"
+                      className="flex items-center justify-center gap-2 bg-red-600 text-white p-3 rounded-xl shadow-lg font-black uppercase text-[9px] tracking-widest"
                     >
                       Abrir Consola Firebase <ExternalLink className="h-3 w-3" />
                     </a>
