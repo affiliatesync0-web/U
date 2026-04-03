@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn, ArrowLeft, AlertCircle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -18,7 +18,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -33,6 +33,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState<string | null>(null)
+  const [authErrorCode, setAuthErrorCode] = useState<string | null>(null)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -79,6 +80,7 @@ export default function LoginPage() {
     
     setLoading(true);
     setAuthError(null)
+    setAuthErrorCode(null)
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
@@ -105,14 +107,15 @@ export default function LoginPage() {
       
     } catch (error: any) {
       console.error("Google Login Error:", error);
+      setAuthErrorCode(error.code);
       let errorMessage = "Ocurrió un error al conectar con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Se cerró la ventana antes de elegir cuenta. Por favor, intenta de nuevo sin cerrarla.";
+        errorMessage = "La ventana se cerró antes de elegir cuenta. Intenta de nuevo.";
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "El navegador bloqueó la ventana emergente. Habilita los pop-ups.";
+        errorMessage = "El navegador bloqueó la ventana emergente.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Dominio no autorizado en Firebase. Verifica la consola.";
+        errorMessage = "Este dominio no está autorizado en Firebase.";
       }
       
       setAuthError(errorMessage)
@@ -167,7 +170,19 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="space-y-4">
-              {authError && (
+              
+              {authErrorCode === 'auth/unauthorized-domain' && (
+                <Alert variant="destructive" className="rounded-xl border-2 bg-red-50 mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="text-xs font-black">DOMINIO NO AUTORIZADO</AlertTitle>
+                  <AlertDescription className="text-[10px] font-bold mt-1 space-y-2">
+                    <p>Agrega el dominio actual en tu Consola de Firebase > Authentication > Settings.</p>
+                    <a href="https://console.firebase.google.com/" target="_blank" className="flex items-center gap-1 underline">Abrir Consola <ExternalLink className="h-3 w-3" /></a>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {authError && authErrorCode !== 'auth/unauthorized-domain' && (
                 <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>

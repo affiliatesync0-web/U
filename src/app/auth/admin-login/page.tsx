@@ -5,10 +5,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
-import { useLanguage } from '@/components/language-context'
 import { useAuth } from '@/firebase'
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -57,11 +56,11 @@ export default function AdminLoginPage() {
       
       let errorMessage = "Ocurrió un problema al conectar con Google.";
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró. Asegúrate de elegir tu cuenta de Google rápidamente.";
+        errorMessage = "La ventana se cerró antes de terminar. Asegúrate de elegir tu cuenta rápidamente.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Este dominio no está autorizado en Firebase. Debes agregarlo en la consola.";
+        errorMessage = "Este dominio NO está autorizado en tu consola de Firebase.";
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "Tu navegador bloqueó la ventana. Por favor, habilita los pop-ups.";
+        errorMessage = "Tu navegador bloqueó la ventana emergente. Por favor, habilita los pop-ups.";
       }
       
       toast({
@@ -100,26 +99,40 @@ export default function AdminLoginPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="space-y-6">
-              <Alert className="bg-blue-50 border-blue-100 rounded-[1.5rem] border-2">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
+              <Alert className="bg-blue-50 border-blue-100 rounded-[1.5rem] border-2 shadow-sm">
+                <ShieldCheck className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-xs text-blue-700 font-bold">
                   Acceso exclusivo para: <span className="text-blue-900 block mt-1">affiliatesync0@gmail.com</span>
                 </AlertDescription>
               </Alert>
 
-              {authErrorCode === 'auth/unauthorized-domain' && (
-                <Alert variant="destructive" className="rounded-2xl border-2">
+              {/* DETECTOR DE ERRORES CRÍTICOS */}
+              {authErrorCode && (
+                <Alert variant="destructive" className="rounded-2xl border-2 animate-in fade-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">Dominio No Autorizado</AlertTitle>
-                  <AlertDescription className="text-[10px] mt-2 space-y-2">
-                    <p>Debes agregar este dominio en la Consola de Firebase para que el login funcione.</p>
-                    <a 
-                      href="https://console.firebase.google.com/" 
-                      target="_blank" 
-                      className="flex items-center gap-1 font-black underline"
-                    >
-                      Abrir Consola Firebase <ExternalLink className="h-3 w-3" />
-                    </a>
+                  <AlertTitle className="text-xs font-black uppercase">
+                    {authErrorCode === 'auth/unauthorized-domain' ? 'Dominio No Autorizado' : 'Error de Conexión'}
+                  </AlertTitle>
+                  <AlertDescription className="text-[10px] mt-2 space-y-3 font-bold leading-relaxed">
+                    {authErrorCode === 'auth/unauthorized-domain' ? (
+                      <>
+                        <p>Debes agregar este dominio en la Consola de Firebase para que el login funcione.</p>
+                        <p className="p-2 bg-white/50 rounded-lg border border-destructive/20 font-mono text-center overflow-hidden truncate">
+                          {typeof window !== 'undefined' ? window.location.hostname : 'tu-dominio.com'}
+                        </p>
+                        <a 
+                          href="https://console.firebase.google.com/project/_/authentication/providers" 
+                          target="_blank" 
+                          className="flex items-center justify-center gap-2 bg-destructive text-white p-3 rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                        >
+                          Configurar en Firebase <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </>
+                    ) : authErrorCode === 'auth/popup-closed-by-user' ? (
+                      <p>La ventana se cerró. Por favor, selecciona tu cuenta sin cerrar el cuadro de diálogo de Google.</p>
+                    ) : (
+                      <p>Código de error: {authErrorCode}. Por favor, verifica que los pop-ups estén permitidos.</p>
+                    )}
                   </AlertDescription>
                 </Alert>
               )}
@@ -144,16 +157,14 @@ export default function AdminLoginPage() {
                 )}
               </Button>
 
-              <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
+              <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-2 text-center">
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Seguridad SSL Activa</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Seguridad Sync Connect Activa</span>
                 </div>
-                {authErrorCode === 'auth/popup-closed-by-user' && (
-                  <p className="text-[9px] text-amber-600 font-bold text-center">
-                    Tip: No cierres la ventana de Google hasta elegir tu cuenta.
-                  </p>
-                )}
+                <p className="text-[9px] text-slate-400 font-bold max-w-[200px]">
+                  Si el problema persiste, revisa tu conexión a internet o intenta desde una ventana de incógnito.
+                </p>
               </div>
             </div>
           </CardContent>
