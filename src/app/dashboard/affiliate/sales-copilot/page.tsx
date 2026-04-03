@@ -1,9 +1,8 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -14,7 +13,6 @@ import {
   Bot, 
   User, 
   Loader2, 
-  ExternalLink, 
   Sparkles, 
   Smartphone,
   Copy,
@@ -55,6 +53,7 @@ export default function SalesCopilotPage() {
   const [searchBuyer, setSearchBuyer] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('ai')
   const [whatsappUrl, setWhatsappUrl] = useState('https://web.whatsapp.com')
+  const [iframeKey, setIframeKey] = useState(0) // Para forzar recarga del iframe
   const [copiedIndex, setCopiedId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -117,23 +116,25 @@ export default function SalesCopilotPage() {
     toast({ title: "Script Copiado", description: "Pégalo en tu chat de WhatsApp." });
   };
 
-  const activateWhatsAppView = (phoneNumber: string = '', message: string = '') => {
+  const setWhatsAppChat = (phoneNumber: string = '', message: string = '') => {
     let url = 'https://web.whatsapp.com';
     if (phoneNumber) {
       const cleanNumber = phoneNumber.replace(/\D/g, '');
+      // WhatsApp Web permite pasar el número y el texto por URL
       url = `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
     }
     setWhatsappUrl(url);
     setViewMode('whatsapp');
-    toast({ title: "Cargando WhatsApp", description: "Conectando con tu mesa de trabajo..." });
+    setIframeKey(prev => prev + 1); // Forzar que el iframe navegue a la nueva URL
+    toast({ title: "Cargando Chat", description: "Conectando con el prospecto dentro del panel..." });
   };
 
   return (
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-180px)] flex flex-col lg:flex-row gap-6">
         
-        {/* LADO IZQUIERDO: CENTRO DE CONTACTO */}
-        <div className="w-full lg:w-[400px] flex flex-col gap-6 h-full overflow-hidden">
+        {/* LADO IZQUIERDO: DIRECTORIO DE PROSPECTOS */}
+        <div className="w-full lg:w-[380px] flex flex-col gap-6 h-full overflow-hidden">
           <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-8 space-y-6 shrink-0">
               <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/10">
@@ -143,7 +144,7 @@ export default function SalesCopilotPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-0.5">Operador Sync</p>
-                  <h3 className="text-base font-black truncate">{profile?.firstName} {profile?.lastName}</h3>
+                  <h3 className="text-base font-black truncate">{profile?.firstName}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest">
@@ -212,7 +213,7 @@ export default function SalesCopilotPage() {
                         </div>
                         <div className="flex gap-2">
                           <Button 
-                            onClick={() => activateWhatsAppView(buyer.phone, `¡Hola ${buyer.firstName}! Soy ${profile?.firstName} de Sync Connect. Te contacto para darte seguimiento...`)}
+                            onClick={() => setWhatsAppChat(buyer.phone, `¡Hola ${buyer.firstName}! Soy ${profile?.firstName} de Sync Connect. Te contacto para darte seguimiento a tu interés por nuestros productos...`)}
                             disabled={!buyer.phone}
                             className="flex-1 h-10 rounded-xl bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-xl shadow-green-200 transition-all"
                           >
@@ -237,14 +238,14 @@ export default function SalesCopilotPage() {
             </CardContent>
             
             <div className="p-6 bg-white border-t border-slate-100 shrink-0">
-              <Button onClick={() => activateWhatsAppView()} variant="default" className="w-full h-12 bg-slate-900 text-white font-black text-[9px] uppercase tracking-[0.2em] rounded-xl shadow-2xl hover:bg-primary transition-all">
-                Abrir Panel WhatsApp <Layout className="ml-2 h-3 w-3" />
+              <Button onClick={() => setWhatsAppChat()} variant="default" className="w-full h-12 bg-slate-900 text-white font-black text-[9px] uppercase tracking-[0.2em] rounded-xl shadow-2xl hover:bg-primary transition-all">
+                Abrir WhatsApp Interno <Layout className="ml-2 h-3 w-3" />
               </Button>
             </div>
           </Card>
         </div>
 
-        {/* LADO DERECHO: VISTA DINÁMICA (IA O WHATSAPP) */}
+        {/* LADO DERECHO: INTERFAZ DINÁMICA (IA O WHATSAPP WEB) */}
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[3rem] flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-8 shrink-0 border-b border-white/5">
@@ -278,7 +279,7 @@ export default function SalesCopilotPage() {
                           viewMode === 'whatsapp' ? "text-green-500" : "text-slate-500 opacity-50 hover:opacity-100"
                         )}
                       >
-                        <span className={cn("h-1.5 w-1.5 rounded-full", viewMode === 'whatsapp' ? "bg-green-500 animate-pulse" : "bg-slate-700")} /> WhatsApp
+                        <span className={cn("h-1.5 w-1.5 rounded-full", viewMode === 'whatsapp' ? "bg-green-500 animate-pulse" : "bg-slate-700")} /> WhatsApp Real
                       </button>
                     </div>
                   </div>
@@ -291,7 +292,7 @@ export default function SalesCopilotPage() {
                     onClick={() => setViewMode('ai')}
                     className="text-white/40 hover:text-white gap-2"
                   >
-                    <X className="h-4 w-4" /> Cerrar WhatsApp
+                    <X className="h-4 w-4" /> Volver a la IA
                   </Button>
                 )}
               </div>
@@ -393,37 +394,19 @@ export default function SalesCopilotPage() {
                   </div>
                 </>
               ) : (
-                <div className="h-full w-full flex flex-col relative bg-slate-100">
-                  <div className="absolute inset-0 z-20 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-10 text-center">
-                    <div className="max-w-md space-y-8 animate-in zoom-in-95 duration-500">
-                       <div className="h-20 w-20 bg-green-500 text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-green-500/20 rotate-3">
-                         <Smartphone className="h-10 w-10" />
-                       </div>
-                       <div className="space-y-3">
-                         <h3 className="text-3xl font-headline font-black text-white tracking-tight">Estación de Trabajo WhatsApp</h3>
-                         <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                           Por razones de seguridad, WhatsApp Web requiere abrirse en su propia ventana dedicada para funcionar correctamente.
-                         </p>
-                       </div>
-                       <div className="pt-4 space-y-4">
-                         <Button asChild size="lg" className="w-full h-16 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-2xl shadow-green-500/30">
-                           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                             Conectar WhatsApp Ahora <ExternalLink className="ml-2 h-4 w-4" />
-                           </a>
-                         </Button>
-                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                           Usa el Copiloto IA al lado para generar tus respuestas.
-                         </p>
-                       </div>
-                    </div>
-                  </div>
-                  {/* Iframe invisible para intentar precargar si el navegador lo permite */}
+                <div className="h-full w-full bg-slate-100 relative">
                   <iframe 
+                    key={iframeKey}
                     src={whatsappUrl} 
-                    className="w-full h-full border-none opacity-0"
+                    className="w-full h-full border-none"
                     allow="camera; microphone; clipboard-read; clipboard-write"
                     title="WhatsApp Web Interface"
                   />
+                  
+                  {/* Overlay informativo discreto */}
+                  <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest z-50 pointer-events-none">
+                    Panel WhatsApp Directo
+                  </div>
                 </div>
               )}
             </CardContent>
