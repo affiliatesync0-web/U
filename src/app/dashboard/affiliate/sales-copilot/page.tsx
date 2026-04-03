@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   MessageSquare, 
   Send, 
@@ -26,7 +27,8 @@ import {
   ShieldAlert,
   PanelRightClose,
   PanelRightOpen,
-  ArrowRight
+  SearchCode,
+  Globe
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -53,7 +55,8 @@ export default function SalesCopilotPage() {
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [searchBuyer, setSearchBuyer] = useState('')
   const [copiedIndex, setCopiedId] = useState<number | null>(null);
-  const [showWhatsApp, setShowWhatsApp] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [activeTool, setActiveTool] = useState<'whatsapp' | 'google'>('whatsapp');
   const [iframeError, setIframeError] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -116,9 +119,8 @@ export default function SalesCopilotPage() {
     toast({ title: "Script Copiado", description: "Pégalo ahora en tu panel de WhatsApp." });
   };
 
-  const openExternalWhatsApp = (phoneNumber: string = '', message: string = '') => {
-    const cleanNumber = phoneNumber.replace(/\D/g, '');
-    const url = `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+  const openExternalTool = () => {
+    const url = activeTool === 'whatsapp' ? 'https://web.whatsapp.com/' : 'https://www.google.com/';
     window.open(url, '_blank', 'width=1200,height=800');
   };
 
@@ -135,18 +137,18 @@ export default function SalesCopilotPage() {
             <div>
               <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Command Center</span></h1>
               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> IA & WhatsApp Integrado
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> IA & Herramientas Integradas
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Button 
-              onClick={() => setShowWhatsApp(!showWhatsApp)} 
-              variant={showWhatsApp ? "default" : "outline"}
+              onClick={() => setShowRightPanel(!showRightPanel)} 
+              variant={showRightPanel ? "default" : "outline"}
               className="h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 transition-all"
             >
-              {showWhatsApp ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-              {showWhatsApp ? "Ocultar WhatsApp" : "Ver WhatsApp Web"}
+              {showRightPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              {showRightPanel ? "Ocultar Navegador" : "Ver Navegador"}
             </Button>
             <div className="h-10 px-5 bg-green-50 rounded-xl border border-green-100 flex items-center gap-3">
               <Smartphone className="h-4 w-4 text-green-600" />
@@ -155,7 +157,7 @@ export default function SalesCopilotPage() {
           </div>
         </div>
 
-        {/* Estación de Trabajo: 3 Paneles */}
+        {/* Estación de Trabajo */}
         <div className="flex-1 flex gap-4 overflow-hidden">
           
           {/* PANEL 1: Prospectos (Izquierda) */}
@@ -318,28 +320,58 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL 3: WHATSAPP WEB REAL (Derecha) */}
-          {showWhatsApp && (
-            <div className="flex-[1.2] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-4 duration-500">
+          {/* PANEL 3: NAVEGADOR MULTI-HERRAMIENTA (Derecha) */}
+          {showRightPanel && (
+            <div className="flex-[1.5] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-4 duration-500">
               <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
-                <CardHeader className="bg-[#25D366] text-white p-5 shrink-0 flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-5 w-5 fill-white" />
-                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">WhatsApp Web Real</CardTitle>
+                <CardHeader className={cn(
+                  "p-4 shrink-0 flex flex-col gap-4 transition-colors duration-500",
+                  activeTool === 'whatsapp' ? "bg-[#25D366]" : "bg-blue-600"
+                )}>
+                  <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center gap-3 text-white">
+                      {activeTool === 'whatsapp' ? <MessageSquare className="h-5 w-5 fill-white" /> : <Globe className="h-5 w-5" />}
+                      <CardTitle className="text-xs font-headline font-black uppercase tracking-widest text-white">
+                        {activeTool === 'whatsapp' ? "WhatsApp Web Real" : "Google Search"}
+                      </CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                      <span className="text-[8px] font-black uppercase tracking-widest text-white/80">Navegador Sync</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Sync Activo</span>
+
+                  <div className="flex gap-2 bg-black/10 p-1 rounded-xl">
+                    <Button 
+                      onClick={() => setActiveTool('whatsapp')}
+                      variant="ghost" 
+                      className={cn(
+                        "flex-1 h-9 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all",
+                        activeTool === 'whatsapp' ? "bg-white text-green-600 shadow-lg" : "text-white/60 hover:text-white"
+                      )}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 mr-2" /> WhatsApp
+                    </Button>
+                    <Button 
+                      onClick={() => setActiveTool('google')}
+                      variant="ghost" 
+                      className={cn(
+                        "flex-1 h-9 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all",
+                        activeTool === 'google' ? "bg-white text-blue-600 shadow-lg" : "text-white/60 hover:text-white"
+                      )}
+                    >
+                      <Globe className="h-3.5 w-3.5 mr-2" /> Google
+                    </Button>
                   </div>
                 </CardHeader>
                 
                 <CardContent className="flex-1 p-0 relative bg-slate-100">
-                  {/* El iframe de WhatsApp Web */}
                   {!iframeError ? (
                     <iframe 
-                      src="https://web.whatsapp.com/"
+                      key={activeTool}
+                      src={activeTool === 'whatsapp' ? "https://web.whatsapp.com/" : "https://www.google.com/search?igu=1"}
                       className="w-full h-full border-none"
-                      title="WhatsApp Web"
+                      title={activeTool}
                       onError={() => setIframeError(true)}
                     />
                   ) : (
@@ -349,28 +381,36 @@ export default function SalesCopilotPage() {
                       </div>
                       <h3 className="text-lg font-black text-slate-900 mb-2">Bloqueo de Seguridad</h3>
                       <p className="text-xs text-slate-500 font-medium mb-8 leading-relaxed max-w-xs">
-                        Tu navegador bloquea la vista interna por seguridad. Haz clic abajo para abrir WhatsApp en una ventana sincronizada a tu lado.
+                        Tu navegador bloquea la vista interna de {activeTool === 'whatsapp' ? 'WhatsApp' : 'Google'}. Haz clic abajo para abrirlo en una ventana sincronizada.
                       </p>
                       <Button 
-                        onClick={() => openExternalWhatsApp()} 
-                        className="bg-[#25D366] hover:bg-[#1da853] h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl shadow-green-200"
+                        onClick={() => openExternalTool()} 
+                        className={cn(
+                          "h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl",
+                          activeTool === 'whatsapp' ? "bg-[#25D366] shadow-green-200" : "bg-blue-600 shadow-blue-200"
+                        )}
                       >
-                        <ExternalLink className="h-4 w-4" /> Abrir WhatsApp Lateral
+                        <ExternalLink className="h-4 w-4" /> Abrir {activeTool === 'whatsapp' ? 'WhatsApp' : 'Google'} Lateral
                       </Button>
                     </div>
                   )}
 
-                  {/* Capa de aviso inferior */}
+                  {/* Barra de estado inferior */}
                   <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/10">
                     <div className="flex items-center gap-3">
-                       <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center"><Smartphone className="h-4 w-4 text-white" /></div>
+                       <div className={cn(
+                         "h-8 w-8 rounded-lg flex items-center justify-center",
+                         activeTool === 'whatsapp' ? "bg-green-500" : "bg-blue-500"
+                       )}>
+                         <Smartphone className="h-4 w-4 text-white" />
+                       </div>
                        <p className="text-[9px] text-white/70 font-bold leading-tight max-w-[180px]">
-                         Usa el botón derecho si ves la pantalla en blanco por seguridad.
+                         Investiga en Google o chatea en WhatsApp sin perder de vista a la IA.
                        </p>
                     </div>
                     <Button 
                       size="sm"
-                      onClick={() => openExternalWhatsApp()}
+                      onClick={() => openExternalTool()}
                       className="bg-white text-black hover:bg-slate-200 h-8 px-4 rounded-lg font-black text-[8px] uppercase tracking-widest shrink-0"
                     >
                       Abrir afuera
