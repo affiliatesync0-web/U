@@ -2,11 +2,10 @@
 
 import nodemailer from 'nodemailer';
 import { initializeFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 
 /**
  * Obtiene la configuración SMTP desde la colección site_config en Firestore.
- * Esta es la fuente de verdad controlada desde el panel de administración.
  */
 async function getSmtpConfig() {
   const { firestore } = initializeFirebase();
@@ -22,21 +21,19 @@ async function getSmtpConfig() {
 }
 
 /**
- * Envía un correo electrónico utilizando la configuración SMTP guardada por el administrador.
+ * Envía un correo electrónico utilizando la configuración SMTP guardada.
  */
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
   const config = await getSmtpConfig();
 
-  // Si no hay configuración en la DB, no podemos enviar
   if (!config || !config.smtp_user || !config.smtp_password) {
-    console.error("Configuración SMTP no encontrada en la base de datos.");
-    return { success: false, error: "Configuración de correo no disponible. Por favor configúrala en el panel admin." };
+    return { success: false, error: "Configuración de correo no disponible." };
   }
 
   const transporter = nodemailer.createTransport({
     host: config.smtp_host || 'smtp.gmail.com',
     port: parseInt(config.smtp_port) || 465,
-    secure: config.smtp_port == '465', // SSL para el puerto 465
+    secure: config.smtp_port == '465',
     auth: {
       user: config.smtp_user,
       pass: config.smtp_password,
@@ -46,7 +43,6 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   const fromName = config.smtp_from_name || 'Sync Connect';
   const fromEmail = config.smtp_from_email || config.smtp_user;
 
-  // Plantilla visual elegante para todos los correos
   const emailHtml = html || `
     <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background-color: #ffffff;">
       <div style="background-color: #ff5d1b; padding: 40px; text-align: center;">
@@ -57,7 +53,6 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       </div>
       <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
         <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${fromName}</p>
-        <p style="margin: 5px 0 0;">Este correo fue enviado automáticamente desde tu plataforma Sync Connect.</p>
       </div>
     </div>
   `;
@@ -66,14 +61,49 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to,
-      subject: `${subject}`,
+      subject,
       text,
       html: emailHtml,
     });
-
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
-    console.error('Error SMTP:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Genera y envía un código de recuperación de contraseña.
+ */
+export async function sendPasswordResetCode(email: string) {
+  const { firestore } = initializeFirebase();
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
+
+  try {
+    // Guardar código en Firestore
+    await setDoc(doc(firestore, 'password_resets', email.toLowerCase().trim()), {
+      code,
+      expiresAt,
+      email: email.toLowerCase().trim()
+    });
+
+    // Enviar correo
+    return await sendEmail({
+      to: email,
+      subject: 'Código de Recuperación - Sync Connect',
+      text: `Tu código de seguridad para restablecer tu contraseña es: ${code}\n\nEste código expirará en 15 minutos. Si no solicitaste este cambio, ignora este mensaje.`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #eee; border-radius: 20px; text-align: center;">
+          <h2 style="color: #333;">Recuperar Contraseña</h2>
+          <p style="color: #666;">Usa el siguiente código para validar tu identidad:</p>
+          <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #ff5d1b; margin: 20px 0;">
+            ${code}
+          </div>
+          <p style="font-size: 12px; color: #999;">Válido por 15 minutos.</p>
+        </div>
+      `
+    });
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
@@ -82,6 +112,6 @@ export async function testEmailConfig(email: string) {
   return await sendEmail({
     to: email,
     subject: 'Prueba de Conexión Exitosa',
-    text: 'Si recibes este mensaje, tu configuración de Gmail en el panel de Sync Connect es correcta. Todos los avisos de nuevos afiliados y ventas se enviarán desde esta cuenta.'
+    text: 'Si recibes este mensaje, tu configuración de Gmail en el panel de Sync Connect es correcta.'
   });
 }
