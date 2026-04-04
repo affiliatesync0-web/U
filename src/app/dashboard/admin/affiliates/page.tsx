@@ -1,4 +1,3 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
@@ -52,16 +51,12 @@ export default function AdminAffiliatesPage() {
     try {
       await sendEmail({
         to: affEmail,
-        subject: `¡Cuenta Activada! - Sync Connect`,
-        text: `¡Felicidades ${affName}! Tu solicitud de afiliado ha sido revisada y aprobada por nuestro equipo. 
-        
-Ya puedes acceder a tu panel administrativo para obtener tus links de divulgación y empezar a generar comisiones.
-
-Entra aquí: ${window.location.origin}/auth/login`
+        subject: `✅ ¡Cuenta Activada! - Sync Connect`,
+        text: `¡Felicidades ${affName}! Tu solicitud de afiliado ha sido revisada y aprobada por nuestro equipo.\n\nYa puedes acceder a tu panel administrativo para obtener tus links de divulgación y empezar a generar comisiones reales.\n\nInicia sesión aquí: ${window.location.origin}/auth/login\n\n¡Bienvenido a la red de marketing más potente de Nicaragua!`
       });
-      toast({ title: "Afiliado Aprobado", description: `Se ha notificado a ${affName} por correo.` });
+      toast({ title: "Afiliado Aprobado", description: `Se ha enviado el correo de activación a ${affEmail}.` });
     } catch (error) {
-      toast({ title: "Afiliado Aprobado", description: "La cuenta está activa, pero no se pudo enviar el correo de aviso." });
+      toast({ title: "Afiliado Aprobado", description: "La cuenta está activa, pero hubo un error enviando el email de aviso." });
     }
   };
 
@@ -290,10 +285,6 @@ function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
                 <div className="p-4 rounded-xl bg-slate-50 border">
                   <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Experiencia:</p>
                   <p className="text-xs font-medium text-slate-700 italic">"{answers.q2}"</p>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-50 border">
-                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Objeciones:</p>
-                  <p className="text-xs font-medium text-slate-700 italic">"{answers.q3}"</p>
                 </div>
               </div>
             )}
