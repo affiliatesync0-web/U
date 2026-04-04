@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -30,6 +30,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
@@ -37,7 +39,6 @@ export default function LoginPage() {
 
   const handlePostLoginRedirect = async (currentUser: any) => {
     if (!currentUser) return;
-    const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     
     if (currentUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       router.push('/dashboard/admin');
@@ -48,16 +49,10 @@ export default function LoginPage() {
   }
 
   useEffect(() => {
-    if (auth && db) {
-      getRedirectResult(auth).then(async (result) => {
-        if (result?.user) {
-          await handlePostLoginRedirect(result.user);
-        }
-      }).catch((err) => {
-        console.error("Redirect login error:", err);
-      });
+    if (auth) {
+      getRedirectResult(auth).catch(console.error);
     }
-  }, [auth, db]);
+  }, [auth]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -68,9 +63,8 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const cleanEmail = email.trim().toLowerCase();
     try {
-      const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
+      const cred = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
       await handlePostLoginRedirect(cred.user);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Datos de acceso incorrectos." });
@@ -79,7 +73,7 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = async () => {
-    if (!auth || !db) return;
+    if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -92,7 +86,7 @@ export default function LoginPage() {
   };
 
   if (isUserLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
   }
 
   return (
@@ -128,13 +122,13 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="font-bold text-[10px] uppercase tracking-widest text-slate-500 ml-1">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12 rounded-xl" />
+                <Label className="font-bold text-[10px] uppercase tracking-widest text-slate-500 ml-1">Email</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="font-bold text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
+                <Label className="font-bold text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
                 <div className="relative">
-                  <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required className="h-12 rounded-xl" />
+                  <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required className="h-12 rounded-xl" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>

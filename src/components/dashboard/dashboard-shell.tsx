@@ -76,11 +76,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
       const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
-      if (isUserAdmin && role !== 'admin') {
-        router.push('/dashboard/admin');
-        return;
+      // PRIORIDAD ABSOLUTA PARA EL ADMINISTRADOR
+      if (isUserAdmin) {
+        if (role !== 'admin') {
+          router.push('/dashboard/admin');
+        }
+        return; // Detener evaluación, el admin tiene acceso total
       }
 
+      // Restricción para no-admins en panel admin
       if (!isUserAdmin && role === 'admin') {
         router.push('/auth/login');
         return;

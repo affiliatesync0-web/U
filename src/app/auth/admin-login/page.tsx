@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useUser } from '@/firebase'
@@ -20,31 +20,32 @@ export default function AdminLoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
+  // 1. Manejar resultado de redirección al montar la página
   useEffect(() => {
     if (auth) {
-      setLoading(true);
-      getRedirectResult(auth).then((result) => {
-        if (result?.user) {
-          if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-            router.push('/dashboard/admin');
-          } else {
-            signOut(auth);
-            toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta de administrador oficial." });
-          }
-        }
-        setLoading(false);
-      }).catch((error) => {
-        console.error("Auth error:", error);
-        setLoading(false);
+      getRedirectResult(auth).catch((error) => {
+        console.error("Auth redirect error:", error);
       });
     }
-  }, [auth, router, toast]);
+  }, [auth]);
 
+  // 2. Redirección automática si el usuario ya está autenticado o vuelve de Google
   useEffect(() => {
-    if (!isUserLoading && user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      router.push('/dashboard/admin');
+    if (!isUserLoading && user) {
+      if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        router.push('/dashboard/admin');
+      } else {
+        // Si no es el admin, forzamos cierre de sesión para limpiar el estado
+        signOut(auth).then(() => {
+          toast({ 
+            variant: "destructive", 
+            title: "Acceso Denegado", 
+            description: "Esta cuenta no tiene permisos de administrador." 
+          });
+        });
+      }
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, auth, toast]);
 
   const handleGoogleLogin = async () => {
     if (!auth) return;
@@ -52,7 +53,7 @@ export default function AdminLoginPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      // Usamos redirección directamente para evitar errores 403 de popup en este entorno
+      // Usamos redirección forzada para evitar errores de popup y 403
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo iniciar la conexión con Google." });
@@ -60,7 +61,14 @@ export default function AdminLoginPage() {
     }
   }
 
-  const isWrongAccount = user && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase();
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Credenciales...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
@@ -84,36 +92,18 @@ export default function AdminLoginPage() {
           </CardHeader>
 
           <CardContent className="p-0 space-y-6">
-            {isWrongAccount && (
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl mb-6 text-left">
-                <div className="flex items-center gap-2 text-amber-600 mb-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Sesión Incorrecta</span>
-                </div>
-                <p className="text-[11px] text-amber-800 font-bold mb-3">
-                  Cierra la sesión actual para entrar como administrador.
-                </p>
-                <Button 
-                  onClick={() => signOut(auth)} 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full h-10 rounded-xl border-amber-200 text-amber-700 font-black text-[9px] uppercase hover:bg-amber-100"
-                >
-                  Cerrar Sesión de {user.email?.split('@')[0]}
-                </Button>
-              </div>
-            )}
-
             <Button 
               onClick={handleGoogleLogin}
               className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50" 
-              disabled={loading || isUserLoading || isWrongAccount}
+              disabled={loading}
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar como Administrador"}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                <><LogIn className="h-5 w-5" /> Entrar como Administrador</>
+              )}
             </Button>
             
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              El sistema utilizará redirección segura para garantizar el acceso en entornos restringidos.
+              El sistema utilizará redirección segura para garantizar el acceso en entornos restringidos y evitar errores 403.
             </p>
           </CardContent>
         </div>
