@@ -13,7 +13,7 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, signInWithRedirect } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, getRedirectResult, signInWithRedirect } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -53,11 +53,12 @@ export default function LoginPage() {
         if (result?.user) {
           await handlePostLoginRedirect(result.user);
         }
-      }).catch(console.error);
+      }).catch((err) => {
+        console.error("Redirect login error:", err);
+      });
     }
   }, [auth, db]);
 
-  // Si ya hay usuario, redirigir automáticamente
   useEffect(() => {
     if (!isUserLoading && user) {
       handlePostLoginRedirect(user);
@@ -83,15 +84,10 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      console.warn("Popup fallido, usando redirección...");
-      try {
-        await signInWithRedirect(auth, provider);
-      } catch (err) {
-        toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
-        setLoading(false);
-      }
+      toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
+      setLoading(false);
     }
   };
 

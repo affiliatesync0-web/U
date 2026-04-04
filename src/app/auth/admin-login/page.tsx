@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, Copy, Check, Globe } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useUser } from '@/firebase'
-import { signInWithPopup, GoogleAuthProvider, signOut, getRedirectResult, signInWithRedirect } from 'firebase/auth'
+import { GoogleAuthProvider, signOut, getRedirectResult, signInWithRedirect } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -17,19 +17,12 @@ export default function AdminLoginPage() {
   const auth = useAuth()
   const { user, isUserLoading } = useUser()
   const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [currentDomain, setCurrentDomain] = useState('')
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentDomain(window.location.hostname)
-    }
-  }, [])
-
-  useEffect(() => {
     if (auth) {
+      setLoading(true);
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -39,8 +32,9 @@ export default function AdminLoginPage() {
             toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta de administrador oficial." });
           }
         }
+        setLoading(false);
       }).catch((error) => {
-        console.error("Auth redirect error:", error);
+        console.error("Auth error:", error);
         setLoading(false);
       });
     }
@@ -52,36 +46,18 @@ export default function AdminLoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleGoogleLogin = async (mode: 'popup' | 'redirect' = 'popup') => {
+  const handleGoogleLogin = async () => {
     if (!auth) return;
     setLoading(true);
-    
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    
     try {
-      if (mode === 'popup') {
-        await signInWithPopup(auth, provider);
-      } else {
-        await signInWithRedirect(auth, provider);
-      }
+      // Usamos redirección directamente para evitar errores 403 de popup en este entorno
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      console.error("Login error:", error);
-      if (mode === 'popup') {
-        // Fallback automático a redirección si falla el popup (común en 403)
-        await signInWithRedirect(auth, provider);
-      } else {
-        toast({ variant: "destructive", title: "Error de Conexión", description: "Verifica los dominios autorizados en Firebase." });
-        setLoading(false);
-      }
+      toast({ variant: "destructive", title: "Error", description: "No se pudo iniciar la conexión con Google." });
+      setLoading(false);
     }
-  }
-
-  const copyDomain = () => {
-    navigator.clipboard.writeText(currentDomain);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Copiado", description: "Pega este dominio en Authorized Domains de Firebase." });
   }
 
   const isWrongAccount = user && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase();
@@ -115,7 +91,7 @@ export default function AdminLoginPage() {
                   <span className="text-[10px] font-black uppercase tracking-widest">Sesión Incorrecta</span>
                 </div>
                 <p className="text-[11px] text-amber-800 font-bold mb-3">
-                  Cerrar sesión actual para poder entrar como administrador.
+                  Cierra la sesión actual para entrar como administrador.
                 </p>
                 <Button 
                   onClick={() => signOut(auth)} 
@@ -128,37 +104,17 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-            <div className="space-y-3">
-              <Button 
-                onClick={() => handleGoogleLogin('popup')}
-                className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50" 
-                disabled={loading || isUserLoading || isWrongAccount}
-              >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar como Administrador"}
-              </Button>
-              
-              <Button 
-                variant="ghost"
-                onClick={() => handleGoogleLogin('redirect')}
-                className="w-full h-12 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-primary"
-                disabled={loading || isUserLoading || isWrongAccount}
-              >
-                ¿Problemas? Usar Modo Redirección
-              </Button>
-            </div>
-
-            {/* Herramienta de Reparación de Dominio (Discreta) */}
-            <div className="mt-8 pt-8 border-t border-slate-200/50 text-left">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Globe className="h-3 w-3" /> Dominio que debe estar en Firebase:
-              </p>
-              <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-inner group">
-                <code className="text-[9px] font-mono text-slate-500 truncate flex-1">{currentDomain}</code>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-primary" onClick={copyDomain}>
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                </Button>
-              </div>
-            </div>
+            <Button 
+              onClick={handleGoogleLogin}
+              className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50" 
+              disabled={loading || isUserLoading || isWrongAccount}
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar como Administrador"}
+            </Button>
+            
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+              El sistema utilizará redirección segura para garantizar el acceso en entornos restringidos.
+            </p>
           </CardContent>
         </div>
       </Card>

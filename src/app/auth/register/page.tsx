@@ -14,7 +14,7 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, getRedirectResult, signInWithRedirect, signOut } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -82,31 +82,10 @@ function RegisterContent() {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-
     try {
-      await signInWithPopup(auth, provider);
-      const user = auth.currentUser;
-      if (user) {
-        const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-        const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
-
-        if (affiliateSnap.exists() || buyerSnap.exists()) {
-          router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
-          return;
-        }
-
-        setFormData(prev => ({
-          ...prev,
-          firstName: user.displayName?.split(' ')[0] || '',
-          lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-          email: user.email || ''
-        }));
-        setStep('info');
-      }
-    } catch (error: any) {
-      console.warn("Popup blocked, trying redirect...");
       await signInWithRedirect(auth, provider);
-    } finally {
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
       setLoading(false);
     }
   };
@@ -116,7 +95,7 @@ function RegisterContent() {
     const cleanPhone = formData.phone.replace(/\D/g, '');
     
     if (cleanPhone.length < 8) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu WhatsApp completo con código de área." });
+      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu WhatsApp completo." });
       return;
     }
 
@@ -190,7 +169,7 @@ function RegisterContent() {
               <ShoppingBag className="h-8 w-8" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Quiero comprar</h3>
-            <p className="text-xs font-medium text-slate-400 leading-relaxed">Accede a productos digitales exclusivos y gestiona tus accesos.</p>
+            <p className="text-xs font-medium text-slate-400 leading-relaxed">Accede a productos digitales exclusivos.</p>
           </button>
           <button 
             onClick={() => { setRole('affiliate'); setStep('info'); }} 
@@ -200,7 +179,7 @@ function RegisterContent() {
               <Target className="h-8 w-8" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Quiero vender</h3>
-            <p className="text-xs font-medium text-slate-400 leading-relaxed">Genera ingresos vendiendo productos de terceros y cobra comisiones.</p>
+            <p className="text-xs font-medium text-slate-400 leading-relaxed">Genera comisiones vendiendo productos.</p>
           </button>
         </div>
       )}
@@ -231,7 +210,7 @@ function RegisterContent() {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">WhatsApp (Requerido)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">WhatsApp / Teléfono <span className="text-primary">*</span></Label>
                 <div className="relative">
                   <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="pl-10 h-12 rounded-xl" />
@@ -276,7 +255,7 @@ function RegisterContent() {
             <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl flex items-start gap-4">
                <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
                <p className="text-[10px] font-bold text-blue-700 leading-relaxed">
-                 Al enviar esta solicitud, nuestro equipo revisará tus respuestas. Recibirás un correo de activación en las próximas 24h.
+                 Al enviar esta solicitud, nuestro equipo revisará tus respuestas. Recibirás un correo de activación.
                </p>
             </div>
 

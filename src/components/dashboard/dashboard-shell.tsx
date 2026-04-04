@@ -41,13 +41,12 @@ import { NavMain } from "@/components/dashboard/nav-main"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
 import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { signOut } from "firebase/auth"
-import { useAuth } from "@/firebase"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -68,7 +67,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // Redirección de seguridad y roles consolidada
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
@@ -78,13 +76,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
       const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
-      // Si es admin, forzar su panel
       if (isUserAdmin && role !== 'admin') {
         router.push('/dashboard/admin');
         return;
       }
 
-      // Si no es admin e intenta entrar a panel admin, expulsarlo
       if (!isUserAdmin && role === 'admin') {
         router.push('/auth/login');
         return;
@@ -95,9 +91,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    // Los admins no necesitan cargar perfil de afiliado/comprador
     if (isUserAdmin) return null;
-    
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
   }, [db, user, role]);
@@ -155,7 +149,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const isUserAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
   
-  // Pantalla de espera para afiliados pendientes (Excepto Admin)
   if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
