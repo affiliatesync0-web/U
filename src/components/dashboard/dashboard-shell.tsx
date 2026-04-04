@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
   LayoutDashboard,
@@ -62,15 +62,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
-  const { data: logoOverride } = useDoc(logoConfigRef);
-  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
-  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Redirección de seguridad
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
@@ -80,31 +76,35 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
       const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
-      // Si es admin, siempre tiene acceso a todo, no redirigir a otros dashboards
-      if (isUserAdmin) {
-        if (role !== 'admin' && !window.location.pathname.includes('/dashboard/admin')) {
-          router.push('/dashboard/admin');
-        }
+      // El administrador SIEMPRE puede ver el panel de admin
+      if (isUserAdmin && role !== 'admin') {
+        router.push('/dashboard/admin');
         return;
       }
 
-      // Si intenta entrar a admin y NO es admin
-      if (role === 'admin' && !isUserAdmin) {
+      // Un usuario normal NO puede ver el panel de admin
+      if (!isUserAdmin && role === 'admin') {
         router.push('/dashboard/affiliate');
+        return;
       }
     }
   }, [user, isUserLoading, router, role, mounted]);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // El administrador no necesita perfil en Firestore para navegar
-    if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return null;
+    const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    if (isUserAdmin) return null; // El admin no necesita perfil de afiliado
     
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
   }, [db, user, role]);
 
   const { data: profile } = useDoc(profileRef);
+
+  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const { data: logoOverride } = useDoc(logoConfigRef);
+  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
@@ -140,23 +140,19 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sincronizando Workspace...</p>
-        </div>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
   }
 
-  // Si es un afiliado pendiente (y NO es admin), mostramos pantalla de espera
-  if (role === 'affiliate' && profile?.status === 'Pending' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+  // Pantalla de espera para afiliados pendientes (Excepto Admin)
+  const isUserAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
-        <div className="max-w-md space-y-8 animate-in zoom-in-95 duration-500">
-          <div className="relative inline-block">
-            <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary shadow-inner">
-              <Clock className="h-12 w-12 animate-pulse" />
-            </div>
+        <div className="max-w-md space-y-8">
+          <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary shadow-inner mx-auto">
+            <Clock className="h-12 w-12 animate-pulse" />
           </div>
           <div className="space-y-3">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
@@ -175,7 +171,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <Sidebar collapsible="icon" className="border-r border-slate-100">
         <SidebarHeader className="bg-white">
           <div className="flex items-center gap-4 px-3 py-8">
-            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white shadow-xl shadow-primary/5 ring-1 ring-slate-100 flex items-center justify-center">
+            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-100 flex items-center justify-center">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
@@ -187,7 +183,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <div className="flex items-center gap-1 mt-0.5">
                 <Flame className="h-2 w-2 text-primary" />
                 <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">
-                  {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'SYSTEM' : (role === 'buyer' ? 'CLIENT' : 'PLATINUM')}
+                  {isUserAdmin ? 'SYSTEM' : (role === 'buyer' ? 'CLIENT' : 'PLATINUM')}
                 </span>
               </div>
             </div>
@@ -196,17 +192,17 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarContent className="bg-white px-2">
           <NavMain 
             items={getMenu()} 
-            label={user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
+            label={isUserAdmin ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
           />
         </SidebarContent>
         <SidebarFooter className="bg-white border-t border-slate-50 p-4">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild className="h-12 rounded-xl text-slate-500 hover:text-primary transition-colors">
-                <a href="/">
+                <Link href="/">
                   <LogOut className="h-5 w-5" />
                   <span className="font-black uppercase text-[11px] tracking-widest">{t.logout}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -214,17 +210,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="bg-[#F8FAFC]">
-        <header className="flex h-20 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-16 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-30 px-6">
-          <SidebarTrigger className="-ml-1 text-primary hover:bg-primary/5 transition-colors" />
+        <header className="flex h-20 shrink-0 items-center gap-2 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-30 px-6">
+          <SidebarTrigger className="-ml-1 text-primary" />
           <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100" />
           <div className="flex-1">
              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
-                {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
+                {isUserAdmin ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
              </h2>
           </div>
-          <div className="flex items-center gap-4">
-             <LanguageToggle />
-          </div>
+          <LanguageToggle />
         </header>
         <main className="flex-1 p-6 md:p-10">
           <div className="mx-auto max-w-7xl animate-in fade-in duration-700">

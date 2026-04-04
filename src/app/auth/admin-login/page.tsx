@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, LogOut } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
@@ -16,21 +16,19 @@ export default function AdminLoginPage() {
   const { toast } = useToast()
   const auth = useAuth()
   const [loading, setLoading] = useState(false)
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   useEffect(() => {
     if (auth) {
+      // 1. Detectar si ya hay una sesión activa del admin
       const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          setCurrentUserEmail(user.email);
-          if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-            router.push('/dashboard/admin');
-          }
+        if (user && user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          router.push('/dashboard/admin');
         }
       });
 
+      // 2. Capturar resultado de redirección (si el popup falló antes)
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -40,18 +38,13 @@ export default function AdminLoginPage() {
             toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta de administrador oficial." });
           }
         }
-      }).catch(console.error);
+      }).catch((error) => {
+        console.error("Auth Error:", error);
+      });
 
       return () => unsubscribe();
     }
   }, [auth, router, toast]);
-
-  const handleLogout = async () => {
-    if (!auth) return;
-    await signOut(auth);
-    setCurrentUserEmail(null);
-    toast({ title: "Sesión cerrada" });
-  }
 
   const handleGoogleAdminLogin = async () => {
     if (!auth) return;
@@ -60,18 +53,17 @@ export default function AdminLoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      // Intentamos primero con popup (más rápido si no está bloqueado)
+      // Intentamos con popup primero
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      console.error("Auth Error:", error.code);
-      // Si el popup falla o es bloqueado, usamos redirección que es infalible
+      console.warn("Popup blocked or failed, trying redirect...", error.code);
+      // Si falla el popup, usamos redirección que es infalible
       try {
         await signInWithRedirect(auth, provider);
       } catch (err) {
-        toast({ variant: "destructive", title: "Error de conexión", description: "Verifica que el dominio esté autorizado en Firebase." });
+        toast({ variant: "destructive", title: "Error de conexión", description: "Verifica tu conexión a internet o los dominios en Firebase." });
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -97,21 +89,6 @@ export default function AdminLoginPage() {
           </CardHeader>
 
           <CardContent className="p-0 space-y-6">
-            {currentUserEmail && currentUserEmail.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
-              <div className="p-6 bg-amber-50 rounded-2xl border-2 border-amber-100 space-y-4 mb-4">
-                <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
-                  Sesión activa: <b className="text-amber-600">{currentUserEmail}</b>. <br/> Debes cambiar a la cuenta de administrador.
-                </p>
-                <Button 
-                  onClick={handleLogout}
-                  variant="outline" 
-                  className="w-full h-10 rounded-xl border-amber-200 text-amber-800 font-black text-[10px] uppercase tracking-widest"
-                >
-                  Cerrar Sesión Actual
-                </Button>
-              </div>
-            )}
-            
             <Button 
               onClick={handleGoogleAdminLogin}
               className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50" 
@@ -125,13 +102,13 @@ export default function AdminLoginPage() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                   </svg>
-                  Entrar con Google
+                  Entrar como Administrador
                 </>
               )}
             </Button>
 
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              Solo el correo oficial affiliatesync0@gmail.com <br/> tiene acceso a este panel.
+              Solo la cuenta autorizada tiene acceso <br/> a este panel de control.
             </p>
           </CardContent>
         </div>

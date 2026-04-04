@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -12,7 +13,7 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, signInWithRedirect } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -74,14 +75,11 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      const result = await signInWithPopup(auth, provider);
-      await handlePostLoginRedirect(result.user);
+      await signInWithPopup(auth, provider);
+      if (auth.currentUser) await handlePostLoginRedirect(auth.currentUser);
     } catch (error: any) {
-      console.error("Auth Error:", error.code);
-      const { signInWithRedirect } = await import('firebase/auth');
+      console.warn("Popup blocked, trying redirect...");
       await signInWithRedirect(auth, provider);
-    } finally {
-      setLoading(false);
     }
   };
 
