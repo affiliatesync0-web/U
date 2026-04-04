@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -13,9 +12,10 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
+import { sendEmail } from '@/lib/email'
 
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'info' | 'exam'
@@ -73,6 +73,34 @@ function RegisterContent() {
           status: 'Pending',
           examAnswers: examData
         });
+
+        // 1. Notificar al afiliado
+        await sendEmail({
+          to: formData.email.toLowerCase().trim(),
+          subject: '¡Solicitud Recibida! - Sync Connect',
+          text: `Hola ${formData.firstName}, hemos recibido tu solicitud para unirte como afiliado.
+          
+Actualmente tu cuenta está "En Revisión". Nuestro equipo técnico analizará tu estrategia y te notificaremos por este medio en cuanto tu panel sea activado.
+
+Gracias por confiar en Sync Connect.`
+        });
+
+        // 2. Notificar al Administrador
+        const settingsSnap = await getDoc(doc(db, 'site_config', 'settings'));
+        const adminEmail = settingsSnap.data()?.smtp_user || 'affiliatesync0@gmail.com';
+        
+        await sendEmail({
+          to: adminEmail,
+          subject: 'NUEVA SOLICITUD DE AFILIADO',
+          text: `Se ha registrado un nuevo postulante:
+          
+Nombre: ${formData.firstName} ${formData.lastName}
+Email: ${formData.email}
+WhatsApp: ${cleanPhone}
+
+Revisa el panel de administración para aprobar o rechazar esta cuenta.`
+        });
+
       } else {
         await setDoc(doc(db, 'buyers', userId), {
           ...commonData,

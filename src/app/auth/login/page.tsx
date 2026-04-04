@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -39,10 +38,9 @@ export default function LoginPage() {
     if (!email || !password) return;
     setLoading(true)
     try {
-      const cred = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
       toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
       
-      // Redirigir según el correo o rol
       if (email.toLowerCase().trim() === 'affiliatesync0@gmail.com') {
         router.push('/dashboard/admin');
       } else {
@@ -82,19 +80,22 @@ export default function LoginPage() {
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   required 
-                  className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
+                  className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
                   placeholder="ejemplo@correo.com" 
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Contraseña</Label>
+                <div className="flex justify-between items-center ml-1">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500">Tu Contraseña</Label>
+                  <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black text-primary uppercase hover:underline">¿Olvidaste tu clave?</Link>
+                </div>
                 <div className="relative">
                   <Input 
                     type={showPassword ? "text" : "password"} 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)} 
                     required 
-                    className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
+                    className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
                     placeholder="••••••••" 
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">

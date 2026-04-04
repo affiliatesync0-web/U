@@ -6,7 +6,6 @@ import { doc, getDoc } from 'firebase/firestore';
 
 /**
  * Obtiene la configuración SMTP desde la colección site_config en Firestore.
- * Se espera un documento con ID 'settings'.
  */
 async function getSmtpConfig() {
   const { firestore } = initializeFirebase();
@@ -35,7 +34,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   const transporter = nodemailer.createTransport({
     host: config.smtp_host || 'smtp.gmail.com',
     port: parseInt(config.smtp_port) || 465,
-    secure: config.smtp_port == '465', // true para puerto 465 (SSL)
+    secure: config.smtp_port == '465', 
     auth: {
       user: config.smtp_user,
       pass: config.smtp_password,
@@ -45,18 +44,17 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   const fromName = config.smtp_from_name || 'Sync Connect';
   const fromEmail = config.smtp_from_email || config.smtp_user;
 
-  // Diseño de correo electrónico profesional
   const emailHtml = html || `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-      <div style="background-color: #ff5d1b; padding: 30px; text-align: center;">
-        <h1 style="margin: 0; color: #ffffff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Sync Connect</h1>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+      <div style="background-color: #ff5d1b; padding: 40px; text-align: center;">
+        <h1 style="margin: 0; color: #ffffff; font-size: 28px; text-transform: uppercase; letter-spacing: 3px; font-weight: 900;">Sync Connect</h1>
       </div>
       <div style="padding: 40px; line-height: 1.6; color: #1e293b; font-size: 16px;">
         ${text.split('\n').map(line => `<p style="margin-bottom: 15px;">${line}</p>`).join('')}
       </div>
-      <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-        <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${fromName}. Todos los derechos reservados.</p>
-        <p style="margin: 5px 0 0;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+      <div style="background-color: #f8fafc; padding: 30px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">&copy; ${new Date().getFullYear()} ${fromName}</p>
+        <p style="margin: 5px 0 0;">Este es un correo automático del sistema. Por favor no respondas.</p>
       </div>
     </div>
   `;
@@ -77,9 +75,6 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   }
 }
 
-/**
- * Función para probar la configuración SMTP desde el panel.
- */
 export async function testEmailConfig(email: string) {
   return await sendEmail({
     to: email,
