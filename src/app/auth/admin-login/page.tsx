@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { ShieldAlert, ArrowLeft, Loader2, LogIn, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
@@ -15,9 +16,10 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 export default function AdminLoginPage() {
   const { toast } = useToast()
   const auth = useAuth()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('affiliatesync0@gmail.com')
   const [password, setPassword] = useState('')
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -35,7 +37,10 @@ export default function AdminLoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
+      // Redirigir inmediatamente al panel admin
+      router.push('/dashboard/admin');
     } catch (error: any) {
+      console.error("Login Error:", error);
       toast({ variant: "destructive", title: "Error", description: "Credenciales administrativas inválidas." });
       setLoading(false);
     }

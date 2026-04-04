@@ -79,7 +79,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
-    // Prioridad absoluta del Administrador
+    // Prioridad absoluta del Administrador: Si es admin y no está en /admin, moverlo allí.
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/admin');
       return;
@@ -95,10 +95,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const buyerRef = useMemoFirebase(() => (db && user ? doc(db, 'buyers', user.uid) : null), [db, user]);
   
-  const { data: affiliateProfile } = useDoc(affiliateRef);
+  const { data: affiliateProfile, isLoading: affLoading } = useDoc(affiliateRef);
   const { data: buyerProfile } = useDoc(buyerRef);
-
-  const profile = affiliateProfile || buyerProfile;
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -126,7 +124,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
-  // APROBACIÓN REQUERIDA (Solo para afiliados pendientes)
+  // APROBACIÓN REQUERIDA (Solo para afiliados pendientes y que NO son administradores)
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">

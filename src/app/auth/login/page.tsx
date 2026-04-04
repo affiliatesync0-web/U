@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const { t } = useLanguage()
   const auth = useAuth()
   const db = useFirestore()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
@@ -37,8 +39,15 @@ export default function LoginPage() {
     if (!email || !password) return;
     setLoading(true)
     try {
-      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
-      // El Shell detectará el cambio de auth y redirigirá
+      const cred = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+      toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
+      
+      // Redirigir según el correo o rol
+      if (email.toLowerCase().trim() === 'affiliatesync0@gmail.com') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/dashboard/affiliate');
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales incorrectas o cuenta no registrada." });
       setLoading(false)
