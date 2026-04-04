@@ -5,23 +5,24 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/firebase'
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, getRedirectResult, signInWithRedirect } from 'firebase/auth'
+import { useAuth, useUser } from '@/firebase'
+import { signInWithPopup, GoogleAuthProvider, signOut, getRedirectResult, signInWithRedirect } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const auth = useAuth()
+  const { user, isUserLoading } = useUser()
   const [loading, setLoading] = useState(false)
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
+  // Manejar resultado de redirección al montar
   useEffect(() => {
     if (auth) {
-      // Capturar resultado de redirección si el popup falló
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -31,41 +32,42 @@ export default function AdminLoginPage() {
             toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta de administrador oficial." });
           }
         }
-      }).catch(console.error);
-
-      // Detectar sesión activa del admin
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user && user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          router.push('/dashboard/admin');
-        }
+      }).catch((error) => {
+        console.error("Redirect error:", error);
+        setLoading(false);
       });
-
-      return () => unsubscribe();
     }
   }, [auth, router, toast]);
+
+  // Redirigir si ya hay sesión de admin
+  useEffect(() => {
+    if (!isUserLoading && user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      router.push('/dashboard/admin');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleGoogleAdminLogin = async () => {
     if (!auth) return;
     setLoading(true);
     
-    // Limpieza preventiva: cerramos cualquier sesión antes de entrar como admin
-    await signOut(auth);
-
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
       await signInWithPopup(auth, provider);
+      // El onAuthStateChanged global o el useEffect de arriba manejarán la redirección
     } catch (error: any) {
-      console.warn("Popup fallido, intentando redirección...", error.code);
+      console.warn("Popup blocked or failed, trying redirect...", error.code);
       try {
         await signInWithRedirect(auth, provider);
       } catch (err) {
-        toast({ variant: "destructive", title: "Error de conexión", description: "Verifica los dominios autorizados en Firebase." });
+        toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
         setLoading(false);
       }
     }
   }
+
+  const isWrongAccount = user && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase();
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
@@ -89,10 +91,30 @@ export default function AdminLoginPage() {
           </CardHeader>
 
           <CardContent className="p-0 space-y-6">
+            {isWrongAccount && (
+              <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl mb-6 text-left animate-in fade-in zoom-in">
+                <div className="flex items-center gap-2 text-amber-600 mb-1">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Sesión Incorrecta</span>
+                </div>
+                <p className="text-[11px] text-amber-800 font-bold leading-tight mb-3">
+                  Estás conectado como <span className="underline">{user.email}</span>. Esta cuenta no es de administrador.
+                </p>
+                <Button 
+                  onClick={() => signOut(auth)} 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full h-10 rounded-xl border-amber-200 text-amber-700 font-black text-[9px] uppercase tracking-widest hover:bg-amber-100"
+                >
+                  Cerrar Sesión Actual
+                </Button>
+              </div>
+            )}
+
             <Button 
               onClick={handleGoogleAdminLogin}
               className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50" 
-              disabled={loading}
+              disabled={loading || isUserLoading}
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                 <>

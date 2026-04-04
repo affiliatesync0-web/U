@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, signInWithRedirect, signOut } from 'firebase/auth'
+import { useAuth, useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, signInWithRedirect } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -24,24 +24,26 @@ export default function LoginPage() {
   const { t } = useLanguage()
   const auth = useAuth()
   const db = useFirestore()
+  const { user, isUserLoading } = useUser()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  const handlePostLoginRedirect = async (user: any) => {
-    if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+  const handlePostLoginRedirect = async (currentUser: any) => {
+    if (!currentUser) return;
+    const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+    
+    if (currentUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       router.push('/dashboard/admin');
       return;
     }
-    const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+    const affiliateSnap = await getDoc(doc(db, 'affiliates', currentUser.uid));
     router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
   }
 
@@ -55,6 +57,13 @@ export default function LoginPage() {
     }
   }, [auth, db]);
 
+  // Si ya hay usuario, redirigir automáticamente
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      handlePostLoginRedirect(user);
+    }
+  }, [user, isUserLoading]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -64,7 +73,6 @@ export default function LoginPage() {
       await handlePostLoginRedirect(cred.user);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Datos de acceso incorrectos." });
-    } finally {
       setLoading(false)
     }
   }
@@ -76,12 +84,20 @@ export default function LoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
       await signInWithPopup(auth, provider);
-      if (auth.currentUser) await handlePostLoginRedirect(auth.currentUser);
     } catch (error: any) {
       console.warn("Popup fallido, usando redirección...");
-      await signInWithRedirect(auth, provider);
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (err) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
+        setLoading(false);
+      }
     }
   };
+
+  if (isUserLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">

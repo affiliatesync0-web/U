@@ -46,7 +46,6 @@ import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { signOut } from "firebase/auth"
 import { useAuth } from "@/firebase"
 
@@ -69,7 +68,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // Redirección de seguridad y roles
+  // Redirección de seguridad y roles consolidada
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
@@ -79,15 +78,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
       const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
-      // Prioridad absoluta al admin: si es admin, entra a su panel
+      // Si es admin, forzar su panel
       if (isUserAdmin && role !== 'admin') {
         router.push('/dashboard/admin');
         return;
       }
 
-      // Si no es admin e intenta entrar a panel admin, lo mandamos a login
+      // Si no es admin e intenta entrar a panel admin, expulsarlo
       if (!isUserAdmin && role === 'admin') {
-        router.push('/auth/admin-login');
+        router.push('/auth/login');
         return;
       }
     }
@@ -96,6 +95,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    // Los admins no necesitan cargar perfil de afiliado/comprador
     if (isUserAdmin) return null;
     
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
