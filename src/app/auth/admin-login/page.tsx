@@ -50,6 +50,7 @@ export default function AdminLoginPage() {
     if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    // Forzamos selección de cuenta para evitar el error 403 de sesiones automáticas
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
