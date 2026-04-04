@@ -148,6 +148,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
+    { title: "Gestionar Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: t.affiliateGmailList, url: "/dashboard/admin/affiliates-contacts", icon: Mail },
     { title: t.buyers, url: "/dashboard/admin/buyers", icon: Users2 },
