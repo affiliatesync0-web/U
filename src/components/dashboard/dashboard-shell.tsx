@@ -65,45 +65,39 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const db = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
+  
   const [mounted, setMounted] = useState(false);
   const [phoneToRegister, setPhoneToRegister] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Determinar si es Admin ANTES de cualquier efecto
-  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
-
-  // 1. Redirección de Autenticación
+  // 1. GESTIÓN DE ACCESO Y REDIRECCIONES (SOLO CUANDO TODO ESTÁ CARGADO)
   useEffect(() => {
-    if (!isUserLoading && mounted) {
-      if (!user) {
-        router.replace('/auth/login');
-        return;
-      }
+    if (!mounted || isUserLoading) return;
 
-      // Prioridad Admin: Si es admin y no está en /admin, enviarlo allí
-      if (isUserAdmin && !pathname.includes('/dashboard/admin')) {
-        router.replace('/dashboard/admin');
-        return;
-      }
-
-      // Seguridad: Si no es admin e intenta entrar a /admin, sacarlo
-      if (!isUserAdmin && pathname.includes('/dashboard/admin')) {
-        router.replace('/dashboard/affiliate');
-        return;
-      }
+    if (!user) {
+      router.replace('/auth/login');
+      return;
     }
-  }, [user, isUserLoading, router, role, mounted, pathname, isUserAdmin]);
 
-  // Carga de perfil (Solo para no-admins para validar estatus y teléfono)
+    // Redirección forzada por rol de URL
+    if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
+      router.replace('/dashboard/admin');
+    } else if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
+      router.replace('/dashboard/affiliate');
+    }
+  }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
+
+  // CARGA DE PERFIL (Solo para no-admins o para validar datos de contacto)
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // Intentamos buscar en ambas colecciones si no sabemos el rol exacto aún
+    // Si no es admin, buscamos en la colección que corresponde al rol actual de la página
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
   }, [db, user, role]);
@@ -117,19 +111,19 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.replace('/');
+    router.replace('/auth/login');
   }
 
   const handleRegisterPhone = async () => {
     if (!user || !db || phoneToRegister.length < 8) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un WhatsApp válido." });
+      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un WhatsApp válido para continuar." });
       return;
     }
     setSavingPhone(true);
     try {
+      // Guardar en la colección que corresponda según dónde esté intentando entrar
       const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
       const userRef = doc(db, collectionName, user.uid);
-      
       const names = user.displayName?.split(' ') || [];
       
       await setDocumentNonBlocking(userRef, {
@@ -143,74 +137,81 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         currentBalance: 0
       }, { merge: true });
 
-      toast({ title: "WhatsApp Vinculado", description: "Ya puedes acceder a tu panel." });
+      toast({ title: "WhatsApp Vinculado", description: "Configuración guardada exitosamente." });
+      // Forzar recarga para que el useDoc detecte el nuevo perfil
       window.location.reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el teléfono." });
+      toast({ variant: "destructive", title: "Error", description: "No pudimos guardar tus datos de contacto." });
     } finally {
       setSavingPhone(false);
     }
   }
 
-  // ESTADO DE CARGA INICIAL
+  // ESTADO DE CARGA GLOBAL
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Verificando Credenciales...</p>
+        <div className="flex flex-col items-center gap-6">
+          <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando Accesos...</p>
         </div>
       </div>
     )
   }
 
-  // PROTECCIÓN 1: Faltan datos obligatorios (WhatsApp) - Excepto Admin que ya conocemos
-  if (user && !isUserAdmin && !profileLoading && (!profile || !profile.whatsappNumber)) {
+  // SI NO HAY USUARIO, NO RENDERIZAMOS NADA (El useEffect ya está redirigiendo)
+  if (!user) return null;
+
+  // REQUISITO 1: VINCULAR WHATSAPP (Solo para no-admins que no tienen perfil guardado)
+  if (!isUserAdmin && !profileLoading && (!profile || !profile.whatsappNumber)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 text-center space-y-8 animate-in fade-in zoom-in duration-500">
-          <div className="h-20 w-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto shadow-inner">
-            <Smartphone className="h-10 w-10" />
+        <div className="max-w-md w-full bg-white rounded-[3.5rem] shadow-2xl p-12 text-center space-y-10 animate-in fade-in zoom-in duration-500 ring-1 ring-slate-100">
+          <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary mx-auto shadow-inner rotate-3">
+            <Smartphone className="h-12 w-12" />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Vincular WhatsApp</h2>
-            <p className="text-slate-500 font-medium text-sm">Para continuar, necesitamos tu número de contacto oficial en Sync Connect.</p>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Paso Final</h2>
+            <p className="text-slate-500 font-medium text-sm leading-relaxed">Para activar tu cuenta en Sync Connect, vincula tu número de WhatsApp oficial.</p>
           </div>
-          <div className="space-y-4 text-left">
+          <div className="space-y-6 text-left">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tu número de WhatsApp</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tu WhatsApp (Sin símbolos)</Label>
               <Input 
                 placeholder="50588888888" 
                 value={phoneToRegister}
                 onChange={(e) => setPhoneToRegister(e.target.value)}
-                className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold px-6 text-lg"
+                className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold px-6 text-xl"
               />
             </div>
-            <Button onClick={handleRegisterPhone} className="w-full h-14 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={savingPhone}>
-              {savingPhone ? <Loader2 className="animate-spin" /> : "FINALIZAR Y ENTRAR"}
+            <Button onClick={handleRegisterPhone} className="w-full h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 text-lg" disabled={savingPhone}>
+              {savingPhone ? <Loader2 className="animate-spin" /> : "VINCULAR Y ENTRAR"}
             </Button>
-            <Button variant="ghost" onClick={handleLogout} className="w-full text-[10px] font-black uppercase tracking-widest text-slate-400">Cerrar Sesión</Button>
+            <Button variant="ghost" onClick={handleLogout} className="w-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary">Cancelar y Salir</Button>
           </div>
         </div>
       </div>
     );
   }
 
-  // PROTECCIÓN 2: Bloqueo de aprobación (Solo afiliados reales, no administradores ni compradores)
+  // REQUISITO 2: ESPERANDO APROBACIÓN (Solo afiliados pendientes, no admins ni compradores)
   if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
-        <div className="max-w-md space-y-8 animate-in fade-in zoom-in duration-500">
-          <div className="h-24 w-24 bg-primary/10 rounded-[3rem] flex items-center justify-center text-primary shadow-inner mx-auto">
-            <Clock className="h-12 w-12 animate-pulse" />
+        <div className="max-w-md space-y-10 animate-in fade-in zoom-in duration-500">
+          <div className="h-28 w-28 bg-primary/10 rounded-[3rem] flex items-center justify-center text-primary shadow-inner mx-auto">
+            <Clock className="h-14 w-14 animate-pulse" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
             <p className="text-slate-500 font-medium leading-relaxed">{t.waitingApprovalMsg}</p>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200 hover:bg-slate-50">
-            {t.logout}
-          </Button>
+          <div className="flex flex-col gap-4">
+            <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest">VERIFICAR ESTATUS</Button>
+            <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
+              {t.logout}
+            </Button>
+          </div>
         </div>
       </div>
     );

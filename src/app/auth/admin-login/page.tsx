@@ -9,7 +9,7 @@ import { ShieldAlert, ArrowLeft, Loader2, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useUser } from '@/firebase'
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -20,24 +20,23 @@ export default function AdminLoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  // Manejar resultado de redirección al montar
+  // Sincronizar resultado de Google al volver
   useEffect(() => {
     if (auth) {
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
-          const userEmail = result.user.email?.toLowerCase().trim();
-          if (userEmail === ADMIN_EMAIL.toLowerCase()) {
+          const email = result.user.email?.toLowerCase().trim();
+          if (email === ADMIN_EMAIL.toLowerCase()) {
             router.replace('/dashboard/admin');
           } else {
-            toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta autorizada." });
-            signOut(auth);
+            toast({ variant: "destructive", title: "Acceso Denegado", description: "Esta cuenta no es de administrador." });
           }
         }
       }).catch(console.error);
     }
   }, [auth, router, toast]);
 
-  // Redirección inmediata si ya hay usuario admin
+  // Redirección inmediata si ya está logueado como admin
   useEffect(() => {
     if (!isUserLoading && user && user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
       router.replace('/dashboard/admin');
@@ -50,10 +49,10 @@ export default function AdminLoginPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      // Forzamos redirección para evitar errores 403 de popups
+      // Forzamos redirección para evitar bloqueos de popups
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
+      toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo contactar con Google." });
       setLoading(false);
     }
   }
@@ -65,7 +64,7 @@ export default function AdminLoginPage() {
           <div className="h-24 w-24 rounded-3xl border-4 border-primary/20 border-t-primary animate-spin" />
           <ShieldAlert className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary" />
         </div>
-        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Autenticando Autoridad...</p>
+        <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Autenticando Autoridad...</p>
       </div>
     );
   }
@@ -87,23 +86,23 @@ export default function AdminLoginPage() {
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">Sync Admin</CardTitle>
-              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Acceso Centralizado</CardDescription>
+              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Acceso Maestro</CardDescription>
             </div>
           </CardHeader>
 
           <CardContent className="p-0">
             <Button 
               onClick={handleAdminLogin}
-              className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95" 
+              className="w-full h-18 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95" 
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <><LogIn className="h-5 w-5" /> Entrar como Administrador</>
+              {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                <><LogIn className="h-6 w-6" /> ENTRAR COMO ADMINISTRADOR</>
               )}
             </Button>
             
-            <p className="mt-8 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              Usa exclusivamente la cuenta autorizada para entrar.
+            <p className="mt-10 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+              Usa exclusivamente la cuenta autorizada.<br/> El acceso se valida por correo electrónico.
             </p>
           </CardContent>
         </div>
