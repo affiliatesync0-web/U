@@ -23,7 +23,6 @@ import {
   ShieldCheck,
   UserCircle,
   MessageSquare,
-  Smartphone,
 } from "lucide-react"
 import {
   Sidebar,
@@ -42,15 +41,12 @@ import { NavMain } from "@/components/dashboard/nav-main"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, setDocumentNonBlocking } from "@/firebase"
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
 import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { signOut } from "firebase/auth"
-import { useToast } from "@/hooks/use-toast"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -64,11 +60,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const pathname = usePathname();
   const db = useFirestore();
   const auth = useAuth();
-  const { toast } = useToast();
   
   const [mounted, setMounted] = useState(false);
-  const [phoneToRegister, setPhoneToRegister] = useState("");
-  const [savingPhone, setSavingPhone] = useState(false);
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
   const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
@@ -77,7 +70,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // 1. GESTIÓN DE ACCESO CENTRALIZADA: El Shell es el único que manda sobre la navegación
+  // GESTIÓN DE NAVEGACIÓN CENTRALIZADA
   useEffect(() => {
     if (!mounted || isUserLoading) return;
 
@@ -86,28 +79,26 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
-    // El Administrador SIEMPRE va a su panel, sin importar de dónde venga
+    // Prioridad absoluta del Administrador
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/admin');
       return;
     }
 
-    // Los no-administradores NO pueden entrar al panel admin
+    // Los no-administradores no pueden entrar al panel admin
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/affiliate');
       return;
     }
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
 
-  // Cargamos perfiles de forma paralela
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const buyerRef = useMemoFirebase(() => (db && user ? doc(db, 'buyers', user.uid) : null), [db, user]);
   
-  const { data: affiliateProfile, isLoading: affLoading } = useDoc(affiliateRef);
-  const { data: buyerProfile, isLoading: buyLoading } = useDoc(buyerRef);
+  const { data: affiliateProfile } = useDoc(affiliateRef);
+  const { data: buyerProfile } = useDoc(buyerRef);
 
   const profile = affiliateProfile || buyerProfile;
-  const isProfileLoading = affLoading || buyLoading;
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -119,44 +110,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     router.replace('/auth/login');
   }
 
-  const handleRegisterPhone = async () => {
-    if (!user || !db || phoneToRegister.length < 8) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un WhatsApp válido para continuar." });
-      return;
-    }
-    setSavingPhone(true);
-    try {
-      // Determinamos el rol según el contexto o el correo
-      const targetCollection = isUserAdmin ? 'affiliates' : (role === 'affiliate' ? 'affiliates' : 'buyers');
-      const userRef = doc(db, targetCollection, user.uid);
-      
-      const names = user.displayName?.split(' ') || [];
-      const data = {
-        id: user.uid,
-        firstName: names[0] || 'Usuario',
-        lastName: names.slice(1).join(' ') || 'Sync',
-        email: user.email?.toLowerCase().trim(),
-        whatsappNumber: phoneToRegister.replace(/\D/g, ''),
-        registeredAt: new Date().toISOString(),
-        status: isUserAdmin ? 'Active' : (targetCollection === 'buyers' ? 'Active' : 'Pending'),
-        currentBalance: 0
-      };
-
-      await setDocumentNonBlocking(userRef, data, { merge: true });
-      toast({ title: "Acceso Concedido", description: "Iniciando sesión..." });
-      
-      // Forzamos recarga para refrescar los estados de Firestore
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron guardar los datos." });
-    } finally {
-      setSavingPhone(false);
-    }
-  }
-
-  // ESTADO DE CARGA GLOBAL: Solo durante el inicio de la sesión
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -173,39 +126,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
-  // REQUISITO DE WHATSAPP OBLIGATORIO: Si el usuario no tiene perfil registrado en Firestore (nuevo usuario Google)
-  if (!isProfileLoading && !profile) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-[3.5rem] shadow-2xl p-12 text-center space-y-10 animate-in fade-in zoom-in duration-500 ring-1 ring-slate-100">
-          <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary mx-auto shadow-inner rotate-3">
-            <Smartphone className="h-12 w-12" />
-          </div>
-          <div className="space-y-3">
-            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Vincular Teléfono</h2>
-            <p className="text-slate-500 font-medium text-sm leading-relaxed">Bienvenido, <strong>{user.displayName}</strong>. Por seguridad, vincula tu WhatsApp para activar tu panel.</p>
-          </div>
-          <div className="space-y-6 text-left">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tu WhatsApp (Sin +)</Label>
-              <Input 
-                placeholder="50588888888" 
-                value={phoneToRegister}
-                onChange={(e) => setPhoneToRegister(e.target.value)}
-                className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold px-6 text-xl"
-              />
-            </div>
-            <Button onClick={handleRegisterPhone} className="w-full h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 text-lg" disabled={savingPhone}>
-              {savingPhone ? <Loader2 className="animate-spin" /> : "VINCULAR Y ENTRAR"}
-            </Button>
-            <Button variant="ghost" onClick={handleLogout} className="w-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary">Usar otra cuenta</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // REQUISITO DE APROBACIÓN: Solo para afiliados con estatus pendiente
+  // APROBACIÓN REQUERIDA (Solo para afiliados pendientes)
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
@@ -214,11 +135,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <Clock className="h-14 w-14 animate-pulse" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
-            <p className="text-slate-500 font-medium leading-relaxed">{t.waitingApprovalMsg}</p>
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none">{t.waitingApproval}</h1>
+            <p className="text-slate-500 font-medium leading-relaxed mt-4">Tu cuenta está en revisión. Te avisaremos por email cuando tu panel sea habilitado.</p>
           </div>
           <div className="flex flex-col gap-4">
-            <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest">ACTUALIZAR</Button>
+            <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20">ACTUALIZAR ESTADO</Button>
             <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
               {t.logout}
             </Button>
