@@ -59,12 +59,12 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
 
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
-
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   useEffect(() => {
     setMounted(true);
@@ -74,14 +74,25 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     if (!isUserLoading && mounted) {
       if (!user) {
         router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
-      } else if (role === 'admin' && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        router.push('/auth/admin-login');
+        return;
       }
+
+      const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+      // Si intenta entrar a admin y NO es admin
+      if (role === 'admin' && !isUserAdmin) {
+        router.push('/dashboard/affiliate');
+      }
+      
+      // Si intenta entrar a secciones de usuario siendo admin, lo dejamos pasar o redirigimos (Admin es superuser)
     }
   }, [user, isUserLoading, router, role, mounted]);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
+    // Si es admin, no buscamos perfil en colecciones estándar para evitar errores
+    if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return null;
+    
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
   }, [db, user, role]);
@@ -114,7 +125,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   ]
 
   const getMenu = () => {
-    if (role === 'admin') return adminItems;
+    if (user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return adminItems;
     if (role === 'buyer') return buyerItems;
     return affiliateItems;
   }
@@ -130,8 +141,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     )
   }
 
-  // Si es un afiliado pendiente, mostramos pantalla de espera
-  if (role === 'affiliate' && profile?.status === 'Pending') {
+  // Si es un afiliado pendiente (y NO es admin), mostramos pantalla de espera
+  if (role === 'affiliate' && profile?.status === 'Pending' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
         <div className="max-w-md space-y-8 animate-in zoom-in-95 duration-500">
@@ -168,7 +179,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <span className="font-headline font-black text-lg tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
               <div className="flex items-center gap-1 mt-0.5">
                 <Flame className="h-2 w-2 text-primary" />
-                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">{role === 'buyer' ? 'CLIENT' : (role === 'admin' ? 'SYSTEM' : 'PLATINUM')}</span>
+                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">
+                  {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'SYSTEM' : (role === 'buyer' ? 'CLIENT' : 'PLATINUM')}
+                </span>
               </div>
             </div>
           </div>
@@ -176,7 +189,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarContent className="bg-white px-2">
           <NavMain 
             items={getMenu()} 
-            label={role === "admin" ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
+            label={user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
           />
         </SidebarContent>
         <SidebarFooter className="bg-white border-t border-slate-50 p-4">
@@ -199,7 +212,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100" />
           <div className="flex-1">
              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
-                {role === 'admin' ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
+                {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
              </h2>
           </div>
           <div className="flex items-center gap-4">

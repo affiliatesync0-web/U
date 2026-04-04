@@ -28,18 +28,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
+  const handlePostLoginRedirect = async (user: any) => {
+    if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      router.push('/dashboard/admin');
+      return;
+    }
+    const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+    router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+  }
+
   useEffect(() => {
     if (auth && db) {
       getRedirectResult(auth).then(async (result) => {
         if (result?.user) {
-          const user = result.user;
-          const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-          router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+          await handlePostLoginRedirect(result.user);
         }
       }).catch(console.error);
     }
@@ -51,9 +60,7 @@ export default function LoginPage() {
     const cleanEmail = email.trim().toLowerCase();
     try {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, password)
-      const user = cred.user;
-      const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-      router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+      await handlePostLoginRedirect(cred.user);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Datos de acceso incorrectos." });
     } finally {
@@ -68,14 +75,11 @@ export default function LoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
       const result = await signInWithPopup(auth, provider);
-      const affiliateSnap = await getDoc(doc(db, 'affiliates', result.user.uid));
-      router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+      await handlePostLoginRedirect(result.user);
     } catch (error: any) {
       console.error("Auth Error:", error.code);
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-        const { signInWithRedirect } = await import('firebase/auth');
-        await signInWithRedirect(auth, provider);
-      }
+      const { signInWithRedirect } = await import('firebase/auth');
+      await signInWithRedirect(auth, provider);
     } finally {
       setLoading(false);
     }

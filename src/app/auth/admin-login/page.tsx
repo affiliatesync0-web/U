@@ -21,7 +21,6 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (auth) {
-      // Escuchar cambios de estado
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
           setCurrentUserEmail(user.email);
@@ -31,14 +30,13 @@ export default function AdminLoginPage() {
         }
       });
 
-      // Capturar resultado de redirección (Bypass para bloqueos de popup)
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             router.push('/dashboard/admin');
           } else {
             signOut(auth);
-            toast({ variant: "destructive", title: "Acceso Denegado", description: "Esta cuenta no tiene permisos administrativos." });
+            toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta de administrador oficial." });
           }
         }
       }).catch(console.error);
@@ -64,17 +62,14 @@ export default function AdminLoginPage() {
       const result = await signInWithPopup(auth, provider);
       if (result.user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
         await signOut(auth);
-        toast({ variant: "destructive", title: "Email Incorrecto", description: "Usa la cuenta de administrador autorizada." });
+        toast({ variant: "destructive", title: "Email Incorrecto", description: "Solo la cuenta oficial tiene acceso." });
       } else {
         router.push('/dashboard/admin');
       }
     } catch (error: any) {
       console.error("Auth Error:", error.code);
-      // Si falla el popup por bloqueo, usamos redirección silenciosa
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-        const { signInWithRedirect } = await import('firebase/auth');
-        await signInWithRedirect(auth, provider);
-      }
+      const { signInWithRedirect } = await import('firebase/auth');
+      await signInWithRedirect(auth, provider);
     } finally {
       setLoading(false);
     }
@@ -105,14 +100,14 @@ export default function AdminLoginPage() {
             {currentUserEmail && currentUserEmail.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
               <div className="p-6 bg-amber-50 rounded-2xl border-2 border-amber-100 space-y-4 mb-4">
                 <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
-                  Has iniciado sesión como <b className="text-amber-600">{currentUserEmail}</b>. Debes cambiar de cuenta para entrar como administrador.
+                  Sesión activa: <b className="text-amber-600">{currentUserEmail}</b>. <br/> Debes cambiar a la cuenta de administrador.
                 </p>
                 <Button 
                   onClick={handleLogout}
                   variant="outline" 
                   className="w-full h-10 rounded-xl border-amber-200 text-amber-800 font-black text-[10px] uppercase tracking-widest"
                 >
-                  <LogOut className="h-4 w-4 mr-2" /> Cerrar Sesión
+                  Cerrar Sesión Actual
                 </Button>
               </div>
             )}
