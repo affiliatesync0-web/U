@@ -24,6 +24,7 @@ import {
   UserCircle,
   MessageSquare,
   Zap,
+  GraduationCap,
 } from "lucide-react"
 import {
   Sidebar,
@@ -148,6 +149,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
+    { title: t.manageAcademy, url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: "Gestionar Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: t.affiliateGmailList, url: "/dashboard/admin/affiliates-contacts", icon: Mail },
@@ -159,6 +161,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: t.syncAcademy, url: "/dashboard/affiliate/academy", icon: GraduationCap },
     { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: "IA Sales Copilot", url: "/dashboard/affiliate/sales-copilot", icon: MessageSquare },
     { title: "Bot WhatsApp", url: "/dashboard/affiliate/bot-settings", icon: ShieldCheck },

@@ -200,6 +200,14 @@ export const translations = {
     waitingApprovalMsg: "Your affiliate application is being reviewed by our team. You will receive an email once your account is activated.",
     salesLab: "Sales Lab",
     salesLabDesc: "Elite hooks and strategies to double your conversion rate.",
+    syncAcademy: "Sync Academy",
+    academyDesc: "Exclusive digital marketing training for partners.",
+    manageAcademy: "Manage Academy",
+    addLesson: "Add New Lesson",
+    lessonTitle: "Lesson Title",
+    lessonDesc: "Lesson Description",
+    uploadVideo: "Upload Video File",
+    pastingLink: "Paste Video Link",
   },
   es: {
     brand: "Sync Connect",
@@ -401,5 +409,13 @@ export const translations = {
     waitingApprovalMsg: "Tu solicitud de afiliado está siendo revisada por nuestro equipo. Recibirás un correo una vez que tu cuenta sea activada.",
     salesLab: "Laboratorio de Ventas",
     salesLabDesc: "Ganchos elite y estrategias para duplicar tu tasa de cierre.",
+    syncAcademy: "Academia Sync",
+    academyDesc: "Entrenamiento exclusivo de marketing digital para socios.",
+    manageAcademy: "Gestionar Academia",
+    addLesson: "Nueva Lección",
+    lessonTitle: "Título de la Lección",
+    lessonDesc: "Descripción de la Clase",
+    uploadVideo: "Subir Archivo de Video",
+    pastingLink: "Pegar Link de Video",
   }
 };
