@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,7 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -53,6 +53,30 @@ function RegisterContent() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
+  useEffect(() => {
+    if (auth && db) {
+      getRedirectResult(auth).then(async (result) => {
+        if (result?.user) {
+          const user = result.user;
+          const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
+          const buySnap = await getDoc(doc(db, 'buyers', user.uid));
+
+          if (affSnap.exists() || buySnap.exists()) {
+            router.push(affSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+          } else {
+            setFormData(prev => ({
+              ...prev,
+              firstName: user.displayName?.split(' ')[0] || '',
+              lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+              email: user.email || ''
+            }));
+            setStep('info');
+          }
+        }
+      }).catch(console.error);
+    }
+  }, [auth, db, router]);
+
   const handleGoogleLogin = async () => {
     if (!auth || !db) return;
     setLoading(true);
@@ -60,33 +84,28 @@ function RegisterContent() {
     provider.setCustomParameters({ prompt: 'select_account' });
 
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      await signInWithPopup(auth, provider);
+      if (auth.currentUser) {
+        const user = auth.currentUser;
+        const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+        const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
 
-      const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-      const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
+        if (affiliateSnap.exists() || buyerSnap.exists()) {
+          router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+          return;
+        }
 
-      if (affiliateSnap.exists() || buyerSnap.exists()) {
-        router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
-        return;
+        setFormData(prev => ({
+          ...prev,
+          firstName: user.displayName?.split(' ')[0] || '',
+          lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+          email: user.email || ''
+        }));
+        setStep('info');
       }
-
-      setFormData(prev => ({
-        ...prev,
-        firstName: user.displayName?.split(' ')[0] || '',
-        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-        email: user.email || ''
-      }));
-      setStep('info');
-      toast({ title: "Información adicional", description: "Completa tu número de WhatsApp para finalizar." });
-
     } catch (error: any) {
-      console.error("Auth Error:", error);
-      try {
-        await signInWithRedirect(auth, provider);
-      } catch (err) {
-        toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
-      }
+      console.warn("Popup blocked, trying redirect...");
+      await signInWithRedirect(auth, provider);
     } finally {
       setLoading(false);
     }
@@ -95,7 +114,7 @@ function RegisterContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.phone) {
-      toast({ variant: "destructive", title: "Teléfono requerido", description: "Necesitamos tu WhatsApp para contactarte." });
+      toast({ variant: "destructive", title: "WhatsApp requerido", description: "Es necesario para la comunicación oficial." });
       return;
     }
 

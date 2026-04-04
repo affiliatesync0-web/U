@@ -13,7 +13,7 @@ import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, signInWithRedirect } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, signInWithRedirect, signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -53,7 +53,7 @@ export default function LoginPage() {
         }
       }).catch(console.error);
     }
-  }, [auth, db, router]);
+  }, [auth, db]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,7 +78,7 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
       if (auth.currentUser) await handlePostLoginRedirect(auth.currentUser);
     } catch (error: any) {
-      console.warn("Popup blocked, trying redirect...");
+      console.warn("Popup fallido, usando redirección...");
       await signInWithRedirect(auth, provider);
     }
   };

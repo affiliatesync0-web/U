@@ -21,14 +21,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (auth) {
-      // 1. Detectar si ya hay una sesión activa del admin
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user && user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          router.push('/dashboard/admin');
-        }
-      });
-
-      // 2. Capturar resultado de redirección (si el popup falló antes)
+      // Capturar resultado de redirección si el popup falló
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -38,8 +31,13 @@ export default function AdminLoginPage() {
             toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta de administrador oficial." });
           }
         }
-      }).catch((error) => {
-        console.error("Auth Error:", error);
+      }).catch(console.error);
+
+      // Detectar sesión activa del admin
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user && user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          router.push('/dashboard/admin');
+        }
       });
 
       return () => unsubscribe();
@@ -49,20 +47,21 @@ export default function AdminLoginPage() {
   const handleGoogleAdminLogin = async () => {
     if (!auth) return;
     setLoading(true);
+    
+    // Limpieza preventiva: cerramos cualquier sesión antes de entrar como admin
+    await signOut(auth);
+
     const provider = new GoogleAuthProvider();
-    // Forzamos selección de cuenta para evitar el error 403 de sesiones automáticas
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      // Intentamos con popup primero
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      console.warn("Popup blocked or failed, trying redirect...", error.code);
-      // Si falla el popup, usamos redirección que es infalible
+      console.warn("Popup fallido, intentando redirección...", error.code);
       try {
         await signInWithRedirect(auth, provider);
       } catch (err) {
-        toast({ variant: "destructive", title: "Error de conexión", description: "Verifica tu conexión a internet o los dominios en Firebase." });
+        toast({ variant: "destructive", title: "Error de conexión", description: "Verifica los dominios autorizados en Firebase." });
         setLoading(false);
       }
     }

@@ -47,6 +47,8 @@ import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { signOut } from "firebase/auth"
+import { useAuth } from "@/firebase"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -58,6 +60,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const db = useFirestore();
+  const auth = useAuth();
   const [mounted, setMounted] = useState(false);
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
@@ -66,7 +69,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // Redirección de seguridad
+  // Redirección de seguridad y roles
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
@@ -76,15 +79,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
       const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
-      // El administrador SIEMPRE puede ver el panel de admin
+      // Prioridad absoluta al admin: si es admin, entra a su panel
       if (isUserAdmin && role !== 'admin') {
         router.push('/dashboard/admin');
         return;
       }
 
-      // Un usuario normal NO puede ver el panel de admin
+      // Si no es admin e intenta entrar a panel admin, lo mandamos a login
       if (!isUserAdmin && role === 'admin') {
-        router.push('/dashboard/affiliate');
+        router.push('/auth/admin-login');
         return;
       }
     }
@@ -93,7 +96,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    if (isUserAdmin) return null; // El admin no necesita perfil de afiliado
+    if (isUserAdmin) return null;
     
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
@@ -137,6 +140,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     return affiliateItems;
   }
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/');
+  }
+
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -145,8 +153,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     )
   }
 
-  // Pantalla de espera para afiliados pendientes (Excepto Admin)
   const isUserAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  
+  // Pantalla de espera para afiliados pendientes (Excepto Admin)
   if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
@@ -158,8 +167,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
             <p className="text-slate-500 font-medium leading-relaxed">{t.waitingApprovalMsg}</p>
           </div>
-          <Button asChild variant="outline" className="h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
-            <Link href="/">{t.logout}</Link>
+          <Button onClick={handleLogout} variant="outline" className="h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
+            {t.logout}
           </Button>
         </div>
       </div>
@@ -198,11 +207,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarFooter className="bg-white border-t border-slate-50 p-4">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild className="h-12 rounded-xl text-slate-500 hover:text-primary transition-colors">
-                <Link href="/">
-                  <LogOut className="h-5 w-5" />
-                  <span className="font-black uppercase text-[11px] tracking-widest">{t.logout}</span>
-                </Link>
+              <SidebarMenuButton onClick={handleLogout} className="h-12 rounded-xl text-slate-500 hover:text-primary transition-colors">
+                <LogOut className="h-5 w-5" />
+                <span className="font-black uppercase text-[11px] tracking-widest">{t.logout}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
