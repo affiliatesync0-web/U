@@ -1,10 +1,11 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Tag, Loader2, Landmark, User, Info, Flame, Link as LinkIcon, Check } from 'lucide-react'
+import { Search, Tag, Loader2, Landmark, User, Info, Flame, Link as LinkIcon, Check, GraduationCap, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
@@ -22,7 +23,11 @@ export default function AffiliateProductsPage() {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
-  const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
+  const productsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, 'products');
+  }, [db]);
+  
   const { data: products, isLoading } = useCollection(productsQuery);
 
   const handleCopyLink = (productId: string) => {
@@ -31,8 +36,8 @@ export default function AffiliateProductsPage() {
     setCopiedId(productId);
     setTimeout(() => setCopiedId(null), 2000);
     toast({
-      title: t.salesLinkCopied,
-      description: "Usa este enlace para enviarlo a tus clientes y cerrar ventas directas.",
+      title: "¡Link de Venta Copiado!",
+      description: "Usa este enlace para enviarlo a tus clientes. La comisión se asignará automáticamente a tu cuenta.",
     });
   };
 
@@ -56,14 +61,14 @@ export default function AffiliateProductsPage() {
               <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                 <Flame className="h-6 w-6 animate-pulse" />
               </div>
-              <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Sync Connect Marketplace</span>
+              <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Sync Marketplace Elite</span>
             </div>
-            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Mercado de <span className="text-primary">Afiliación</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Encuentra productos ganadores y obtén tus links de divulgación para empezar a generar comisiones.</p>
+            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Oportunidades de <span className="text-primary">Ganancia</span></h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Elige los cursos con mayor conversión, obtén tus enlaces y escala tu negocio digital hoy mismo.</p>
           </div>
           <div className="relative w-full md:w-[450px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
-            <Input className="pl-16 h-20 rounded-[2rem] border-none bg-white shadow-2xl shadow-slate-200/50 text-lg font-bold placeholder:text-slate-300" placeholder="Buscar productos..." />
+            <Input className="pl-16 h-20 rounded-[2.5rem] border-none bg-white shadow-2xl shadow-slate-200/50 text-lg font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Buscar cursos ganadores..." />
           </div>
         </div>
 
@@ -74,9 +79,10 @@ export default function AffiliateProductsPage() {
         ) : !products || products.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
             <div className="h-24 w-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center mb-8 rotate-12">
-              <Tag className="h-12 w-12 text-slate-300" />
+              <GraduationCap className="h-12 w-12 text-slate-300" />
             </div>
-            <h3 className="text-2xl font-black text-slate-400 mb-3">Marketplace en Preparación</h3>
+            <h3 className="text-2xl font-black text-slate-400 mb-3">Próximamente Cursos VIP</h3>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">La administración está preparando los mejores productos para ti.</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -85,8 +91,8 @@ export default function AffiliateProductsPage() {
               const displayImageUrl = product.imageUrl || placeholderImg.imageUrl;
 
               return (
-                <Card key={product.id} className="border-none shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden flex flex-col rounded-[3rem] bg-white group ring-1 ring-slate-100 hover:-translate-y-3">
-                  <div className="relative h-64 w-full overflow-hidden">
+                <Card key={product.id} className="border-none shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] transition-all duration-700 overflow-hidden flex flex-col rounded-[3.5rem] bg-white group ring-1 ring-slate-100 hover:-translate-y-4">
+                  <div className="relative h-72 w-full overflow-hidden">
                     <Image 
                       src={displayImageUrl} 
                       alt={product.name} 
@@ -94,45 +100,47 @@ export default function AffiliateProductsPage() {
                       className="object-cover transition-transform duration-1000 group-hover:scale-110" 
                       unoptimized={product.imageUrl?.startsWith('data:')}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent opacity-90" />
+                    <div className="absolute top-6 left-6">
+                      <div className="bg-primary px-5 py-2 rounded-2xl shadow-2xl flex items-center gap-2">
+                        <Sparkles className="h-3 w-3 text-white animate-pulse" />
+                        <span className="text-white font-black text-[9px] uppercase tracking-widest">TOP VENTAS</span>
+                      </div>
+                    </div>
                     <div className="absolute top-6 right-6">
-                      <Badge className="bg-white/95 text-primary font-black px-5 py-2 rounded-2xl shadow-2xl border-none text-[10px] tracking-widest">
+                      <Badge className="bg-white/95 text-slate-900 font-black px-5 py-2 rounded-2xl shadow-2xl border-none text-[9px] tracking-widest">
                         {product.category.toUpperCase()}
                       </Badge>
                     </div>
-                    <div className="absolute bottom-6 left-8 text-white">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mb-1.5">CÓDIGO DE VENTA</p>
-                      <p className="font-mono font-black text-base tracking-[0.2em] uppercase bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-xl border border-white/20">
-                        {product.code}
-                      </p>
+                    <div className="absolute bottom-8 left-8 right-8 text-white">
+                      <p className="text-[9px] font-black uppercase tracking-[0.4em] text-primary mb-2">IDENTIFICADOR: {product.code}</p>
+                      <h3 className="text-2xl font-headline font-black tracking-tight leading-tight line-clamp-2 uppercase">
+                        {product.name}
+                      </h3>
                     </div>
                   </div>
-                  <CardHeader className="pt-8 pb-3 px-8">
-                    <CardTitle className="text-2xl font-headline font-black text-slate-900 group-hover:text-primary transition-colors duration-500 line-clamp-2 min-h-[4rem] tracking-tight">
-                      {product.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-8 pb-10 pt-3 flex-1 flex flex-col gap-6">
-                    <div className="flex items-center justify-between p-6 rounded-[2rem] bg-slate-50 border border-slate-100 shadow-inner group-hover:bg-primary/5 transition-colors duration-500">
-                      <div className="space-y-1.5">
-                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">PRECIO</p>
+                  
+                  <CardContent className="p-10 flex-1 flex flex-col gap-8">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 shadow-inner group-hover:bg-primary/5 transition-colors duration-500">
+                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1.5">PRECIO PUBLICO</p>
                         <p className="font-black text-3xl text-slate-900 tracking-tighter">${product.price?.toFixed(2)}</p>
                       </div>
-                      <div className="space-y-1.5 text-right">
-                        <p className="text-[10px] text-primary uppercase font-black tracking-widest">COMISIÓN</p>
+                      <div className="p-6 rounded-[2rem] bg-green-50 border border-green-100 shadow-inner group-hover:bg-green-100/50 transition-colors duration-500 text-right">
+                        <p className="text-[9px] text-green-600 uppercase font-black tracking-widest mb-1.5">TU GANANCIA</p>
                         <p className="font-black text-3xl text-green-600 tracking-tighter">{product.commissionRate}%</p>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="space-y-4">
                       <Button 
                         onClick={() => handleCopyLink(product.id)}
-                        className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest gap-3 shadow-2xl shadow-primary/20"
+                        className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-4 shadow-2xl shadow-primary/30 transition-all hover:scale-[1.03] active:scale-95"
                       >
-                        {copiedId === product.id ? <Check className="h-5 w-5" /> : <LinkIcon className="h-5 w-5" />}
-                        Copiar Link de Divulgación
+                        {copiedId === product.id ? <Check className="h-6 w-6" /> : <LinkIcon className="h-6 w-6" />}
+                        COPIAR LINK DE DIVULGACIÓN
                       </Button>
-                      <AffiliateDialog product={product} t={t} />
+                      <ProductDetailsDialog product={product} />
                     </div>
                   </CardContent>
                 </Card>
@@ -145,47 +153,68 @@ export default function AffiliateProductsPage() {
   )
 }
 
-function AffiliateDialog({ product, t }: any) {
+function ProductDetailsDialog({ product }: any) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" className="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest h-10 hover:text-primary">
-          <Info className="mr-2 h-3 w-3" /> Ver detalles bancarios
+        <Button variant="ghost" className="w-full text-slate-400 font-black text-[9px] uppercase tracking-widest h-12 rounded-2xl hover:bg-slate-50 hover:text-primary transition-all">
+          <Info className="mr-2 h-4 w-4" /> Ver ficha técnica y beneficios
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-        <div className="bg-primary p-12 text-white text-center relative overflow-hidden">
-           <Flame className="h-20 w-20 mx-auto mb-6 drop-shadow-2xl animate-pulse" />
-           <DialogHeader>
-             <DialogTitle className="text-4xl font-headline font-black text-white text-center tracking-tighter leading-tight">
-                Datos de Venta Directa
-             </DialogTitle>
-           </DialogHeader>
+      <DialogContent className="max-w-2xl rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+        <div className="bg-slate-900 p-12 text-white relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-12 opacity-10">
+             <GraduationCap className="h-40 w-40" />
+           </div>
+           <div className="relative z-10">
+             <Badge className="bg-primary border-none text-white font-black px-4 py-1.5 rounded-full text-[9px] tracking-[0.2em] mb-6">CURSO PREMIUM</Badge>
+             <DialogHeader>
+               <DialogTitle className="text-4xl font-headline font-black text-white tracking-tighter leading-[1.1] uppercase">
+                  {product.name}
+               </DialogTitle>
+             </DialogHeader>
+           </div>
         </div>
-        <div className="p-10 space-y-8">
-          <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-200 space-y-6 shadow-inner">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
-               <Landmark className="h-5 w-5 text-primary" /> Información de Depósito
-            </h3>
-            <div className="space-y-6">
-               <div className="space-y-2">
-                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest px-1">Banco</p>
-                 <p className="font-black text-2xl text-slate-900 tracking-tight">{product.payoutBankId}</p>
-               </div>
-               <div className="space-y-2">
-                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest px-1">Número de Cuenta</p>
-                 <div className="p-6 bg-white rounded-[1.5rem] border-2 border-primary/20 font-mono font-black text-3xl tracking-[0.3em] text-primary text-center">
-                   {product.payoutBankAccountNumber}
-                 </div>
-               </div>
-               <div className="space-y-2">
-                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest px-1">Titular</p>
-                 <p className="font-black text-lg flex items-center gap-3 text-slate-800">
-                   <User className="h-4 w-4 text-slate-500" /> {product.payoutBankAccountHolderName}
-                 </p>
-               </div>
+        
+        <div className="p-12 space-y-10">
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Propuesta de Valor</h4>
+            <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 shadow-inner">
+              <p className="text-sm font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
+                {product.description || "Este curso ha sido diseñado para transformar los resultados de tus clientes. Incluye material actualizado, soporte experto y una comunidad activa."}
+              </p>
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Resumen de Pagos</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm font-bold text-slate-700">
+                  <span className="opacity-50">Precio Final:</span>
+                  <span>${product.price?.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm font-black text-green-600">
+                  <span className="opacity-50">Tu Comisión:</span>
+                  <span className="bg-green-50 px-3 py-1 rounded-lg border border-green-100">${((product.price * product.commissionRate) / 100).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Garantía Sync</h4>
+              <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                <ShieldCheck className="h-8 w-8 text-blue-500 shrink-0" />
+                <p className="text-[9px] font-black text-blue-700 uppercase tracking-widest leading-relaxed">
+                  Pago 100% seguro y comisiones garantizadas por la plataforma Sync Connect.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Button className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl group">
+            Empezar a promover este curso <ArrowRight className="ml-3 h-4 w-4 transition-transform group-hover:translate-x-2" />
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
