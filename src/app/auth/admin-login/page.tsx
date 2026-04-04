@@ -1,72 +1,32 @@
 
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { ShieldAlert, ArrowLeft, Loader2, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth, useUser } from '@/firebase'
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth'
+import { useAuth } from '@/firebase'
+import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth'
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const auth = useAuth()
-  const { user, isUserLoading } = useUser()
   const [loading, setLoading] = useState(false)
-
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-
-  // Sincronizar resultado de Google al volver
-  useEffect(() => {
-    if (auth) {
-      getRedirectResult(auth).then((result) => {
-        if (result?.user) {
-          const email = result.user.email?.toLowerCase().trim();
-          if (email === ADMIN_EMAIL.toLowerCase()) {
-            router.replace('/dashboard/admin');
-          } else {
-            toast({ variant: "destructive", title: "Acceso Denegado", description: "Esta cuenta no es de administrador." });
-          }
-        }
-      }).catch(console.error);
-    }
-  }, [auth, router, toast]);
-
-  // Redirección inmediata si ya está logueado como admin
-  useEffect(() => {
-    if (!isUserLoading && user && user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
-      router.replace('/dashboard/admin');
-    }
-  }, [user, isUserLoading, router]);
 
   const handleAdminLogin = async () => {
     if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    // FORZAR SELECTOR DE CUENTA PARA EVITAR ERROR 403
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      // Forzamos redirección para evitar bloqueos de popups
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo contactar con Google." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo iniciar Google." });
       setLoading(false);
     }
-  }
-
-  if (isUserLoading || (user && user.email?.toLowerCase().trim() === ADMIN_EMAIL)) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="relative">
-          <div className="h-24 w-24 rounded-3xl border-4 border-primary/20 border-t-primary animate-spin" />
-          <ShieldAlert className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary" />
-        </div>
-        <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Autenticando Autoridad...</p>
-      </div>
-    );
   }
 
   return (
@@ -102,7 +62,7 @@ export default function AdminLoginPage() {
             </Button>
             
             <p className="mt-10 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              Usa exclusivamente la cuenta autorizada.<br/> El acceso se valida por correo electrónico.
+              Usa exclusivamente la cuenta autorizada.<br/> El acceso se valida al entrar.
             </p>
           </CardContent>
         </div>

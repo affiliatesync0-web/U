@@ -1,8 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,57 +11,26 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { useAuth, useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, getRedirectResult, signInWithRedirect } from 'firebase/auth'
+import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth'
 import { doc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 export default function LoginPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const { t } = useLanguage()
   const auth = useAuth()
   const db = useFirestore()
-  const { user, isUserLoading } = useUser()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
-
-  // Capturar resultado de redirección al montar
-  useEffect(() => {
-    if (auth) {
-      getRedirectResult(auth).then((result) => {
-        if (result?.user) {
-          // El DashboardShell se encargará de la redirección basada en el email
-          toast({ title: "Acceso Exitoso", description: `Bienvenido, ${result.user.displayName || 'Usuario'}` });
-        }
-      }).catch((error) => {
-        if (error.code !== 'auth/web-storage-unsupported') {
-          console.error("Auth error:", error);
-        }
-      });
-    }
-  }, [auth, toast]);
-
-  // Si ya hay un usuario, ir al dashboard correspondiente
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        router.replace('/dashboard/admin');
-      } else {
-        router.replace('/dashboard/affiliate');
-      }
-    }
-  }, [user, isUserLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,29 +47,15 @@ export default function LoginPage() {
     if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    // FORZAR SELECTOR DE CUENTA PARA EVITAR ERROR 403 Y PERMITIR CAMBIO DE CUENTA
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      // Usamos redirección para evitar error 403 de popups en puerto 6000
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
       setLoading(false);
     }
   };
-
-  if (isUserLoading || user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="relative">
-            <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
-            <ImageIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary/20" />
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Abriendo Sesión...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">

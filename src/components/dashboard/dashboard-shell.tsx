@@ -77,7 +77,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // 1. GESTIÓN DE ACCESO Y REDIRECCIONES (SOLO CUANDO TODO ESTÁ CARGADO)
+  // 1. GESTIÓN DE ACCESO CENTRALIZADA
   useEffect(() => {
     if (!mounted || isUserLoading) return;
 
@@ -94,15 +94,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     }
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
 
-  // CARGA DE PERFIL (Solo para no-admins o para validar datos de contacto)
-  const profileRef = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    // Si no es admin, buscamos en la colección que corresponde al rol actual de la página
-    const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
-    return doc(db, collectionName, user.uid);
-  }, [db, user, role]);
+  // Intentar cargar perfil de afiliado o comprador
+  const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
+  const buyerRef = useMemoFirebase(() => (db && user ? doc(db, 'buyers', user.uid) : null), [db, user]);
+  
+  const { data: affiliateProfile, isLoading: affLoading } = useDoc(affiliateRef);
+  const { data: buyerProfile, isLoading: buyLoading } = useDoc(buyerRef);
 
-  const { data: profile, isLoading: profileLoading } = useDoc(profileRef);
+  const profile = affiliateProfile || buyerProfile;
+  const isProfileLoading = affLoading || buyLoading;
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -121,27 +121,30 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     }
     setSavingPhone(true);
     try {
-      // Guardar en la colección que corresponda según dónde esté intentando entrar
-      const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
-      const userRef = doc(db, collectionName, user.uid);
-      const names = user.displayName?.split(' ') || [];
+      // Si el usuario no existe en ninguna tabla, lo creamos como comprador por defecto si no es admin
+      const targetCollection = isUserAdmin ? 'affiliates' : (role === 'affiliate' ? 'affiliates' : 'buyers');
+      const userRef = doc(db, targetCollection, user.uid);
       
-      await setDocumentNonBlocking(userRef, {
+      const names = user.displayName?.split(' ') || [];
+      const data = {
         id: user.uid,
         firstName: names[0] || 'Usuario',
         lastName: names.slice(1).join(' ') || 'Sync',
         email: user.email?.toLowerCase().trim(),
         whatsappNumber: phoneToRegister.replace(/\D/g, ''),
         registeredAt: new Date().toISOString(),
-        status: isUserAdmin ? 'Active' : 'Pending',
+        status: isUserAdmin ? 'Active' : (targetCollection === 'buyers' ? 'Active' : 'Pending'),
         currentBalance: 0
-      }, { merge: true });
+      };
 
-      toast({ title: "WhatsApp Vinculado", description: "Configuración guardada exitosamente." });
-      // Forzar recarga para que el useDoc detecte el nuevo perfil
-      window.location.reload();
+      await setDocumentNonBlocking(userRef, data, { merge: true });
+      toast({ title: "Acceso Concedido", description: "Iniciando sesión..." });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "No pudimos guardar tus datos de contacto." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron guardar los datos." });
     } finally {
       setSavingPhone(false);
     }
@@ -150,20 +153,22 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   // ESTADO DE CARGA GLOBAL
   if (!mounted || isUserLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-6">
-          <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando Accesos...</p>
+          <div className="relative">
+            <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
+            <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary/20" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando Identidad...</p>
         </div>
       </div>
     )
   }
 
-  // SI NO HAY USUARIO, NO RENDERIZAMOS NADA (El useEffect ya está redirigiendo)
   if (!user) return null;
 
-  // REQUISITO 1: VINCULAR WHATSAPP (Solo para no-admins que no tienen perfil guardado)
-  if (!isUserAdmin && !profileLoading && (!profile || !profile.whatsappNumber)) {
+  // REQUISITO DE WHATSAPP: Solo para no-admins que no tienen perfil registrado
+  if (!isUserAdmin && !isProfileLoading && !profile) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-[3.5rem] shadow-2xl p-12 text-center space-y-10 animate-in fade-in zoom-in duration-500 ring-1 ring-slate-100">
@@ -171,12 +176,12 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <Smartphone className="h-12 w-12" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Paso Final</h2>
-            <p className="text-slate-500 font-medium text-sm leading-relaxed">Para activar tu cuenta en Sync Connect, vincula tu número de WhatsApp oficial.</p>
+            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Finalizar Registro</h2>
+            <p className="text-slate-500 font-medium text-sm leading-relaxed">Bienvenido, <strong>{user.displayName}</strong>. Vincula tu número de WhatsApp para activar tu panel.</p>
           </div>
           <div className="space-y-6 text-left">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tu WhatsApp (Sin símbolos)</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tu WhatsApp (Sin +)</Label>
               <Input 
                 placeholder="50588888888" 
                 value={phoneToRegister}
@@ -187,15 +192,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <Button onClick={handleRegisterPhone} className="w-full h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 text-lg" disabled={savingPhone}>
               {savingPhone ? <Loader2 className="animate-spin" /> : "VINCULAR Y ENTRAR"}
             </Button>
-            <Button variant="ghost" onClick={handleLogout} className="w-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary">Cancelar y Salir</Button>
+            <Button variant="ghost" onClick={handleLogout} className="w-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary">Usar otra cuenta</Button>
           </div>
         </div>
       </div>
     );
   }
 
-  // REQUISITO 2: ESPERANDO APROBACIÓN (Solo afiliados pendientes, no admins ni compradores)
-  if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
+  // REQUISITO DE APROBACIÓN: Solo para afiliados con estatus pendiente
+  if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
         <div className="max-w-md space-y-10 animate-in fade-in zoom-in duration-500">
@@ -207,7 +212,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <p className="text-slate-500 font-medium leading-relaxed">{t.waitingApprovalMsg}</p>
           </div>
           <div className="flex flex-col gap-4">
-            <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest">VERIFICAR ESTATUS</Button>
+            <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest">ACTUALIZAR</Button>
             <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
               {t.logout}
             </Button>
