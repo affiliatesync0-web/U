@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -22,7 +21,6 @@ import {
   Clock,
   ShieldCheck,
   UserCircle,
-  MessageSquare,
   Zap,
   GraduationCap,
 } from "lucide-react"
@@ -43,6 +41,7 @@ import { NavMain } from "@/components/dashboard/nav-main"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
 import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
@@ -72,7 +71,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // GESTIÓN DE NAVEGACIÓN CENTRALIZADA
   useEffect(() => {
     if (!mounted || isUserLoading) return;
 
@@ -81,13 +79,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
-    // Prioridad absoluta del Administrador: Si es admin y no está en /admin, moverlo allí.
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/admin');
       return;
     }
 
-    // Los no-administradores no pueden entrar al panel admin
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/affiliate');
       return;
@@ -109,7 +105,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!mounted || isUserLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
             <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
@@ -123,21 +119,20 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
-  // APROBACIÓN REQUERIDA (Solo para afiliados pendientes y que NO son administradores)
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex items-center justify-center p-6 text-center text-foreground">
         <div className="max-w-md space-y-10 animate-in fade-in zoom-in duration-500">
           <div className="h-28 w-28 bg-primary/10 rounded-[3rem] flex items-center justify-center text-primary shadow-inner mx-auto">
             <Clock className="h-14 w-14 animate-pulse" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none">{t.waitingApproval}</h1>
-            <p className="text-slate-500 font-medium leading-relaxed mt-4">Tu cuenta está en revisión. Te avisaremos por email cuando tu panel sea habilitado.</p>
+            <h1 className="text-4xl font-headline font-black tracking-tight leading-none">{t.waitingApproval}</h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-4">Tu cuenta está en revisión. Te avisaremos por email cuando tu panel sea habilitado.</p>
           </div>
           <div className="flex flex-col gap-4">
             <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20">ACTUALIZAR ESTADO</Button>
-            <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
+            <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200 dark:border-slate-800">
               {t.logout}
             </Button>
           </div>
@@ -163,8 +158,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: t.syncAcademy, url: "/dashboard/affiliate/academy", icon: GraduationCap },
     { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
-    { title: "IA Sales Copilot", url: "/dashboard/affiliate/sales-copilot", icon: MessageSquare },
-    { title: "Bot WhatsApp", url: "/dashboard/affiliate/bot-settings", icon: ShieldCheck },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
     { title: "Mi Perfil / Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
@@ -183,10 +176,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" className="border-r border-slate-100">
-        <SidebarHeader className="bg-white">
+      <Sidebar collapsible="icon" className="border-r border-slate-100 dark:border-slate-800">
+        <SidebarHeader className="bg-white dark:bg-slate-900 transition-colors">
           <div className="flex items-center gap-4 px-3 py-10">
-            <div className="relative h-14 w-14 overflow-hidden rounded-[1.25rem] bg-white shadow-2xl ring-1 ring-slate-100 flex items-center justify-center">
+            <div className="relative h-14 w-14 overflow-hidden rounded-[1.25rem] bg-white dark:bg-slate-800 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-700 flex items-center justify-center">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
@@ -194,7 +187,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               )}
             </div>
             <div className="flex flex-col gap-0 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-black text-xl tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
+              <span className="font-headline font-black text-xl tracking-tight text-slate-900 dark:text-white">Sync <span className="text-primary">Connect</span></span>
               <div className="flex items-center gap-1 mt-1">
                 <Flame className="h-2.5 w-2.5 text-primary" />
                 <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">
@@ -204,16 +197,16 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             </div>
           </div>
         </SidebarHeader>
-        <SidebarContent className="bg-white px-2">
+        <SidebarContent className="bg-white dark:bg-slate-900 transition-colors px-2">
           <NavMain 
             items={getMenu()} 
             label={isUserAdmin ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
           />
         </SidebarContent>
-        <SidebarFooter className="bg-white border-t border-slate-50 p-4">
+        <SidebarFooter className="bg-white dark:bg-slate-900 border-t border-slate-50 dark:border-slate-800 p-4 transition-colors">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} className="h-12 rounded-xl text-slate-500 hover:text-primary transition-colors">
+              <SidebarMenuButton onClick={handleLogout} className="h-12 rounded-xl text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
                 <LogOut className="h-5 w-5" />
                 <span className="font-black uppercase text-[11px] tracking-widest">{t.logout}</span>
               </SidebarMenuButton>
@@ -222,18 +215,21 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      <SidebarInset className="bg-[#F8FAFC]">
-        <header className="flex h-20 shrink-0 items-center gap-2 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-30 px-6">
+      <SidebarInset className="bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
+        <header className="flex h-20 shrink-0 items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-6 transition-colors">
           <SidebarTrigger className="-ml-1 text-primary" />
-          <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100" />
+          <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100 dark:bg-slate-800" />
           <div className="flex-1">
              <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
                 {isUserAdmin ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
              </h2>
           </div>
-          <LanguageToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
         </header>
-        <main className="flex-1 p-6 md:p-12">
+        <main className="flex-1 p-6 md:p-12 text-foreground">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>
