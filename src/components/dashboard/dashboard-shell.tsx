@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   UserCircle,
   MessageSquare,
+  Zap,
 } from "lucide-react"
 import {
   Sidebar,
@@ -93,10 +94,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
 
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
-  const buyerRef = useMemoFirebase(() => (db && user ? doc(db, 'buyers', user.uid) : null), [db, user]);
-  
-  const { data: affiliateProfile, isLoading: affLoading } = useDoc(affiliateRef);
-  const { data: buyerProfile } = useDoc(buyerRef);
+  const { data: affiliateProfile } = useDoc(affiliateRef);
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -160,6 +158,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: "IA Sales Copilot", url: "/dashboard/affiliate/sales-copilot", icon: MessageSquare },
     { title: "Bot WhatsApp", url: "/dashboard/affiliate/bot-settings", icon: ShieldCheck },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },

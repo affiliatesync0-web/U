@@ -198,6 +198,8 @@ export const translations = {
     finishExam: "Finish and Submit Application",
     waitingApproval: "Under Review",
     waitingApprovalMsg: "Your affiliate application is being reviewed by our team. You will receive an email once your account is activated.",
+    salesLab: "Sales Lab",
+    salesLabDesc: "Elite hooks and strategies to double your conversion rate.",
   },
   es: {
     brand: "Sync Connect",
@@ -397,5 +399,7 @@ export const translations = {
     finishExam: "Finalizar y Enviar Solicitud",
     waitingApproval: "En Revisión",
     waitingApprovalMsg: "Tu solicitud de afiliado está siendo revisada por nuestro equipo. Recibirás un correo una vez que tu cuenta sea activada.",
+    salesLab: "Laboratorio de Ventas",
+    salesLabDesc: "Ganchos elite y estrategias para duplicar tu tasa de cierre.",
   }
 };
