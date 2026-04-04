@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, ExternalLink, Globe, Zap, Copy, Check } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -27,8 +27,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [currentHostname, setCurrentHostname] = useState("")
-  const [copied, setCopied] = useState(false)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -36,25 +34,14 @@ export default function LoginPage() {
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentHostname(window.location.hostname)
-    }
-    
     if (auth && db) {
-      // Capturar resultado de redirección al volver de Google
       getRedirectResult(auth).then(async (result) => {
         if (result?.user) {
           const user = result.user;
           const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-          if (affiliateSnap.exists()) {
-            router.push('/dashboard/affiliate');
-          } else {
-            router.push('/dashboard/buyer');
-          }
+          router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
         }
-      }).catch((error) => {
-        console.error("Login Result Error:", error);
-      });
+      }).catch(console.error);
     }
   }, [auth, db, router]);
 
@@ -68,40 +55,31 @@ export default function LoginPage() {
       const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
       router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Datos incorrectos." });
+      toast({ variant: "destructive", title: "Error", description: "Datos de acceso incorrectos." });
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGoogleLogin = async (method: 'popup' | 'redirect' = 'popup') => {
+  const handleGoogleLogin = async () => {
     if (!auth || !db) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      if (method === 'popup') {
-        const result = await signInWithPopup(auth, provider);
-        const affiliateSnap = await getDoc(doc(db, 'affiliates', result.user.uid));
-        router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
-      } else {
-        await signInWithRedirect(auth, provider);
-      }
+      const result = await signInWithPopup(auth, provider);
+      const affiliateSnap = await getDoc(doc(db, 'affiliates', result.user.uid));
+      router.push(affiliateSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
     } catch (error: any) {
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/network-request-failed') {
+      console.error("Auth Error:", error.code);
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        const { signInWithRedirect } = await import('firebase/auth');
         await signInWithRedirect(auth, provider);
       }
     } finally {
-      if (method === 'popup') setLoading(false);
+      setLoading(false);
     }
   };
-
-  const handleCopyDomain = () => {
-    navigator.clipboard.writeText(currentHostname);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Dominio copiado" });
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
@@ -113,9 +91,7 @@ export default function LoginPage() {
              <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
            )}
         </div>
-        <div className="flex flex-col items-center text-center">
-           <span className="font-headline font-black text-4xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
-        </div>
+        <span className="font-headline font-black text-4xl text-slate-900 tracking-tight">Sync <span className="text-primary">Connect</span></span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3rem] overflow-hidden bg-white p-2">
@@ -124,34 +100,9 @@ export default function LoginPage() {
             <CardTitle className="text-4xl font-headline font-black text-slate-900">{t.login}</CardTitle>
           </CardHeader>
           <CardContent className="p-0 space-y-6">
-            
-            <div className="p-5 bg-red-50 rounded-2xl border-2 border-red-100 space-y-3">
-              <div className="flex items-center gap-2 text-red-800">
-                <Globe className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Autorización de Dominio</span>
-              </div>
-              <p className="text-[9px] font-bold text-red-900 leading-relaxed">
-                Importante: Verifica que este dominio exacto esté en tu consola de Firebase:
-              </p>
-              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-red-100 shadow-inner">
-                <code className="flex-1 text-[9px] font-mono font-black text-slate-600 truncate">{currentHostname}</code>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-primary shrink-0" onClick={handleCopyDomain}>
-                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                </Button>
-              </div>
-              <div className="flex gap-2">
-                <a href="https://console.firebase.google.com/" target="_blank" className="flex-1 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center gap-2 text-[8px] font-black uppercase tracking-widest shadow-lg">
-                  Consola <ExternalLink className="h-3 w-3" />
-                </a>
-                <Button onClick={() => handleGoogleLogin('redirect')} variant="outline" className="flex-1 h-9 rounded-xl border-red-200 text-red-800 font-black text-[8px] uppercase tracking-widest bg-white">
-                  <Zap className="h-3 w-3 mr-1" /> Redirección
-                </Button>
-              </div>
-            </div>
-
             <Button 
               variant="outline" 
-              onClick={() => handleGoogleLogin('popup')}
+              onClick={handleGoogleLogin}
               className="w-full h-14 rounded-2xl border-slate-200 bg-white hover:bg-slate-50 font-bold gap-3 shadow-sm"
               disabled={loading}
             >
@@ -159,15 +110,15 @@ export default function LoginPage() {
               Entrar con Google
             </Button>
 
-            <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-50 px-2 text-slate-500">O con email</span></div></div>
+            <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-[10px] uppercase font-black text-slate-400"><span className="bg-slate-50/50 px-2">O con email</span></div></div>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="font-bold text-[10px] uppercase tracking-widest text-slate-500 ml-1">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password" className="font-bold text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required className="h-12 rounded-xl" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -175,13 +126,13 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-12 rounded-xl font-bold text-lg" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : "Iniciar Sesión"}
+              <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "Iniciar Sesión"}
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="justify-center mt-6 p-0">
-            <p className="text-sm text-slate-500">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-bold">Regístrate ahora</Link></p>
+          <CardFooter className="justify-center mt-8 p-0">
+            <p className="text-xs font-bold text-slate-400">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate</Link></p>
           </CardFooter>
         </div>
       </Card>

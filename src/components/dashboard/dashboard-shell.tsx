@@ -36,7 +36,6 @@ import {
   SidebarTrigger,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-context"
@@ -57,7 +56,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const pathname = usePathname();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
 
@@ -132,10 +130,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     )
   }
 
-  if (role === 'admin' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    return null; 
-  }
-
+  // Si es un afiliado pendiente, mostramos pantalla de espera
   if (role === 'affiliate' && profile?.status === 'Pending') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
