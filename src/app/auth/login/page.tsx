@@ -40,13 +40,12 @@ export default function LoginPage() {
   const handlePostLoginRedirect = async (currentUser: any) => {
     if (!currentUser) return;
     
-    // 1. Prioridad Admin
+    // Admin Prioridad
     if (currentUser.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
       router.replace('/dashboard/admin');
       return;
     }
 
-    // 2. Verificar Rol
     try {
       const affiliateSnap = await getDoc(doc(db, 'affiliates', currentUser.uid));
       if (affiliateSnap.exists()) {
@@ -56,12 +55,12 @@ export default function LoginPage() {
         if (buyerSnap.exists()) {
           router.replace('/dashboard/buyer');
         } else {
-          // Si es Google nuevo y no tiene perfil, enviarlo a completar registro (teléfono)
-          router.replace('/auth/register');
+          // Si es nuevo de Google, el DashboardShell le pedirá el teléfono
+          router.replace('/dashboard/affiliate');
         }
       }
     } catch (e) {
-      router.replace('/dashboard/buyer');
+      router.replace('/dashboard/affiliate');
     }
   }
 

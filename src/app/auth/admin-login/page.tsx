@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  // Manejar el resultado de la redirección al volver de Google
+  // Manejar resultado de redirección al montar
   useEffect(() => {
     if (auth) {
       getRedirectResult(auth).then((result) => {
@@ -29,22 +29,18 @@ export default function AdminLoginPage() {
           if (userEmail === ADMIN_EMAIL.toLowerCase()) {
             router.replace('/dashboard/admin');
           } else {
-            toast({ variant: "destructive", title: "Acceso Denegado", description: "Esta cuenta no tiene permisos de administrador." });
+            toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa la cuenta autorizada." });
             signOut(auth);
           }
         }
-      }).catch((err) => {
-        console.error("Redirect Auth Error:", err);
-      });
+      }).catch(console.error);
     }
   }, [auth, router, toast]);
 
-  // Redirección inmediata si ya está logueado
+  // Redirección inmediata si ya hay usuario admin
   useEffect(() => {
-    if (!isUserLoading && user) {
-      if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
-        router.replace('/dashboard/admin');
-      }
+    if (!isUserLoading && user && user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
+      router.replace('/dashboard/admin');
     }
   }, [user, isUserLoading, router]);
 
@@ -54,6 +50,7 @@ export default function AdminLoginPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
+      // Forzamos redirección para evitar errores 403 de popups
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
@@ -68,7 +65,7 @@ export default function AdminLoginPage() {
           <div className="h-24 w-24 rounded-3xl border-4 border-primary/20 border-t-primary animate-spin" />
           <ShieldAlert className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary" />
         </div>
-        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Sincronizando Autoridad...</p>
+        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Autenticando Autoridad...</p>
       </div>
     );
   }
@@ -77,7 +74,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <Link href="/" className="mb-10 flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-        <span>Volver a la plataforma</span>
+        <span>Volver al inicio</span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-white p-2">
@@ -106,7 +103,7 @@ export default function AdminLoginPage() {
             </Button>
             
             <p className="mt-8 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              Usa tu cuenta autorizada `affiliatesync0@gmail.com` para entrar.
+              Usa exclusivamente la cuenta autorizada para entrar.
             </p>
           </CardContent>
         </div>
