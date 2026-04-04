@@ -1,9 +1,8 @@
-
 "use client"
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import {
   LayoutDashboard,
@@ -46,6 +45,7 @@ import { doc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -56,6 +56,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
 
@@ -73,9 +74,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
+        // Redirigir a login si no hay sesión
         router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
       } else if (role === 'admin' && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        // Redirección forzada si no es el admin correcto para evitar loops
+        // Bloquear acceso a admin si el correo no coincide
         router.push('/auth/admin-login');
       }
     }
@@ -123,17 +125,18 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Credenciales...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sincronizando Workspace...</p>
         </div>
       </div>
     )
   }
 
-  // Protección visual adicional
+  // Protección visual adicional para Admin
   if (role === 'admin' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     return null; 
   }
 
+  // Pantalla de espera para Afiliados pendientes
   if (role === 'affiliate' && profile?.status === 'Pending') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">

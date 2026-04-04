@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -7,13 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, AlertCircle, ExternalLink, Globe } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, AlertCircle, ExternalLink, Globe, Zap } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -47,6 +46,26 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, [resetCooldown]);
 
+  // Capturar resultado de redirección al montar
+  useEffect(() => {
+    if (auth && db) {
+      getRedirectResult(auth).then(async (result) => {
+        if (result?.user) {
+          const user = result.user;
+          const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+          if (affiliateSnap.exists()) {
+            router.push('/dashboard/affiliate');
+          } else {
+            router.push('/dashboard/buyer');
+          }
+        }
+      }).catch((error) => {
+        console.error("Redirect Login Error:", error);
+        setAuthErrorCode(error.code);
+      });
+    }
+  }, [auth, db, router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -74,7 +93,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (method: 'popup' | 'redirect' = 'popup') => {
     if (!auth || !db) return;
     
     setLoading(true);
@@ -84,61 +103,30 @@ export default function LoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      if (!user) throw new Error("No se pudo obtener información.");
-
-      const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
-      const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
-
-      if (affiliateSnap.exists()) {
-        router.push('/dashboard/affiliate');
-        return;
+      if (method === 'popup') {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        const affiliateSnap = await getDoc(doc(db, 'affiliates', user.uid));
+        if (affiliateSnap.exists()) {
+          router.push('/dashboard/affiliate');
+        } else {
+          router.push('/dashboard/buyer');
+        }
+      } else {
+        await signInWithRedirect(auth, provider);
       }
-
-      if (buyerSnap.exists()) {
-        router.push('/dashboard/buyer');
-        return;
-      }
-
-      setAuthError("No encontramos una cuenta vinculada. Regístrate primero.")
-      
     } catch (error: any) {
       console.error("Google Login Error:", error);
       setAuthErrorCode(error.code);
-      let errorMessage = "Ocurrió un error al conectar con Google.";
-      
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "La ventana se cerró. Intenta de nuevo.";
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Dominio no autorizado en Firebase.";
+      if (error.code === 'auth/popup-blocked') {
+        await signInWithRedirect(auth, provider);
+      } else {
+        setAuthError("Ocurrió un error al conectar con Google.");
       }
-      
-      setAuthError(errorMessage)
-      toast({ variant: "destructive", title: "Error de Conexión", description: errorMessage });
     } finally {
-      setLoading(false);
+      if (method === 'popup') setLoading(false);
     }
   };
-
-  const handleForgotPassword = async () => {
-    const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes('@')) {
-      toast({ variant: "destructive", title: "Email Requerido", description: "Escribe tu correo arriba primero." });
-      return;
-    }
-    setResetLoading(true)
-    try {
-      await sendPasswordResetEmail(auth, cleanEmail)
-      toast({ title: "Enlace enviado", description: "Revisa tu bandeja de entrada." });
-      setResetCooldown(60); 
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar." });
-    } finally {
-      setResetLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
@@ -163,25 +151,34 @@ export default function LoginPage() {
           <CardContent className="p-0">
             <div className="space-y-4">
               
-              {authErrorCode === 'auth/unauthorized-domain' && (
+              {authErrorCode && (
                 <Alert variant="destructive" className="rounded-2xl border-2 bg-red-50 mb-4 animate-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-black uppercase">DOMINIO NO AUTORIZADO</AlertTitle>
+                  <AlertTitle className="text-xs font-black uppercase">ERROR DE CONEXIÓN</AlertTitle>
                   <AlertDescription className="text-[10px] font-bold mt-2 space-y-3 text-red-900 leading-relaxed">
-                    <p>Agrega este dominio exacto en tu Consola de Firebase &gt; Authentication &gt; Settings:</p>
+                    <p>Si el login falla, asegúrate de haber autorizado este dominio en tu consola de Firebase:</p>
                     <div className="p-3 bg-white rounded-xl border border-red-200 font-mono text-center flex items-center justify-between gap-2 shadow-inner">
                       <Globe className="h-3 w-3 text-red-200" />
                       <span className="truncate select-all font-black">
                         {typeof window !== 'undefined' ? window.location.hostname : '...'}
                       </span>
                     </div>
-                    <a 
-                      href="https://console.firebase.google.com/" 
-                      target="_blank" 
-                      className="flex items-center justify-center gap-2 bg-red-600 text-white p-3 rounded-xl shadow-lg font-black uppercase text-[9px] tracking-widest"
-                    >
-                      Abrir Consola Firebase <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <div className="flex gap-2">
+                      <a 
+                        href="https://console.firebase.google.com/" 
+                        target="_blank" 
+                        className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white p-3 rounded-xl shadow-lg font-black uppercase text-[9px] tracking-widest"
+                      >
+                        Consola <ExternalLink className="h-3 w-3" />
+                      </a>
+                      <Button 
+                        onClick={() => handleGoogleLogin('redirect')}
+                        variant="outline"
+                        className="flex-1 h-10 rounded-xl bg-white border-red-200 text-red-800 font-black uppercase text-[9px]"
+                      >
+                        <Zap className="h-3 w-3 mr-1" /> Modo Redirección
+                      </Button>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
@@ -195,7 +192,7 @@ export default function LoginPage() {
 
               <Button 
                 variant="outline" 
-                onClick={handleGoogleLogin}
+                onClick={() => handleGoogleLogin('popup')}
                 className="w-full h-14 rounded-2xl border-slate-200 bg-white hover:bg-slate-50 font-bold gap-3 shadow-sm"
                 disabled={loading}
               >
