@@ -6,17 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, AlertCircle, ExternalLink, Globe, Zap, Copy, Check } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowLeft, ExternalLink, Globe, Zap, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,7 +27,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [authErrorCode, setAuthErrorCode] = useState<string | null>(null)
   const [currentHostname, setCurrentHostname] = useState("")
   const [copied, setCopied] = useState(false)
 
@@ -43,6 +41,7 @@ export default function LoginPage() {
     }
     
     if (auth && db) {
+      // Capturar resultado de redirección al volver de Google
       getRedirectResult(auth).then(async (result) => {
         if (result?.user) {
           const user = result.user;
@@ -54,8 +53,7 @@ export default function LoginPage() {
           }
         }
       }).catch((error) => {
-        console.error("Redirect Login Error:", error);
-        setAuthErrorCode(error.code);
+        console.error("Login Result Error:", error);
       });
     }
   }, [auth, db, router]);
@@ -79,7 +77,6 @@ export default function LoginPage() {
   const handleGoogleLogin = async (method: 'popup' | 'redirect' = 'popup') => {
     if (!auth || !db) return;
     setLoading(true);
-    setAuthErrorCode(null)
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
@@ -91,7 +88,6 @@ export default function LoginPage() {
         await signInWithRedirect(auth, provider);
       }
     } catch (error: any) {
-      setAuthErrorCode(error.code);
       if (error.code === 'auth/popup-blocked' || error.code === 'auth/network-request-failed') {
         await signInWithRedirect(auth, provider);
       }
@@ -129,14 +125,13 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-0 space-y-6">
             
-            {/* Panel de ayuda de dominio */}
             <div className="p-5 bg-red-50 rounded-2xl border-2 border-red-100 space-y-3">
               <div className="flex items-center gap-2 text-red-800">
                 <Globe className="h-4 w-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Autorización de Dominio</span>
               </div>
               <p className="text-[9px] font-bold text-red-900 leading-relaxed">
-                Si el login con Google falla, copia este dominio y agrégalo en Firebase:
+                Importante: Verifica que este dominio exacto esté en tu consola de Firebase:
               </p>
               <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-red-100 shadow-inner">
                 <code className="flex-1 text-[9px] font-mono font-black text-slate-600 truncate">{currentHostname}</code>
@@ -146,7 +141,7 @@ export default function LoginPage() {
               </div>
               <div className="flex gap-2">
                 <a href="https://console.firebase.google.com/" target="_blank" className="flex-1 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center gap-2 text-[8px] font-black uppercase tracking-widest shadow-lg">
-                  Firebase <ExternalLink className="h-3 w-3" />
+                  Consola <ExternalLink className="h-3 w-3" />
                 </a>
                 <Button onClick={() => handleGoogleLogin('redirect')} variant="outline" className="flex-1 h-9 rounded-xl border-red-200 text-red-800 font-black text-[8px] uppercase tracking-widest bg-white">
                   <Zap className="h-3 w-3 mr-1" /> Redirección

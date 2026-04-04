@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, ExternalLink, ShieldCheck, Copy, Check, LogOut, Zap, Globe, AlertTriangle } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, ExternalLink, ShieldCheck, Copy, Check, LogOut, Zap, Globe, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
@@ -17,7 +17,6 @@ export default function AdminLoginPage() {
   const auth = useAuth()
   const [loading, setLoading] = useState(false)
   const [authErrorCode, setAuthErrorCode] = useState<string | null>(null)
-  const [wrongEmail, setWrongEmail] = useState<string | null>(null)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
   const [currentHostname, setCurrentHostname] = useState("")
   const [copied, setCopied] = useState(false)
@@ -30,6 +29,7 @@ export default function AdminLoginPage() {
     }
     
     if (auth) {
+      // 1. Escuchar cambios de estado en tiempo real
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
           setCurrentUserEmail(user.email);
@@ -41,18 +41,18 @@ export default function AdminLoginPage() {
         }
       });
 
+      // 2. Capturar resultado de redirección (Crucial para entornos Workstation)
       getRedirectResult(auth).then((result) => {
         if (result?.user) {
           if (result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             router.push('/dashboard/admin');
           } else {
             signOut(auth);
-            setWrongEmail(result.user.email);
-            toast({ variant: "destructive", title: "Email No Autorizado", description: "Debes usar la cuenta de administrador." });
+            toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa el correo administrativo autorizado." });
           }
         }
       }).catch((error) => {
-        console.error("Redirect Result Error:", error);
+        console.error("Redirect Error:", error);
         setAuthErrorCode(error.code);
       });
 
@@ -63,10 +63,9 @@ export default function AdminLoginPage() {
   const handleLogout = async () => {
     if (!auth) return;
     await signOut(auth);
-    setWrongEmail(null);
     setCurrentUserEmail(null);
     setAuthErrorCode(null);
-    toast({ title: "Sesión cerrada" });
+    toast({ title: "Sesión cerrada correctamente" });
   }
 
   const handleCopyDomain = () => {
@@ -74,7 +73,7 @@ export default function AdminLoginPage() {
       navigator.clipboard.writeText(currentHostname)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-      toast({ title: "Dominio copiado" })
+      toast({ title: "Dominio copiado al portapapeles" })
     }
   }
 
@@ -83,7 +82,6 @@ export default function AdminLoginPage() {
     
     setLoading(true);
     setAuthErrorCode(null);
-    setWrongEmail(null);
     
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -95,16 +93,16 @@ export default function AdminLoginPage() {
           router.push('/dashboard/admin');
         } else {
           await signOut(auth);
-          setWrongEmail(result.user.email);
-          toast({ variant: "destructive", title: "Acceso Denegado", description: "Usa el correo administrativo autorizado." });
+          toast({ variant: "destructive", title: "Email Incorrecto", description: "Debes usar la cuenta affiliatesync0@gmail.com" });
         }
       } else {
         await signInWithRedirect(auth, provider);
       }
     } catch (error: any) {
-      console.error("Login Error:", error);
+      console.error("Auth Method Error:", error.code);
       setAuthErrorCode(error.code);
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/network-request-failed') {
+      // Si el popup falla, intentamos redirección automáticamente
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
         await signInWithRedirect(auth, provider);
       }
     } finally {
@@ -129,7 +127,7 @@ export default function AdminLoginPage() {
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">Sync Admin</CardTitle>
-              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Verificación de Identidad</CardDescription>
+              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Verificación de Seguridad</CardDescription>
             </div>
           </CardHeader>
 
@@ -145,10 +143,10 @@ export default function AdminLoginPage() {
               <div className="p-6 bg-amber-50 rounded-2xl border-2 border-amber-100 space-y-4">
                 <div className="flex items-center gap-3 text-amber-800">
                   <AlertTriangle className="h-5 w-5" />
-                  <span className="text-xs font-black uppercase tracking-tight">Sesión Incorrecta</span>
+                  <span className="text-xs font-black uppercase tracking-tight">Cuenta Incorrecta</span>
                 </div>
                 <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
-                  Estás como <b className="text-amber-600">{currentUserEmail}</b>. Cierra sesión para entrar como admin.
+                  Has iniciado sesión como <b className="text-amber-600">{currentUserEmail}</b>. Debes cerrar sesión para entrar como administrador.
                 </p>
                 <Button 
                   onClick={handleLogout}
@@ -164,10 +162,10 @@ export default function AdminLoginPage() {
               <div className="p-5 bg-red-50 rounded-2xl border-2 border-red-100 space-y-3">
                 <div className="flex items-center gap-2 text-red-800">
                   <Globe className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Diagnóstico de Dominio</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Diagnóstico de Acceso</span>
                 </div>
                 <p className="text-[10px] font-bold text-red-900 leading-relaxed">
-                  Copia este link y agrégalo en la consola de Firebase (Authorized Domains):
+                  Si ves errores de conexión, copia este dominio y agrégalo en Firebase:
                 </p>
                 
                 <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-red-100 shadow-inner overflow-hidden">
@@ -216,7 +214,7 @@ export default function AdminLoginPage() {
               </Button>
 
               <p className="text-center text-slate-400 text-[9px] font-bold leading-relaxed px-4">
-                Si el popup no funciona, usa el <b>Modo Redirección</b> y autoriza el dominio arriba mencionado.
+                Tip: Si el popup no carga, usa el <b>Modo Redirección</b> y verifica que el dominio del puerto <b>6000</b> esté en Firebase.
               </p>
             </div>
           </CardContent>
