@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -8,7 +9,7 @@ import { ShieldAlert, ArrowLeft, Loader2, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth'
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, getRedirectResult, signInWithRedirect } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -59,17 +60,16 @@ export default function AdminLoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      const result = await signInWithPopup(auth, provider);
-      if (result.user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        await signOut(auth);
-        toast({ variant: "destructive", title: "Email Incorrecto", description: "Solo la cuenta oficial tiene acceso." });
-      } else {
-        router.push('/dashboard/admin');
-      }
+      // Intentamos primero con popup (más rápido si no está bloqueado)
+      await signInWithPopup(auth, provider);
     } catch (error: any) {
       console.error("Auth Error:", error.code);
-      const { signInWithRedirect } = await import('firebase/auth');
-      await signInWithRedirect(auth, provider);
+      // Si el popup falla o es bloqueado, usamos redirección que es infalible
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (err) {
+        toast({ variant: "destructive", title: "Error de conexión", description: "Verifica que el dominio esté autorizado en Firebase." });
+      }
     } finally {
       setLoading(false);
     }

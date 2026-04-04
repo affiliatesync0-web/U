@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -79,18 +80,24 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
       const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
+      // Si es admin, siempre tiene acceso a todo, no redirigir a otros dashboards
+      if (isUserAdmin) {
+        if (role !== 'admin' && !window.location.pathname.includes('/dashboard/admin')) {
+          router.push('/dashboard/admin');
+        }
+        return;
+      }
+
       // Si intenta entrar a admin y NO es admin
       if (role === 'admin' && !isUserAdmin) {
         router.push('/dashboard/affiliate');
       }
-      
-      // Si intenta entrar a secciones de usuario siendo admin, lo dejamos pasar o redirigimos (Admin es superuser)
     }
   }, [user, isUserLoading, router, role, mounted]);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // Si es admin, no buscamos perfil en colecciones estándar para evitar errores
+    // El administrador no necesita perfil en Firestore para navegar
     if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return null;
     
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -7,13 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, Target, Loader2, ArrowLeft, Smartphone, ShieldCheck, Landmark } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -70,7 +71,6 @@ function RegisterContent() {
         return;
       }
 
-      // Si no existe, le pedimos información extra (como teléfono)
       setFormData(prev => ({
         ...prev,
         firstName: user.displayName?.split(' ')[0] || '',
@@ -82,9 +82,10 @@ function RegisterContent() {
 
     } catch (error: any) {
       console.error("Auth Error:", error);
-      if (error.code === 'auth/popup-blocked') {
-        const { signInWithRedirect } = await import('firebase/auth');
+      try {
         await signInWithRedirect(auth, provider);
+      } catch (err) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
       }
     } finally {
       setLoading(false);
