@@ -70,23 +70,23 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
-        router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
+        router.replace(role === 'admin' ? '/auth/admin-login' : '/auth/login');
         return;
       }
 
-      const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      const isUserAdmin = user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
 
       // PRIORIDAD ABSOLUTA PARA EL ADMINISTRADOR
       if (isUserAdmin) {
         if (role !== 'admin') {
-          router.push('/dashboard/admin');
+          router.replace('/dashboard/admin');
         }
-        return; // Detener evaluación, el admin tiene acceso total
+        return; // El administrador no necesita pasar más filtros
       }
 
       // Restricción para no-admins en panel admin
       if (!isUserAdmin && role === 'admin') {
-        router.push('/auth/login');
+        router.replace('/auth/login');
         return;
       }
     }
@@ -94,8 +94,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
-    const isUserAdmin = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    if (isUserAdmin) return null;
+    // El administrador no necesita cargar un perfil de la colección para ver el menú admin
+    if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) return null;
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
   }, [db, user, role]);
@@ -133,38 +133,39 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   ]
 
   const getMenu = () => {
-    if (user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return adminItems;
+    if (user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) return adminItems;
     if (role === 'buyer') return buyerItems;
     return affiliateItems;
   }
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push('/');
+    router.replace('/');
   }
 
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <div className="h-16 w-16 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
       </div>
     )
   }
 
-  const isUserAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
   
+  // Bloqueo de aprobación solo para AFILIADOS que no sean Admin
   if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
-        <div className="max-w-md space-y-8">
-          <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary shadow-inner mx-auto">
+        <div className="max-w-md space-y-8 animate-in fade-in zoom-in duration-500">
+          <div className="h-24 w-24 bg-primary/10 rounded-[3rem] flex items-center justify-center text-primary shadow-inner mx-auto">
             <Clock className="h-12 w-12 animate-pulse" />
           </div>
           <div className="space-y-3">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.waitingApproval}</h1>
             <p className="text-slate-500 font-medium leading-relaxed">{t.waitingApprovalMsg}</p>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200">
+          <Button onClick={handleLogout} variant="outline" className="h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200 hover:bg-slate-50">
             {t.logout}
           </Button>
         </div>
@@ -176,8 +177,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r border-slate-100">
         <SidebarHeader className="bg-white">
-          <div className="flex items-center gap-4 px-3 py-8">
-            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-100 flex items-center justify-center">
+          <div className="flex items-center gap-4 px-3 py-10">
+            <div className="relative h-14 w-14 overflow-hidden rounded-[1.25rem] bg-white shadow-2xl ring-1 ring-slate-100 flex items-center justify-center">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
@@ -185,9 +186,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               )}
             </div>
             <div className="flex flex-col gap-0 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-black text-lg tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Flame className="h-2 w-2 text-primary" />
+              <span className="font-headline font-black text-xl tracking-tight text-slate-900">Sync <span className="text-primary">Connect</span></span>
+              <div className="flex items-center gap-1 mt-1">
+                <Flame className="h-2.5 w-2.5 text-primary" />
                 <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">
                   {isUserAdmin ? 'SYSTEM' : (role === 'buyer' ? 'CLIENT' : 'PLATINUM')}
                 </span>
@@ -218,14 +219,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <SidebarTrigger className="-ml-1 text-primary" />
           <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100" />
           <div className="flex-1">
-             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
+             <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
                 {isUserAdmin ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
              </h2>
           </div>
           <LanguageToggle />
         </header>
-        <main className="flex-1 p-6 md:p-10">
-          <div className="mx-auto max-w-7xl animate-in fade-in duration-700">
+        <main className="flex-1 p-6 md:p-12">
+          <div className="mx-auto max-w-7xl">
             {children}
           </div>
         </main>

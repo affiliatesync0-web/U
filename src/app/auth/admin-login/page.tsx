@@ -9,7 +9,7 @@ import { ShieldAlert, ArrowLeft, Loader2, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useUser } from '@/firebase'
-import { GoogleAuthProvider, signOut, getRedirectResult, signInWithRedirect } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -20,66 +20,61 @@ export default function AdminLoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  // 1. Manejar resultado de redirección al montar la página
+  // Manejar el resultado de la redirección al volver de Google
   useEffect(() => {
     if (auth) {
-      getRedirectResult(auth).catch((error) => {
-        console.error("Auth redirect error:", error);
-      });
+      getRedirectResult(auth).catch(console.error);
     }
   }, [auth]);
 
-  // 2. Redirección automática si el usuario ya está autenticado o vuelve de Google
+  // Redirección inmediata si se detecta al admin
   useEffect(() => {
     if (!isUserLoading && user) {
-      if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        router.push('/dashboard/admin');
+      if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
+        router.replace('/dashboard/admin');
       } else {
-        // Si no es el admin, forzamos cierre de sesión para limpiar el estado
-        signOut(auth).then(() => {
-          toast({ 
-            variant: "destructive", 
-            title: "Acceso Denegado", 
-            description: "Esta cuenta no tiene permisos de administrador." 
-          });
-        });
+        // No es admin, no hacemos nada o mostramos error si intentó entrar aquí
+        setLoading(false);
       }
     }
-  }, [user, isUserLoading, router, auth, toast]);
+  }, [user, isUserLoading, router]);
 
-  const handleGoogleLogin = async () => {
+  const handleAdminLogin = async () => {
     if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      // Usamos redirección forzada para evitar errores de popup y 403
+      // Usamos redirección forzada para evitar errores 403 y bloqueos de popups
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo iniciar la conexión con Google." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
       setLoading(false);
     }
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || (user && user.email?.toLowerCase() === ADMIN_EMAIL)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Credenciales...</p>
+        <div className="relative">
+          <div className="h-24 w-24 rounded-3xl border-4 border-primary/20 border-t-primary animate-spin" />
+          <ShieldAlert className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary" />
+        </div>
+        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Sincronizando Autoridad...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
-      <Link href="/" className="mb-8 flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
+      <Link href="/" className="mb-10 flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-        <span>Volver al inicio</span>
+        <span>Volver a la plataforma</span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-white p-2">
-        <div className="bg-slate-50/50 rounded-[3rem] p-10 md:p-12 text-center">
-          <CardHeader className="p-0 mb-10 space-y-4">
+        <div className="bg-slate-50/50 rounded-[3rem] p-10 md:p-14 text-center">
+          <CardHeader className="p-0 mb-12 space-y-4">
             <div className="flex justify-center">
               <div className="h-20 w-20 rounded-[2.2rem] bg-slate-900 flex items-center justify-center text-primary shadow-2xl rotate-3">
                 <ShieldAlert className="h-10 w-10" />
@@ -87,14 +82,14 @@ export default function AdminLoginPage() {
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">Sync Admin</CardTitle>
-              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Acceso de Máxima Autoridad</CardDescription>
+              <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Acceso Centralizado</CardDescription>
             </div>
           </CardHeader>
 
-          <CardContent className="p-0 space-y-6">
+          <CardContent className="p-0">
             <Button 
-              onClick={handleGoogleLogin}
-              className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50" 
+              onClick={handleAdminLogin}
+              className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95" 
               disabled={loading}
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
@@ -102,8 +97,8 @@ export default function AdminLoginPage() {
               )}
             </Button>
             
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              El sistema utilizará redirección segura para garantizar el acceso en entornos restringidos y evitar errores 403.
+            <p className="mt-8 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+              Inicia sesión con tu cuenta de Google autorizada para acceder al centro de control.
             </p>
           </CardContent>
         </div>
