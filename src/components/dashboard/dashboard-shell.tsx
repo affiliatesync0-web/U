@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import {
   LayoutDashboard,
@@ -57,6 +57,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const db = useFirestore();
   const auth = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -67,40 +68,41 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
+  // 1. Redirección de Autenticación Básica
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
-        router.replace(role === 'admin' ? '/auth/admin-login' : '/auth/login');
-        return;
-      }
-
-      const isUserAdmin = user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
-
-      // PRIORIDAD ABSOLUTA PARA EL ADMINISTRADOR
-      if (isUserAdmin) {
-        if (role !== 'admin') {
-          router.replace('/dashboard/admin');
-        }
-        return; // El administrador no necesita pasar más filtros
-      }
-
-      // Restricción para no-admins en panel admin
-      if (!isUserAdmin && role === 'admin') {
         router.replace('/auth/login');
         return;
       }
-    }
-  }, [user, isUserLoading, router, role, mounted]);
 
+      const userEmail = user.email?.toLowerCase().trim();
+      const isAdmin = userEmail === ADMIN_EMAIL.toLowerCase();
+
+      // Prioridad Admin: Si es admin y no está en /admin, enviarlo allí
+      if (isAdmin && !pathname.includes('/dashboard/admin')) {
+        router.replace('/dashboard/admin');
+        return;
+      }
+
+      // Seguridad: Si no es admin e intenta entrar a /admin, sacarlo
+      if (!isAdmin && pathname.includes('/dashboard/admin')) {
+        router.replace('/dashboard/affiliate');
+        return;
+      }
+    }
+  }, [user, isUserLoading, router, role, mounted, pathname]);
+
+  // Carga de perfil (Solo para no-admins para validar estatus)
+  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
+  
   const profileRef = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    // El administrador no necesita cargar un perfil de la colección para ver el menú admin
-    if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) return null;
+    if (!db || !user || isUserAdmin) return null;
     const collectionName = role === 'buyer' ? 'buyers' : 'affiliates';
     return doc(db, collectionName, user.uid);
-  }, [db, user, role]);
+  }, [db, user, role, isUserAdmin]);
 
-  const { data: profile } = useDoc(profileRef);
+  const { data: profile, isLoading: profileLoading } = useDoc(profileRef);
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -133,7 +135,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   ]
 
   const getMenu = () => {
-    if (user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) return adminItems;
+    if (isUserAdmin) return adminItems;
     if (role === 'buyer') return buyerItems;
     return affiliateItems;
   }
@@ -146,14 +148,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="h-16 w-16 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-16 w-16 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Autenticando Acceso...</p>
+        </div>
       </div>
     )
   }
 
-  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
-  
-  // Bloqueo de aprobación solo para AFILIADOS que no sean Admin
+  // Bloqueo de aprobación (Solo afiliados reales, no administradores)
   if (role === 'affiliate' && profile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">

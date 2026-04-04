@@ -9,7 +9,7 @@ import { ShieldAlert, ArrowLeft, Loader2, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useUser } from '@/firebase'
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -23,18 +23,27 @@ export default function AdminLoginPage() {
   // Manejar el resultado de la redirección al volver de Google
   useEffect(() => {
     if (auth) {
-      getRedirectResult(auth).catch(console.error);
+      getRedirectResult(auth).then((result) => {
+        if (result?.user) {
+          const userEmail = result.user.email?.toLowerCase().trim();
+          if (userEmail === ADMIN_EMAIL.toLowerCase()) {
+            router.replace('/dashboard/admin');
+          } else {
+            toast({ variant: "destructive", title: "Acceso Denegado", description: "Esta cuenta no tiene permisos de administrador." });
+            signOut(auth);
+          }
+        }
+      }).catch((err) => {
+        console.error("Redirect Auth Error:", err);
+      });
     }
-  }, [auth]);
+  }, [auth, router, toast]);
 
-  // Redirección inmediata si se detecta al admin
+  // Redirección inmediata si ya está logueado
   useEffect(() => {
     if (!isUserLoading && user) {
       if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
         router.replace('/dashboard/admin');
-      } else {
-        // No es admin, no hacemos nada o mostramos error si intentó entrar aquí
-        setLoading(false);
       }
     }
   }, [user, isUserLoading, router]);
@@ -45,7 +54,6 @@ export default function AdminLoginPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      // Usamos redirección forzada para evitar errores 403 y bloqueos de popups
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo conectar con Google." });
@@ -53,7 +61,7 @@ export default function AdminLoginPage() {
     }
   }
 
-  if (isUserLoading || (user && user.email?.toLowerCase() === ADMIN_EMAIL)) {
+  if (isUserLoading || (user && user.email?.toLowerCase().trim() === ADMIN_EMAIL)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="relative">
@@ -98,7 +106,7 @@ export default function AdminLoginPage() {
             </Button>
             
             <p className="mt-8 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              Inicia sesión con tu cuenta de Google autorizada para acceder al centro de control.
+              Usa tu cuenta autorizada `affiliatesync0@gmail.com` para entrar.
             </p>
           </CardContent>
         </div>

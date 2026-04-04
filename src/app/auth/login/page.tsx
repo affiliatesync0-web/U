@@ -47,17 +47,31 @@ export default function LoginPage() {
     }
 
     // 2. Verificar Rol
-    const affiliateSnap = await getDoc(doc(db, 'affiliates', currentUser.uid));
-    if (affiliateSnap.exists()) {
-      router.replace('/dashboard/affiliate');
-    } else {
+    try {
+      const affiliateSnap = await getDoc(doc(db, 'affiliates', currentUser.uid));
+      if (affiliateSnap.exists()) {
+        router.replace('/dashboard/affiliate');
+      } else {
+        const buyerSnap = await getDoc(doc(db, 'buyers', currentUser.uid));
+        if (buyerSnap.exists()) {
+          router.replace('/dashboard/buyer');
+        } else {
+          // Si es Google nuevo y no tiene perfil, enviarlo a completar registro (teléfono)
+          router.replace('/auth/register');
+        }
+      }
+    } catch (e) {
       router.replace('/dashboard/buyer');
     }
   }
 
   useEffect(() => {
     if (auth) {
-      getRedirectResult(auth).catch(console.error);
+      getRedirectResult(auth).then((result) => {
+        if (result?.user) {
+          handlePostLoginRedirect(result.user);
+        }
+      }).catch(console.error);
     }
   }, [auth]);
 
@@ -95,8 +109,10 @@ export default function LoginPage() {
   if (isUserLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin text-primary h-12 w-12 mb-4" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Sesión...</p>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin text-primary h-12 w-12" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Sesión...</p>
+        </div>
       </div>
     );
   }

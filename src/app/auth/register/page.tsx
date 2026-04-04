@@ -59,12 +59,22 @@ function RegisterContent() {
       getRedirectResult(auth).then(async (result) => {
         if (result?.user) {
           const user = result.user;
+          
+          // Prioridad Admin
+          if (user.email?.toLowerCase() === 'affiliatesync0@gmail.com') {
+            router.replace('/dashboard/admin');
+            return;
+          }
+
           const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
           const buySnap = await getDoc(doc(db, 'buyers', user.uid));
 
-          if (affSnap.exists() || buySnap.exists()) {
-            router.replace(affSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer');
+          if (affSnap.exists()) {
+            router.replace('/dashboard/affiliate');
+          } else if (buySnap.exists()) {
+            router.replace('/dashboard/buyer');
           } else {
+            // Usuario Google nuevo: Pedir datos faltantes (especialmente el teléfono)
             setFormData(prev => ({
               ...prev,
               firstName: user.displayName?.split(' ')[0] || '',
@@ -72,7 +82,7 @@ function RegisterContent() {
               email: user.email || ''
             }));
             setStep('info');
-            toast({ title: "Google Conectado", description: "Completa tu número de teléfono para finalizar." });
+            toast({ title: "Google Conectado", description: "Completa tu WhatsApp para finalizar el registro." });
           }
         }
       }).catch(console.error);
@@ -97,7 +107,7 @@ function RegisterContent() {
     const cleanPhone = formData.phone.replace(/\D/g, '');
     
     if (cleanPhone.length < 8) {
-      toast({ variant: "destructive", title: "WhatsApp Requerido", description: "Ingresa un número de teléfono válido." });
+      toast({ variant: "destructive", title: "WhatsApp Requerido", description: "Ingresa un número válido para contactarte." });
       return;
     }
 
