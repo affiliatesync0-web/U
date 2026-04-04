@@ -21,6 +21,7 @@ import {
   Clock,
   ShieldCheck,
   UserCircle,
+  MessageSquare,
 } from "lucide-react"
 import {
   Sidebar,
@@ -74,10 +75,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
-        // Redirigir a login si no hay sesión
         router.push(role === 'admin' ? '/auth/admin-login' : '/auth/login');
       } else if (role === 'admin' && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        // Bloquear acceso a admin si el correo no coincide
         router.push('/auth/admin-login');
       }
     }
@@ -104,6 +103,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "IA Sales Copilot", url: "/dashboard/affiliate/sales-copilot", icon: MessageSquare },
+    { title: "Bot WhatsApp", url: "/dashboard/affiliate/bot-settings", icon: ShieldCheck },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
     { title: "Mi Perfil / Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
@@ -131,12 +132,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     )
   }
 
-  // Protección visual adicional para Admin
   if (role === 'admin' && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     return null; 
   }
 
-  // Pantalla de espera para Afiliados pendientes
   if (role === 'affiliate' && profile?.status === 'Pending') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">

@@ -92,7 +92,9 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       setAuthErrorCode(error.code);
-      if (error.code === 'auth/popup-blocked') await signInWithRedirect(auth, provider);
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/network-request-failed') {
+        await signInWithRedirect(auth, provider);
+      }
     } finally {
       if (method === 'popup') setLoading(false);
     }
@@ -127,14 +129,14 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-0 space-y-6">
             
-            {/* Panel de ayuda de dominio (Siempre visible para diagnóstico rápido) */}
+            {/* Panel de ayuda de dominio */}
             <div className="p-5 bg-red-50 rounded-2xl border-2 border-red-100 space-y-3">
               <div className="flex items-center gap-2 text-red-800">
                 <Globe className="h-4 w-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Autorización de Dominio</span>
               </div>
               <p className="text-[9px] font-bold text-red-900 leading-relaxed">
-                Si el login con Google falla, asegúrate de haber agregado este dominio en Firebase:
+                Si el login con Google falla, copia este dominio y agrégalo en Firebase:
               </p>
               <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-red-100 shadow-inner">
                 <code className="flex-1 text-[9px] font-mono font-black text-slate-600 truncate">{currentHostname}</code>

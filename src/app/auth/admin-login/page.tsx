@@ -104,7 +104,7 @@ export default function AdminLoginPage() {
     } catch (error: any) {
       console.error("Login Error:", error);
       setAuthErrorCode(error.code);
-      if (error.code === 'auth/popup-blocked') {
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/network-request-failed') {
         await signInWithRedirect(auth, provider);
       }
     } finally {
@@ -164,7 +164,7 @@ export default function AdminLoginPage() {
               <div className="p-5 bg-red-50 rounded-2xl border-2 border-red-100 space-y-3">
                 <div className="flex items-center gap-2 text-red-800">
                   <Globe className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Dominio para Firebase</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Diagnóstico de Dominio</span>
                 </div>
                 <p className="text-[10px] font-bold text-red-900 leading-relaxed">
                   Copia este link y agrégalo en la consola de Firebase (Authorized Domains):
