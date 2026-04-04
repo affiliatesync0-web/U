@@ -13,8 +13,7 @@ const DEFAULT_SMTP = {
   smtp_port: '465',
   smtp_user: 'affiliatesync0@gmail.com',
   smtp_password: 'wagrmuphptnevpin',
-  smtp_from_name: 'Sync Connect',
-  smtp_from_email: 'affiliatesync0@gmail.com'
+  smtp_from_name: 'Sync Connect'
 };
 
 /**
@@ -26,15 +25,13 @@ async function getSmtpConfig() {
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
     if (configDoc.exists()) {
       const data = configDoc.data();
-      // Validar campos mínimos
       if (data.smtp_user && data.smtp_password) {
         return {
-          host: data.smtp_host || 'smtp.gmail.com',
-          port: parseInt(data.smtp_port || '465'),
+          host: (data.smtp_host || DEFAULT_SMTP.smtp_host).trim(),
+          port: parseInt(data.smtp_port || DEFAULT_SMTP.smtp_port),
           user: data.smtp_user.trim(),
           pass: data.smtp_password.trim(),
-          fromName: data.smtp_from_name || 'Sync Connect',
-          fromEmail: data.smtp_user.trim() // Gmail requiere que el From sea el mismo usuario
+          fromName: data.smtp_from_name || DEFAULT_SMTP.smtp_from_name,
         };
       }
     }
@@ -46,8 +43,7 @@ async function getSmtpConfig() {
     port: parseInt(DEFAULT_SMTP.smtp_port),
     user: DEFAULT_SMTP.smtp_user,
     pass: DEFAULT_SMTP.smtp_password,
-    fromName: DEFAULT_SMTP.smtp_from_name,
-    fromEmail: DEFAULT_SMTP.smtp_user
+    fromName: DEFAULT_SMTP.smtp_from_name
   };
 }
 
@@ -67,12 +63,13 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
         user: config.user,
         pass: config.pass,
       },
-      // Configuración de autenticación estricta para Gmail
-      authMethod: 'LOGIN',
+      // Configuración recomendada para Vercel/Cloud Functions
+      connectionTimeout: 10000, 
+      greetingTimeout: 5000,
+      socketTimeout: 15000,
       tls: {
         rejectUnauthorized: false
-      },
-      pool: true
+      }
     });
 
     const emailHtml = html || `
@@ -85,7 +82,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
         </div>
         <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
           <p style="margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">&copy; ${new Date().getFullYear()} ${config.fromName}</p>
-          <p style="margin-top: 5px; opacity: 0.5;">Enviado vía Sync Connect Engine</p>
+          <p style="margin-top: 5px; opacity: 0.5;">Enviado vía Sync Connect Cloud Engine</p>
         </div>
       </div>
     `;
@@ -102,11 +99,11 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
   } catch (error: any) {
     console.error("DETALLE DE ERROR SMTP:", error);
     
-    let userFriendlyError = "Error de conexión con el servidor.";
-    if (error.code === 'EAUTH' || error.responseCode === 535) {
-      userFriendlyError = "Credenciales rechazadas. Asegúrate de usar una 'Contraseña de Aplicación' de 16 dígitos de Google, no tu clave normal.";
+    let userFriendlyError = "Fallo de conexión SMTP.";
+    if (error.responseCode === 535) {
+      userFriendlyError = "Acceso Denegado: Tu Contraseña de Aplicación de Google es incorrecta o ha expirado.";
     } else if (error.code === 'ETIMEDOUT') {
-      userFriendlyError = "Tiempo de espera agotado. Revisa el puerto (465 para SSL).";
+      userFriendlyError = "Tiempo de espera agotado. Verifica el puerto (465 para SSL).";
     } else {
       userFriendlyError = error.message || "Error desconocido en el servidor de correos.";
     }
@@ -146,7 +143,7 @@ export async function sendPasswordResetCode(email: string) {
           <div style="background: #f8fafc; padding: 30px; border-radius: 24px; border: 2px dashed #e2e8f0; margin: 20px 0;">
             <span style="font-family: 'Courier New', monospace; font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #ff5d1b;">${code}</span>
           </div>
-          <p style="font-size: 11px; color: #94a3b8; margin-top: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Válido por 15 minutos</p>
+          <p style="font-size: 11px; color: #94a3b8; margin-top: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Este código caduca en 15 minutos.</p>
         </div>
       `
     });
@@ -154,7 +151,7 @@ export async function sendPasswordResetCode(email: string) {
     return result;
   } catch (error: any) {
     console.error("RESET CODE ERROR:", error);
-    return { success: false, error: "Error al generar el código de seguridad." };
+    return { success: false, error: "No pudimos generar el código. Inténtalo más tarde." };
   }
 }
 
@@ -162,6 +159,6 @@ export async function testEmailConfig(email: string) {
   return await sendEmail({
     to: email,
     subject: '🔔 Prueba de Conexión Sync Connect',
-    text: 'Configuración de correo exitosa. Tu sistema ya puede enviar notificaciones.'
+    text: '¡Configuración Exitosa! Tu plataforma Sync Connect ahora puede enviar notificaciones reales a tus afiliados y clientes.'
   });
 }

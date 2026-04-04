@@ -5,36 +5,38 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 
 ## 🛠️ Tecnologías Utilizadas
 - **Next.js (App Router)**: Máximo rendimiento y SEO.
-- **Firebase (Auth & Firestore)**: Gestión segura de usuarios y base de datos en tiempo real.
-- **Genkit (IA)**: Inteligencia Artificial para el bot de ventas de WhatsApp y descripciones de productos.
-- **ShadCN UI & Tailwind**: Interfaz moderna, minimalista y responsiva.
-- **Nodemailer**: Envío de correos transaccionales vía Gmail SMTP.
+- **Firebase (Auth, Firestore, Storage)**: Gestión segura de usuarios, base de datos y archivos de video.
+- **Genkit (IA)**: Inteligencia Artificial para descripciones de productos automáticas.
+- **ShadCN UI & Tailwind**: Interfaz moderna con soporte de Modo Claro/Oscuro.
+- **Nodemailer**: Envío de correos transaccionales y códigos de seguridad vía SMTP.
 
-## 🚀 Guía de Configuración de Correo (Gmail)
+## 🚀 Guía de Despliegue en Vercel
 
-El sistema está pre-configurado para usar el correo **affiliatesync0@gmail.com**.
+### 1. Variables de Entorno (Environment Variables)
+Al subir a Vercel, asegúrate de configurar las siguientes variables en el dashboard de Vercel > Settings > Environment Variables:
 
-### 1. Correos de Bienvenida y Ventas (SMTP)
-Se utiliza el servidor SMTP de Gmail con las siguientes credenciales:
-- **Usuario**: `affiliatesync0@gmail.com`
-- **Contraseña de Aplicación**: `wagrmuphptnevpin`
+- `GEMINI_API_KEY`: Tu clave de Google AI para el asistente de copywriting.
+- `NEXT_PUBLIC_FIREBASE_API_KEY`: (Opcional, si no usas el config.ts).
 
-### 2. Recuperación de Contraseña (Firebase Console)
-Para que los correos de restablecimiento de contraseña salgan desde tu Gmail personalizado, debes configurar el servidor SMTP manualmente en Firebase siguiendo este enlace:
+### 2. Configuración de Correo (Gmail SMTP)
+El sistema está diseñado para usar el correo administrativo que tú mismo configures desde el panel de **Diseño**.
 
+**Pasos críticos:**
+1. Ve a tu cuenta de Google > Seguridad.
+2. Activa la **Verificación en 2 pasos**.
+3. Busca la opción **Contraseñas de Aplicación**.
+4. Genera una clave de 16 dígitos para "Correo".
+5. Pega esa clave en tu panel administrativo de Sync Connect.
+
+### 3. Recuperación de Contraseña (Firebase Console)
+Para que los correos de restablecimiento automáticos de Firebase funcionen con tu Gmail:
 👉 **[Configurar SMTP en Consola de Firebase](https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/emails)**
 
-**Pasos:**
-1. Haz clic en el enlace de arriba.
-2. Selecciona el template **Password Reset**.
-3. Haz clic en el icono de edición (lápiz).
-4. Haz clic en **"Configure SMTP server"**.
-5. Ingresa los siguientes datos:
-   - **SMTP Server**: `smtp.gmail.com`
-   - **Port**: `465` (SSL)
-   - **Username**: `affiliatesync0@gmail.com`
-   - **Password**: `wagrmuphptnevpin`
-6. Guarda los cambios.
+**Datos a ingresar:**
+- **SMTP Server**: `smtp.gmail.com`
+- **Port**: `465` (SSL)
+- **Username**: Tu correo Gmail.
+- **Password**: Tu contraseña de aplicación de 16 dígitos.
 
 ---
-© 2024 Sync Connect. Desarrollado para escalar negocios digitales.
+© 2024 Sync Connect. Desarrollado para escalar negocios digitales en Nicaragua.

@@ -11,7 +11,6 @@ import {
   ShieldCheck, 
   Send, 
   ExternalLink, 
-  AlertTriangle, 
   Check, 
   Copy, 
   RefreshCw, 
@@ -23,7 +22,8 @@ import {
   Star,
   Image as ImageIcon,
   KeyRound,
-  ShieldAlert
+  ShieldAlert,
+  Server
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -65,8 +65,8 @@ export default function AdminDesignPage() {
     setTimeout(() => {
       setSavingId(null);
       toast({
-        title: t.saveChanges,
-        description: "La configuración se ha actualizado correctamente.",
+        title: "Imagen Actualizada",
+        description: "Los cambios visuales se aplicarán en todo el sitio.",
       });
     }, 1000);
   };
@@ -84,8 +84,8 @@ export default function AdminDesignPage() {
     setTimeout(() => {
       setSavingId(null);
       toast({
-        title: t.saveChanges,
-        description: "Se ha actualizado el valor de configuración.",
+        title: "Ajuste Guardado",
+        description: "La configuración ha sido actualizada.",
       });
     }, 1000);
   };
@@ -98,7 +98,6 @@ export default function AdminDesignPage() {
       smtp_port: formData.get('smtp_port'),
       smtp_user: formData.get('smtp_user')?.toString().trim(),
       smtp_password: formData.get('smtp_password')?.toString().trim(),
-      smtp_from_email: formData.get('smtp_user')?.toString().trim(), // Forzar coincidencia
       smtp_from_name: formData.get('smtp_from_name'),
       updatedAt: new Date().toISOString()
     };
@@ -111,7 +110,7 @@ export default function AdminDesignPage() {
       setSavingId(null);
       toast({
         title: "Configuración Guardada",
-        description: "Los ajustes de correo han sido actualizados.",
+        description: "Los ajustes de Gmail se han actualizado correctamente.",
       });
     }, 1000);
   };
@@ -126,10 +125,10 @@ export default function AdminDesignPage() {
       if (result.success) {
         toast({ title: "Prueba Exitosa", description: `Revisa la bandeja de entrada de ${emailToTest}.` });
       } else {
-        toast({ variant: "destructive", title: "Fallo en Prueba", description: result.error });
+        toast({ variant: "destructive", title: "Fallo en Correo", description: result.error });
       }
     } catch (error) {
-      toast({ variant: "destructive", title: "Error crítico", description: "No se pudo contactar con el servidor SMTP." });
+      toast({ variant: "destructive", title: "Error Crítico", description: "No se pudo contactar con el servidor de correo." });
     } finally {
       setTestLoading(false);
     }
@@ -159,17 +158,21 @@ export default function AdminDesignPage() {
     <DashboardShell role="admin">
       <div className="space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-4xl font-headline font-black text-primary mb-2">Identidad & Configuración</h1>
-            <p className="text-muted-foreground font-medium">Personaliza tu marca y asegura las comunicaciones del sistema.</p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Server className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Infraestructura Sync</span>
+            </div>
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none">Identidad & <span className="text-primary">Conectividad</span></h1>
+            <p className="text-slate-500 font-medium">Controla la marca y asegura las comunicaciones automáticas de tu red.</p>
           </div>
-          <div className="flex items-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10">
-             <ShieldCheck className="h-5 w-5 text-primary" />
-             <span className="text-[10px] font-black text-primary uppercase tracking-widest">Conexión Sync-Secure</span>
+          <div className="flex items-center gap-3 px-6 py-3 bg-green-50 rounded-2xl border border-green-100">
+             <ShieldCheck className="h-5 w-5 text-green-600" />
+             <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Servidores Operativos</span>
           </div>
         </div>
 
-        <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
+        <Card className="border-none shadow-2xl rounded-[3.5rem] bg-white overflow-hidden ring-1 ring-slate-100">
           <CardHeader className="bg-slate-900 text-white p-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-6">
@@ -177,9 +180,9 @@ export default function AdminDesignPage() {
                   <Mail className="h-8 w-8" />
                 </div>
                 <div>
-                  <CardTitle className="text-3xl font-headline font-black text-white">Configuración de Correo (SMTP)</CardTitle>
+                  <CardTitle className="text-3xl font-headline font-black text-white">Configuración de Gmail (SMTP)</CardTitle>
                   <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
-                    Define la cuenta que enviará todos los correos y códigos de seguridad
+                    Habilita el envío de códigos de seguridad y notificaciones de venta
                   </CardDescription>
                 </div>
               </div>
@@ -190,7 +193,7 @@ export default function AdminDesignPage() {
                 className="bg-white/5 border-white/10 text-white hover:bg-primary hover:border-primary font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl transition-all"
               >
                 {testLoading ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                PROBAR CONFIGURACIÓN
+                PROBAR CONEXIÓN
               </Button>
             </div>
           </CardHeader>
@@ -198,11 +201,11 @@ export default function AdminDesignPage() {
             
             <Alert className="bg-amber-50 border-amber-200 rounded-[2rem] p-8">
               <ShieldAlert className="h-6 w-6 text-amber-600" />
-              <AlertTitle className="text-amber-800 font-black text-xs uppercase tracking-widest ml-2">¿Error de Credenciales (535 Bad Credentials)?</AlertTitle>
+              <AlertTitle className="text-amber-800 font-black text-xs uppercase tracking-widest ml-2">¿Cómo evitar el error de conexión?</AlertTitle>
               <AlertDescription className="text-amber-700 text-sm font-medium leading-relaxed mt-2 ml-2">
-                Gmail no acepta tu contraseña normal por seguridad. Debes usar una <strong>"Contraseña de Aplicación"</strong> de 16 dígitos.<br/>
-                <a href="https://myaccount.google.com/apppasswords" target="_blank" className="text-amber-900 font-black underline flex items-center gap-1 mt-2">
-                  <KeyRound className="h-3 w-3" /> Generar Contraseña de Aplicación de Google Aquí
+                Gmail no acepta tu clave normal por seguridad. Debes usar una <strong>"Contraseña de Aplicación"</strong> de 16 dígitos.<br/>
+                <a href="https://myaccount.google.com/apppasswords" target="_blank" className="text-amber-900 font-black underline flex items-center gap-1 mt-3 bg-amber-100/50 w-fit px-4 py-2 rounded-xl">
+                  <KeyRound className="h-4 w-4" /> CREAR MI CONTRASEÑA DE APLICACIÓN AQUÍ
                 </a>
               </AlertDescription>
             </Alert>
@@ -210,27 +213,27 @@ export default function AdminDesignPage() {
             <form onSubmit={handleSaveSmtp} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Servidor SMTP</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Servidor SMTP (Host)</Label>
                   <Input name="smtp_host" defaultValue={settings.smtp_host || 'smtp.gmail.com'} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 px-4 font-bold" required />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Puerto (SSL)</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Puerto / SSL</Label>
                   <Input name="smtp_port" defaultValue={settings.smtp_port || '465'} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 px-4 font-bold" required />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Gmail Administrativo</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Gmail Principal</Label>
                   <Input name="smtp_user" defaultValue={settings.smtp_user || 'affiliatesync0@gmail.com'} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 px-4 font-bold" required />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Contraseña de Aplicación (16 dígitos)</Label>
-                  <Input name="smtp_password" type="password" defaultValue={settings.smtp_password || 'wagrmuphptnevpin'} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 px-4 font-black tracking-widest" required />
+                  <Input name="smtp_password" type="password" defaultValue={settings.smtp_password || ''} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 px-4 font-black tracking-widest" required placeholder="••••••••••••••••" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre Remitente (Marca)</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre Remitente</Label>
                   <Input name="smtp_from_name" defaultValue={settings.smtp_from_name || 'Sync Connect'} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 px-4 font-bold" required />
                 </div>
               </div>
-              <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl" disabled={savingId === 'smtp'}>
+              <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl bg-primary text-white" disabled={savingId === 'smtp'}>
                 {savingId === 'smtp' ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : "GUARDAR CONFIGURACIÓN MAESTRA"}
               </Button>
             </form>
@@ -246,23 +249,23 @@ export default function AdminDesignPage() {
                      <RefreshCw className="h-8 w-8" />
                    </div>
                    <div>
-                     <h3 className="text-2xl font-black text-blue-900 tracking-tight">Sincronizador de Firebase</h3>
-                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Para habilitar la recuperación automática de contraseña</p>
+                     <h3 className="text-2xl font-black text-blue-900 tracking-tight">Vincular con Firebase</h3>
+                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Para enviar correos del sistema desde la nube</p>
                    </div>
                  </div>
                  <Button asChild variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl shadow-xl shadow-blue-200">
                    <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
-                     <ExternalLink className="h-4 w-4 mr-2" /> Abrir Consola Firebase
+                     <ExternalLink className="h-4 w-4 mr-2" /> ABRIR CONSOLA FIREBASE
                    </a>
                  </Button>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
                  {[
-                   { label: "Servidor SMTP", value: "smtp.gmail.com" },
-                   { label: "Puerto / SSL", value: "465" },
-                   { label: "Usuario SMTP", value: settings.smtp_user || 'affiliatesync0@gmail.com' },
-                   { label: "Clave SMTP", value: settings.smtp_password || 'wagrmuphptnevpin' },
+                   { label: "Servidor", value: "smtp.gmail.com" },
+                   { label: "Puerto", value: "465" },
+                   { label: "Usuario", value: settings.smtp_user || 'affiliatesync0@gmail.com' },
+                   { label: "Contraseña", value: settings.smtp_password || 'Ver arriba' },
                  ].map((field) => (
                    <div key={field.label} className="p-6 bg-white rounded-[1.5rem] border border-blue-100 shadow-sm flex flex-col justify-between group hover:scale-[1.02] transition-all">
                      <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-3">{field.label}</p>
@@ -291,12 +294,12 @@ export default function AdminDesignPage() {
                 <div className="h-12 w-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 shadow-inner">
                   <Smartphone className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-black text-slate-900">WhatsApp de Soporte</CardTitle>
+                <CardTitle className="text-2xl font-headline font-black text-slate-900">Soporte Central</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-10 space-y-6">
               <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Número de Soporte Central</Label>
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">WhatsApp de Soporte (Internacional)</Label>
                 <Input 
                   placeholder="50588888888" 
                   defaultValue={overrides?.find(o => o.id === 'site-whatsapp')?.value}
@@ -313,7 +316,7 @@ export default function AdminDesignPage() {
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
                   <Star className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-black text-white">Redes Sociales</CardTitle>
+                <CardTitle className="text-2xl font-headline font-black text-white">Presencia Digital</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-10 space-y-6">
@@ -321,7 +324,7 @@ export default function AdminDesignPage() {
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Facebook className="h-3 w-3" /> Facebook URL</Label>
                   <Input 
-                    placeholder="https://facebook.com/tu-pagina" 
+                    placeholder="https://facebook.com/sync" 
                     defaultValue={overrides?.find(o => o.id === 'social-facebook')?.value}
                     onBlur={(e) => handleSaveValue('social-facebook', e.target.value)}
                     className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
@@ -330,7 +333,7 @@ export default function AdminDesignPage() {
                 <div className="space-y-2">
                   <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Instagram className="h-3 w-3" /> Instagram URL</Label>
                   <Input 
-                    placeholder="https://instagram.com/tu-perfil" 
+                    placeholder="https://instagram.com/sync" 
                     defaultValue={overrides?.find(o => o.id === 'social-instagram')?.value}
                     onBlur={(e) => handleSaveValue('social-instagram', e.target.value)}
                     className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
@@ -344,7 +347,7 @@ export default function AdminDesignPage() {
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-1 w-12 bg-primary rounded-full" />
-            <h2 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Galería de Imágenes de Marca</h2>
+            <h2 className="text-2xl font-headline font-black text-slate-900 tracking-tight">Activos Visuales de Marca</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {images.map((img) => {
@@ -398,7 +401,7 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
             <Input 
               value={url} 
               onChange={(e) => setUrl(e.target.value)} 
-              placeholder="https://..." 
+              placeholder="https://drive.google.com/..." 
               className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
             />
           </div>
@@ -407,7 +410,7 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
             <Input 
               value={hint} 
               onChange={(e) => setHint(e.target.value)} 
-              placeholder="Ej: network business" 
+              placeholder="Ej: tech network" 
               className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
             />
           </div>
@@ -417,7 +420,7 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
           className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all"
           disabled={isSaving}
         >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar Identidad"}
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "GUARDAR CAMBIOS"}
         </Button>
       </CardContent>
     </Card>
