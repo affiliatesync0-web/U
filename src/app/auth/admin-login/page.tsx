@@ -19,9 +19,10 @@ export default function AdminLoginPage() {
     if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    // FORZAR SELECTOR DE CUENTA PARA EVITAR ERROR 403
+    // FORZAR SELECTOR DE CUENTA PARA EVITAR ERROR 403 Y PERMITIR ELEGIR LA CUENTA CORRECTA
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
+      // Usamos redirección porque es 100% fiable contra bloqueos de popups y errores 403
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo iniciar Google." });
@@ -57,7 +58,7 @@ export default function AdminLoginPage() {
               disabled={loading}
             >
               {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                <><LogIn className="h-6 w-6" /> ENTRAR COMO ADMINISTRADOR</>
+                <><LogIn className="h-6 w-6" /> ENTRAR CON GOOGLE</>
               )}
             </Button>
             

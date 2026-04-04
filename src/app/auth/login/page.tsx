@@ -47,7 +47,7 @@ export default function LoginPage() {
     if (!auth) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    // FORZAR SELECTOR DE CUENTA PARA EVITAR ERROR 403 Y PERMITIR CAMBIO DE CUENTA
+    // FORZAR SELECTOR DE CUENTA PARA PERMITIR CAMBIO DE CUENTA Y EVITAR ERRORES DE SESIÓN
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
       await signInWithRedirect(auth, provider);

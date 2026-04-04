@@ -77,7 +77,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     setMounted(true);
   }, []);
 
-  // 1. GESTIÓN DE ACCESO CENTRALIZADA
+  // 1. GESTIÓN DE ACCESO CENTRALIZADA: El Shell es el único que manda sobre la navegación
   useEffect(() => {
     if (!mounted || isUserLoading) return;
 
@@ -86,15 +86,20 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
-    // Redirección forzada por rol de URL
+    // El Administrador SIEMPRE va a su panel, sin importar de dónde venga
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/admin');
-    } else if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
+      return;
+    }
+
+    // Los no-administradores NO pueden entrar al panel admin
+    if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/affiliate');
+      return;
     }
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
 
-  // Intentar cargar perfil de afiliado o comprador
+  // Cargamos perfiles de forma paralela
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const buyerRef = useMemoFirebase(() => (db && user ? doc(db, 'buyers', user.uid) : null), [db, user]);
   
@@ -121,7 +126,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     }
     setSavingPhone(true);
     try {
-      // Si el usuario no existe en ninguna tabla, lo creamos como comprador por defecto si no es admin
+      // Determinamos el rol según el contexto o el correo
       const targetCollection = isUserAdmin ? 'affiliates' : (role === 'affiliate' ? 'affiliates' : 'buyers');
       const userRef = doc(db, targetCollection, user.uid);
       
@@ -140,6 +145,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       await setDocumentNonBlocking(userRef, data, { merge: true });
       toast({ title: "Acceso Concedido", description: "Iniciando sesión..." });
       
+      // Forzamos recarga para refrescar los estados de Firestore
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -150,7 +156,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     }
   }
 
-  // ESTADO DE CARGA GLOBAL
+  // ESTADO DE CARGA GLOBAL: Solo durante el inicio de la sesión
   if (!mounted || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -167,8 +173,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
-  // REQUISITO DE WHATSAPP: Solo para no-admins que no tienen perfil registrado
-  if (!isUserAdmin && !isProfileLoading && !profile) {
+  // REQUISITO DE WHATSAPP OBLIGATORIO: Si el usuario no tiene perfil registrado en Firestore (nuevo usuario Google)
+  if (!isProfileLoading && !profile) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-[3.5rem] shadow-2xl p-12 text-center space-y-10 animate-in fade-in zoom-in duration-500 ring-1 ring-slate-100">
@@ -176,8 +182,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <Smartphone className="h-12 w-12" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Finalizar Registro</h2>
-            <p className="text-slate-500 font-medium text-sm leading-relaxed">Bienvenido, <strong>{user.displayName}</strong>. Vincula tu número de WhatsApp para activar tu panel.</p>
+            <h2 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Vincular Teléfono</h2>
+            <p className="text-slate-500 font-medium text-sm leading-relaxed">Bienvenido, <strong>{user.displayName}</strong>. Por seguridad, vincula tu WhatsApp para activar tu panel.</p>
           </div>
           <div className="space-y-6 text-left">
             <div className="space-y-2">
