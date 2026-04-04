@@ -43,32 +43,46 @@ async function getSmtpConfig() {
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
   try {
     const config = await getSmtpConfig();
+    const port = parseInt(config.smtp_port || '465');
+    const isSecure = port === 465;
 
+    // Configuración robusta para Gmail y servidores seguros
     const transporter = nodemailer.createTransport({
       host: config.smtp_host || 'smtp.gmail.com',
-      port: parseInt(config.smtp_port || '465'),
-      secure: config.smtp_port === '465' || config.smtp_port === 465,
+      port: port,
+      secure: isSecure,
       auth: {
         user: config.smtp_user,
         pass: config.smtp_password,
       },
-      // Aumentar tiempo de espera para evitar errores de red lenta
-      connectionTimeout: 10000, 
+      // Pool para mayor eficiencia y evitar bloqueos de Google
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 5,
+      // Saltarse validación estricta de certificados si es necesario
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 15000, // 15 segundos
+      greetingTimeout: 10000,
+      socketTimeout: 20000
     });
 
     const fromName = config.smtp_from_name || 'Sync Connect';
-    const fromEmail = config.smtp_from_email || config.smtp_user;
+    // Gmail requiere que el From coincida con el usuario autenticado para evitar spam
+    const fromEmail = config.smtp_user;
 
     const emailHtml = html || `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background-color: #ffffff;">
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
         <div style="background-color: #ff5d1b; padding: 40px; text-align: center;">
-          <h1 style="margin: 0; color: #ffffff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Sync Connect</h1>
+          <h1 style="margin: 0; color: #ffffff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">Sync Connect</h1>
         </div>
         <div style="padding: 40px; line-height: 1.6; color: #334155; font-size: 16px;">
           ${text.split('\n').map(line => `<p style="margin-bottom: 10px;">${line}</p>`).join('')}
         </div>
         <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-          <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${fromName}</p>
+          <p style="margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">&copy; ${new Date().getFullYear()} ${fromName}</p>
+          <p style="margin-top: 5px; opacity: 0.5;">Enviado de forma segura vía Sync Engine</p>
         </div>
       </div>
     `;
@@ -81,10 +95,18 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       html: emailHtml,
     });
 
+    console.log("CORREO ENVIADO CON ÉXITO:", info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
-    console.error("SMTP SEND ERROR:", error);
-    return { success: false, error: error.message || "Error desconocido al enviar el correo." };
+    console.error("DETALLE DE ERROR SMTP:", error);
+    
+    // Devolver mensaje legible según el código de error de Nodemailer
+    let userFriendlyError = "No se pudo conectar con el servidor de Gmail.";
+    if (error.code === 'EAUTH') userFriendlyError = "Credenciales de Gmail inválidas (revisa la contraseña de aplicación).";
+    if (error.code === 'ETIMEDOUT') userFriendlyError = "La conexión con Gmail tardó demasiado tiempo.";
+    if (error.response) userFriendlyError = `Respuesta del servidor: ${error.response}`;
+
+    return { success: false, error: userFriendlyError };
   }
 }
 
@@ -109,8 +131,8 @@ export async function sendPasswordResetCode(email: string) {
     // 2. Intentar enviar el correo
     const result = await sendEmail({
       to: cleanEmail,
-      subject: `[${code}] Tu Código de Seguridad - Sync Connect`,
-      text: `Has solicitado restablecer tu contraseña. Tu código de seguridad es: ${code}\n\nEste código expirará en 15 minutos.\n\nSi no solicitaste este cambio, puedes ignorar este correo de forma segura.`,
+      subject: `[${code}] Código de Verificación Sync`,
+      text: `Tu código de seguridad es: ${code}\n\nEste código expirará en 15 minutos.\n\nÚsalo para restablecer tu contraseña en Sync Connect.`,
       html: `
         <div style="font-family: 'Inter', sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; text-align: center; background-color: #ffffff; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
           <div style="margin-bottom: 30px;">
@@ -123,7 +145,7 @@ export async function sendPasswordResetCode(email: string) {
           </div>
           <p style="font-size: 11px; color: #94a3b8; margin-top: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Válido por 15 minutos</p>
           <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;" />
-          <p style="font-size: 10px; color: #cbd5e1; line-height: 1.5;">Este es un mensaje automático. Por favor no respondas a este correo.</p>
+          <p style="font-size: 10px; color: #cbd5e1; line-height: 1.5;">Si no solicitaste este código, puedes ignorar este mensaje de forma segura.</p>
         </div>
       `
     });

@@ -5,35 +5,40 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Loader2, Mail, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, Mail, ShieldCheck, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { sendPasswordResetCode } from '@/lib/email'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setLoading(true);
+    setErrorDetail(null);
+    
     try {
       const result = await sendPasswordResetCode(email.trim().toLowerCase());
       if (result.success) {
         toast({ title: "Código Enviado", description: "Revisa tu Gmail (incluyendo SPAM)." });
-        // Redirigir a la página de validación pasando el email como parámetro
         router.push(`/auth/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`);
       } else {
-        toast({ variant: "destructive", title: "Error SMTP", description: result.error || "No se pudo enviar el correo." });
+        setErrorDetail(result.error || "No se pudo conectar con el servidor SMTP.");
+        toast({ variant: "destructive", title: "Fallo en Envío", description: "Revisa el aviso en pantalla." });
         setLoading(false);
       }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Ocurrió un fallo inesperado." });
+      setErrorDetail("Ocurrió un error inesperado al procesar la solicitud.");
+      toast({ variant: "destructive", title: "Error crítico", description: "Fallo de conexión interno." });
       setLoading(false);
     }
   }
@@ -59,7 +64,17 @@ export default function ForgotPasswordPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0">
+          <CardContent className="p-0 space-y-6">
+            {errorDetail && (
+              <Alert variant="destructive" className="bg-red-50 border-red-100 rounded-2xl text-left">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="text-[10px] font-black uppercase tracking-widest">Error de Conexión</AlertTitle>
+                <AlertDescription className="text-xs font-medium leading-relaxed">
+                  {errorDetail}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSendCode} className="space-y-6 text-left">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Tu Email Registrado</Label>
