@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash, Globe } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash, Globe, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -36,7 +36,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errorDetail, setErrorDetail] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string} | null>(null)
 
   // Phone Auth States
   const [countryCode, setCountryCode] = useState('+505')
@@ -52,40 +52,33 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  // Inicialización dinámica y única del reCAPTCHA
+  // Inicialización segura del reCAPTCHA
   const initRecaptcha = () => {
     if (typeof window === 'undefined') return null;
     
+    // Si ya existe una instancia válida, no la duplicamos
+    if (recaptchaVerifier.current) {
+      return recaptchaVerifier.current;
+    }
+
     try {
-      // Limpiar instancia previa si existe
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-        const container = document.getElementById('recaptcha-container');
-        if (container) container.innerHTML = ''; 
-      }
-      
+      const container = document.getElementById('recaptcha-container');
+      if (container) container.innerHTML = ''; // Limpiar basura del DOM
+
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
-          console.log("reCAPTCHA verificado");
+          console.log("reCAPTCHA verificado con éxito");
         }
       });
       
       recaptchaVerifier.current = verifier;
       return verifier;
     } catch (e) {
-      console.error("Fallo al inicializar seguridad reCAPTCHA:", e);
+      console.error("Fallo crítico inicializando seguridad reCAPTCHA:", e);
       return null;
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-      }
-    };
-  }, []);
 
   const handleLoginSuccess = async (userEmail?: string, uid?: string) => {
     const finalUid = uid || auth.currentUser?.uid || '';
@@ -134,7 +127,7 @@ export default function LoginPage() {
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
       if (error.code === 'auth/user-not-found') msg = "El usuario no existe.";
-      setErrorDetail(msg);
+      setErrorDetail({ msg });
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
     }
@@ -143,7 +136,16 @@ export default function LoginPage() {
   const handleSendPhoneCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
-    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    
+    // Limpieza profunda del número
+    let cleanPhone = phoneNumber.replace(/\D/g, '');
+    
+    // Detectar si el usuario incluyó el código de país por error en el campo de texto
+    const plainCode = countryCode.replace('+', '');
+    if (cleanPhone.startsWith(plainCode)) {
+      cleanPhone = cleanPhone.substring(plainCode.length);
+    }
+
     if (!cleanPhone || cleanPhone.length < 7) {
       toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu número de teléfono completo." });
       return;
@@ -154,7 +156,7 @@ export default function LoginPage() {
 
     try {
       const appVerifier = initRecaptcha();
-      if (!appVerifier) throw new Error("No se pudo inicializar el motor de seguridad.");
+      if (!appVerifier) throw new Error("No se pudo conectar con el motor de seguridad.");
 
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
@@ -163,14 +165,20 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("SMS Auth Error:", error);
       
-      let msg = "Error al enviar el código de seguridad.";
+      // Limpiar verificado fallido para permitir re-intento
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
+        recaptchaVerifier.current = null;
+      }
+
+      let msg = "Error al conectar con el servidor de SMS.";
       if (error.code === 'auth/invalid-phone-number') msg = "El número no tiene un formato válido.";
       if (error.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
-      if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca la página e intenta de nuevo.";
+      if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca la página.";
       if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
-      if (error.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado. Debes añadir la URL en la consola de Firebase.";
+      if (error.code === 'auth/unauthorized-domain') msg = "ESTE DOMINIO NO TIENE PERMISO. Ve a la Consola de Firebase > Authentication > Settings > Authorized Domains y añade esta URL.";
       
-      setErrorDetail(msg);
+      setErrorDetail({ msg, code: error.code });
       toast({ variant: "destructive", title: "Error de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -242,8 +250,9 @@ export default function LoginPage() {
 
               {errorDetail && (
                 <Alert variant="destructive" className="mb-4 rounded-2xl bg-red-50 border-red-100">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail}</AlertDescription>
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle className="text-[10px] font-black uppercase">Fallo de Seguridad</AlertTitle>
+                  <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail.msg}</AlertDescription>
                 </Alert>
               )}
 
@@ -302,7 +311,7 @@ export default function LoginPage() {
                   <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl bg-slate-900 text-white" disabled={loading}>
                     {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "VERIFICAR Y ENTRAR"}
                   </Button>
-                  <Button type="button" variant="ghost" onClick={() => setStep('phone')} className="w-full text-[9px] font-black uppercase text-muted-foreground">Cambiar Número</Button>
+                  <Button type="button" variant="ghost" onClick={() => { setStep('phone'); setConfirmationResult(null); }} className="w-full text-[9px] font-black uppercase text-muted-foreground">Cambiar Número</Button>
                 </form>
               )}
             </TabsContent>

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash, Globe } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash, Globe, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -36,7 +36,7 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
-  const [errorDetail, setErrorDetail] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string} | null>(null)
   
   const [countryCode, setCountryCode] = useState('+505')
   const [phone, setPhone] = useState('')
@@ -56,13 +56,15 @@ function RegisterContent() {
 
   const initRecaptcha = () => {
     if (typeof window === 'undefined') return null;
+    
+    if (recaptchaVerifier.current) {
+      return recaptchaVerifier.current;
+    }
+
     try {
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-        const container = document.getElementById('recaptcha-reg-container');
-        if (container) container.innerHTML = '';
-      }
-      
+      const container = document.getElementById('recaptcha-reg-container');
+      if (container) container.innerHTML = '';
+
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
         'size': 'invisible'
       });
@@ -74,14 +76,6 @@ function RegisterContent() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-      }
-    };
-  }, []);
-
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
@@ -90,7 +84,16 @@ function RegisterContent() {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
-    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Limpieza profunda del número
+    let cleanPhone = phone.replace(/\D/g, '');
+    
+    // Detectar duplicación de código de país
+    const plainCode = countryCode.replace('+', '');
+    if (cleanPhone.startsWith(plainCode)) {
+      cleanPhone = cleanPhone.substring(plainCode.length);
+    }
+
     if (!cleanPhone || cleanPhone.length < 7) {
       toast({ variant: "destructive", title: "Número Inválido" });
       return;
@@ -109,14 +112,20 @@ function RegisterContent() {
     } catch (err: any) {
       console.error("SMS Reg Error:", err);
       
+      // Limpiar verificado fallido
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
+        recaptchaVerifier.current = null;
+      }
+
       let msg = "Error al conectar con el servidor de SMS.";
       if (err.code === 'auth/invalid-phone-number') msg = "El formato del número no es válido.";
       if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
       if (err.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Intenta de nuevo.";
       if (err.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
-      if (err.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado en Firebase.";
+      if (err.code === 'auth/unauthorized-domain') msg = "ESTE DOMINIO NO ESTÁ AUTORIZADO. Debes añadir la URL de tu app en la Consola de Firebase.";
       
-      setErrorDetail(msg);
+      setErrorDetail({ msg, code: err.code });
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -209,8 +218,9 @@ function RegisterContent() {
       <div className="w-full max-w-4xl">
         {errorDetail && (
           <Alert variant="destructive" className="mb-8 rounded-3xl bg-red-50 border-red-100">
-            <AlertCircle className="h-5 w-5" />
-            <AlertDescription className="text-xs font-bold">{errorDetail}</AlertDescription>
+            <ShieldAlert className="h-5 w-5" />
+            <AlertTitle className="text-[10px] font-black uppercase">Fallo de Envío</AlertTitle>
+            <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail.msg}</AlertDescription>
           </Alert>
         )}
 
@@ -287,7 +297,7 @@ function RegisterContent() {
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl" disabled={loading}>
                   {loading ? <Loader2 className="animate-spin" /> : "VERIFICAR CÓDIGO"}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => setStep('phone')} className="w-full text-[9px] font-black uppercase">Cambiar Número</Button>
+                <Button type="button" variant="ghost" onClick={() => { setStep('phone'); setConfirmationResult(null); }} className="w-full text-[9px] font-black uppercase">Cambiar Número</Button>
               </form>
             </div>
           </Card>
