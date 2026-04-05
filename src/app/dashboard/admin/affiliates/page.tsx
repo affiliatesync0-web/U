@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -399,7 +398,7 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
                   </Button>
                   <p className="text-[9px] text-slate-500 font-medium text-center">
                     2. Busca a {user.email}<br/>
-                    3. Clic en los 3 puntos (...) > Cambiar Contraseña<br/>
+                    3. Clic en los 3 puntos (...) {'->'} Cambiar Contraseña<br/>
                     4. Pega la clave: <strong>{generatedPass}</strong> y guarda.
                   </p>
                 </div>
