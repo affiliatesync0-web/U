@@ -3,31 +3,39 @@ import * as admin from 'firebase-admin';
 
 /**
  * Inicialización segura del SDK de Administración de Firebase.
- * Se encarga de verificar que las credenciales existan antes de intentar usarlas.
+ * Se encarga de verificar que las credenciales existan y tengan el formato correcto.
  */
 
-const serviceAccount = {
-  projectId: process.env.FIREBASE_PROJECT_ID || "studio-9886993662-50a10",
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-};
+const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const projectId = process.env.FIREBASE_PROJECT_ID || "studio-9886993662-50a10";
+
+// Limpiar la clave privada para asegurar que los saltos de línea sean correctos
+const privateKey = rawKey ? rawKey.replace(/\\n/g, '\n') : undefined;
+
+// Verificar si la credencial parece ser un certificado válido de Google
+const hasValidCredentials = !!(privateKey && clientEmail && privateKey.includes('BEGIN PRIVATE KEY'));
 
 function getAdminApp() {
   if (admin.apps.length > 0) return admin.apps[0];
 
   try {
-    // Solo inicializar con certificado si las variables críticas existen
-    if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+    if (hasValidCredentials) {
+      console.log("Iniciando Firebase Admin con certificado explícito...");
       return admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+        credential: admin.credential.cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        } as admin.ServiceAccount),
       });
     } else {
-      // Intento de inicialización por defecto (Solo funciona en Google Cloud / Firebase Hosting nativo)
-      // En Vercel o Local sin variables, esto lanzará un error que capturamos abajo.
+      // Intento de inicialización por defecto (Solo funciona si hay credenciales de Google Cloud en el entorno)
+      console.warn("ADMIN_INIT: No hay credenciales explícitas válidas. Usando inicialización por defecto.");
       return admin.initializeApp();
     }
   } catch (error) {
-    console.error("ADMIN_INIT_WARNING: No se pudo inicializar Firebase Admin con credenciales automáticas.");
+    console.error("ADMIN_INIT_ERROR: No se pudo inicializar Firebase Admin.", error);
     return null;
   }
 }
