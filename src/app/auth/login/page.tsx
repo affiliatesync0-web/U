@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -44,22 +44,33 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
+  
+  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  // Función para inicializar o resetear el reCAPTCHA
+  // Inicialización ultra-segura del reCAPTCHA
   const setupRecaptcha = () => {
+    if (typeof window === 'undefined') return;
+    
     try {
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
       }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      
+      const container = document.getElementById('recaptcha-container');
+      if (!container) return;
+
+      recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
-          console.log("reCAPTCHA verificado");
+          console.log("reCAPTCHA verificado con éxito");
+        },
+        'expired-callback': () => {
+          setupRecaptcha();
         }
       });
     } catch (e) {
@@ -70,8 +81,8 @@ export default function LoginPage() {
   useEffect(() => {
     setupRecaptcha();
     return () => {
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
       }
     };
   }, [auth]);
@@ -142,28 +153,28 @@ export default function LoginPage() {
     const fullNumber = `${countryCode}${cleanPhone}`;
 
     try {
-      // Asegurar que el reCAPTCHA esté listo
-      if (!(window as any).recaptchaVerifier) {
+      if (!recaptchaVerifier.current) {
         setupRecaptcha();
       }
-      const appVerifier = (window as any).recaptchaVerifier;
       
+      const appVerifier = recaptchaVerifier.current;
+      if (!appVerifier) throw new Error("Recaptcha no disponible");
+
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
       toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}.` });
     } catch (error: any) {
       console.error("SMS Auth Error:", error);
-      
-      // Reset recaptcha on error
-      setupRecaptcha();
+      setupRecaptcha(); // Reset recaptcha on error
       
       let msg = "No se pudo enviar el código.";
       if (error.code === 'auth/invalid-phone-number') msg = "El formato del número es incorrecto.";
-      if (error.code === 'auth/quota-exceeded') msg = "Se ha excedido el límite de SMS por hoy.";
-      if (error.code === 'auth/captcha-check-failed') msg = "La verificación de seguridad falló. Intenta de nuevo.";
+      if (error.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
+      if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca e intenta de nuevo.";
+      if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
       
-      setErrorDetail(`${msg} Asegúrate de que el número sea correcto y que tengas habilitado el acceso por teléfono en la consola de Firebase.`);
+      setErrorDetail(msg);
       toast({ variant: "destructive", title: "Error SMS", description: msg });
     } finally {
       setLoading(false);
@@ -188,8 +199,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
-      {/* El contenedor debe estar siempre presente y fuera de condicionales complejos */}
-      <div id="recaptcha-container"></div>
+      {/* Contenedor fijo fuera de la estructura principal para máxima estabilidad */}
+      <div id="recaptcha-container" className="fixed bottom-0 left-0"></div>
       
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />

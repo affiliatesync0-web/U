@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,6 +42,8 @@ function RegisterContent() {
   const [phone, setPhone] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+  
+  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null)
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -53,12 +55,16 @@ function RegisterContent() {
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: '' })
 
   const setupRecaptcha = () => {
+    if (typeof window === 'undefined') return;
     try {
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
       }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
-        'size': 'invisible'
+      recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
+        'size': 'invisible',
+        'expired-callback': () => {
+          setupRecaptcha();
+        }
       });
     } catch (e) {
       console.error("Error recaptcha init:", e);
@@ -70,8 +76,8 @@ function RegisterContent() {
       setupRecaptcha();
     }
     return () => {
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
       }
     };
   }, [auth, step]);
@@ -93,10 +99,12 @@ function RegisterContent() {
     const fullPhone = `${countryCode}${cleanPhone}`;
 
     try {
-      if (!(window as any).recaptchaVerifier) {
+      if (!recaptchaVerifier.current) {
         setupRecaptcha();
       }
-      const appVerifier = (window as any).recaptchaVerifier;
+      const appVerifier = recaptchaVerifier.current;
+      if (!appVerifier) throw new Error("Captcha no listo");
+
       const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
@@ -107,10 +115,11 @@ function RegisterContent() {
       
       let msg = "Error al enviar SMS.";
       if (err.code === 'auth/invalid-phone-number') msg = "El formato del número no es válido.";
-      if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido temporalmente.";
-      if (err.code === 'auth/captcha-check-failed') msg = "La verificación de seguridad falló. Intenta de nuevo.";
+      if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
+      if (err.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Intenta de nuevo.";
+      if (err.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
       
-      setErrorDetail(`${msg} Asegúrate de que el número sea correcto y compatible con Firebase.`);
+      setErrorDetail(msg);
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -183,7 +192,7 @@ function RegisterContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4 transition-colors duration-300">
-      <div id="recaptcha-reg-container"></div>
+      <div id="recaptcha-reg-container" className="fixed bottom-0 left-0"></div>
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
         <LanguageToggle />
