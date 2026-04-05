@@ -65,6 +65,7 @@ export default function LoginPage() {
   const initRecaptcha = async () => {
     if (typeof window === 'undefined') return null;
     
+    // Limpiar instancia previa si existe para evitar error de "already rendered"
     if (recaptchaVerifier.current) {
       try {
         recaptchaVerifier.current.clear();
@@ -75,12 +76,15 @@ export default function LoginPage() {
     try {
       const container = document.getElementById('recaptcha-container');
       if (!container) return null;
-      container.innerHTML = '';
+      container.innerHTML = ''; // Limpiar el div
 
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
-          console.log("reCAPTCHA verificado");
+          console.log("reCAPTCHA verificado correctamente");
+        },
+        'expired-callback': () => {
+          toast({ variant: "destructive", title: "Seguridad Expirada", description: "Por favor, intenta enviar el código de nuevo." });
         }
       });
       
@@ -88,7 +92,7 @@ export default function LoginPage() {
       recaptchaVerifier.current = verifier;
       return verifier;
     } catch (e: any) {
-      console.error("Fallo inicializando seguridad reCAPTCHA:", e);
+      console.error("Fallo inicializando motor de seguridad:", e);
       return null;
     }
   };
@@ -117,7 +121,7 @@ export default function LoginPage() {
         if (buyerSnap.exists()) {
           router.push('/dashboard/buyer');
         } else {
-          toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado." });
+          toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado. Contacta a soporte." });
           router.push('/');
         }
       }
@@ -155,7 +159,7 @@ export default function LoginPage() {
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un número real." });
+      toast({ variant: "destructive", title: "Número inválido", description: "Por favor, ingresa un número real." });
       return;
     }
 
@@ -166,7 +170,7 @@ export default function LoginPage() {
       const appVerifier = await initRecaptcha();
       if (!appVerifier) {
         setLoading(false);
-        setErrorDetail({ msg: "Error al cargar el motor de seguridad. Recarga la página." });
+        setErrorDetail({ msg: "Error al cargar el motor de seguridad. Por favor, recarga la página." });
         return;
       }
 
@@ -175,18 +179,18 @@ export default function LoginPage() {
       setStep('otp');
       toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullNumber}` });
     } catch (error: any) {
-      console.error("SMS Auth Error:", error.code);
+      console.error("SMS Auth Error:", error.code, error.message);
       
       let msg = "Error al conectar con el servidor de SMS.";
       let domain = undefined;
 
       if (error.code === 'auth/unauthorized-domain') {
-        msg = "DOMINIO NO AUTORIZADO. Firebase bloqueó la petición.";
-        domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
+        msg = "DOMINIO NO AUTORIZADO. Firebase está bloqueando la petición desde esta URL.";
+        domain = typeof window !== 'undefined' ? window.location.hostname : 'tu dominio actual';
       } else if (error.code === 'auth/admin-restricted-operation') {
-        msg = "OPERACIÓN RESTRINGIDA. El método de Teléfono no está habilitado en Firebase.";
+        msg = "OPERACIÓN RESTRINGIDA. El método de Teléfono no está configurado correctamente en Firebase.";
       } else if (error.code === 'auth/quota-exceeded') {
-        msg = "Límite de SMS excedido por hoy.";
+        msg = "Límite de SMS excedido por hoy. Intenta de nuevo mañana.";
       }
       
       setErrorDetail({ 
@@ -210,7 +214,7 @@ export default function LoginPage() {
       const result = await confirmationResult.confirm(otpCode);
       await handleLoginSuccess(undefined, result.user.uid);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código no es válido." });
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código ingresado no es válido o ha expirado." });
     } finally {
       setLoading(false);
     }
@@ -252,33 +256,34 @@ export default function LoginPage() {
             <TabsContent value="phone" className="space-y-6">
               <CardHeader className="text-center p-0 mb-6">
                 <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">WhatsApp</span></CardTitle>
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu móvil</p>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu móvil verificado</p>
               </CardHeader>
 
               {errorDetail && (
                 <Alert variant="destructive" className="mb-4 rounded-3xl bg-red-50 border-red-100">
                   <ShieldAlert className="h-5 w-5" />
-                  <AlertTitle className="text-[10px] font-black uppercase">Fallo Crítico</AlertTitle>
+                  <AlertTitle className="text-[10px] font-black uppercase">Acción Requerida</AlertTitle>
                   <AlertDescription className="text-xs font-bold leading-relaxed space-y-3">
                     <p>{errorDetail.msg}</p>
                     {errorDetail.code === 'auth/admin-restricted-operation' && (
                       <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
                         <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                          <Zap className="h-3 w-3" /> Acción Requerida:
+                          <Zap className="h-3 w-3" /> Configuración en Consola:
                         </p>
                         <p className="text-[10px] font-medium text-slate-600 leading-tight">
-                          Ve a Consola {'->'} Authentication {'->'} Sign-in method y habilita el proveedor de <strong>Teléfono</strong>.
+                          Ve a Consola {'->'} Authentication {'->'} Sign-in method y asegúrate de que <strong>Teléfono</strong> esté habilitado.
                         </p>
                       </div>
                     )}
                     {errorDetail.domain && (
                       <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
                         <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                          <Zap className="h-3 w-3" /> Añadir Dominio:
+                          <Zap className="h-3 w-3" /> Autorizar este Dominio:
                         </p>
                         <code className="block p-2 bg-red-100 rounded-xl font-black text-[11px] break-all border border-red-200 select-all">
                           {errorDetail.domain}
                         </code>
+                        <p className="text-[9px] font-medium text-slate-500 italic">Copia esto y pégalo en Authentication {'->'} Settings {'->'} Authorized Domains.</p>
                       </div>
                     )}
                   </AlertDescription>

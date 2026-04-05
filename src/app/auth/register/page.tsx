@@ -111,7 +111,7 @@ function RegisterContent() {
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número Inválido", description: "Verifica tu número." });
+      toast({ variant: "destructive", title: "Número Inválido", description: "Verifica tu número antes de continuar." });
       return;
     }
     setLoading(true);
@@ -121,7 +121,7 @@ function RegisterContent() {
       const appVerifier = await initRecaptcha();
       if (!appVerifier) {
         setLoading(false);
-        setErrorDetail({ msg: "Error de seguridad. Recarga la página." });
+        setErrorDetail({ msg: "Error de seguridad. Por favor, recarga la página." });
         return;
       }
 
@@ -136,10 +136,10 @@ function RegisterContent() {
       let domain = undefined;
 
       if (err.code === 'auth/unauthorized-domain') {
-        msg = "DOMINIO NO AUTORIZADO. Firebase bloqueó la petición.";
+        msg = "DOMINIO NO AUTORIZADO. Firebase está bloqueando este sitio.";
         domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
       } else if (err.code === 'auth/admin-restricted-operation') {
-        msg = "OPERACIÓN RESTRINGIDA. El servicio de SMS no está habilitado en Firebase.";
+        msg = "OPERACIÓN RESTRINGIDA. El servicio de SMS no está habilitado en la consola.";
       }
       
       setErrorDetail({ 
@@ -163,7 +163,7 @@ function RegisterContent() {
       setStep('info');
       toast({ title: "Número Verificado ✓" });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Código Incorrecto" });
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código no es válido." });
     } finally {
       setLoading(false);
     }
@@ -192,25 +192,25 @@ function RegisterContent() {
           status: 'Pending',
           examAnswers: examData
         });
-        toast({ title: "Solicitud Enviada" });
+        toast({ title: "Solicitud Enviada", description: "Tu perfil de afiliado está en revisión." });
         router.push('/dashboard/affiliate');
       } else {
         await setDoc(doc(db, 'buyers', user.uid), {
           ...commonData,
           status: 'Active'
         });
-        toast({ title: "¡Bienvenido!" });
+        toast({ title: "¡Bienvenido!", description: "Tu cuenta de comprador ha sido creada." });
         router.push('/dashboard/buyer');
       }
 
       sendEmail({
         to: formData.email,
         subject: '¡Registro Exitoso! - Sync Connect',
-        text: `Hola ${formData.firstName}, bienvenido a Sync Connect.`
+        text: `Hola ${formData.firstName}, bienvenido a Sync Connect. Tu cuenta ha sido vinculada correctamente a tu número de WhatsApp.`
       }).catch(() => {});
 
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error de Guardado" });
+      toast({ variant: "destructive", title: "Error de Guardado", description: "No pudimos guardar tus datos." });
     } finally {
       setLoading(false);
     }
@@ -239,26 +239,26 @@ function RegisterContent() {
         {errorDetail && (
           <Alert variant="destructive" className="mb-8 rounded-[3rem] bg-red-50 border-red-100 border-2">
             <ShieldAlert className="h-6 w-6" />
-            <AlertTitle className="text-[10px] font-black uppercase ml-2">Error de Configuración</AlertTitle>
+            <AlertTitle className="text-[10px] font-black uppercase ml-2">Fallo de Configuración</AlertTitle>
             <AlertDescription className="text-xs font-bold leading-relaxed space-y-4 mt-2 ml-2">
               <p>{errorDetail.msg}</p>
               {errorDetail.code === 'auth/admin-restricted-operation' && (
                 <div className="p-6 bg-white/90 rounded-[2rem] border border-red-200 shadow-sm space-y-3">
                   <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                    <Zap className="h-3 w-3 fill-red-800" /> Resolución Administrativa:
+                    <Zap className="h-3 w-3 fill-red-800" /> Solución Administrativa:
                   </p>
                   <p className="text-[10px] font-medium text-slate-600">
-                    Habilita el proveedor de <strong>Teléfono</strong> en la sección Authentication de la Consola de Firebase para desbloquear esta función.
+                    Asegúrate de que el proveedor <strong>Teléfono</strong> esté en estado "Habilitado" en la Consola de Firebase.
                   </p>
                 </div>
               )}
               {errorDetail.domain && (
                 <div className="p-6 bg-white/90 rounded-[2rem] border border-red-200 shadow-sm space-y-3">
                   <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                    <Zap className="h-3 w-3 fill-red-800" /> Resolución de Dominio:
+                    <Zap className="h-3 w-3 fill-red-800" /> Solución de Dominio:
                   </p>
                   <p className="text-[10px] font-medium text-slate-600">
-                    Añade este dominio a la lista de autorizados en Firebase:
+                    Añade esta URL a la lista de "Dominios Autorizados" en Firebase:
                   </p>
                   <code className="block p-3 bg-red-100 rounded-xl font-black text-xs break-all border border-red-200 select-all">
                     {errorDetail.domain}
@@ -273,18 +273,18 @@ function RegisterContent() {
           <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
             <div className="text-center">
               <h1 className="text-5xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">Crea tu <span className="text-primary">Cuenta</span></h1>
-              <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">¿Cuál es tu objetivo?</p>
+              <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">Elige tu rol en la red</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <button type="button" onClick={() => { setRole('buyer'); setStep('phone'); }} className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left border border-border/50 group">
                 <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-500 mb-8 group-hover:scale-110 transition-transform"><ShoppingBag className="h-8 w-8" /></div>
-                <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Comprar</h3>
-                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Accede a formación premium.</p>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Quiero Comprar</h3>
+                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Accede a formación premium y servicios digitales.</p>
               </button>
               <button type="button" onClick={() => { setRole('affiliate'); setStep('phone'); }} className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left border border-border/50 group">
                 <div className="h-16 w-16 bg-primary/5 rounded-2xl flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform"><Target className="h-8 w-8" /></div>
-                <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Vender</h3>
-                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Genera comisiones reales.</p>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Quiero Vender</h3>
+                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Genera comisiones reales promocionando nuestro catálogo.</p>
               </button>
             </div>
           </div>
@@ -333,7 +333,7 @@ function RegisterContent() {
           <Card className="w-full max-w-xl mx-auto border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in zoom-in-95">
             <div className="space-y-8 text-center">
               <h2 className="text-3xl font-headline font-black uppercase italic">Verifica tu <span className="text-primary">Código</span></h2>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Enviado al {countryCode} {phone}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Código enviado al {countryCode} {phone}</p>
               <form onSubmit={handleVerifyOtp} className="space-y-6">
                 <div className="relative">
                   <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -379,7 +379,7 @@ function RegisterContent() {
           <Card className="w-full max-w-xl mx-auto border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in slide-in-from-right-8">
             <CardHeader className="p-0 mb-10 text-center">
               <CardTitle className="text-3xl font-headline font-black text-primary uppercase italic">Evaluación de Vendedor</CardTitle>
-              <p className="text-xs font-bold text-muted-foreground mt-4 uppercase tracking-widest">Estrategia Sync</p>
+              <p className="text-xs font-bold text-muted-foreground mt-4 uppercase tracking-widest">Estrategia Sync Connect</p>
             </CardHeader>
             <form onSubmit={handleFinalRegister} className="space-y-8">
               <div className="space-y-2">
