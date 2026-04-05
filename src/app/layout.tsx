@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
@@ -8,6 +9,8 @@ import { ThemeProvider } from '@/components/theme-context';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
+
+export const revalidate = 0; // Forzar que los metadatos se recalculen para detectar cambios de logo
 
 export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();

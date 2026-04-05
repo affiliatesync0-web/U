@@ -25,7 +25,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'i.pravatar.cc' },
       { protocol: 'https', hostname: 'chatgpt.com' },
       { protocol: 'https', hostname: 'files.oaiusercontent.com' },
-      { protocol: 'https', hostname: 'drive.google.com' }
+      { protocol: 'https', hostname: 'drive.google.com' },
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com' }
     ],
   },
 };

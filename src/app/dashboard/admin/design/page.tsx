@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -394,6 +394,11 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   const [hint, setHint] = useState(defaultHint);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sincronizar estado local con props si cambian externamente
+  useEffect(() => {
+    setUrl(defaultUrl);
+  }, [defaultUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
