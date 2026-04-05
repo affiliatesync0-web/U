@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash, Globe } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -22,6 +23,7 @@ import { LanguageToggle } from '@/components/language-toggle'
 import { sendEmail } from '@/lib/email'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { COUNTRY_CODES } from '@/lib/constants'
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -37,6 +39,7 @@ export default function LoginPage() {
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
   // Phone Auth States
+  const [countryCode, setCountryCode] = useState('+505')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
@@ -48,13 +51,9 @@ export default function LoginPage() {
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   useEffect(() => {
-    // Initialize Recaptcha
     if (typeof window !== 'undefined' && !(window as any).recaptchaVerifier) {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          console.log('Recaptcha resolved');
-        }
+        'size': 'invisible'
       });
     }
   }, [auth]);
@@ -75,12 +74,10 @@ export default function LoginPage() {
     if (finalEmail.toLowerCase().trim() === ADMIN_EMAIL) {
       router.push('/dashboard/admin');
     } else {
-      // Buscar en afiliados
       const affSnap = await getDoc(doc(db, 'affiliates', finalUid));
       if (affSnap.exists()) {
         router.push('/dashboard/affiliate');
       } else {
-        // Buscar en compradores
         const buyerSnap = await getDoc(doc(db, 'buyers', finalUid));
         if (buyerSnap.exists()) {
           router.push('/dashboard/buyer');
@@ -104,7 +101,6 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       await handleLoginSuccess(cleanEmail);
     } catch (error: any) {
-      console.error("Login error:", error.code);
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
       setErrorDetail(msg);
@@ -116,23 +112,23 @@ export default function LoginPage() {
   const handleSendPhoneCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
-    if (!phoneNumber || phoneNumber.length < 8) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu número completo con código de país." });
+    if (!phoneNumber || phoneNumber.length < 7) {
+      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu número de teléfono completo." });
       return;
     }
 
     setLoading(true);
     const appVerifier = (window as any).recaptchaVerifier;
-    const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+    const fullNumber = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
 
     try {
-      const result = await signInWithPhoneNumber(auth, formattedNumber, appVerifier);
+      const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
-      toast({ title: "Código Enviado", description: "Revisa tus mensajes SMS." });
+      toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}.` });
     } catch (error: any) {
       console.error("SMS Error:", error);
-      setErrorDetail("No se pudo enviar el código. Verifica que el número sea correcto y que hayas activado el acceso por teléfono en Firebase.");
+      setErrorDetail("No se pudo enviar el código. Verifica que el número sea correcto y que tengas habilitado el acceso por teléfono.");
       toast({ variant: "destructive", title: "Error SMS", description: "Fallo al enviar el código." });
     } finally {
       setLoading(false);
@@ -210,17 +206,33 @@ export default function LoginPage() {
               {step === 'phone' ? (
                 <form onSubmit={handleSendPhoneCode} className="space-y-5">
                   <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Número (Con +)</Label>
-                    <div className="relative">
-                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        type="tel" 
-                        value={phoneNumber} 
-                        onChange={(e) => setPhoneNumber(e.target.value)} 
-                        required 
-                        placeholder="+50588888888"
-                        className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold pl-12 pr-6" 
-                      />
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Número</Label>
+                    <div className="flex gap-2">
+                      <div className="w-[120px] shrink-0">
+                        <Select value={countryCode} onValueChange={setCountryCode}>
+                          <SelectTrigger className="h-14 rounded-2xl bg-card border-none ring-1 ring-border font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {COUNTRY_CODES.map((country) => (
+                              <SelectItem key={country.code} value={country.code} className="font-bold">
+                                <span className="mr-2">{country.flag}</span> {country.code}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="relative flex-1">
+                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          type="tel" 
+                          value={phoneNumber} 
+                          onChange={(e) => setPhoneNumber(e.target.value)} 
+                          required 
+                          placeholder="8888 8888"
+                          className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold pl-12 pr-6" 
+                        />
+                      </div>
                     </div>
                   </div>
                   <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>

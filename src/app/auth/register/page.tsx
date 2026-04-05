@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash, Globe } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -21,6 +22,7 @@ import { sendEmail } from '@/lib/email'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { COUNTRY_CODES } from '@/lib/constants'
 
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'phone' | 'otp' | 'info' | 'exam'
@@ -36,6 +38,7 @@ function RegisterContent() {
   const [step, setStep] = useState<RegStep>('role')
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   
+  const [countryCode, setCountryCode] = useState('+505')
   const [phone, setPhone] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
@@ -64,21 +67,22 @@ function RegisterContent() {
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || phone.length < 8) {
+    if (!phone || phone.length < 7) {
       toast({ variant: "destructive", title: "Número Inválido" });
       return;
     }
     setLoading(true);
     const appVerifier = (window as any).recaptchaVerifier;
-    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    const fullPhone = `${countryCode}${phone.replace(/\D/g, '')}`;
 
     try {
-      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
-      toast({ title: "Código Enviado" });
+      toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullPhone}` });
     } catch (e: any) {
-      setErrorDetail("Error al enviar SMS. Asegúrate de que el número sea correcto.");
+      console.error(e);
+      setErrorDetail("Error al enviar SMS. Asegúrate de que el número sea correcto y compatible con Firebase.");
     } finally {
       setLoading(false);
     }
@@ -110,7 +114,7 @@ function RegisterContent() {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       email: formData.email.toLowerCase().trim(),
-      whatsappNumber: phone.replace(/\D/g, ''),
+      whatsappNumber: `${countryCode}${phone.replace(/\D/g, '')}`,
       registeredAt: new Date().toISOString()
     };
 
@@ -202,10 +206,26 @@ function RegisterContent() {
               </div>
               <form onSubmit={handleSendCode} className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Número de Teléfono (Con código de país)</Label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="+50588888888" value={phone} onChange={e => setPhone(e.target.value)} required className="pl-12 h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border font-bold" />
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">País y Número de Teléfono</Label>
+                  <div className="flex gap-3">
+                    <div className="w-[140px] shrink-0">
+                      <Select value={countryCode} onValueChange={setCountryCode}>
+                        <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {COUNTRY_CODES.map((country) => (
+                            <SelectItem key={country.code} value={country.code} className="font-bold">
+                              <span className="mr-2">{country.flag}</span> {country.code}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="relative flex-1">
+                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="8888 8888" value={phone} onChange={e => setPhone(e.target.value)} required className="pl-12 h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border font-bold" />
+                    </div>
                   </div>
                 </div>
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading}>
@@ -220,7 +240,7 @@ function RegisterContent() {
           <Card className="w-full max-w-xl mx-auto border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in zoom-in-95">
             <div className="space-y-8 text-center">
               <h2 className="text-3xl font-headline font-black uppercase italic">Verifica tu <span className="text-primary">Código</span></h2>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Enviado al {phone}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Enviado al {countryCode} {phone}</p>
               <form onSubmit={handleVerifyOtp} className="space-y-6">
                 <div className="relative">
                   <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
