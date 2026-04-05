@@ -35,7 +35,7 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
-  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string} | null>(null)
+  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string} | null>(null)
   
   const [countryCode, setCountryCode] = useState('+505')
   const [phone, setPhone] = useState('')
@@ -53,7 +53,6 @@ function RegisterContent() {
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: '' })
 
-  // Limpieza al desmontar
   useEffect(() => {
     return () => {
       if (recaptchaVerifier.current) {
@@ -77,9 +76,8 @@ function RegisterContent() {
 
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
         'size': 'invisible',
-        'expired-callback': () => {
-          verifier.clear();
-          recaptchaVerifier.current = null;
+        'callback': () => {
+          console.log("reCAPTCHA verificado en registro");
         }
       });
       recaptchaVerifier.current = verifier;
@@ -129,13 +127,16 @@ function RegisterContent() {
       }
 
       let msg = "Error al conectar con el servidor de SMS.";
-      if (err.code === 'auth/invalid-phone-number') msg = "El formato del número no es válido.";
-      if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
-      if (err.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Intenta de nuevo.";
-      if (err.code === 'auth/operation-not-allowed') msg = "El proveedor de TELÉFONO no está habilitado.";
-      if (err.code === 'auth/unauthorized-domain') msg = "ESTE DOMINIO NO ESTÁ AUTORIZADO en Firebase.";
+      let domain = undefined;
+
+      if (err.code === 'auth/unauthorized-domain') {
+        msg = "DOMINIO NO AUTORIZADO. Firebase no tiene permiso para enviar SMS desde este sitio.";
+        domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
+      } else if (err.code === 'auth/quota-exceeded') {
+        msg = "Límite de SMS excedido por hoy.";
+      }
       
-      setErrorDetail({ msg, code: err.code });
+      setErrorDetail({ msg, code: err.code, domain });
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -229,8 +230,19 @@ function RegisterContent() {
         {errorDetail && (
           <Alert variant="destructive" className="mb-8 rounded-3xl bg-red-50 border-red-100">
             <ShieldAlert className="h-5 w-5" />
-            <AlertTitle className="text-[10px] font-black uppercase">Fallo de Envío</AlertTitle>
-            <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail.msg}</AlertDescription>
+            <AlertTitle className="text-[10px] font-black uppercase">Fallo de Seguridad</AlertTitle>
+            <AlertDescription className="text-xs font-bold leading-relaxed space-y-2">
+              <p>{errorDetail.msg}</p>
+              {errorDetail.domain && (
+                <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2">
+                  <p className="text-[9px] font-black uppercase text-red-800">Acción Requerida:</p>
+                  <p className="text-[10px] font-medium mt-1">
+                    Copia este dominio y pégalo en la sección "Dominios autorizados" de Firebase:
+                    <code className="block mt-2 p-2 bg-red-100 rounded font-black text-xs break-all">{errorDetail.domain}</code>
+                  </p>
+                </div>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 

@@ -35,7 +35,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string} | null>(null)
+  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string} | null>(null)
 
   // Phone Auth States
   const [countryCode, setCountryCode] = useState('+505')
@@ -51,7 +51,6 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  // Limpieza al desmontar
   useEffect(() => {
     return () => {
       if (recaptchaVerifier.current) {
@@ -64,7 +63,6 @@ export default function LoginPage() {
   const initRecaptcha = () => {
     if (typeof window === 'undefined') return null;
     
-    // Si ya existe una instancia válida, la reutilizamos
     if (recaptchaVerifier.current) {
       return recaptchaVerifier.current;
     }
@@ -73,24 +71,19 @@ export default function LoginPage() {
       const container = document.getElementById('recaptcha-container');
       if (!container) return null;
       
-      container.innerHTML = ''; // Limpiar el contenedor por si acaso
+      container.innerHTML = '';
 
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
           console.log("reCAPTCHA verificado con éxito");
-        },
-        'expired-callback': () => {
-          console.warn("reCAPTCHA expirado, reiniciando...");
-          verifier.clear();
-          recaptchaVerifier.current = null;
         }
       });
       
       recaptchaVerifier.current = verifier;
       return verifier;
     } catch (e) {
-      console.error("Fallo crítico inicializando seguridad reCAPTCHA:", e);
+      console.error("Fallo inicializando seguridad reCAPTCHA:", e);
       return null;
     }
   };
@@ -141,7 +134,6 @@ export default function LoginPage() {
       console.error("Email Login Error:", error);
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
-      if (error.code === 'auth/user-not-found') msg = "El usuario no existe.";
       setErrorDetail({ msg });
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
@@ -177,20 +169,24 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("SMS Auth Error:", error);
       
-      // Limpiar verificado fallido
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
         recaptchaVerifier.current = null;
       }
 
       let msg = "Error al conectar con el servidor de SMS.";
-      if (error.code === 'auth/invalid-phone-number') msg = "El número no tiene un formato válido.";
-      if (error.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
-      if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca la página.";
-      if (error.code === 'auth/operation-not-allowed') msg = "El método de TELÉFONO no está habilitado en Firebase.";
-      if (error.code === 'auth/unauthorized-domain') msg = "DOMINIO NO AUTORIZADO. Añade tu URL en la consola de Firebase.";
+      let domain = undefined;
+
+      if (error.code === 'auth/unauthorized-domain') {
+        msg = "DOMINIO NO AUTORIZADO. Firebase está bloqueando la petición desde este sitio.";
+        domain = typeof window !== 'undefined' ? window.location.hostname : 'este dominio';
+      } else if (error.code === 'auth/quota-exceeded') {
+        msg = "Límite de SMS excedido por hoy.";
+      } else if (error.code === 'auth/invalid-phone-number') {
+        msg = "El número no tiene un formato válido.";
+      }
       
-      setErrorDetail({ msg, code: error.code });
+      setErrorDetail({ msg, code: error.code, domain });
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -215,7 +211,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
-      {/* Contenedor invisible para el motor de seguridad */}
       <div id="recaptcha-container"></div>
       
       <div className="fixed top-6 right-6 flex items-center gap-2">
@@ -264,7 +259,18 @@ export default function LoginPage() {
                 <Alert variant="destructive" className="mb-4 rounded-2xl bg-red-50 border-red-100">
                   <ShieldAlert className="h-4 w-4" />
                   <AlertTitle className="text-[10px] font-black uppercase">Fallo de Seguridad</AlertTitle>
-                  <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail.msg}</AlertDescription>
+                  <AlertDescription className="text-xs font-bold leading-relaxed space-y-2">
+                    <p>{errorDetail.msg}</p>
+                    {errorDetail.domain && (
+                      <div className="p-3 bg-white/50 rounded-xl border border-red-200 mt-2">
+                        <p className="text-[9px] font-black uppercase text-red-800">Instrucción Maestra:</p>
+                        <p className="text-[10px] font-medium mt-1">
+                          Ve a Consola de Firebase -> Authentication -> Settings -> Authorized Domains y añade: 
+                          <code className="block mt-1 p-1 bg-red-100 rounded font-black text-xs">{errorDetail.domain}</code>
+                        </p>
+                      </div>
+                    )}
+                  </AlertDescription>
                 </Alert>
               )}
 
