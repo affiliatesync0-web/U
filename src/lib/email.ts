@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -29,6 +28,7 @@ async function getSmtpConfig() {
     console.error("Error al obtener la configuración de correo:", error);
   }
   
+  // Fallback seguro si no hay nada configurado aún
   return {
     host: 'smtp.gmail.com',
     port: 465,
@@ -91,6 +91,30 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     console.error("DETALLE DE ERROR SMTP:", error);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Envía un correo de prueba para verificar la configuración SMTP.
+ */
+export async function testEmailConfig(to: string) {
+  return await sendEmail({
+    to,
+    subject: '🧪 Prueba de Conexión Sync Connect',
+    text: `¡Éxito! Si estás leyendo esto, la configuración de tu servidor de correo en Sync Connect funciona perfectamente.\n\nEnviado el: ${new Date().toLocaleString()}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
+        <div style="margin-bottom: 30px;">
+          <span style="font-size: 40px;">🧪</span>
+        </div>
+        <h2 style="color: #0f172a; font-size: 22px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase;">Prueba de Conexión</h2>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">La configuración de tu servidor SMTP es correcta y ya puedes enviar notificaciones automáticas.</p>
+        <div style="background: #f0fdf4; padding: 25px; border-radius: 20px; border: 1px solid #bbf7d0; margin-bottom: 30px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 900; color: #166534; text-transform: uppercase; letter-spacing: 1px;">Estado: CONECTADO</p>
+        </div>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 30px; font-weight: 700;">ENVIADO EL: ${new Date().toLocaleString()}</p>
+      </div>
+    `
+  });
 }
 
 /**
