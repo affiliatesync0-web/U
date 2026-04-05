@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -14,7 +15,6 @@ async function getSmtpConfig() {
     const configDoc = await getDoc(doc(firestore, 'site_config', 'settings'));
     if (configDoc.exists()) {
       const data = configDoc.data();
-      // Validamos que existan los datos críticos
       if (data.smtp_user && data.smtp_password) {
         return {
           host: (data.smtp_host || 'smtp.gmail.com').trim(),
@@ -29,7 +29,6 @@ async function getSmtpConfig() {
     console.error("Error al obtener la configuración de correo:", error);
   }
   
-  // Backup oficial solo si no hay nada configurado (para que el sistema no muera)
   return {
     host: 'smtp.gmail.com',
     port: 465,
@@ -41,14 +40,12 @@ async function getSmtpConfig() {
 
 /**
  * Envía un correo electrónico utilizando la configuración SMTP activa.
- * Optimizado para Vercel y Gmail.
  */
 export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
   try {
     const config = await getSmtpConfig();
     const isSecure = config.port === 465;
 
-    // Crear transportador con pool para estabilidad en serverless
     const transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
@@ -65,7 +62,6 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       }
     });
 
-    // CRÍTICO: El remitente DEBE ser el mismo que el usuario autenticado para Gmail
     const fromAddress = `"${config.fromName}" <${config.user}>`;
 
     const emailHtml = html || `
@@ -93,59 +89,32 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error("DETALLE DE ERROR SMTP:", error);
-    
-    let errorMsg = error.message || "Error desconocido.";
-    if (error.responseCode === 535) {
-      errorMsg = "Contraseña de aplicación inválida o Gmail denegó el acceso.";
-    } else if (error.code === 'EENVELOPE') {
-      errorMsg = "El correo de destino o el remitente no son válidos.";
-    }
-
-    return { success: false, error: errorMsg };
+    return { success: false, error: error.message };
   }
 }
 
 /**
- * Genera y envía un código de recuperación.
+ * Envía una nueva contraseña generada por el administrador.
  */
-export async function sendPasswordResetCode(email: string) {
-  const { firestore } = initializeFirebase();
-  const cleanEmail = email.toLowerCase().trim();
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); 
-
-  try {
-    await setDoc(doc(firestore, 'password_resets', cleanEmail), {
-      code,
-      expiresAt,
-      email: cleanEmail,
-      createdAt: new Date().toISOString()
-    });
-
-    return await sendEmail({
-      to: cleanEmail,
-      subject: `[${code}] Código de Acceso Sync`,
-      text: `Tu código es: ${code}. Válido por 15 minutos.`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; text-align: center; background-color: #ffffff;">
-          <h2 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 10px;">Código de Seguridad</h2>
-          <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Copia este código para restablecer tu acceso:</p>
-          <div style="background: #f8fafc; padding: 30px; border-radius: 24px; border: 2px dashed #e2e8f0; margin: 20px 0;">
-            <span style="font-family: monospace; font-size: 42px; font-weight: 900; letter-spacing: 10px; color: #ff5d1b;">${code}</span>
-          </div>
-          <p style="font-size: 11px; color: #94a3b8; margin-top: 30px; font-weight: 700;">ESTE CÓDIGO EXPIRA EN 15 MINUTOS</p>
-        </div>
-      `
-    });
-  } catch (error: any) {
-    return { success: false, error: "Fallo al generar el registro de seguridad." };
-  }
-}
-
-export async function testEmailConfig(email: string) {
+export async function sendNewPasswordAdmin({ to, name, newPassword }: { to: string, name: string, newPassword: string }) {
   return await sendEmail({
-    to: email,
-    subject: '🔔 Prueba de Conexión Sync Connect',
-    text: '¡Configuración Exitosa! Los correos de tu plataforma ahora funcionan correctamente.'
+    to,
+    subject: '🔐 Tus nuevas credenciales de acceso - Sync Connect',
+    text: `Hola ${name},\n\nUn administrador ha restablecido tu contraseña de acceso por seguridad.\n\nNUEVOS DATOS DE ACCESO:\n- Email: ${to}\n- Contraseña: ${newPassword}\n\nInicia sesión aquí: ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/auth/login\n\nTe recomendamos cambiar esta contraseña una vez que ingreses a tu panel.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
+        <div style="margin-bottom: 30px;">
+          <span style="font-size: 40px;">🔐</span>
+        </div>
+        <h2 style="color: #0f172a; font-size: 22px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase;">Nueva Contraseña</h2>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Tus credenciales han sido actualizadas por el administrador:</p>
+        <div style="background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
+          <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Tu nueva clave es:</p>
+          <span style="font-family: monospace; font-size: 32px; font-weight: 900; color: #ff5d1b;">${newPassword}</span>
+        </div>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || '#'}/auth/login" style="display: block; background-color: #0f172a; color: white; padding: 18px; border-radius: 16px; text-decoration: none; font-weight: 900; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;">INICIAR SESIÓN AHORA</a>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 30px; font-weight: 700;">POR SEGURIDAD, NO COMPARTAS ESTOS DATOS CON NADIE.</p>
+      </div>
+    `
   });
 }

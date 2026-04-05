@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -45,11 +45,10 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
       const user = userCredential.user;
 
-      // Enviar notificación de inicio de sesión por seguridad
       sendEmail({
         to: email.trim().toLowerCase(),
         subject: '🔔 Nuevo Inicio de Sesión - Sync Connect',
-        text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${email}\n\nSi no fuiste tú, por favor restablece tu contraseña inmediatamente desde el panel de acceso.`
+        text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${email}\n\nSi no fuiste tú, por favor contacta al administrador de inmediato para asegurar tu cuenta.`
       }).catch(err => console.error("Error enviando alerta de login:", err));
 
       toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
@@ -110,10 +109,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between items-center ml-1">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Tu Contraseña</Label>
-                  <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black text-primary uppercase hover:underline">¿Olvidaste tu clave?</Link>
-                </div>
+                <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Contraseña</Label>
                 <div className="relative">
                   <Input 
                     type={showPassword ? "text" : "password"} 
@@ -134,6 +130,13 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
+            
+            <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
+               <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+               <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase">
+                 Si olvidaste tu clave, contacta al administrador de Sync Connect para recibir una nueva contraseña de acceso.
+               </p>
+            </div>
           </CardContent>
           <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-2">
             <p className="text-xs font-bold text-muted-foreground">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate gratis</Link></p>

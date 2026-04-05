@@ -1,10 +1,11 @@
 
 "use client"
 
+import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, Loader2, User, Calendar, Trash2, ShoppingBag, UserCheck, ShieldCheck } from 'lucide-react'
+import { Search, Mail, Loader2, User, Calendar, Trash2, ShoppingBag, UserCheck, ShieldCheck, KeyRound } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -15,10 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
+import { sendNewPasswordAdmin } from '@/lib/email'
 
 export default function AdminBuyersPage() {
   const { t } = useLanguage();
@@ -83,7 +86,6 @@ export default function AdminBuyersPage() {
                       <TableHead className="px-10 h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.firstName} {t.lastName}</TableHead>
                       <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.email}</TableHead>
                       <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.date}</TableHead>
-                      <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Estatus</TableHead>
                       <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.actions}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -108,33 +110,31 @@ export default function AdminBuyersPage() {
                             <Calendar className="h-4 w-4" /> {buyer.registeredAt ? new Date(buyer.registeredAt).toLocaleDateString() : 'N/A'}
                           </div>
                         </TableCell>
-                        <TableCell>
-                           <div className="flex items-center gap-2 text-[10px] font-black text-green-600 bg-green-50 px-3 py-1 rounded-lg w-fit border border-green-100">
-                             <ShieldCheck className="h-3 w-3" /> VERIFICADO
-                           </div>
-                        </TableCell>
                         <TableCell className="px-10 text-right">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-2xl transition-colors">
-                                <Trash2 className="h-6 w-6" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">{t.confirmDeleteTitle}</AlertDialogTitle>
-                                <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
-                                  Esta acción eliminará permanentemente al comprador del sistema. El historial de compras asociado podría quedar huérfano.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter className="mt-10 gap-4">
-                                <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
-                                  ELIMINAR DEFINITIVAMENTE
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <div className="flex justify-end gap-2">
+                            <AdminPasswordResetDialog user={buyer} />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-2xl transition-colors">
+                                  <Trash2 className="h-6 w-6" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">{t.confirmDeleteTitle}</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
+                                    Esta acción eliminará permanentemente al comprador del sistema. El historial de compras asociado podría quedar huérfano.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="mt-10 gap-4">
+                                  <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
+                                    ELIMINAR DEFINITIVAMENTE
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -147,4 +147,64 @@ export default function AdminBuyersPage() {
       </div>
     </DashboardShell>
   )
+}
+
+function AdminPasswordResetDialog({ user }: { user: any }) {
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleResetPassword = async () => {
+    setLoading(true);
+    const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100);
+    
+    try {
+      const result = await sendNewPasswordAdmin({
+        to: user.email,
+        name: user.firstName,
+        newPassword: newPass
+      });
+
+      if (result.success) {
+        toast({ title: "Clave Enviada", description: `Se ha enviado la nueva clave a ${user.email}.` });
+        setOpen(false);
+      } else {
+        toast({ variant: "destructive", title: "Error SMTP", description: "No se pudo enviar el correo." });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error Crítico", description: "Fallo al procesar el cambio." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="ghost" className="h-12 w-12 text-slate-400 hover:text-primary rounded-2xl">
+          <KeyRound className="h-6 w-6" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+        <div className="bg-slate-900 p-8 text-white text-center">
+          <KeyRound className="h-12 w-12 mx-auto mb-4 text-primary" />
+          <DialogHeader>
+            <DialogTitle className="text-xl font-headline font-black text-white text-center uppercase tracking-tight">Cambiar Clave de Acceso</DialogTitle>
+            <p className="text-slate-400 font-bold text-[10px] uppercase mt-1">Generar credenciales para {user.firstName}</p>
+          </DialogHeader>
+        </div>
+        <div className="p-10 space-y-6">
+          <p className="text-sm font-medium text-slate-500 text-center leading-relaxed">
+            ¿Confirmas que deseas generar una nueva clave aleatoria? Se enviará automáticamente al email registrado del cliente.
+          </p>
+          <div className="flex gap-4">
+            <Button variant="ghost" onClick={() => setOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase">Cancelar</Button>
+            <Button onClick={handleResetPassword} className="flex-[2] h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase shadow-xl shadow-primary/20" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "ENVIAR NUEVA CLAVE"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

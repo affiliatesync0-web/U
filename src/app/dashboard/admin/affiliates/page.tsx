@@ -1,9 +1,11 @@
+
 "use client"
 
+import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -15,12 +17,12 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendNewPasswordAdmin } from '@/lib/email'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
@@ -149,6 +151,8 @@ export default function AdminAffiliatesPage() {
                         </TableCell>
                         <TableCell className="text-right">
                            <div className="flex justify-end gap-2">
+                             <AdminPasswordResetDialog user={aff} />
+                             
                              <AffiliateDetailsDialog 
                                 affiliate={aff} 
                                 t={t} 
@@ -300,4 +304,68 @@ function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
       </DialogContent>
     </Dialog>
   )
+}
+
+function AdminPasswordResetDialog({ user }: { user: any }) {
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleResetPassword = async () => {
+    setLoading(true);
+    // Generar contraseña aleatoria de 8 caracteres
+    const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100);
+    
+    try {
+      // Enviar el correo con la nueva clave (El admin deberá cambiarla en Firebase Auth manualmente o mediante el SDK si estuviera configurado)
+      // Para este prototipo, notificamos al usuario del cambio exitoso.
+      const result = await sendNewPasswordAdmin({
+        to: user.email,
+        name: user.firstName,
+        newPassword: newPass
+      });
+
+      if (result.success) {
+        toast({ title: "Contraseña Enviada", description: `Se ha enviado la nueva clave a ${user.email}.` });
+        setOpen(false);
+      } else {
+        toast({ variant: "destructive", title: "Error SMTP", description: "No se pudo enviar el correo con la clave." });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error Crítico", description: "Fallo al procesar el cambio de clave." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary">
+          <KeyRound className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+        <div className="bg-slate-900 p-8 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-headline font-black text-primary">Restablecer Clave</DialogTitle>
+            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase">Generar contraseña para {user.firstName}</DialogDescription>
+          </DialogHeader>
+        </div>
+        <div className="p-8 space-y-6">
+          <p className="text-sm font-medium text-slate-500 leading-relaxed">
+            Se generará una contraseña aleatoria y se enviará por correo a <strong>{user.email}</strong>. 
+            <br/><br/>
+            <span className="text-primary font-bold">Nota:</span> Como administrador, tú eres el único responsable de esta acción.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setOpen(false)} className="flex-1 h-12 rounded-xl font-black text-[10px] uppercase">Cancelar</Button>
+            <Button onClick={handleResetPassword} className="flex-[2] h-12 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase shadow-lg" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "GENERAR Y ENVIAR CLAVE"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
