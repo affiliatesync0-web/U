@@ -85,10 +85,12 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault(); // CRÍTICO: Evitar cualquier otro evento del navegador
     setGoogleLoading(true);
     setErrorDetail(null);
     const provider = new GoogleAuthProvider();
+    
     try {
       const result = await signInWithPopup(auth, provider);
       if (result.user.email) {
@@ -99,11 +101,13 @@ export default function LoginPage() {
       let detail = "No se pudo completar el inicio de sesión con Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        detail = "Cerraste la ventana de Google antes de terminar.";
+        detail = "La ventana de Google se cerró. Esto suele ocurrir si el dominio no está autorizado en Firebase Console -> Authentication -> Settings.";
+      } else if (error.code === 'auth/popup-blocked') {
+        detail = "Tu navegador bloqueó la ventana emergente. Por favor, permite los popups para este sitio.";
       } else if (error.code === 'auth/operation-not-allowed') {
         detail = "El proveedor de Google no está habilitado en Firebase Console.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        detail = "Este dominio no está autorizado para Google Login. Agrégalo en Firebase > Authentication > Settings.";
+        detail = "DOMINIO NO AUTORIZADO: Debes agregar este dominio en Firebase Console -> Authentication -> Settings -> Authorized Domains.";
       }
       
       setErrorDetail(detail);
@@ -153,6 +157,7 @@ export default function LoginPage() {
             )}
 
             <Button 
+              type="button"
               onClick={handleGoogleLogin} 
               variant="outline" 
               className="w-full h-14 rounded-2xl font-bold border-border bg-card hover:bg-muted transition-all gap-3 shadow-sm"

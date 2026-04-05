@@ -133,10 +133,12 @@ function RegisterContent() {
     }
   }
 
-  const handleGoogleRegister = async () => {
+  const handleGoogleRegister = async (e: React.MouseEvent) => {
+    e.preventDefault();
     setGoogleLoading(true);
     setErrorDetail(null);
     const provider = new GoogleAuthProvider();
+    
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -166,11 +168,13 @@ function RegisterContent() {
       let detail = "No se pudo sincronizar tu cuenta de Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        detail = "La ventana de Google fue cerrada antes de terminar.";
+        detail = "La ventana de Google se cerró sola. Verifica que este dominio esté en 'Dominios Autorizados' en Firebase Console -> Authentication -> Settings.";
+      } else if (error.code === 'auth/popup-blocked') {
+        detail = "Ventana bloqueada. Por favor, habilita las ventanas emergentes en tu navegador para continuar.";
       } else if (error.code === 'auth/operation-not-allowed') {
         detail = "El acceso con Google está deshabilitado en Firebase Console.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        detail = "Este dominio no está autorizado para Google Login en Firebase.";
+        detail = "DOMINIO NO AUTORIZADO: Agrega este dominio en Firebase -> Authentication -> Settings -> Authorized Domains.";
       }
       
       setErrorDetail(detail);
@@ -215,6 +219,7 @@ function RegisterContent() {
 
             <div className="flex justify-center mb-4">
               <Button 
+                type="button"
                 onClick={handleGoogleRegister} 
                 variant="outline" 
                 className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl hover:bg-muted border-none ring-1 ring-border"
@@ -234,6 +239,7 @@ function RegisterContent() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <button 
+                type="button"
                 onClick={() => { setRole('buyer'); setStep('info'); }} 
                 className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left group border border-border/50 relative overflow-hidden"
               >
@@ -244,6 +250,7 @@ function RegisterContent() {
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">Accede a formación y herramientas digitales premium.</p>
               </button>
               <button 
+                type="button"
                 onClick={() => { setRole('affiliate'); setStep('info'); }} 
                 className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left group border border-border/50 relative overflow-hidden"
               >
