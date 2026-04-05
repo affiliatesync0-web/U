@@ -14,8 +14,8 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
-import { createUserWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
@@ -54,33 +54,33 @@ function RegisterContent() {
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: '' })
 
-  const setupRecaptcha = () => {
-    if (typeof window === 'undefined') return;
+  const initRecaptcha = () => {
+    if (typeof window === 'undefined') return null;
     try {
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
+        const container = document.getElementById('recaptcha-reg-container');
+        if (container) container.innerHTML = '';
       }
-      recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
-        'size': 'invisible',
-        'expired-callback': () => {
-          setupRecaptcha();
-        }
+      
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
+        'size': 'invisible'
       });
+      recaptchaVerifier.current = verifier;
+      return verifier;
     } catch (e) {
-      console.error("Error recaptcha init:", e);
+      console.error("Fallo inicialización seguridad:", e);
+      return null;
     }
   };
 
   useEffect(() => {
-    if (step === 'phone' || step === 'otp') {
-      setupRecaptcha();
-    }
     return () => {
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
       }
     };
-  }, [auth, step]);
+  }, []);
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -99,11 +99,8 @@ function RegisterContent() {
     const fullPhone = `${countryCode}${cleanPhone}`;
 
     try {
-      if (!recaptchaVerifier.current) {
-        setupRecaptcha();
-      }
-      const appVerifier = recaptchaVerifier.current;
-      if (!appVerifier) throw new Error("Captcha no listo");
+      const appVerifier = initRecaptcha();
+      if (!appVerifier) throw new Error("Motor de seguridad no disponible.");
 
       const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(result);
@@ -111,13 +108,13 @@ function RegisterContent() {
       toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullPhone}` });
     } catch (err: any) {
       console.error("SMS Reg Error:", err);
-      setupRecaptcha();
       
-      let msg = "Error al enviar SMS.";
+      let msg = "Error al conectar con el servidor de SMS.";
       if (err.code === 'auth/invalid-phone-number') msg = "El formato del número no es válido.";
       if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
       if (err.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Intenta de nuevo.";
       if (err.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
+      if (err.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado en Firebase.";
       
       setErrorDetail(msg);
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
@@ -192,7 +189,8 @@ function RegisterContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4 transition-colors duration-300">
-      <div id="recaptcha-reg-container" className="fixed bottom-0 left-0"></div>
+      <div id="recaptcha-reg-container"></div>
+      
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
         <LanguageToggle />

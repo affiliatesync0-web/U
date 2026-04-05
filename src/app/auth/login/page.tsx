@@ -52,40 +52,40 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  // Inicialización ultra-segura del reCAPTCHA
-  const setupRecaptcha = () => {
-    if (typeof window === 'undefined') return;
+  // Inicialización dinámica y única del reCAPTCHA
+  const initRecaptcha = () => {
+    if (typeof window === 'undefined') return null;
     
     try {
+      // Limpiar instancia previa si existe
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
+        const container = document.getElementById('recaptcha-container');
+        if (container) container.innerHTML = ''; 
       }
       
-      const container = document.getElementById('recaptcha-container');
-      if (!container) return;
-
-      recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
-          console.log("reCAPTCHA verificado con éxito");
-        },
-        'expired-callback': () => {
-          setupRecaptcha();
+          console.log("reCAPTCHA verificado");
         }
       });
+      
+      recaptchaVerifier.current = verifier;
+      return verifier;
     } catch (e) {
-      console.error("Error al configurar reCAPTCHA:", e);
+      console.error("Fallo al inicializar seguridad reCAPTCHA:", e);
+      return null;
     }
   };
 
   useEffect(() => {
-    setupRecaptcha();
     return () => {
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
       }
     };
-  }, [auth]);
+  }, []);
 
   const handleLoginSuccess = async (userEmail?: string, uid?: string) => {
     const finalUid = uid || auth.currentUser?.uid || '';
@@ -153,12 +153,8 @@ export default function LoginPage() {
     const fullNumber = `${countryCode}${cleanPhone}`;
 
     try {
-      if (!recaptchaVerifier.current) {
-        setupRecaptcha();
-      }
-      
-      const appVerifier = recaptchaVerifier.current;
-      if (!appVerifier) throw new Error("Recaptcha no disponible");
+      const appVerifier = initRecaptcha();
+      if (!appVerifier) throw new Error("No se pudo inicializar el motor de seguridad.");
 
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
@@ -166,16 +162,16 @@ export default function LoginPage() {
       toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}.` });
     } catch (error: any) {
       console.error("SMS Auth Error:", error);
-      setupRecaptcha(); // Reset recaptcha on error
       
-      let msg = "No se pudo enviar el código.";
-      if (error.code === 'auth/invalid-phone-number') msg = "El formato del número es incorrecto.";
+      let msg = "Error al enviar el código de seguridad.";
+      if (error.code === 'auth/invalid-phone-number') msg = "El número no tiene un formato válido.";
       if (error.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
-      if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca e intenta de nuevo.";
+      if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca la página e intenta de nuevo.";
       if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
+      if (error.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado. Debes añadir la URL en la consola de Firebase.";
       
       setErrorDetail(msg);
-      toast({ variant: "destructive", title: "Error SMS", description: msg });
+      toast({ variant: "destructive", title: "Error de Envío", description: msg });
     } finally {
       setLoading(false);
     }
@@ -191,7 +187,7 @@ export default function LoginPage() {
       await handleLoginSuccess(undefined, result.user.uid);
     } catch (error: any) {
       console.error("OTP Verification Error:", error);
-      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código ingresado no es válido o ha expirado." });
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código no es válido o ha caducado." });
     } finally {
       setLoading(false);
     }
@@ -199,8 +195,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
-      {/* Contenedor fijo fuera de la estructura principal para máxima estabilidad */}
-      <div id="recaptcha-container" className="fixed bottom-0 left-0"></div>
+      {/* Contenedor invisible para el motor de seguridad */}
+      <div id="recaptcha-container"></div>
       
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
@@ -241,7 +237,7 @@ export default function LoginPage() {
             <TabsContent value="phone" className="space-y-6">
               <CardHeader className="text-center p-0 mb-6">
                 <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">WhatsApp</span></CardTitle>
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu número de teléfono</p>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu número móvil</p>
               </CardHeader>
 
               {errorDetail && (
