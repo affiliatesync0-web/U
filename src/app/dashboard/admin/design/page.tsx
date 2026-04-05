@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -23,7 +24,8 @@ import {
   Image as ImageIcon,
   KeyRound,
   ShieldAlert,
-  Server
+  Server,
+  Music2
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -336,6 +338,15 @@ export default function AdminDesignPage() {
                     placeholder="https://instagram.com/sync" 
                     defaultValue={overrides?.find(o => o.id === 'social-instagram')?.value}
                     onBlur={(e) => handleSaveValue('social-instagram', e.target.value)}
+                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Music2 className="h-3 w-3" /> TikTok URL</Label>
+                  <Input 
+                    placeholder="https://tiktok.com/@sync" 
+                    defaultValue={overrides?.find(o => o.id === 'social-tiktok')?.value}
+                    onBlur={(e) => handleSaveValue('social-tiktok', e.target.value)}
                     className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
                   />
                 </div>
