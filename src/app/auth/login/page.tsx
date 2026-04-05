@@ -1,19 +1,19 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from 'components/ui/card'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -21,6 +21,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { sendEmail } from '@/lib/email'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -28,40 +29,70 @@ export default function LoginPage() {
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
+  
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
+  // Phone Auth States
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+  const [step, setStep] = useState<'phone' | 'otp'>('phone')
+
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  const handleLoginSuccess = async (userEmail: string) => {
+  useEffect(() => {
+    // Initialize Recaptcha
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          console.log('Recaptcha resolved');
+        }
+      });
+    }
+  }, [auth]);
+
+  const handleLoginSuccess = async (userEmail?: string, uid?: string) => {
+    const finalUid = uid || auth.currentUser?.uid || '';
+    const finalEmail = userEmail || auth.currentUser?.email || 'Usuario Teléfono';
+
     sendEmail({
-      to: userEmail,
-      subject: '🔔 Nuevo Inicio de Sesión - Sync Connect',
-      text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${userEmail}\n\nSi no fuiste tú, por favor contacta al administrador de inmediato para asegurar tu cuenta.`
-    }).catch(err => console.error("Error enviando alerta de login:", err));
+      to: 'affiliatesync0@gmail.com',
+      subject: '🔔 Nuevo Inicio de Sesión Detectado',
+      text: `Detección de acceso en Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${finalEmail}\nUID: ${finalUid}`
+    }).catch(err => console.warn("Email alert skipped"));
 
     toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
     
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-    if (userEmail.toLowerCase().trim() === ADMIN_EMAIL) {
+    if (finalEmail.toLowerCase().trim() === ADMIN_EMAIL) {
       router.push('/dashboard/admin');
     } else {
-      const affSnap = await getDoc(doc(db, 'affiliates', auth.currentUser?.uid || ''));
+      // Buscar en afiliados
+      const affSnap = await getDoc(doc(db, 'affiliates', finalUid));
       if (affSnap.exists()) {
         router.push('/dashboard/affiliate');
       } else {
-        router.push('/dashboard/buyer');
+        // Buscar en compradores
+        const buyerSnap = await getDoc(doc(db, 'buyers', finalUid));
+        if (buyerSnap.exists()) {
+          router.push('/dashboard/buyer');
+        } else {
+          toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado. Contacta a soporte." });
+          router.push('/');
+        }
       }
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorDetail(null)
     const cleanEmail = email.trim().toLowerCase();
@@ -73,19 +104,60 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       await handleLoginSuccess(cleanEmail);
     } catch (error: any) {
-      console.error("Login error code:", error.code);
-      let msg = "Credenciales incorrectas o cuenta no registrada.";
+      console.error("Login error:", error.code);
+      let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
-      if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos fallidos.";
-      
       setErrorDetail(msg);
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
     }
   }
 
+  const handleSendPhoneCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorDetail(null);
+    if (!phoneNumber || phoneNumber.length < 8) {
+      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu número completo con código de país." });
+      return;
+    }
+
+    setLoading(true);
+    const appVerifier = (window as any).recaptchaVerifier;
+    const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+
+    try {
+      const result = await signInWithPhoneNumber(auth, formattedNumber, appVerifier);
+      setConfirmationResult(result);
+      setStep('otp');
+      toast({ title: "Código Enviado", description: "Revisa tus mensajes SMS." });
+    } catch (error: any) {
+      console.error("SMS Error:", error);
+      setErrorDetail("No se pudo enviar el código. Verifica que el número sea correcto y que hayas activado el acceso por teléfono en Firebase.");
+      toast({ variant: "destructive", title: "Error SMS", description: "Fallo al enviar el código." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || !confirmationResult) return;
+
+    setLoading(true);
+    try {
+      const result = await confirmationResult.confirm(otpCode);
+      await handleLoginSuccess(undefined, result.user.uid);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código ingresado no es válido o ha expirado." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
+      <div id="recaptcha-container"></div>
+      
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
         <LanguageToggle />
@@ -99,69 +171,130 @@ export default function LoginPage() {
       </div>
 
       <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
-        <div className="relative h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center group-hover:scale-105 transition-transform border border-border/50">
+        <div className="relative h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
            {displayLogoUrl ? (
              <Image src={displayLogoUrl} alt="Sync Connect" width={80} height={80} className="object-contain p-3" unoptimized />
            ) : (
              <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
            )}
         </div>
-        <span className="font-headline font-black text-4xl text-foreground tracking-tight">Sync <span className="text-primary">Connect</span></span>
+        <span className="font-headline font-black text-4xl text-foreground tracking-tight uppercase italic">Sync <span className="text-primary">Connect</span></span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">
-          <CardHeader className="text-center p-0 mb-10">
-            <CardTitle className="text-4xl font-headline font-black text-foreground tracking-tight">{t.login}</CardTitle>
-            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Ingresa tus credenciales para continuar</p>
-          </CardHeader>
-          <CardContent className="p-0 space-y-6">
-            {errorDetail && (
-              <Alert variant="destructive" className="mb-2 rounded-2xl bg-red-50 border-red-100 text-red-800">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-[10px] font-black uppercase tracking-widest">Aviso del Sistema</AlertTitle>
-                <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail}</AlertDescription>
-              </Alert>
-            )}
+          
+          <Tabs defaultValue="phone" className="w-full">
+            <TabsList className="grid grid-cols-2 mb-10 h-14 bg-muted p-1 rounded-2xl">
+              <TabsTrigger value="phone" className="rounded-xl font-black text-[10px] uppercase tracking-widest gap-2">
+                <Smartphone className="h-3 w-3" /> Teléfono
+              </TabsTrigger>
+              <TabsTrigger value="email" className="rounded-xl font-black text-[10px] uppercase tracking-widest gap-2">
+                <Mail className="h-3 w-3" /> Email
+              </TabsTrigger>
+            </TabsList>
 
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
-                <Input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  required 
-                  className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
-                  placeholder="ejemplo@correo.com" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Contraseña</Label>
-                <div className="relative">
+            <TabsContent value="phone" className="space-y-6">
+              <CardHeader className="text-center p-0 mb-6">
+                <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">WhatsApp</span></CardTitle>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu número de teléfono</p>
+              </CardHeader>
+
+              {errorDetail && (
+                <Alert variant="destructive" className="mb-4 rounded-2xl bg-red-50 border-red-100">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail}</AlertDescription>
+                </Alert>
+              )}
+
+              {step === 'phone' ? (
+                <form onSubmit={handleSendPhoneCode} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Número (Con +)</Label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="tel" 
+                        value={phoneNumber} 
+                        onChange={(e) => setPhoneNumber(e.target.value)} 
+                        required 
+                        placeholder="+50588888888"
+                        className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold pl-12 pr-6" 
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
+                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR CÓDIGO SMS"}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-5">
+                  <div className="space-y-2 text-center">
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-primary">Ingresa el código de 6 dígitos</Label>
+                    <div className="relative">
+                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        value={otpCode} 
+                        onChange={(e) => setOtpCode(e.target.value)} 
+                        required 
+                        maxLength={6}
+                        className="h-16 rounded-2xl bg-card border-none ring-1 ring-border text-center text-3xl font-black tracking-[0.5em] pl-12" 
+                        placeholder="000000"
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl bg-slate-900 text-white" disabled={loading}>
+                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "VERIFICAR Y ENTRAR"}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setStep('phone')} className="w-full text-[9px] font-black uppercase text-muted-foreground">Cambiar Número</Button>
+                </form>
+              )}
+            </TabsContent>
+
+            <TabsContent value="email" className="space-y-6">
+              <CardHeader className="text-center p-0 mb-6">
+                <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">Email</span></CardTitle>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Usa tus credenciales tradicionales</p>
+              </CardHeader>
+
+              <form onSubmit={handleEmailLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
                   <Input 
-                    type={showPassword ? "text" : "password"} 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
                     required 
                     className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
-                    placeholder="••••••••" 
+                    placeholder="ejemplo@correo.com" 
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
                 </div>
-              </div>
-              <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin h-6 w-6" /> : (
-                  <span className="flex items-center gap-2 uppercase">Entrar a mi Panel <ArrowRight className="h-5 w-5" /></span>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-2">
-            <p className="text-xs font-bold text-muted-foreground">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate gratis</Link></p>
-            <Link href="/auth/admin-login" className="text-[9px] font-black uppercase text-muted-foreground/50 hover:text-foreground transition-colors tracking-widest">Acceso Maestro</Link>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Contraseña</Label>
+                  <div className="relative">
+                    <Input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      required 
+                      className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
+                      placeholder="••••••••" 
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "INICIAR SESIÓN"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-4">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate gratis</Link></p>
+            <Link href="/auth/admin-login" className="text-[8px] font-black uppercase text-muted-foreground/40 hover:text-foreground transition-colors tracking-[0.3em]">Acceso Maestro Especial</Link>
           </CardFooter>
         </div>
       </Card>
