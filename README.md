@@ -13,23 +13,15 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 
 ## 🚀 Guía de Despliegue en Vercel
 
-### 1. Variables de Entorno Críticas
-Para que el cambio de contraseñas automático y Google funcionen en Vercel, debes configurar estas variables:
+### 1. Variables de Envorno Críticas
+Para que el cambio de contraseñas automático y la conexión con Firebase funcionen en Vercel, debes configurar estas variables:
 
 - `FIREBASE_PROJECT_ID`: `studio-9886993662-50a10`
 - `FIREBASE_CLIENT_EMAIL`: (Cuenta de servicio de Firebase)
 - `FIREBASE_PRIVATE_KEY`: (Clave privada completa con `-----BEGIN PRIVATE KEY-----`)
 - `GEMINI_API_KEY`: Tu clave de Google AI.
 
-### 2. Configurar Google Sign-In (IMPORTANTE)
-Para evitar que la ventana de Google se cierre sola:
-1. Ve a la [Consola de Firebase](https://console.firebase.google.com/).
-2. **Authentication** -> **Sign-in method**.
-3. Habilita el proveedor de **Google**.
-4. Ve a la pestaña **Settings** (Ajustes) -> **Authorized Domains**.
-5. Haz clic en **"Add domain"** y añade la URL de tu app en Vercel (ej: `sync-connect.vercel.app`). **Sin esto, el login con Google fallará.**
-
-### 3. Configuración de Correo (Gmail SMTP)
+### 2. Configuración de Correo (Gmail SMTP)
 1. Ve a tu cuenta de Google > Seguridad > Activa **Verificación en 2 pasos**.
 2. Busca **Contraseñas de Aplicación** y genera una clave de 16 dígitos para "Correo".
 3. Pega esa clave en tu panel administrativo de Sync Connect (Sección Identidad).
