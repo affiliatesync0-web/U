@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from 'components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -49,7 +49,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Initialize Recaptcha
-    if (!(window as any).recaptchaVerifier) {
+    if (typeof window !== 'undefined' && !(window as any).recaptchaVerifier) {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
