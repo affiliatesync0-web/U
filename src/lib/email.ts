@@ -63,7 +63,6 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
         user: config.user,
         pass: config.pass,
       },
-      // Configuración recomendada para Vercel/Cloud Functions
       connectionTimeout: 10000, 
       greetingTimeout: 5000,
       socketTimeout: 15000,
@@ -71,6 +70,9 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
         rejectUnauthorized: false
       }
     });
+
+    // Forzamos que el remitente sea el mismo que el usuario SMTP para evitar bloqueos de Gmail
+    const fromAddress = `"${config.fromName}" <${config.user}>`;
 
     const emailHtml = html || `
       <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -82,13 +84,13 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
         </div>
         <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
           <p style="margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">&copy; ${new Date().getFullYear()} ${config.fromName}</p>
-          <p style="margin-top: 5px; opacity: 0.5;">Enviado vía Sync Connect Cloud Engine</p>
+          <p style="margin-top: 5px; opacity: 0.5;">Enviado desde tu plataforma personalizada</p>
         </div>
       </div>
     `;
 
     const info = await transporter.sendMail({
-      from: `"${config.fromName}" <${config.user}>`,
+      from: fromAddress,
       to,
       subject,
       text,
@@ -122,6 +124,7 @@ export async function sendPasswordResetCode(email: string) {
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); 
 
   try {
+    // 1. Guardamos el código en Firestore vinculado al email
     await setDoc(doc(firestore, 'password_resets', cleanEmail), {
       code,
       expiresAt,
@@ -129,6 +132,7 @@ export async function sendPasswordResetCode(email: string) {
       createdAt: new Date().toISOString()
     });
 
+    // 2. Enviamos el código usando el SMTP configurado por el admin
     const result = await sendEmail({
       to: cleanEmail,
       subject: `[${code}] Tu Código de Seguridad Sync`,
@@ -139,11 +143,12 @@ export async function sendPasswordResetCode(email: string) {
             <span style="background-color: #fff1eb; color: #ff5d1b; padding: 10px 20px; border-radius: 100px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">Seguridad Sync</span>
           </div>
           <h2 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 10px;">Recuperar Contraseña</h2>
-          <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Usa el código de 6 dígitos para validar tu identidad:</p>
+          <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Ingresa el siguiente código de 6 dígitos en la aplicación para validar tu identidad:</p>
           <div style="background: #f8fafc; padding: 30px; border-radius: 24px; border: 2px dashed #e2e8f0; margin: 20px 0;">
             <span style="font-family: 'Courier New', monospace; font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #ff5d1b;">${code}</span>
           </div>
           <p style="font-size: 11px; color: #94a3b8; margin-top: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Este código caduca en 15 minutos.</p>
+          <p style="font-size: 10px; color: #cbd5e1; margin-top: 20px;">Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
         </div>
       `
     });
@@ -159,6 +164,6 @@ export async function testEmailConfig(email: string) {
   return await sendEmail({
     to: email,
     subject: '🔔 Prueba de Conexión Sync Connect',
-    text: '¡Configuración Exitosa! Tu plataforma Sync Connect ahora puede enviar notificaciones reales a tus afiliados y clientes.'
+    text: '¡Configuración Exitosa! Tu plataforma Sync Connect ahora puede enviar notificaciones reales a tus afiliados y clientes desde tu propio Gmail.'
   });
 }
