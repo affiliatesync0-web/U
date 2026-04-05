@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash, Globe, ShieldAlert } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash, Globe, ShieldAlert, Zap } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -35,7 +35,7 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
-  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string} | null>(null)
+  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string, technical?: string} | null>(null)
   
   const [countryCode, setCountryCode] = useState('+505')
   const [phone, setPhone] = useState('')
@@ -56,17 +56,23 @@ function RegisterContent() {
   useEffect(() => {
     return () => {
       if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
+        try {
+          recaptchaVerifier.current.clear();
+        } catch (e) {}
         recaptchaVerifier.current = null;
       }
     };
   }, []);
 
-  const initRecaptcha = () => {
+  const initRecaptcha = async () => {
     if (typeof window === 'undefined') return null;
     
+    // Limpieza profunda preventiva
     if (recaptchaVerifier.current) {
-      return recaptchaVerifier.current;
+      try {
+        recaptchaVerifier.current.clear();
+      } catch (e) {}
+      recaptchaVerifier.current = null;
     }
 
     try {
@@ -80,10 +86,20 @@ function RegisterContent() {
           console.log("reCAPTCHA verificado en registro");
         }
       });
+      
+      // Renderizado previo para asegurar disponibilidad
+      await verifier.render();
       recaptchaVerifier.current = verifier;
       return verifier;
-    } catch (e) {
+    } catch (e: any) {
       console.error("Fallo inicialización seguridad:", e);
+      if (e.code === 'auth/unauthorized-domain') {
+        setErrorDetail({ 
+          msg: "El dominio actual no tiene permiso para enviar SMS.", 
+          code: e.code, 
+          domain: window.location.hostname 
+        });
+      }
       return null;
     }
   };
@@ -104,15 +120,18 @@ function RegisterContent() {
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número Inválido" });
+      toast({ variant: "destructive", title: "Número Inválido", description: "Verifica los dígitos de tu número." });
       return;
     }
     setLoading(true);
     const fullPhone = `${countryCode}${cleanPhone}`;
 
     try {
-      const appVerifier = initRecaptcha();
-      if (!appVerifier) throw new Error("Motor de seguridad no disponible.");
+      const appVerifier = await initRecaptcha();
+      if (!appVerifier) {
+        setLoading(false);
+        return;
+      }
 
       const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(result);
@@ -121,22 +140,24 @@ function RegisterContent() {
     } catch (err: any) {
       console.error("SMS Reg Error:", err);
       
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-        recaptchaVerifier.current = null;
-      }
-
       let msg = "Error al conectar con el servidor de SMS.";
       let domain = undefined;
 
       if (err.code === 'auth/unauthorized-domain') {
-        msg = "DOMINIO NO AUTORIZADO. Firebase no tiene permiso para enviar SMS desde este sitio.";
+        msg = "DOMINIO NO AUTORIZADO. Firebase bloqueó la petición.";
         domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
       } else if (err.code === 'auth/quota-exceeded') {
         msg = "Límite de SMS excedido por hoy.";
+      } else if (err.code === 'auth/captcha-check-failed') {
+        msg = "La verificación anti-bot falló. Recarga la página.";
       }
       
-      setErrorDetail({ msg, code: err.code, domain });
+      setErrorDetail({ 
+        msg, 
+        code: err.code, 
+        domain,
+        technical: err.message 
+      });
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -228,19 +249,26 @@ function RegisterContent() {
 
       <div className="w-full max-w-4xl">
         {errorDetail && (
-          <Alert variant="destructive" className="mb-8 rounded-3xl bg-red-50 border-red-100">
-            <ShieldAlert className="h-5 w-5" />
-            <AlertTitle className="text-[10px] font-black uppercase">Fallo de Seguridad</AlertTitle>
-            <AlertDescription className="text-xs font-bold leading-relaxed space-y-2">
+          <Alert variant="destructive" className="mb-8 rounded-[3rem] bg-red-50 border-red-100 border-2">
+            <ShieldAlert className="h-6 w-6" />
+            <AlertTitle className="text-[10px] font-black uppercase ml-2">Bloqueo de Infraestructura</AlertTitle>
+            <AlertDescription className="text-xs font-bold leading-relaxed space-y-4 mt-2 ml-2">
               <p>{errorDetail.msg}</p>
               {errorDetail.domain && (
-                <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2">
-                  <p className="text-[9px] font-black uppercase text-red-800">Acción Requerida:</p>
-                  <p className="text-[10px] font-medium mt-1">
-                    Copia este dominio y pégalo en la sección "Dominios autorizados" de Firebase:
-                    <code className="block mt-2 p-2 bg-red-100 rounded font-black text-xs break-all">{errorDetail.domain}</code>
+                <div className="p-6 bg-white/90 rounded-[2rem] border border-red-200 shadow-sm space-y-3">
+                  <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
+                    <Zap className="h-3 w-3 fill-red-800" /> Resolución Maestra:
                   </p>
+                  <p className="text-[10px] font-medium text-slate-600">
+                    Copia exactamente este dominio y pégalo en la sección "Dominios autorizados" de Firebase:
+                  </p>
+                  <code className="block p-3 bg-red-100 rounded-xl font-black text-xs break-all border border-red-200 select-all">
+                    {errorDetail.domain}
+                  </code>
                 </div>
+              )}
+              {errorDetail.technical && (
+                <p className="text-[9px] font-mono opacity-40 italic">Log: {errorDetail.technical}</p>
               )}
             </AlertDescription>
           </Alert>

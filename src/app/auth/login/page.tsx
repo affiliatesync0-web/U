@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash, Globe, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash, Globe, ShieldAlert, Zap } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -35,7 +35,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string} | null>(null)
+  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string, technical?: string} | null>(null)
 
   // Phone Auth States
   const [countryCode, setCountryCode] = useState('+505')
@@ -54,17 +54,25 @@ export default function LoginPage() {
   useEffect(() => {
     return () => {
       if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
+        try {
+          recaptchaVerifier.current.clear();
+        } catch (e) {
+          // ignore cleanup errors
+        }
         recaptchaVerifier.current = null;
       }
     };
   }, []);
 
-  const initRecaptcha = () => {
+  const initRecaptcha = async () => {
     if (typeof window === 'undefined') return null;
     
+    // Si ya existe uno, lo limpiamos para evitar conflictos de "ya renderizado"
     if (recaptchaVerifier.current) {
-      return recaptchaVerifier.current;
+      try {
+        recaptchaVerifier.current.clear();
+      } catch (e) {}
+      recaptchaVerifier.current = null;
     }
 
     try {
@@ -76,14 +84,28 @@ export default function LoginPage() {
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
-          console.log("reCAPTCHA verificado con éxito");
+          console.log("reCAPTCHA verificado");
+        },
+        'expired-callback': () => {
+          console.log("reCAPTCHA expirado, reiniciando...");
+          setErrorDetail({ msg: "La verificación de seguridad expiró. Intenta de nuevo." });
         }
       });
       
+      // Renderizar para capturar errores de dominio antes de enviar el SMS
+      await verifier.render();
       recaptchaVerifier.current = verifier;
       return verifier;
-    } catch (e) {
+    } catch (e: any) {
       console.error("Fallo inicializando seguridad reCAPTCHA:", e);
+      if (e.code === 'auth/unauthorized-domain') {
+        const domain = window.location.hostname;
+        setErrorDetail({ 
+          msg: "Dominio no autorizado para SMS.", 
+          code: e.code, 
+          domain 
+        });
+      }
       return null;
     }
   };
@@ -151,7 +173,7 @@ export default function LoginPage() {
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número inválido" });
+      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un número de teléfono real." });
       return;
     }
 
@@ -159,34 +181,39 @@ export default function LoginPage() {
     const fullNumber = `${countryCode}${cleanPhone}`;
 
     try {
-      const appVerifier = initRecaptcha();
-      if (!appVerifier) throw new Error("No se pudo conectar con el motor de seguridad.");
+      const appVerifier = await initRecaptcha();
+      if (!appVerifier) {
+        setLoading(false);
+        return;
+      }
 
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
-      toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS.` });
+      toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}` });
     } catch (error: any) {
       console.error("SMS Auth Error:", error);
       
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-        recaptchaVerifier.current = null;
-      }
-
       let msg = "Error al conectar con el servidor de SMS.";
       let domain = undefined;
 
       if (error.code === 'auth/unauthorized-domain') {
-        msg = "DOMINIO NO AUTORIZADO. Firebase está bloqueando la petición desde este sitio.";
-        domain = typeof window !== 'undefined' ? window.location.hostname : 'este dominio';
+        msg = "DOMINIO BLOQUEADO. Firebase no permite el envío desde este sitio web.";
+        domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
       } else if (error.code === 'auth/quota-exceeded') {
-        msg = "Límite de SMS excedido por hoy.";
+        msg = "Límite de SMS excedido por hoy. Intenta de nuevo mañana.";
       } else if (error.code === 'auth/invalid-phone-number') {
-        msg = "El número no tiene un formato válido.";
+        msg = "El formato del número es inválido para el país seleccionado.";
+      } else if (error.code === 'auth/captcha-check-failed') {
+        msg = "La verificación de seguridad falló. Recarga la página.";
       }
       
-      setErrorDetail({ msg, code: error.code, domain });
+      setErrorDetail({ 
+        msg, 
+        code: error.code, 
+        domain,
+        technical: error.message 
+      });
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
@@ -256,19 +283,26 @@ export default function LoginPage() {
               </CardHeader>
 
               {errorDetail && (
-                <Alert variant="destructive" className="mb-4 rounded-2xl bg-red-50 border-red-100">
-                  <ShieldAlert className="h-4 w-4" />
-                  <AlertTitle className="text-[10px] font-black uppercase">Fallo de Seguridad</AlertTitle>
-                  <AlertDescription className="text-xs font-bold leading-relaxed space-y-2">
+                <Alert variant="destructive" className="mb-4 rounded-3xl bg-red-50 border-red-100">
+                  <ShieldAlert className="h-5 w-5" />
+                  <AlertTitle className="text-[10px] font-black uppercase">Bloqueo de Seguridad</AlertTitle>
+                  <AlertDescription className="text-xs font-bold leading-relaxed space-y-3">
                     <p>{errorDetail.msg}</p>
                     {errorDetail.domain && (
-                      <div className="p-3 bg-white/50 rounded-xl border border-red-200 mt-2">
-                        <p className="text-[9px] font-black uppercase text-red-800">Instrucción Maestra:</p>
-                        <p className="text-[10px] font-medium mt-1">
-                          Ve a Consola de Firebase {'->'} Authentication {'->'} Settings {'->'} Authorized Domains y añade: 
-                          <code className="block mt-1 p-1 bg-red-100 rounded font-black text-xs">{errorDetail.domain}</code>
+                      <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
+                        <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
+                          <Zap className="h-3 w-3" /> Acción Requerida en Firebase:
                         </p>
+                        <p className="text-[10px] font-medium text-slate-600 leading-tight">
+                          Ve a Consola {'->'} Authentication {'->'} Settings {'->'} Authorized Domains y añade este dominio:
+                        </p>
+                        <code className="block p-2 bg-red-100 rounded-xl font-black text-[11px] break-all border border-red-200 select-all">
+                          {errorDetail.domain}
+                        </code>
                       </div>
+                    )}
+                    {errorDetail.technical && (
+                      <p className="text-[9px] opacity-50 font-mono mt-2 truncate">Error: {errorDetail.technical}</p>
                     )}
                   </AlertDescription>
                 </Alert>
@@ -277,7 +311,7 @@ export default function LoginPage() {
               {step === 'phone' ? (
                 <form onSubmit={handleSendPhoneCode} className="space-y-5">
                   <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Número</Label>
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">País y Número</Label>
                     <div className="flex gap-2">
                       <div className="w-[120px] shrink-0">
                         <Select value={countryCode} onValueChange={setCountryCode}>
