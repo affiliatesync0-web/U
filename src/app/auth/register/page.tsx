@@ -135,6 +135,10 @@ function RegisterContent() {
 
   const handleGoogleRegister = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    if (googleLoading) return;
+    
     setGoogleLoading(true);
     setErrorDetail(null);
     const provider = new GoogleAuthProvider();
@@ -168,11 +172,9 @@ function RegisterContent() {
       let detail = "No se pudo sincronizar tu cuenta de Google.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        detail = "La ventana de Google se cerró sola. Verifica que este dominio esté en 'Dominios Autorizados' en Firebase Console -> Authentication -> Settings.";
+        detail = "La ventana se cerró inesperadamente. Verifica que este dominio esté en 'Dominios Autorizados' en Firebase Console.";
       } else if (error.code === 'auth/popup-blocked') {
-        detail = "Ventana bloqueada. Por favor, habilita las ventanas emergentes en tu navegador para continuar.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        detail = "El acceso con Google está deshabilitado en Firebase Console.";
+        detail = "Ventana bloqueada por el navegador. Por favor, habilita los popups.";
       } else if (error.code === 'auth/unauthorized-domain') {
         detail = "DOMINIO NO AUTORIZADO: Agrega este dominio en Firebase -> Authentication -> Settings -> Authorized Domains.";
       }
