@@ -53,7 +53,6 @@ export default function LoginPage() {
     if (userEmail.toLowerCase().trim() === ADMIN_EMAIL) {
       router.push('/dashboard/admin');
     } else {
-      // Verificar si es afiliado o comprador
       const affSnap = await getDoc(doc(db, 'affiliates', auth.currentUser?.uid || ''));
       if (affSnap.exists()) {
         router.push('/dashboard/affiliate');
@@ -77,15 +76,10 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login error code:", error.code);
       let msg = "Credenciales incorrectas o cuenta no registrada.";
+      if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
+      if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos fallidos.";
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        msg = "Email o contraseña inválidos.";
-        setErrorDetail("Verifica que no haya espacios al final de tu contraseña. Si el administrador te dio una nueva clave, asegúrate de escribirla exactamente igual.");
-      } else if (error.code === 'auth/too-many-requests') {
-        msg = "Demasiados intentos fallidos.";
-        setErrorDetail("Tu cuenta ha sido bloqueada temporalmente por seguridad. Intenta de nuevo en unos minutos.");
-      }
-
+      setErrorDetail(msg);
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
     }
@@ -101,8 +95,19 @@ export default function LoginPage() {
         await handleLoginSuccess(result.user.email);
       }
     } catch (error: any) {
-      console.error("Google login error:", error);
-      toast({ variant: "destructive", title: "Error con Google", description: "No se pudo completar el inicio de sesión." });
+      console.error("Google login error:", error.code, error.message);
+      let detail = "No se pudo completar el inicio de sesión con Google.";
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        detail = "Cerraste la ventana de Google antes de terminar.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        detail = "El proveedor de Google no está habilitado en Firebase Console.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        detail = "Este dominio no está autorizado para Google Login. Agrégalo en Firebase > Authentication > Settings.";
+      }
+      
+      setErrorDetail(detail);
+      toast({ variant: "destructive", title: "Error con Google", description: detail });
       setGoogleLoading(false);
     }
   };
@@ -140,12 +145,10 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-0 space-y-6">
             {errorDetail && (
-              <Alert className="mb-2 rounded-2xl bg-amber-50 border-amber-100 text-amber-800">
+              <Alert variant="destructive" className="mb-2 rounded-2xl bg-red-50 border-red-100 text-red-800">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-[10px] font-black uppercase">Ayuda de Acceso</AlertTitle>
-                <AlertDescription className="text-[11px] font-medium leading-relaxed">
-                  {errorDetail}
-                </AlertDescription>
+                <AlertTitle className="text-[10px] font-black uppercase tracking-widest">Aviso del Sistema</AlertTitle>
+                <AlertDescription className="text-xs font-bold leading-relaxed">{errorDetail}</AlertDescription>
               </Alert>
             )}
 
@@ -205,13 +208,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-            
-            <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
-               <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-               <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase">
-                 Si el administrador te entregó una contraseña y no funciona, verifica que no haya espacios extra al escribirla.
-               </p>
-            </div>
           </CardContent>
           <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-2">
             <p className="text-xs font-bold text-muted-foreground">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate gratis</Link></p>
