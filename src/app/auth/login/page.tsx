@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, AlertCircle, Smartphone, Mail, Hash, Globe, ShieldAlert, Zap } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, Smartphone, Mail, Hash, ShieldAlert, Zap, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -56,9 +56,7 @@ export default function LoginPage() {
       if (recaptchaVerifier.current) {
         try {
           recaptchaVerifier.current.clear();
-        } catch (e) {
-          // ignore cleanup errors
-        }
+        } catch (e) {}
         recaptchaVerifier.current = null;
       }
     };
@@ -67,7 +65,6 @@ export default function LoginPage() {
   const initRecaptcha = async () => {
     if (typeof window === 'undefined') return null;
     
-    // Si ya existe uno, lo limpiamos para evitar conflictos de "ya renderizado"
     if (recaptchaVerifier.current) {
       try {
         recaptchaVerifier.current.clear();
@@ -78,34 +75,20 @@ export default function LoginPage() {
     try {
       const container = document.getElementById('recaptcha-container');
       if (!container) return null;
-      
       container.innerHTML = '';
 
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
           console.log("reCAPTCHA verificado");
-        },
-        'expired-callback': () => {
-          console.log("reCAPTCHA expirado, reiniciando...");
-          setErrorDetail({ msg: "La verificación de seguridad expiró. Intenta de nuevo." });
         }
       });
       
-      // Renderizar para capturar errores de dominio antes de enviar el SMS
       await verifier.render();
       recaptchaVerifier.current = verifier;
       return verifier;
     } catch (e: any) {
       console.error("Fallo inicializando seguridad reCAPTCHA:", e);
-      if (e.code === 'auth/unauthorized-domain') {
-        const domain = window.location.hostname;
-        setErrorDetail({ 
-          msg: "Dominio no autorizado para SMS.", 
-          code: e.code, 
-          domain 
-        });
-      }
       return null;
     }
   };
@@ -117,8 +100,8 @@ export default function LoginPage() {
     sendEmail({
       to: 'affiliatesync0@gmail.com',
       subject: '🔔 Nuevo Inicio de Sesión Detectado',
-      text: `Detección de acceso en Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${finalEmail}\nUID: ${finalUid}`
-    }).catch(err => console.warn("Email alert skipped"));
+      text: `Acceso en Sync Connect.\n\nUsuario: ${finalEmail}\nUID: ${finalUid}`
+    }).catch(() => {});
 
     toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
     
@@ -134,7 +117,7 @@ export default function LoginPage() {
         if (buyerSnap.exists()) {
           router.push('/dashboard/buyer');
         } else {
-          toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado. Contacta a soporte." });
+          toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado." });
           router.push('/');
         }
       }
@@ -153,7 +136,6 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       await handleLoginSuccess(cleanEmail);
     } catch (error: any) {
-      console.error("Email Login Error:", error);
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
       setErrorDetail({ msg });
@@ -173,7 +155,7 @@ export default function LoginPage() {
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un número de teléfono real." });
+      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa un número real." });
       return;
     }
 
@@ -184,28 +166,27 @@ export default function LoginPage() {
       const appVerifier = await initRecaptcha();
       if (!appVerifier) {
         setLoading(false);
+        setErrorDetail({ msg: "Error al cargar el motor de seguridad. Recarga la página." });
         return;
       }
 
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
-      toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}` });
+      toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullNumber}` });
     } catch (error: any) {
-      console.error("SMS Auth Error:", error);
+      console.error("SMS Auth Error:", error.code);
       
       let msg = "Error al conectar con el servidor de SMS.";
       let domain = undefined;
 
       if (error.code === 'auth/unauthorized-domain') {
-        msg = "DOMINIO BLOQUEADO. Firebase no permite el envío desde este sitio web.";
+        msg = "DOMINIO NO AUTORIZADO. Firebase bloqueó la petición.";
         domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
+      } else if (error.code === 'auth/admin-restricted-operation') {
+        msg = "OPERACIÓN RESTRINGIDA. El método de Teléfono no está habilitado en Firebase.";
       } else if (error.code === 'auth/quota-exceeded') {
-        msg = "Límite de SMS excedido por hoy. Intenta de nuevo mañana.";
-      } else if (error.code === 'auth/invalid-phone-number') {
-        msg = "El formato del número es inválido para el país seleccionado.";
-      } else if (error.code === 'auth/captcha-check-failed') {
-        msg = "La verificación de seguridad falló. Recarga la página.";
+        msg = "Límite de SMS excedido por hoy.";
       }
       
       setErrorDetail({ 
@@ -229,8 +210,7 @@ export default function LoginPage() {
       const result = await confirmationResult.confirm(otpCode);
       await handleLoginSuccess(undefined, result.user.uid);
     } catch (error: any) {
-      console.error("OTP Verification Error:", error);
-      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código no es válido o ha caducado." });
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código no es válido." });
     } finally {
       setLoading(false);
     }
@@ -243,13 +223,6 @@ export default function LoginPage() {
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
         <LanguageToggle />
-      </div>
-
-      <div className="fixed top-6 left-6">
-        <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black text-[10px] uppercase tracking-widest group">
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          <span>Volver</span>
-        </Link>
       </div>
 
       <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
@@ -279,30 +252,34 @@ export default function LoginPage() {
             <TabsContent value="phone" className="space-y-6">
               <CardHeader className="text-center p-0 mb-6">
                 <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">WhatsApp</span></CardTitle>
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu número móvil</p>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu móvil</p>
               </CardHeader>
 
               {errorDetail && (
                 <Alert variant="destructive" className="mb-4 rounded-3xl bg-red-50 border-red-100">
                   <ShieldAlert className="h-5 w-5" />
-                  <AlertTitle className="text-[10px] font-black uppercase">Bloqueo de Seguridad</AlertTitle>
+                  <AlertTitle className="text-[10px] font-black uppercase">Fallo Crítico</AlertTitle>
                   <AlertDescription className="text-xs font-bold leading-relaxed space-y-3">
                     <p>{errorDetail.msg}</p>
+                    {errorDetail.code === 'auth/admin-restricted-operation' && (
+                      <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
+                        <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
+                          <Zap className="h-3 w-3" /> Acción Requerida:
+                        </p>
+                        <p className="text-[10px] font-medium text-slate-600 leading-tight">
+                          Ve a Consola {'->'} Authentication {'->'} Sign-in method y habilita el proveedor de <strong>Teléfono</strong>.
+                        </p>
+                      </div>
+                    )}
                     {errorDetail.domain && (
                       <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
                         <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                          <Zap className="h-3 w-3" /> Acción Requerida en Firebase:
-                        </p>
-                        <p className="text-[10px] font-medium text-slate-600 leading-tight">
-                          Ve a Consola {'->'} Authentication {'->'} Settings {'->'} Authorized Domains y añade este dominio:
+                          <Zap className="h-3 w-3" /> Añadir Dominio:
                         </p>
                         <code className="block p-2 bg-red-100 rounded-xl font-black text-[11px] break-all border border-red-200 select-all">
                           {errorDetail.domain}
                         </code>
                       </div>
-                    )}
-                    {errorDetail.technical && (
-                      <p className="text-[9px] opacity-50 font-mono mt-2 truncate">Error: {errorDetail.technical}</p>
                     )}
                   </AlertDescription>
                 </Alert>
@@ -347,7 +324,7 @@ export default function LoginPage() {
               ) : (
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
                   <div className="space-y-2 text-center">
-                    <Label className="font-black text-[10px] uppercase tracking-widest text-primary">Ingresa el código de 6 dígitos</Label>
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-primary">Código de 6 dígitos</Label>
                     <div className="relative">
                       <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -371,12 +348,12 @@ export default function LoginPage() {
             <TabsContent value="email" className="space-y-6">
               <CardHeader className="text-center p-0 mb-6">
                 <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">Email</span></CardTitle>
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Usa tus credenciales tradicionales</p>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Credenciales tradicionales</p>
               </CardHeader>
 
               <form onSubmit={handleEmailLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
                   <Input 
                     type="email" 
                     value={email} 
@@ -387,7 +364,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Contraseña</Label>
+                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Contraseña</Label>
                   <div className="relative">
                     <Input 
                       type={showPassword ? "text" : "password"} 
@@ -410,8 +387,8 @@ export default function LoginPage() {
           </Tabs>
 
           <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-4">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate gratis</Link></p>
-            <Link href="/auth/admin-login" className="text-[8px] font-black uppercase text-muted-foreground/40 hover:text-foreground transition-colors tracking-[0.3em]">Acceso Maestro Especial</Link>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate</Link></p>
+            <Link href="/auth/admin-login" className="text-[8px] font-black uppercase text-muted-foreground/40 hover:text-foreground transition-colors tracking-[0.3em]">Acceso Administrativo</Link>
           </CardFooter>
         </div>
       </Card>

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, AlertCircle, Hash, Globe, ShieldAlert, Zap } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, Smartphone, ArrowLeft, ShieldAlert, Zap, Hash } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -67,7 +67,6 @@ function RegisterContent() {
   const initRecaptcha = async () => {
     if (typeof window === 'undefined') return null;
     
-    // Limpieza profunda preventiva
     if (recaptchaVerifier.current) {
       try {
         recaptchaVerifier.current.clear();
@@ -87,19 +86,11 @@ function RegisterContent() {
         }
       });
       
-      // Renderizado previo para asegurar disponibilidad
       await verifier.render();
       recaptchaVerifier.current = verifier;
       return verifier;
     } catch (e: any) {
       console.error("Fallo inicialización seguridad:", e);
-      if (e.code === 'auth/unauthorized-domain') {
-        setErrorDetail({ 
-          msg: "El dominio actual no tiene permiso para enviar SMS.", 
-          code: e.code, 
-          domain: window.location.hostname 
-        });
-      }
       return null;
     }
   };
@@ -120,7 +111,7 @@ function RegisterContent() {
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número Inválido", description: "Verifica los dígitos de tu número." });
+      toast({ variant: "destructive", title: "Número Inválido", description: "Verifica tu número." });
       return;
     }
     setLoading(true);
@@ -130,6 +121,7 @@ function RegisterContent() {
       const appVerifier = await initRecaptcha();
       if (!appVerifier) {
         setLoading(false);
+        setErrorDetail({ msg: "Error de seguridad. Recarga la página." });
         return;
       }
 
@@ -138,7 +130,7 @@ function RegisterContent() {
       setStep('otp');
       toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullPhone}` });
     } catch (err: any) {
-      console.error("SMS Reg Error:", err);
+      console.error("SMS Reg Error:", err.code);
       
       let msg = "Error al conectar con el servidor de SMS.";
       let domain = undefined;
@@ -146,10 +138,8 @@ function RegisterContent() {
       if (err.code === 'auth/unauthorized-domain') {
         msg = "DOMINIO NO AUTORIZADO. Firebase bloqueó la petición.";
         domain = typeof window !== 'undefined' ? window.location.hostname : 'este sitio';
-      } else if (err.code === 'auth/quota-exceeded') {
-        msg = "Límite de SMS excedido por hoy.";
-      } else if (err.code === 'auth/captcha-check-failed') {
-        msg = "La verificación anti-bot falló. Recarga la página.";
+      } else if (err.code === 'auth/admin-restricted-operation') {
+        msg = "OPERACIÓN RESTRINGIDA. El servicio de SMS no está habilitado en Firebase.";
       }
       
       setErrorDetail({ 
@@ -173,7 +163,6 @@ function RegisterContent() {
       setStep('info');
       toast({ title: "Número Verificado ✓" });
     } catch (e: any) {
-      console.error("OTP Verify Error:", e);
       toast({ variant: "destructive", title: "Código Incorrecto" });
     } finally {
       setLoading(false);
@@ -218,10 +207,9 @@ function RegisterContent() {
         to: formData.email,
         subject: '¡Registro Exitoso! - Sync Connect',
         text: `Hola ${formData.firstName}, bienvenido a Sync Connect.`
-      }).catch(e => console.warn("Email error skipped"));
+      }).catch(() => {});
 
     } catch (e: any) {
-      console.error("Firestore Save Error:", e);
       toast({ variant: "destructive", title: "Error de Guardado" });
     } finally {
       setLoading(false);
@@ -251,24 +239,31 @@ function RegisterContent() {
         {errorDetail && (
           <Alert variant="destructive" className="mb-8 rounded-[3rem] bg-red-50 border-red-100 border-2">
             <ShieldAlert className="h-6 w-6" />
-            <AlertTitle className="text-[10px] font-black uppercase ml-2">Bloqueo de Infraestructura</AlertTitle>
+            <AlertTitle className="text-[10px] font-black uppercase ml-2">Error de Configuración</AlertTitle>
             <AlertDescription className="text-xs font-bold leading-relaxed space-y-4 mt-2 ml-2">
               <p>{errorDetail.msg}</p>
+              {errorDetail.code === 'auth/admin-restricted-operation' && (
+                <div className="p-6 bg-white/90 rounded-[2rem] border border-red-200 shadow-sm space-y-3">
+                  <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
+                    <Zap className="h-3 w-3 fill-red-800" /> Resolución Administrativa:
+                  </p>
+                  <p className="text-[10px] font-medium text-slate-600">
+                    Habilita el proveedor de <strong>Teléfono</strong> en la sección Authentication de la Consola de Firebase para desbloquear esta función.
+                  </p>
+                </div>
+              )}
               {errorDetail.domain && (
                 <div className="p-6 bg-white/90 rounded-[2rem] border border-red-200 shadow-sm space-y-3">
                   <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                    <Zap className="h-3 w-3 fill-red-800" /> Resolución Maestra:
+                    <Zap className="h-3 w-3 fill-red-800" /> Resolución de Dominio:
                   </p>
                   <p className="text-[10px] font-medium text-slate-600">
-                    Copia exactamente este dominio y pégalo en la sección "Dominios autorizados" de Firebase:
+                    Añade este dominio a la lista de autorizados en Firebase:
                   </p>
                   <code className="block p-3 bg-red-100 rounded-xl font-black text-xs break-all border border-red-200 select-all">
                     {errorDetail.domain}
                   </code>
                 </div>
-              )}
-              {errorDetail.technical && (
-                <p className="text-[9px] font-mono opacity-40 italic">Log: {errorDetail.technical}</p>
               )}
             </AlertDescription>
           </Alert>
@@ -278,7 +273,7 @@ function RegisterContent() {
           <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
             <div className="text-center">
               <h1 className="text-5xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">Crea tu <span className="text-primary">Cuenta</span></h1>
-              <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">¿Cuál es tu objetivo en Sync Connect?</p>
+              <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">¿Cuál es tu objetivo?</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <button type="button" onClick={() => { setRole('buyer'); setStep('phone'); }} className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left border border-border/50 group">
@@ -304,7 +299,7 @@ function RegisterContent() {
               </div>
               <form onSubmit={handleSendCode} className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">País y Número de Teléfono</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">País y Número</Label>
                   <div className="flex gap-3">
                     <div className="w-[140px] shrink-0">
                       <Select value={countryCode} onValueChange={setCountryCode}>
@@ -327,7 +322,7 @@ function RegisterContent() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin" /> : "ENVIAR CÓDIGO DE ACCESO"}
+                  {loading ? <Loader2 className="animate-spin" /> : "ENVIAR CÓDIGO"}
                 </Button>
               </form>
             </div>
@@ -384,7 +379,7 @@ function RegisterContent() {
           <Card className="w-full max-w-xl mx-auto border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in slide-in-from-right-8">
             <CardHeader className="p-0 mb-10 text-center">
               <CardTitle className="text-3xl font-headline font-black text-primary uppercase italic">Evaluación de Vendedor</CardTitle>
-              <p className="text-xs font-bold text-muted-foreground mt-4 uppercase tracking-widest">Queremos conocer tu estrategia</p>
+              <p className="text-xs font-bold text-muted-foreground mt-4 uppercase tracking-widest">Estrategia Sync</p>
             </CardHeader>
             <form onSubmit={handleFinalRegister} className="space-y-8">
               <div className="space-y-2">
@@ -396,7 +391,7 @@ function RegisterContent() {
                 <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" />
               </div>
               <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin" /> : "ENVIAR SOLICITUD MAESTRA"}
+                {loading ? <Loader2 className="animate-spin" /> : "ENVIAR SOLICITUD"}
               </Button>
             </form>
           </Card>
