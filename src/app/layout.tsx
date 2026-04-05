@@ -5,11 +5,33 @@ import { LanguageProvider } from '@/components/language-context';
 import { FirebaseClientProvider } from '@/firebase';
 import { FloatingContact } from '@/components/floating-contact';
 import { ThemeProvider } from '@/components/theme-context';
+import { initializeFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { getGoogleDriveDirectLink } from '@/lib/utils';
 
-export const metadata: Metadata = {
-  title: 'Sync Connect | Potenciando Afiliados en Nicaragua',
-  description: 'Gestiona tus productos digitales y comisiones de afiliados sin problemas con Sync Connect.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { firestore } = initializeFirebase();
+  let iconUrl = "/favicon.ico";
+  
+  try {
+    const logoSnap = await getDoc(doc(firestore, 'site_config', 'site-logo'));
+    if (logoSnap.exists() && logoSnap.data().imageUrl) {
+      iconUrl = getGoogleDriveDirectLink(logoSnap.data().imageUrl);
+    }
+  } catch (e) {
+    console.error("Error loading metadata icon:", e);
+  }
+
+  return {
+    title: 'Sync Connect | Potenciando Afiliados en Nicaragua',
+    description: 'Gestiona tus productos digitales y comisiones de afiliados sin problemas con Sync Connect.',
+    icons: {
+      icon: iconUrl,
+      shortcut: iconUrl,
+      apple: iconUrl,
+    }
+  };
+}
 
 export default function RootLayout({
   children,
@@ -17,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
