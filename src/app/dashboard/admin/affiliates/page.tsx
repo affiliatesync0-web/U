@@ -1,10 +1,11 @@
+
 "use client"
 
 import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -22,6 +23,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNo
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin } from '@/lib/email'
+import { adminResetUserPassword } from '@/lib/auth-actions'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminAffiliatesPage() {
@@ -312,33 +314,38 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
   const [generatedPass, setGeneratedPass] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleResetPassword = async () => {
+  const handleAutoReset = async () => {
     setLoading(true);
+    // Generar clave segura
     const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
-    setGeneratedPass(newPass);
     
     try {
-      const result = await sendNewPasswordAdmin({
+      // 1. Aplicar cambio en Firebase Auth (Vía Admin SDK)
+      const res = await adminResetUserPassword(user.email, newPass);
+      
+      if (!res.success) {
+        throw new Error(res.error);
+      }
+
+      // 2. Enviar por Gmail al usuario
+      const emailRes = await sendNewPasswordAdmin({
         to: user.email,
         name: user.firstName,
         newPassword: newPass
       });
 
-      if (result.success) {
-        toast({ title: "Contraseña Enviada", description: `Se ha enviado la nueva clave a ${user.email}.` });
+      if (emailRes.success) {
+        setGeneratedPass(newPass);
+        toast({ title: "Contraseña Sincronizada", description: "Se ha cambiado en el sistema y enviado por correo automáticamente." });
       } else {
-        toast({ variant: "destructive", title: "Error SMTP", description: "No se pudo enviar el correo con la clave." });
+        toast({ variant: "destructive", title: "Error Email", description: "Se cambió la clave pero falló el envío del correo." });
       }
-    } catch (e) {
-      toast({ variant: "destructive", title: "Error Crítico", description: "Fallo al procesar el cambio de clave." });
+    } catch (e: any) {
+      console.error(e);
+      toast({ variant: "destructive", title: "Fallo Automático", description: e.message || "No se pudo actualizar la clave en el servidor." });
     } finally {
       setLoading(false);
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: "Copiado", description: "Clave lista para pegar en Firebase." });
   };
 
   return (
@@ -351,61 +358,38 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
       <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
         <div className="bg-slate-900 p-8 text-white">
           <DialogHeader>
-            <DialogTitle className="text-xl font-headline font-black text-primary">Restablecer Clave</DialogTitle>
-            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase">Procedimiento Maestro para {user.firstName}</DialogDescription>
+            <DialogTitle className="text-xl font-headline font-black text-primary uppercase">Reseteo Automático</DialogTitle>
+            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase">Control Maestro para {user.firstName}</DialogDescription>
           </DialogHeader>
         </div>
         
         <div className="p-8 space-y-6">
           {!generatedPass ? (
-            <div className="space-y-4">
-              <Alert className="bg-blue-50 border-blue-100">
-                <Info className="h-4 w-4 text-blue-500" />
-                <AlertTitle className="text-blue-900 font-black text-[10px] uppercase">Nota de Seguridad</AlertTitle>
-                <AlertDescription className="text-blue-700 text-xs font-medium">
-                  Al hacer clic, el sistema generará una clave aleatoria y la enviará por Gmail al usuario.
-                </AlertDescription>
-              </Alert>
-              <Button onClick={handleResetPassword} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase text-xs shadow-xl" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "GENERAR Y ENVIAR POR GMAIL"}
+            <div className="space-y-4 text-center">
+              <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-inner">
+                <Zap className="h-8 w-8 fill-primary" />
+              </div>
+              <p className="text-sm font-medium text-slate-500 leading-relaxed px-4">
+                Al confirmar, el sistema cambiará la contraseña en los servidores de Firebase y enviará las nuevas credenciales al Gmail del afiliado.
+              </p>
+              <Button onClick={handleAutoReset} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase text-xs shadow-xl shadow-slate-200" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : "GENERAR Y APLICAR CAMBIO"}
               </Button>
             </div>
           ) : (
             <div className="space-y-6 animate-in zoom-in-95 duration-300">
-              <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl space-y-4">
+              <div className="p-6 bg-green-50 border border-green-200 rounded-2xl space-y-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-xs font-bold text-amber-900 leading-relaxed uppercase">
-                    ¡PASO OBLIGATORIO!<br/>
-                    Debes pegar esta clave manualmente en la Consola de Firebase para que funcione.
-                  </p>
+                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <p className="text-xs font-black text-green-900 uppercase">¡Cambio Exitoso!</p>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-dashed border-amber-300">
-                  <code className="text-xl font-black text-slate-900 tracking-widest">{generatedPass}</code>
-                  <Button size="icon" variant="ghost" onClick={() => copyToClipboard(generatedPass)} className="text-amber-600">
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-dashed border-green-300 gap-2">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Nueva clave aplicada:</span>
+                  <code className="text-2xl font-black text-slate-900 tracking-widest">{generatedPass}</code>
                 </div>
               </div>
-
-              <div className="space-y-3">
-                <p className="text-[10px] font-black text-slate-400 uppercase text-center">Instrucciones:</p>
-                <div className="grid grid-cols-1 gap-2">
-                  <Button asChild variant="outline" className="h-12 rounded-xl text-[10px] font-black uppercase gap-2">
-                    <a href="https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/users" target="_blank" rel="noopener noreferrer">
-                      1. ABRIR CONSOLA FIREBASE <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </Button>
-                  <p className="text-[9px] text-slate-500 font-medium text-center">
-                    2. Busca a {user.email}<br/>
-                    3. Clic en los 3 puntos (...) {'->'} Cambiar Contraseña<br/>
-                    4. Pega la clave: <strong>{generatedPass}</strong> y guarda.
-                  </p>
-                </div>
-              </div>
-
               <Button onClick={() => setOpen(false)} className="w-full h-14 rounded-xl bg-green-600 text-white font-black uppercase text-xs shadow-xl">
-                ¡YA LO HICE! CERRAR
+                LISTO, CERRAR VENTANA
               </Button>
             </div>
           )}

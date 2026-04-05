@@ -6,20 +6,23 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 ## 🛠️ Tecnologías Utilizadas
 - **Next.js (App Router)**: Máximo rendimiento y SEO.
 - **Firebase (Auth, Firestore, Storage)**: Gestión segura de usuarios, base de datos y archivos de video.
+- **Firebase Admin SDK**: Automatización de gestión de usuarios desde el panel administrativo.
 - **Genkit (IA)**: Inteligencia Artificial para descripciones de productos automáticas.
 - **ShadCN UI & Tailwind**: Interfaz moderna con soporte de Modo Claro/Oscuro.
 - **Nodemailer**: Envío de correos transaccionales y códigos de seguridad vía SMTP.
 
 ## 🚀 Guía de Despliegue en Vercel
 
-### 1. Variables de Entorno (Environment Variables)
-Al subir a Vercel, asegúrate de configurar las siguientes variables en el dashboard de Vercel > Settings > Environment Variables:
+### 1. Variables de Entorno Críticas
+Para que el cambio de contraseñas automático funcione en Vercel, debes configurar estas variables en el Dashboard de Vercel:
 
-- `GEMINI_API_KEY`: Tu clave de Google AI para el asistente de copywriting.
-- `NEXT_PUBLIC_FIREBASE_API_KEY`: (Opcional, si no usas el config.ts).
+- `FIREBASE_PROJECT_ID`: `studio-9886993662-50a10`
+- `FIREBASE_CLIENT_EMAIL`: (Lo obtienes al generar la clave de cuenta de servicio en Firebase)
+- `FIREBASE_PRIVATE_KEY`: (La clave privada completa, incluyendo `-----BEGIN PRIVATE KEY-----`)
+- `GEMINI_API_KEY`: Tu clave de Google AI.
 
 ### 2. Configuración de Correo (Gmail SMTP)
-El sistema está diseñado para usar el correo administrativo que tú mismo configures desde el panel de **Diseño**.
+El sistema está diseñado para usar el correo administrativo que tú mismo configures desde el panel de **Identidad**.
 
 **Pasos críticos:**
 1. Ve a tu cuenta de Google > Seguridad.
@@ -28,15 +31,11 @@ El sistema está diseñado para usar el correo administrativo que tú mismo conf
 4. Genera una clave de 16 dígitos para "Correo".
 5. Pega esa clave en tu panel administrativo de Sync Connect.
 
-### 3. Recuperación de Contraseña (Firebase Console)
-Para que los correos de restablecimiento automáticos de Firebase funcionen con tu Gmail:
-👉 **[Configurar SMTP en Consola de Firebase](https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/emails)**
-
-**Datos a ingresar:**
-- **SMTP Server**: `smtp.gmail.com`
-- **Port**: `465` (SSL)
-- **Username**: Tu correo Gmail.
-- **Password**: Tu contraseña de aplicación de 16 dígitos.
+### 3. Generar Cuenta de Servicio (Para automatizar claves)
+1. Ve a la [Consola de Firebase](https://console.firebase.google.com/).
+2. Ajustes del proyecto > Cuentas de servicio.
+3. Haz clic en **"Generar nueva clave privada"**.
+4. Abre el archivo JSON descargado y copia los valores a las variables de entorno de Vercel mencionadas arriba.
 
 ---
 © 2024 Sync Connect. Desarrollado para escalar negocios digitales en Nicaragua.
