@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldAlert, ArrowLeft, Loader2, LogIn, Eye, EyeOff } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Loader2, LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { sendEmail } from '@/lib/email'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminLoginPage() {
   const { toast } = useToast()
@@ -22,12 +23,13 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('affiliatesync0@gmail.com')
   const [password, setPassword] = useState('')
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorDetail(null);
     if (!email || !password) return;
 
-    // Validación estricta del correo administrativo
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     if (email.trim().toLowerCase() !== ADMIN_EMAIL) {
       toast({ variant: "destructive", title: "Acceso Denegado", description: "Este formulario es exclusivo para administradores autorizados." });
@@ -38,7 +40,6 @@ export default function AdminLoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       
-      // Notificación de acceso administrativo por seguridad
       sendEmail({
         to: email.trim().toLowerCase(),
         subject: '🛡️ Alerta: Acceso Maestro Detectado',
@@ -48,8 +49,19 @@ export default function AdminLoginPage() {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       router.push('/dashboard/admin');
     } catch (error: any) {
-      console.error("Login Error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Credenciales administrativas inválidas." });
+      console.error("Login Error Code:", error.code);
+      let msg = "Credenciales administrativas inválidas.";
+      
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        msg = "Usuario no encontrado o contraseña incorrecta.";
+        setErrorDetail("Si es tu primera vez, asegúrate de haber creado el usuario 'affiliatesync0@gmail.com' en la Consola de Firebase > Authentication.");
+      } else if (error.code === 'auth/wrong-password') {
+        msg = "La contraseña ingresada es incorrecta.";
+      } else if (error.code === 'auth/too-many-requests') {
+        msg = "Demasiados intentos fallidos. Cuenta bloqueada temporalmente.";
+      }
+
+      toast({ variant: "destructive", title: "Error", description: msg });
       setLoading(false);
     }
   }
@@ -76,6 +88,16 @@ export default function AdminLoginPage() {
           </CardHeader>
 
           <CardContent className="p-0">
+            {errorDetail && (
+              <Alert variant="destructive" className="mb-6 rounded-2xl bg-red-50 border-red-100 text-left">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="text-[10px] font-black uppercase">Nota Técnica</AlertTitle>
+                <AlertDescription className="text-[11px] font-medium leading-relaxed">
+                  {errorDetail}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleAdminLogin} className="space-y-5 text-left">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Email Administrativo</Label>

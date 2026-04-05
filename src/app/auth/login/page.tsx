@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, ArrowRight, ArrowLeft, ShieldAlert, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -20,6 +20,7 @@ import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { sendEmail } from '@/lib/email'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -39,6 +41,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorDetail(null)
     if (!email || !password) return;
     setLoading(true)
     try {
@@ -59,7 +62,17 @@ export default function LoginPage() {
         router.push('/dashboard/affiliate');
       }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales incorrectas o cuenta no registrada." });
+      console.error("Login error code:", error.code);
+      let msg = "Credenciales incorrectas o cuenta no registrada.";
+      
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        msg = "Email o contraseña inválidos.";
+        setErrorDetail("Si creaste tu cuenta recientemente, es posible que el administrador aún no la haya aprobado o que los datos no coincidan.");
+      } else if (error.code === 'auth/wrong-password') {
+        msg = "La contraseña ingresada no es correcta.";
+      }
+
+      toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
     }
   }
@@ -96,6 +109,16 @@ export default function LoginPage() {
             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Ingresa tus credenciales para continuar</p>
           </CardHeader>
           <CardContent className="p-0 space-y-6">
+            {errorDetail && (
+              <Alert className="mb-2 rounded-2xl bg-amber-50 border-amber-100 text-amber-800">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="text-[10px] font-black uppercase">Ayuda</AlertTitle>
+                <AlertDescription className="text-[11px] font-medium leading-relaxed">
+                  {errorDetail}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
