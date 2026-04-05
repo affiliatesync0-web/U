@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, Mail } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -50,16 +50,18 @@ function RegisterContent() {
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const handleRegisterSuccess = async (userId: string, data: typeof formData, answers?: any) => {
+    // 1. Preparar datos limpios
     const commonData = {
       id: userId,
-      firstName: data.firstName,
-      lastName: data.lastName,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
       email: data.email.toLowerCase().trim(),
       whatsappNumber: data.phone.replace(/\D/g, ''),
       registeredAt: new Date().toISOString()
     };
 
     try {
+      // 2. GUARDADO PRIORITARIO EN FIRESTORE
       if (role === 'affiliate') {
         await setDoc(doc(db, 'affiliates', userId), {
           ...commonData,
@@ -68,36 +70,39 @@ function RegisterContent() {
           examAnswers: answers || examData
         });
 
-        // Notificar al afiliado (Silencioso si falla)
+        // Notificación administrativa (Asíncrona, no bloquea)
         sendEmail({
-          to: data.email.toLowerCase().trim(),
-          subject: '¡Solicitud Recibida! - Sync Connect',
-          text: `Hola ${data.firstName}, hemos recibido tu solicitud para unirte como afiliado.\n\nActualmente tu cuenta está "En Revisión". Nuestro equipo analizará tu estrategia y te notificaremos en cuanto tu panel sea activado.`
-        }).catch(e => console.error("Email error:", e));
-
-        // Notificar al Administrador (Silencioso si falla)
-        const settingsSnap = await getDoc(doc(db, 'site_config', 'settings'));
-        const adminEmail = settingsSnap.data()?.smtp_user || 'affiliatesync0@gmail.com';
-        
-        sendEmail({
-          to: adminEmail,
+          to: 'affiliatesync0@gmail.com', // Email maestro por defecto para evitar bloqueos de lectura
           subject: '🔔 NUEVA SOLICITUD DE AFILIADO',
           text: `Se ha registrado un nuevo postulante:\n\nNombre: ${data.firstName} ${data.lastName}\nEmail: ${data.email}\n\nRevisa el panel de administración para aprobar esta cuenta.`
-        }).catch(e => console.error("Admin Email error:", e));
+        }).catch(e => console.warn("Admin notification skipped:", e.message));
 
-        toast({ title: "Solicitud Enviada", description: "Tu cuenta entrará en fase de revisión." });
+        toast({ title: "Solicitud Enviada", description: "Tu cuenta entrará en fase de revisión técnica." });
         router.push('/dashboard/affiliate');
       } else {
         await setDoc(doc(db, 'buyers', userId), {
           ...commonData,
           status: 'Active'
         });
-        toast({ title: "¡Bienvenido!", description: "Cuenta creada exitosamente." });
+        toast({ title: "¡Bienvenido!", description: "Tu cuenta de cliente ha sido creada." });
         router.push('/dashboard/buyer');
       }
+
+      // Notificación al usuario (Asíncrona)
+      sendEmail({
+        to: data.email.toLowerCase().trim(),
+        subject: '¡Registro Exitoso! - Sync Connect',
+        text: `Hola ${data.firstName}, bienvenido a Sync Connect.\n\nTu registro se ha completado correctamente. ${role === 'affiliate' ? 'Tu cuenta está en revisión y te avisaremos cuando sea activada.' : 'Ya puedes explorar nuestro catálogo.'}`
+      }).catch(e => console.warn("User welcome email skipped:", e.message));
+
     } catch (e: any) {
-      console.error("Firestore Error:", e);
-      toast({ variant: "destructive", title: "Error de Guardado", description: "No pudimos crear tu perfil en la base de datos." });
+      console.error("CRITICAL FIRESTORE ERROR:", e);
+      toast({ 
+        variant: "destructive", 
+        title: "Error de Guardado", 
+        description: "Se creó el acceso pero no pudimos guardar tu perfil. Contacta a soporte." 
+      });
+      setLoading(false);
     }
   };
 
@@ -105,26 +110,27 @@ function RegisterContent() {
     e.preventDefault();
     
     if (formData.phone.length < 8) {
-      toast({ variant: "destructive", title: "WhatsApp Requerido", description: "Ingresa un número válido." });
+      toast({ variant: "destructive", title: "WhatsApp Requerido", description: "Ingresa un número de contacto válido." });
       return;
     }
 
     setLoading(true);
     try {
-      // Si ya hay un usuario (Google), procedemos directamente
+      // Si ya hay un usuario logueado (flujo Google), usamos su UID
       if (auth.currentUser) {
         await handleRegisterSuccess(auth.currentUser.uid, formData, role === 'affiliate' ? examData : undefined);
       } else {
-        // Registro normal con email y contraseña
+        // Registro tradicional con email/pass
         const cred = await createUserWithEmailAndPassword(auth, formData.email.toLowerCase().trim(), formData.password);
         await handleRegisterSuccess(cred.user.uid, formData, role === 'affiliate' ? examData : undefined);
       }
     } catch (error: any) {
-      console.error("Auth Error:", error.code);
-      let msg = error.message;
-      if (error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado. Intenta iniciar sesión.";
+      console.error("AUTH ERROR:", error.code);
+      let msg = "No se pudo completar el registro. Intenta de nuevo.";
+      if (error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado. Por favor, inicia sesión.";
+      if (error.code === 'auth/weak-password') msg = "La contraseña debe tener al menos 6 caracteres.";
       
-      toast({ variant: "destructive", title: "Error en Registro", description: msg });
+      toast({ variant: "destructive", title: "Fallo en Registro", description: msg });
       setLoading(false);
     }
   }
@@ -136,6 +142,7 @@ function RegisterContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
+      // Verificar si ya existe para no duplicar
       const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buySnap = await getDoc(doc(db, 'buyers', user.uid));
       
@@ -148,6 +155,7 @@ function RegisterContent() {
         return;
       }
 
+      // Si es nuevo, capturamos datos de Google y vamos al paso de 'info'
       const [fName, ...lNames] = (user.displayName || '').split(' ');
       setFormData({
         ...formData,
@@ -157,7 +165,8 @@ function RegisterContent() {
       });
       setStep('info');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error con Google", description: error.message });
+      console.error("GOOGLE AUTH ERROR:", error);
+      toast({ variant: "destructive", title: "Error con Google", description: "No se pudo sincronizar tu cuenta de Google." });
     } finally {
       setGoogleLoading(false);
     }
@@ -183,15 +192,15 @@ function RegisterContent() {
       {step === 'role' && (
         <div className="w-full max-w-4xl space-y-10 animate-in fade-in zoom-in-95 duration-500">
           <div className="text-center">
-            <h1 className="text-5xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Crea tu Cuenta</h1>
-            <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">¿Cuál es tu objetivo principal en Sync Connect?</p>
+            <h1 className="text-5xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">Crea tu <span className="text-primary">Cuenta</span></h1>
+            <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">¿Cuál es tu objetivo en Sync Connect?</p>
           </div>
 
           <div className="flex justify-center mb-4">
             <Button 
               onClick={handleGoogleRegister} 
               variant="outline" 
-              className="h-14 px-8 rounded-2xl font-bold gap-3 shadow-md hover:bg-muted"
+              className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl hover:bg-muted border-none ring-1 ring-border"
               disabled={googleLoading}
             >
               {googleLoading ? <Loader2 className="animate-spin h-5 w-5" /> : (
@@ -209,23 +218,23 @@ function RegisterContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <button 
               onClick={() => { setRole('buyer'); setStep('info'); }} 
-              className="p-12 rounded-[3.5rem] bg-card shadow-xl hover:ring-8 hover:ring-primary/5 transition-all text-left group border border-border/50"
+              className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left group border border-border/50 relative overflow-hidden"
             >
               <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-500 mb-8 group-hover:scale-110 transition-transform shadow-inner">
                 <ShoppingBag className="h-8 w-8" />
               </div>
               <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Quiero comprar</h3>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed">Accede a formación y herramientas digitales de alta calidad.</p>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">Accede a formación y herramientas digitales premium.</p>
             </button>
             <button 
               onClick={() => { setRole('affiliate'); setStep('info'); }} 
-              className="p-12 rounded-[3.5rem] bg-card shadow-xl hover:ring-8 hover:ring-primary/5 transition-all text-left group border border-border/50"
+              className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left group border border-border/50 relative overflow-hidden"
             >
               <div className="h-16 w-16 bg-primary/5 rounded-2xl flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform shadow-inner">
                 <Target className="h-8 w-8" />
               </div>
               <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Quiero vender</h3>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed">Únete a nuestra red, recomienda productos y genera comisiones reales.</p>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">Únete a nuestra red y genera comisiones reales por venta.</p>
             </button>
           </div>
         </div>
@@ -236,11 +245,11 @@ function RegisterContent() {
           <div className="space-y-10">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <h2 className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Tus Datos</h2>
-                <p className="text-[9px] font-black uppercase text-primary tracking-widest mt-2">{role === 'affiliate' ? 'Registro de Vendedor' : 'Registro de Cliente'}</p>
+                <h2 className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">Tus <span className="text-primary">Datos</span></h2>
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">{role === 'affiliate' ? 'Registro de Vendedor' : 'Registro de Cliente'}</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setStep('role')} className="h-10 rounded-xl font-bold text-[9px] uppercase text-muted-foreground gap-2">
-                <ArrowLeft className="h-3 w-3" /> Cambiar Perfil
+                <ArrowLeft className="h-3 w-3" /> Volver
               </Button>
             </div>
             
@@ -266,7 +275,7 @@ function RegisterContent() {
 
               <div className="space-y-2">
                 <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
-                <Input type="email" placeholder="tu@correo.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border px-5 font-bold" disabled={formData.email !== '' && !!auth.currentUser} />
+                <Input type="email" placeholder="tu@correo.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border px-5 font-bold" disabled={!!auth.currentUser && formData.email !== ''} />
               </div>
               
               {!auth.currentUser && (
@@ -277,7 +286,7 @@ function RegisterContent() {
               )}
 
               <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 mt-4" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin h-6 w-6" /> : (role === 'affiliate' ? <span className="flex items-center gap-2">SIGUIENTE PASO <ArrowRight className="h-5 w-5" /></span> : "FINALIZAR REGISTRO")}
+                {loading ? <Loader2 className="animate-spin h-6 w-6" /> : (role === 'affiliate' ? <span className="flex items-center gap-2">CONTINUAR <ArrowRight className="h-5 w-5" /></span> : "FINALIZAR REGISTRO")}
               </Button>
             </form>
           </div>
@@ -290,23 +299,29 @@ function RegisterContent() {
             <CardTitle className="text-3xl font-headline font-black text-primary flex items-center gap-4 leading-none uppercase italic">
               <UserCheck className="h-8 w-8" /> Evaluación
             </CardTitle>
-            <p className="text-sm font-medium text-muted-foreground mt-4 leading-relaxed">Queremos conocer tu estrategia antes de activar tu panel de ventas.</p>
+            <p className="text-sm font-medium text-muted-foreground mt-4 leading-relaxed">Queremos conocer tu estrategia antes de activar tu panel.</p>
           </CardHeader>
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-2"><Label className="text-[11px] font-bold text-muted-foreground">¿Cómo planeas promocionar nuestros productos?</Label><Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="TikTok, Facebook Ads, WhatsApp Marketing..." /></div>
-            <div className="space-y-2"><Label className="text-[11px] font-bold text-muted-foreground">¿Cuál es tu experiencia en el mundo digital?</Label><Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Cuéntanos un poco sobre ti..." /></div>
+            <div className="space-y-2">
+              <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cómo planeas promocionar los productos?</Label>
+              <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Ej: TikTok, Facebook Ads, WhatsApp..." />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cuál es tu experiencia previa?</Label>
+              <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Cuéntanos sobre tus resultados anteriores..." />
+            </div>
             
             <div className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-[2rem] flex items-start gap-4">
                <ShieldCheck className="h-6 w-6 text-blue-500 shrink-0" />
-               <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 leading-relaxed uppercase tracking-widest">
-                 Tu solicitud será revisada por nuestro equipo. Recibirás un correo desde nuestro Gmail cuando tu cuenta sea habilitada.
+               <p className="text-[9px] font-black text-blue-700 dark:text-blue-400 leading-relaxed uppercase tracking-widest">
+                 Tu solicitud será auditada por nuestro equipo. Recibirás un aviso en tu Gmail cuando tu panel sea habilitado.
                </p>
             </div>
 
-            <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "ENVIAR SOLICITUD"}
+            <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "ENVIAR SOLICITUD MAESTRA"}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setStep('info')} className="w-full text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Volver a mis datos</Button>
+            <Button type="button" variant="ghost" onClick={() => setStep('info')} className="w-full text-muted-foreground font-black uppercase text-[10px] tracking-widest h-12">Volver a mis datos</Button>
           </form>
         </Card>
       )}
