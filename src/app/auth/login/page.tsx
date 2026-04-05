@@ -1,28 +1,24 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, Smartphone, Mail, Hash, ShieldAlert, Zap, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, Mail, Lock, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { sendEmail } from '@/lib/email'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { COUNTRY_CODES } from '@/lib/constants'
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -35,89 +31,30 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errorDetail, setErrorDetail] = useState<{msg: string, code?: string, domain?: string, technical?: string} | null>(null)
-
-  // Phone Auth States
-  const [countryCode, setCountryCode] = useState('+505')
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [otpCode, setOtpCode] = useState('')
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
-  const [step, setStep] = useState<'phone' | 'otp'>('phone')
-  
-  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  useEffect(() => {
-    return () => {
-      if (recaptchaVerifier.current) {
-        try {
-          recaptchaVerifier.current.clear();
-        } catch (e) {}
-        recaptchaVerifier.current = null;
-      }
-    };
-  }, []);
-
-  const initRecaptcha = async () => {
-    if (typeof window === 'undefined') return null;
-    
-    // Limpiar instancia previa si existe para evitar error de "already rendered"
-    if (recaptchaVerifier.current) {
-      try {
-        recaptchaVerifier.current.clear();
-      } catch (e) {}
-      recaptchaVerifier.current = null;
-    }
-
-    try {
-      const container = document.getElementById('recaptcha-container');
-      if (!container) return null;
-      container.innerHTML = ''; // Limpiar el div
-
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          console.log("reCAPTCHA verificado correctamente");
-        },
-        'expired-callback': () => {
-          toast({ variant: "destructive", title: "Seguridad Expirada", description: "Por favor, intenta enviar el código de nuevo." });
-        }
-      });
-      
-      await verifier.render();
-      recaptchaVerifier.current = verifier;
-      return verifier;
-    } catch (e: any) {
-      console.error("Fallo inicializando motor de seguridad:", e);
-      return null;
-    }
-  };
-
-  const handleLoginSuccess = async (userEmail?: string, uid?: string) => {
-    const finalUid = uid || auth.currentUser?.uid || '';
-    const finalEmail = userEmail || auth.currentUser?.email || 'Usuario Teléfono';
-
+  const handleLoginSuccess = async (userEmail: string, uid: string) => {
     sendEmail({
       to: 'affiliatesync0@gmail.com',
       subject: '🔔 Nuevo Inicio de Sesión Detectado',
-      text: `Acceso en Sync Connect.\n\nUsuario: ${finalEmail}\nUID: ${finalUid}`
+      text: `Acceso en Sync Connect.\n\nUsuario: ${userEmail}\nUID: ${uid}`
     }).catch(() => {});
 
     toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
     
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-    if (finalEmail.toLowerCase().trim() === ADMIN_EMAIL) {
+    if (userEmail.toLowerCase().trim() === ADMIN_EMAIL) {
       router.push('/dashboard/admin');
     } else {
-      const affSnap = await getDoc(doc(db, 'affiliates', finalUid));
+      const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.push('/dashboard/affiliate');
       } else {
-        const buyerSnap = await getDoc(doc(db, 'buyers', finalUid));
+        const buyerSnap = await getDoc(doc(db, 'buyers', uid));
         if (buyerSnap.exists()) {
           router.push('/dashboard/buyer');
         } else {
@@ -130,100 +67,29 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErrorDetail(null)
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = password.trim();
 
     if (!cleanEmail || !cleanPass) return;
     setLoading(true)
     try {
-      await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
-      await handleLoginSuccess(cleanEmail);
+      const result = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
+      await handleLoginSuccess(cleanEmail, result.user.uid);
     } catch (error: any) {
+      console.error("Login Error:", error.code);
       let msg = "Credenciales incorrectas.";
-      if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
-      setErrorDetail({ msg });
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        msg = "Email o contraseña no coinciden con nuestros registros.";
+      } else if (error.code === 'auth/too-many-requests') {
+        msg = "Demasiados intentos. Tu cuenta ha sido bloqueada temporalmente por seguridad.";
+      }
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
     }
   }
 
-  const handleSendPhoneCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorDetail(null);
-    
-    let cleanPhone = phoneNumber.replace(/\D/g, '');
-    const plainCode = countryCode.replace('+', '');
-    if (cleanPhone.startsWith(plainCode)) {
-      cleanPhone = cleanPhone.substring(plainCode.length);
-    }
-
-    if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Por favor, ingresa un número real." });
-      return;
-    }
-
-    setLoading(true);
-    const fullNumber = `${countryCode}${cleanPhone}`;
-
-    try {
-      const appVerifier = await initRecaptcha();
-      if (!appVerifier) {
-        setLoading(false);
-        setErrorDetail({ msg: "Error al cargar el motor de seguridad. Por favor, recarga la página." });
-        return;
-      }
-
-      const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
-      setConfirmationResult(result);
-      setStep('otp');
-      toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullNumber}` });
-    } catch (error: any) {
-      console.error("SMS Auth Error:", error.code, error.message);
-      
-      let msg = "Error al conectar con el servidor de SMS.";
-      let domain = undefined;
-
-      if (error.code === 'auth/unauthorized-domain') {
-        msg = "DOMINIO NO AUTORIZADO. Firebase está bloqueando la petición desde esta URL.";
-        domain = typeof window !== 'undefined' ? window.location.hostname : 'tu dominio actual';
-      } else if (error.code === 'auth/admin-restricted-operation') {
-        msg = "OPERACIÓN RESTRINGIDA. El método de Teléfono no está configurado correctamente en Firebase.";
-      } else if (error.code === 'auth/quota-exceeded') {
-        msg = "Límite de SMS excedido por hoy. Intenta de nuevo mañana.";
-      }
-      
-      setErrorDetail({ 
-        msg, 
-        code: error.code, 
-        domain,
-        technical: error.message 
-      });
-      toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpCode || !confirmationResult) return;
-
-    setLoading(true);
-    try {
-      const result = await confirmationResult.confirm(otpCode);
-      await handleLoginSuccess(undefined, result.user.uid);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código ingresado no es válido o ha expirado." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
-      <div id="recaptcha-container"></div>
-      
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
         <LanguageToggle />
@@ -243,157 +109,60 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">
           
-          <Tabs defaultValue="phone" className="w-full">
-            <TabsList className="grid grid-cols-2 mb-10 h-14 bg-muted p-1 rounded-2xl">
-              <TabsTrigger value="phone" className="rounded-xl font-black text-[10px] uppercase tracking-widest gap-2">
-                <Smartphone className="h-3 w-3" /> Teléfono
-              </TabsTrigger>
-              <TabsTrigger value="email" className="rounded-xl font-black text-[10px] uppercase tracking-widest gap-2">
-                <Mail className="h-3 w-3" /> Email
-              </TabsTrigger>
-            </TabsList>
+          <CardHeader className="text-center p-0 mb-10">
+            <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">Iniciar <span className="text-primary">Sesión</span></CardTitle>
+            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Acceso exclusivo para socios y clientes</p>
+          </CardHeader>
 
-            <TabsContent value="phone" className="space-y-6">
-              <CardHeader className="text-center p-0 mb-6">
-                <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">WhatsApp</span></CardTitle>
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Inicia sesión con tu móvil verificado</p>
-              </CardHeader>
-
-              {errorDetail && (
-                <Alert variant="destructive" className="mb-4 rounded-3xl bg-red-50 border-red-100">
-                  <ShieldAlert className="h-5 w-5" />
-                  <AlertTitle className="text-[10px] font-black uppercase">Acción Requerida</AlertTitle>
-                  <AlertDescription className="text-xs font-bold leading-relaxed space-y-3">
-                    <p>{errorDetail.msg}</p>
-                    {errorDetail.code === 'auth/admin-restricted-operation' && (
-                      <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
-                        <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                          <Zap className="h-3 w-3" /> Configuración en Consola:
-                        </p>
-                        <p className="text-[10px] font-medium text-slate-600 leading-tight">
-                          Ve a Consola {'->'} Authentication {'->'} Sign-in method y asegúrate de que <strong>Teléfono</strong> esté habilitado.
-                        </p>
-                      </div>
-                    )}
-                    {errorDetail.domain && (
-                      <div className="p-4 bg-white/80 rounded-2xl border border-red-200 mt-2 space-y-2">
-                        <p className="text-[9px] font-black uppercase text-red-800 flex items-center gap-2">
-                          <Zap className="h-3 w-3" /> Autorizar este Dominio:
-                        </p>
-                        <code className="block p-2 bg-red-100 rounded-xl font-black text-[11px] break-all border border-red-200 select-all">
-                          {errorDetail.domain}
-                        </code>
-                        <p className="text-[9px] font-medium text-slate-500 italic">Copia esto y pégalo en Authentication {'->'} Settings {'->'} Authorized Domains.</p>
-                      </div>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {step === 'phone' ? (
-                <form onSubmit={handleSendPhoneCode} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">País y Número</Label>
-                    <div className="flex gap-2">
-                      <div className="w-[120px] shrink-0">
-                        <Select value={countryCode} onValueChange={setCountryCode}>
-                          <SelectTrigger className="h-14 rounded-2xl bg-card border-none ring-1 ring-border font-bold">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[300px]">
-                            {COUNTRY_CODES.map((country) => (
-                              <SelectItem key={country.code} value={country.code} className="font-bold">
-                                <span className="mr-2">{country.flag}</span> {country.code}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="relative flex-1">
-                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          type="tel" 
-                          value={phoneNumber} 
-                          onChange={(e) => setPhoneNumber(e.target.value)} 
-                          required 
-                          placeholder="8888 8888"
-                          className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold pl-12 pr-6" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
-                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR CÓDIGO SMS"}
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-5">
-                  <div className="space-y-2 text-center">
-                    <Label className="font-black text-[10px] uppercase tracking-widest text-primary">Código de 6 dígitos</Label>
-                    <div className="relative">
-                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        value={otpCode} 
-                        onChange={(e) => setOtpCode(e.target.value)} 
-                        required 
-                        maxLength={6}
-                        className="h-16 rounded-2xl bg-card border-none ring-1 ring-border text-center text-3xl font-black tracking-[0.5em] pl-12" 
-                        placeholder="000000"
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl bg-slate-900 text-white" disabled={loading}>
-                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "VERIFICAR Y ENTRAR"}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => { setStep('phone'); setConfirmationResult(null); }} className="w-full text-[9px] font-black uppercase text-muted-foreground">Cambiar Número</Button>
-                </form>
-              )}
-            </TabsContent>
-
-            <TabsContent value="email" className="space-y-6">
-              <CardHeader className="text-center p-0 mb-6">
-                <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase">Acceso <span className="text-primary">Email</span></CardTitle>
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">Credenciales tradicionales</p>
-              </CardHeader>
-
-              <form onSubmit={handleEmailLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
-                  <Input 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    required 
-                    className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
-                    placeholder="ejemplo@correo.com" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Contraseña</Label>
-                  <div className="relative">
-                    <Input 
-                      type={showPassword ? "text" : "password"} 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      required 
-                      className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
-                      placeholder="••••••••" 
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "INICIAR SESIÓN"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleEmailLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  required 
+                  className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold pl-12 pr-6" 
+                  placeholder="ejemplo@correo.com" 
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center ml-1">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Contraseña</Label>
+                <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black uppercase text-primary hover:underline">¿La olvidaste?</Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  required 
+                  className="h-14 rounded-2xl bg-card border-none ring-1 ring-border focus:ring-4 focus:ring-primary/10 transition-all font-bold pl-12 pr-6" 
+                  placeholder="••••••••" 
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+            <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ACCEDER AHORA"}
+            </Button>
+          </form>
 
           <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-4">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate</Link></p>
-            <Link href="/auth/admin-login" className="text-[8px] font-black uppercase text-muted-foreground/40 hover:text-foreground transition-colors tracking-[0.3em]">Acceso Administrativo</Link>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              ¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate</Link>
+            </p>
+            <div className="flex items-center gap-2 opacity-30 mt-4">
+              <div className="h-px w-8 bg-slate-400" />
+              <Link href="/auth/admin-login" className="text-[8px] font-black uppercase tracking-widest hover:text-foreground transition-colors">Acceso Maestro</Link>
+              <div className="h-px w-8 bg-slate-400" />
+            </div>
           </CardFooter>
         </div>
       </Card>

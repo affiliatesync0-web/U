@@ -1,12 +1,11 @@
-
 "use client"
 
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ArrowLeft, ShieldAlert, MessageCircle } from 'lucide-react'
+import { ArrowLeft, ShieldAlert, MessageCircle, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { LanguageToggle } from '@/components/language-toggle'
+import { LanguageToggle } from '@/components/language-context'
 
 export default function ForgotPasswordPage() {
   return (
@@ -26,7 +25,7 @@ export default function ForgotPasswordPage() {
           <CardHeader className="p-0 mb-12 space-y-4">
             <div className="flex justify-center">
               <div className="h-20 w-20 rounded-[2.2rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner rotate-3">
-                <ShieldAlert className="h-10 w-10" />
+                <Lock className="h-10 w-10" />
               </div>
             </div>
             <div className="space-y-1">
@@ -38,13 +37,13 @@ export default function ForgotPasswordPage() {
           <CardContent className="p-0 space-y-8">
             <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10">
               <p className="text-xs font-bold text-slate-600 dark:text-slate-400 leading-relaxed uppercase">
-                Por políticas de seguridad de la red, los usuarios no pueden restablecer su contraseña de forma autónoma.
+                Por políticas de protección de datos, los usuarios no pueden restablecer su contraseña de forma autónoma.
               </p>
             </div>
             
             <div className="space-y-4">
               <p className="text-sm font-medium text-muted-foreground">
-                Si has olvidado tu contraseña, por favor contacta directamente con el soporte administrativo para recibir nuevas credenciales.
+                Si has olvidado tu contraseña, por favor contacta directamente con tu asesor o con el soporte administrativo para que un administrador realice el reseteo manual de tus credenciales.
               </p>
               
               <Button asChild className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">
