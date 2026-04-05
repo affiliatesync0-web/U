@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -52,23 +51,39 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  // Inicialización segura del reCAPTCHA
+  // Limpieza al desmontar
+  useEffect(() => {
+    return () => {
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
+        recaptchaVerifier.current = null;
+      }
+    };
+  }, []);
+
   const initRecaptcha = () => {
     if (typeof window === 'undefined') return null;
     
-    // Si ya existe una instancia válida, no la duplicamos
+    // Si ya existe una instancia válida, la reutilizamos
     if (recaptchaVerifier.current) {
       return recaptchaVerifier.current;
     }
 
     try {
       const container = document.getElementById('recaptcha-container');
-      if (container) container.innerHTML = ''; // Limpiar basura del DOM
+      if (!container) return null;
+      
+      container.innerHTML = ''; // Limpiar el contenedor por si acaso
 
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
           console.log("reCAPTCHA verificado con éxito");
+        },
+        'expired-callback': () => {
+          console.warn("reCAPTCHA expirado, reiniciando...");
+          verifier.clear();
+          recaptchaVerifier.current = null;
         }
       });
       
@@ -137,17 +152,14 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorDetail(null);
     
-    // Limpieza profunda del número
     let cleanPhone = phoneNumber.replace(/\D/g, '');
-    
-    // Detectar si el usuario incluyó el código de país por error en el campo de texto
     const plainCode = countryCode.replace('+', '');
     if (cleanPhone.startsWith(plainCode)) {
       cleanPhone = cleanPhone.substring(plainCode.length);
     }
 
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu número de teléfono completo." });
+      toast({ variant: "destructive", title: "Número inválido" });
       return;
     }
 
@@ -161,11 +173,11 @@ export default function LoginPage() {
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
-      toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}.` });
+      toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS.` });
     } catch (error: any) {
       console.error("SMS Auth Error:", error);
       
-      // Limpiar verificado fallido para permitir re-intento
+      // Limpiar verificado fallido
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
         recaptchaVerifier.current = null;
@@ -175,11 +187,11 @@ export default function LoginPage() {
       if (error.code === 'auth/invalid-phone-number') msg = "El número no tiene un formato válido.";
       if (error.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
       if (error.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Refresca la página.";
-      if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
-      if (error.code === 'auth/unauthorized-domain') msg = "ESTE DOMINIO NO TIENE PERMISO. Ve a la Consola de Firebase > Authentication > Settings > Authorized Domains y añade esta URL.";
+      if (error.code === 'auth/operation-not-allowed') msg = "El método de TELÉFONO no está habilitado en Firebase.";
+      if (error.code === 'auth/unauthorized-domain') msg = "DOMINIO NO AUTORIZADO. Añade tu URL en la consola de Firebase.";
       
       setErrorDetail({ msg, code: error.code });
-      toast({ variant: "destructive", title: "Error de Envío", description: msg });
+      toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, Suspense, useRef } from 'react'
@@ -54,6 +53,16 @@ function RegisterContent() {
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: '' })
 
+  // Limpieza al desmontar
+  useEffect(() => {
+    return () => {
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
+        recaptchaVerifier.current = null;
+      }
+    };
+  }, []);
+
   const initRecaptcha = () => {
     if (typeof window === 'undefined') return null;
     
@@ -63,10 +72,15 @@ function RegisterContent() {
 
     try {
       const container = document.getElementById('recaptcha-reg-container');
-      if (container) container.innerHTML = '';
+      if (!container) return null;
+      container.innerHTML = '';
 
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
-        'size': 'invisible'
+        'size': 'invisible',
+        'expired-callback': () => {
+          verifier.clear();
+          recaptchaVerifier.current = null;
+        }
       });
       recaptchaVerifier.current = verifier;
       return verifier;
@@ -85,10 +99,7 @@ function RegisterContent() {
     e.preventDefault();
     setErrorDetail(null);
     
-    // Limpieza profunda del número
     let cleanPhone = phone.replace(/\D/g, '');
-    
-    // Detectar duplicación de código de país
     const plainCode = countryCode.replace('+', '');
     if (cleanPhone.startsWith(plainCode)) {
       cleanPhone = cleanPhone.substring(plainCode.length);
@@ -112,7 +123,6 @@ function RegisterContent() {
     } catch (err: any) {
       console.error("SMS Reg Error:", err);
       
-      // Limpiar verificado fallido
       if (recaptchaVerifier.current) {
         recaptchaVerifier.current.clear();
         recaptchaVerifier.current = null;
@@ -122,8 +132,8 @@ function RegisterContent() {
       if (err.code === 'auth/invalid-phone-number') msg = "El formato del número no es válido.";
       if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido por hoy.";
       if (err.code === 'auth/captcha-check-failed') msg = "Fallo de seguridad reCAPTCHA. Intenta de nuevo.";
-      if (err.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
-      if (err.code === 'auth/unauthorized-domain') msg = "ESTE DOMINIO NO ESTÁ AUTORIZADO. Debes añadir la URL de tu app en la Consola de Firebase.";
+      if (err.code === 'auth/operation-not-allowed') msg = "El proveedor de TELÉFONO no está habilitado.";
+      if (err.code === 'auth/unauthorized-domain') msg = "ESTE DOMINIO NO ESTÁ AUTORIZADO en Firebase.";
       
       setErrorDetail({ msg, code: err.code });
       toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
@@ -185,7 +195,7 @@ function RegisterContent() {
       sendEmail({
         to: formData.email,
         subject: '¡Registro Exitoso! - Sync Connect',
-        text: `Hola ${formData.firstName}, bienvenido a Sync Connect.\n\nTu registro se ha completado correctamente.`
+        text: `Hola ${formData.firstName}, bienvenido a Sync Connect.`
       }).catch(e => console.warn("Email error skipped"));
 
     } catch (e: any) {

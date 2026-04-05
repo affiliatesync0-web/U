@@ -5,18 +5,13 @@ import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 /**
- * Inicialización segura de Firebase para Vercel y Local.
+ * Inicialización segura de Firebase.
+ * Forzamos el uso de la configuración explícita para evitar fallos de conexión en Vercel/Studio.
  */
 export function initializeFirebase() {
   if (!getApps().length) {
-    let firebaseApp;
-    try {
-      // Intento de inicialización dinámica (Firebase App Hosting)
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Fallback manual (Vercel / Desarrollo Local)
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+    // Usamos directamente la configuración para garantizar consistencia
+    const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
   }
 
