@@ -13,8 +13,8 @@ import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { doc } from 'firebase/firestore'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -29,6 +29,7 @@ export default function LoginPage() {
   const db = useFirestore()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,6 +40,29 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
+  const handleLoginSuccess = async (userEmail: string) => {
+    sendEmail({
+      to: userEmail,
+      subject: '🔔 Nuevo Inicio de Sesión - Sync Connect',
+      text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${userEmail}\n\nSi no fuiste tú, por favor contacta al administrador de inmediato para asegurar tu cuenta.`
+    }).catch(err => console.error("Error enviando alerta de login:", err));
+
+    toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
+    
+    const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+    if (userEmail.toLowerCase().trim() === ADMIN_EMAIL) {
+      router.push('/dashboard/admin');
+    } else {
+      // Verificar si es afiliado o comprador
+      const affSnap = await getDoc(doc(db, 'affiliates', auth.currentUser?.uid || ''));
+      if (affSnap.exists()) {
+        router.push('/dashboard/affiliate');
+      } else {
+        router.push('/dashboard/buyer');
+      }
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorDetail(null)
@@ -48,29 +72,15 @@ export default function LoginPage() {
     if (!cleanEmail || !cleanPass) return;
     setLoading(true)
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
-      const user = userCredential.user;
-
-      sendEmail({
-        to: cleanEmail,
-        subject: '🔔 Nuevo Inicio de Sesión - Sync Connect',
-        text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${cleanEmail}\n\nSi no fuiste tú, por favor contacta al administrador de inmediato para asegurar tu cuenta.`
-      }).catch(err => console.error("Error enviando alerta de login:", err));
-
-      toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
-      
-      if (cleanEmail === 'affiliatesync0@gmail.com') {
-        router.push('/dashboard/admin');
-      } else {
-        router.push('/dashboard/affiliate');
-      }
+      await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
+      await handleLoginSuccess(cleanEmail);
     } catch (error: any) {
       console.error("Login error code:", error.code);
       let msg = "Credenciales incorrectas o cuenta no registrada.";
       
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         msg = "Email o contraseña inválidos.";
-        setErrorDetail("Verifica que no haya espacios al final de tu contraseña. Si el administrador te dio una nueva clave, asegúrate de escribirla exactamente igual (mayúsculas y minúsculas importan).");
+        setErrorDetail("Verifica que no haya espacios al final de tu contraseña. Si el administrador te dio una nueva clave, asegúrate de escribirla exactamente igual.");
       } else if (error.code === 'auth/too-many-requests') {
         msg = "Demasiados intentos fallidos.";
         setErrorDetail("Tu cuenta ha sido bloqueada temporalmente por seguridad. Intenta de nuevo en unos minutos.");
@@ -80,6 +90,22 @@ export default function LoginPage() {
       setLoading(false)
     }
   }
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setErrorDetail(null);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user.email) {
+        await handleLoginSuccess(result.user.email);
+      }
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      toast({ variant: "destructive", title: "Error con Google", description: "No se pudo completar el inicio de sesión." });
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
@@ -123,6 +149,28 @@ export default function LoginPage() {
               </Alert>
             )}
 
+            <Button 
+              onClick={handleGoogleLogin} 
+              variant="outline" 
+              className="w-full h-14 rounded-2xl font-bold border-border bg-card hover:bg-muted transition-all gap-3 shadow-sm"
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? <Loader2 className="animate-spin h-5 w-5" /> : (
+                <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.34v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.12z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.27.81-1.57z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+              )}
+              Continuar con Google
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+              <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest"><span className="bg-background px-4 text-muted-foreground">o usa tu email</span></div>
+            </div>
+
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
@@ -151,7 +199,7 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" disabled={loading}>
+              <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" disabled={loading || googleLoading}>
                 {loading ? <Loader2 className="animate-spin h-6 w-6" /> : (
                   <span className="flex items-center gap-2 uppercase">Entrar a mi Panel <ArrowRight className="h-5 w-5" /></span>
                 )}
