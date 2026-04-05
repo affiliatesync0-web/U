@@ -265,7 +265,7 @@ export default function LoginPage() {
                       <div className="p-3 bg-white/50 rounded-xl border border-red-200 mt-2">
                         <p className="text-[9px] font-black uppercase text-red-800">Instrucción Maestra:</p>
                         <p className="text-[10px] font-medium mt-1">
-                          Ve a Consola de Firebase -> Authentication -> Settings -> Authorized Domains y añade: 
+                          Ve a Consola de Firebase {'->'} Authentication {'->'} Settings {'->'} Authorized Domains y añade: 
                           <code className="block mt-1 p-1 bg-red-100 rounded font-black text-xs">{errorDetail.domain}</code>
                         </p>
                       </div>
