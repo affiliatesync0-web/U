@@ -11,20 +11,21 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 - **ShadCN UI & Tailwind**: Interfaz moderna con soporte de Modo Claro/Oscuro.
 - **Nodemailer**: Envío de correos transaccionales y códigos de seguridad vía SMTP.
 
-## 🚀 Guía de Despliegue en Vercel
+## 🚀 Guía de Configuración Crítica
 
-### 1. Variables de Envorno Críticas
-Para que el cambio de contraseñas automático y la conexión con Firebase funcionen en Vercel, debes configurar estas variables:
+### 1. Autenticación por Teléfono (SMS)
+Para que el inicio de sesión por WhatsApp funcione, debes:
+1. Ir a **Consola de Firebase** > **Authentication** > **Sign-in method**.
+2. Habilitar el proveedor **Teléfono**.
+3. En la sección **Dominios autorizados**, añade el dominio de tu app en Vercel (ej: `sync-connect.vercel.app`).
+4. Si estás probando en desarrollo, añade tu número a la lista de "Números de teléfono para pruebas" con el código `123456`.
 
+### 2. Variables de Entorno en Vercel
+Configura estas variables para la automatización administrativa:
 - `FIREBASE_PROJECT_ID`: `studio-9886993662-50a10`
-- `FIREBASE_CLIENT_EMAIL`: (Cuenta de servicio de Firebase)
-- `FIREBASE_PRIVATE_KEY`: (Clave privada completa con `-----BEGIN PRIVATE KEY-----`)
+- `FIREBASE_CLIENT_EMAIL`: (Tu cuenta de servicio)
+- `FIREBASE_PRIVATE_KEY`: (Tu clave privada completa)
 - `GEMINI_API_KEY`: Tu clave de Google AI.
-
-### 2. Configuración de Correo (Gmail SMTP)
-1. Ve a tu cuenta de Google > Seguridad > Activa **Verificación en 2 pasos**.
-2. Busca **Contraseñas de Aplicación** y genera una clave de 16 dígitos para "Correo".
-3. Pega esa clave en tu panel administrativo de Sync Connect (Sección Identidad).
 
 ---
 © 2024 Sync Connect. Desarrollado para escalar negocios digitales en Nicaragua.

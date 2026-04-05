@@ -50,12 +50,30 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !(window as any).recaptchaVerifier) {
+  // Función para inicializar o resetear el reCAPTCHA
+  const setupRecaptcha = () => {
+    try {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible'
+        'size': 'invisible',
+        'callback': () => {
+          console.log("reCAPTCHA verificado");
+        }
       });
+    } catch (e) {
+      console.error("Error al configurar reCAPTCHA:", e);
     }
+  };
+
+  useEffect(() => {
+    setupRecaptcha();
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
+    };
   }, [auth]);
 
   const handleLoginSuccess = async (userEmail?: string, uid?: string) => {
@@ -101,8 +119,10 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       await handleLoginSuccess(cleanEmail);
     } catch (error: any) {
+      console.error("Email Login Error:", error);
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "Email o contraseña inválidos.";
+      if (error.code === 'auth/user-not-found') msg = "El usuario no existe.";
       setErrorDetail(msg);
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
@@ -112,24 +132,39 @@ export default function LoginPage() {
   const handleSendPhoneCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
-    if (!phoneNumber || phoneNumber.length < 7) {
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 7) {
       toast({ variant: "destructive", title: "Número inválido", description: "Ingresa tu número de teléfono completo." });
       return;
     }
 
     setLoading(true);
-    const appVerifier = (window as any).recaptchaVerifier;
-    const fullNumber = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
+    const fullNumber = `${countryCode}${cleanPhone}`;
 
     try {
+      // Asegurar que el reCAPTCHA esté listo
+      if (!(window as any).recaptchaVerifier) {
+        setupRecaptcha();
+      }
+      const appVerifier = (window as any).recaptchaVerifier;
+      
       const result = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
       toast({ title: "Código Enviado", description: `Revisa tus mensajes SMS en el ${fullNumber}.` });
     } catch (error: any) {
-      console.error("SMS Error:", error);
-      setErrorDetail("No se pudo enviar el código. Verifica que el número sea correcto y que tengas habilitado el acceso por teléfono.");
-      toast({ variant: "destructive", title: "Error SMS", description: "Fallo al enviar el código." });
+      console.error("SMS Auth Error:", error);
+      
+      // Reset recaptcha on error
+      setupRecaptcha();
+      
+      let msg = "No se pudo enviar el código.";
+      if (error.code === 'auth/invalid-phone-number') msg = "El formato del número es incorrecto.";
+      if (error.code === 'auth/quota-exceeded') msg = "Se ha excedido el límite de SMS por hoy.";
+      if (error.code === 'auth/captcha-check-failed') msg = "La verificación de seguridad falló. Intenta de nuevo.";
+      
+      setErrorDetail(`${msg} Asegúrate de que el número sea correcto y que tengas habilitado el acceso por teléfono en la consola de Firebase.`);
+      toast({ variant: "destructive", title: "Error SMS", description: msg });
     } finally {
       setLoading(false);
     }
@@ -144,6 +179,7 @@ export default function LoginPage() {
       const result = await confirmationResult.confirm(otpCode);
       await handleLoginSuccess(undefined, result.user.uid);
     } catch (error: any) {
+      console.error("OTP Verification Error:", error);
       toast({ variant: "destructive", title: "Código Incorrecto", description: "El código ingresado no es válido o ha expirado." });
     } finally {
       setLoading(false);
@@ -152,6 +188,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
+      {/* El contenedor debe estar siempre presente y fuera de condicionales complejos */}
       <div id="recaptcha-container"></div>
       
       <div className="fixed top-6 right-6 flex items-center gap-2">

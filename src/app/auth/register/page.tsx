@@ -52,12 +52,28 @@ function RegisterContent() {
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: '' })
 
-  useEffect(() => {
-    if (!(window as any).recaptchaVerifier && (step === 'phone' || step === 'otp')) {
+  const setupRecaptcha = () => {
+    try {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-reg-container', {
         'size': 'invisible'
       });
+    } catch (e) {
+      console.error("Error recaptcha init:", e);
     }
+  };
+
+  useEffect(() => {
+    if (step === 'phone' || step === 'otp') {
+      setupRecaptcha();
+    }
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
+    };
   }, [auth, step]);
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
@@ -67,22 +83,35 @@ function RegisterContent() {
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || phone.length < 7) {
+    setErrorDetail(null);
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 7) {
       toast({ variant: "destructive", title: "Número Inválido" });
       return;
     }
     setLoading(true);
-    const appVerifier = (window as any).recaptchaVerifier;
-    const fullPhone = `${countryCode}${phone.replace(/\D/g, '')}`;
+    const fullPhone = `${countryCode}${cleanPhone}`;
 
     try {
+      if (!(window as any).recaptchaVerifier) {
+        setupRecaptcha();
+      }
+      const appVerifier = (window as any).recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
       toast({ title: "Código Enviado", description: `Revisa tus mensajes en el ${fullPhone}` });
-    } catch (e: any) {
-      console.error(e);
-      setErrorDetail("Error al enviar SMS. Asegúrate de que el número sea correcto y compatible con Firebase.");
+    } catch (err: any) {
+      console.error("SMS Reg Error:", err);
+      setupRecaptcha();
+      
+      let msg = "Error al enviar SMS.";
+      if (err.code === 'auth/invalid-phone-number') msg = "El formato del número no es válido.";
+      if (err.code === 'auth/quota-exceeded') msg = "Límite de SMS excedido temporalmente.";
+      if (err.code === 'auth/captcha-check-failed') msg = "La verificación de seguridad falló. Intenta de nuevo.";
+      
+      setErrorDetail(`${msg} Asegúrate de que el número sea correcto y compatible con Firebase.`);
+      toast({ variant: "destructive", title: "Fallo de Envío", description: msg });
     } finally {
       setLoading(false);
     }
@@ -97,6 +126,7 @@ function RegisterContent() {
       setStep('info');
       toast({ title: "Número Verificado ✓" });
     } catch (e: any) {
+      console.error("OTP Verify Error:", e);
       toast({ variant: "destructive", title: "Código Incorrecto" });
     } finally {
       setLoading(false);
@@ -141,9 +171,10 @@ function RegisterContent() {
         to: formData.email,
         subject: '¡Registro Exitoso! - Sync Connect',
         text: `Hola ${formData.firstName}, bienvenido a Sync Connect.\n\nTu registro se ha completado correctamente.`
-      }).catch(e => console.warn("Email error"));
+      }).catch(e => console.warn("Email error skipped"));
 
     } catch (e: any) {
+      console.error("Firestore Save Error:", e);
       toast({ variant: "destructive", title: "Error de Guardado" });
     } finally {
       setLoading(false);
