@@ -28,20 +28,23 @@ export default function AdminLoginPage() {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
-    if (!email || !password) return;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    if (!cleanEmail || !cleanPass) return;
 
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-    if (email.trim().toLowerCase() !== ADMIN_EMAIL) {
+    if (cleanEmail !== ADMIN_EMAIL) {
       toast({ variant: "destructive", title: "Acceso Denegado", description: "Este formulario es exclusivo para administradores autorizados." });
       return;
     }
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+      await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
       
       sendEmail({
-        to: email.trim().toLowerCase(),
+        to: cleanEmail,
         subject: '🛡️ Alerta: Acceso Maestro Detectado',
         text: `Se ha iniciado sesión correctamente en el Panel Administrativo de Sync Connect.\n\nFecha y Hora: ${new Date().toLocaleString()}\n\nSi no reconoces este acceso, cambia la contraseña administrativa de inmediato.`
       }).catch(err => console.error("Error enviando alerta admin:", err));
@@ -49,16 +52,15 @@ export default function AdminLoginPage() {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       router.push('/dashboard/admin');
     } catch (error: any) {
-      console.error("Login Error Code:", error.code);
+      console.error("Admin Login Error:", error.code);
       let msg = "Credenciales administrativas inválidas.";
       
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         msg = "Usuario no encontrado o contraseña incorrecta.";
-        setErrorDetail("Si es tu primera vez, asegúrate de haber creado el usuario 'affiliatesync0@gmail.com' en la Consola de Firebase > Authentication.");
-      } else if (error.code === 'auth/wrong-password') {
-        msg = "La contraseña ingresada es incorrecta.";
+        setErrorDetail("Asegúrate de que el usuario 'affiliatesync0@gmail.com' exista en la Consola de Firebase. Si acabas de cambiar la contraseña en la consola, espera 30 segundos e intenta de nuevo.");
       } else if (error.code === 'auth/too-many-requests') {
-        msg = "Demasiados intentos fallidos. Cuenta bloqueada temporalmente.";
+        msg = "Cuenta bloqueada temporalmente.";
+        setErrorDetail("Demasiados intentos fallidos. Por favor, espera unos minutos antes de intentar de nuevo.");
       }
 
       toast({ variant: "destructive", title: "Error", description: msg });

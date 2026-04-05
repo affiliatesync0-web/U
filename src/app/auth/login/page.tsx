@@ -42,21 +42,24 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorDetail(null)
-    if (!email || !password) return;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    if (!cleanEmail || !cleanPass) return;
     setLoading(true)
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       const user = userCredential.user;
 
       sendEmail({
-        to: email.trim().toLowerCase(),
+        to: cleanEmail,
         subject: '🔔 Nuevo Inicio de Sesión - Sync Connect',
-        text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${email}\n\nSi no fuiste tú, por favor contacta al administrador de inmediato para asegurar tu cuenta.`
+        text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${cleanEmail}\n\nSi no fuiste tú, por favor contacta al administrador de inmediato para asegurar tu cuenta.`
       }).catch(err => console.error("Error enviando alerta de login:", err));
 
       toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
       
-      if (email.toLowerCase().trim() === 'affiliatesync0@gmail.com') {
+      if (cleanEmail === 'affiliatesync0@gmail.com') {
         router.push('/dashboard/admin');
       } else {
         router.push('/dashboard/affiliate');
@@ -65,11 +68,12 @@ export default function LoginPage() {
       console.error("Login error code:", error.code);
       let msg = "Credenciales incorrectas o cuenta no registrada.";
       
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         msg = "Email o contraseña inválidos.";
-        setErrorDetail("Si creaste tu cuenta recientemente, es posible que el administrador aún no la haya aprobado o que los datos no coincidan.");
-      } else if (error.code === 'auth/wrong-password') {
-        msg = "La contraseña ingresada no es correcta.";
+        setErrorDetail("Verifica que no haya espacios al final de tu contraseña. Si el administrador te dio una nueva clave, asegúrate de escribirla exactamente igual (mayúsculas y minúsculas importan).");
+      } else if (error.code === 'auth/too-many-requests') {
+        msg = "Demasiados intentos fallidos.";
+        setErrorDetail("Tu cuenta ha sido bloqueada temporalmente por seguridad. Intenta de nuevo en unos minutos.");
       }
 
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
@@ -112,7 +116,7 @@ export default function LoginPage() {
             {errorDetail && (
               <Alert className="mb-2 rounded-2xl bg-amber-50 border-amber-100 text-amber-800">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-[10px] font-black uppercase">Ayuda</AlertTitle>
+                <AlertTitle className="text-[10px] font-black uppercase">Ayuda de Acceso</AlertTitle>
                 <AlertDescription className="text-[11px] font-medium leading-relaxed">
                   {errorDetail}
                 </AlertDescription>
@@ -157,7 +161,7 @@ export default function LoginPage() {
             <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
                <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase">
-                 Si olvidaste tu clave, contacta al administrador de Sync Connect para recibir una nueva contraseña de acceso.
+                 Si el administrador te entregó una contraseña y no funciona, verifica que no haya espacios extra al escribirla.
                </p>
             </div>
           </CardContent>

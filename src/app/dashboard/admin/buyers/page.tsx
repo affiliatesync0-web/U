@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, Loader2, User, Calendar, Trash2, ShoppingBag, UserCheck, ShieldCheck, KeyRound } from 'lucide-react'
+import { Search, Mail, Loader2, User, Calendar, Trash2, ShoppingBag, UserCheck, ShieldCheck, KeyRound, ExternalLink, Info, AlertTriangle, Copy } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -22,6 +22,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNo
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendNewPasswordAdmin } from '@/lib/email'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminBuyersPage() {
   const { t } = useLanguage();
@@ -152,11 +153,13 @@ export default function AdminBuyersPage() {
 function AdminPasswordResetDialog({ user }: { user: any }) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [generatedPass, setGeneratedPass] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleResetPassword = async () => {
     setLoading(true);
-    const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100);
+    const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
+    setGeneratedPass(newPass);
     
     try {
       const result = await sendNewPasswordAdmin({
@@ -167,7 +170,6 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
 
       if (result.success) {
         toast({ title: "Clave Enviada", description: `Se ha enviado la nueva clave a ${user.email}.` });
-        setOpen(false);
       } else {
         toast({ variant: "destructive", title: "Error SMTP", description: "No se pudo enviar el correo." });
       }
@@ -178,8 +180,13 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado", description: "Clave lista para pegar." });
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) setGeneratedPass(null); }}>
       <DialogTrigger asChild>
         <Button size="icon" variant="ghost" className="h-12 w-12 text-slate-400 hover:text-primary rounded-2xl">
           <KeyRound className="h-6 w-6" />
@@ -194,15 +201,43 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
           </DialogHeader>
         </div>
         <div className="p-10 space-y-6">
-          <p className="text-sm font-medium text-slate-500 text-center leading-relaxed">
-            ¿Confirmas que deseas generar una nueva clave aleatoria? Se enviará automáticamente al email registrado del cliente.
-          </p>
-          <div className="flex gap-4">
-            <Button variant="ghost" onClick={() => setOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase">Cancelar</Button>
-            <Button onClick={handleResetPassword} className="flex-[2] h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase shadow-xl shadow-primary/20" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "ENVIAR NUEVA CLAVE"}
-            </Button>
-          </div>
+          {!generatedPass ? (
+            <div className="space-y-4">
+              <p className="text-sm font-medium text-slate-500 text-center leading-relaxed">
+                ¿Confirmas que deseas generar una nueva clave? Se enviará por Gmail al cliente, pero <strong>debes activarla manualmente</strong>.
+              </p>
+              <Button onClick={handleResetPassword} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase text-xs" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "GENERAR Y ENVIAR CLAVE"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-in zoom-in-95 duration-300">
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-900 font-black text-[10px] uppercase">Acción Necesaria</AlertTitle>
+                <AlertDescription className="text-amber-700 text-xs font-medium">
+                  Copia la clave de abajo y pégala en el usuario correspondiente dentro de la Consola de Firebase.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border-2 border-dashed">
+                <code className="text-2xl font-black text-slate-900">{generatedPass}</code>
+                <Button size="icon" variant="ghost" onClick={() => copyToClipboard(generatedPass)} className="text-primary">
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <Button asChild variant="outline" className="w-full h-12 rounded-xl text-[10px] font-black uppercase gap-2">
+                <a href="https://console.firebase.google.com/project/studio-9886993662-50a10/authentication/users" target="_blank" rel="noopener noreferrer">
+                  ABRIR CONSOLA FIREBASE <ExternalLink className="h-3 w-3" />
+                </a>
+              </Button>
+
+              <Button onClick={() => setOpen(false)} className="w-full h-14 rounded-xl bg-green-600 text-white font-black uppercase text-xs">
+                LISTO, CERRAR VENTANA
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
