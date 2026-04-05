@@ -2,7 +2,7 @@
 
 import nodemailer from 'nodemailer';
 import { initializeFirebase } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 /**
  * Obtiene la configuración SMTP desde Firestore.
@@ -124,7 +124,7 @@ export async function sendNewPasswordAdmin({ to, name, newPassword }: { to: stri
   return await sendEmail({
     to,
     subject: '🔐 Tus nuevas credenciales de acceso - Sync Connect',
-    text: `Hola ${name},\n\nUn administrador ha restablecido tu contraseña de acceso por seguridad.\n\nNUEVOS DATOS DE ACCESO:\n- Email: ${to}\n- Contraseña: ${newPassword}\n\nInicia sesión aquí: ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/auth/login\n\nTe recomendamos cambiar esta contraseña una vez que ingreses a tu panel.`,
+    text: `Hola ${name},\n\nUn administrador ha restablecido tu contraseña de acceso por seguridad.\n\nNUEVOS DATOS DE ACCESO:\n- Email: ${to}\n- Contraseña: ${newPassword}\n\nTe recomendamos cambiar esta contraseña una vez que ingreses a tu panel.`,
     html: `
       <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
         <div style="margin-bottom: 30px;">
@@ -136,7 +136,6 @@ export async function sendNewPasswordAdmin({ to, name, newPassword }: { to: stri
           <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Tu nueva clave es:</p>
           <span style="font-family: monospace; font-size: 32px; font-weight: 900; color: #ff5d1b;">${newPassword}</span>
         </div>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || '#'}/auth/login" style="display: block; background-color: #0f172a; color: white; padding: 18px; border-radius: 16px; text-decoration: none; font-weight: 900; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;">INICIAR SESIÓN AHORA</a>
         <p style="font-size: 10px; color: #94a3b8; margin-top: 30px; font-weight: 700;">POR SEGURIDAD, NO COMPARTAS ESTOS DATOS CON NADIE.</p>
       </div>
     `
