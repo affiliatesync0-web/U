@@ -32,8 +32,13 @@ export default function ForgotPasswordPage() {
         toast({ title: "Código Enviado", description: "Revisa tu bandeja de entrada o carpeta de SPAM." });
         router.push(`/auth/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`);
       } else {
-        setErrorDetail(result.error || "Fallo crítico en el servidor de correos.");
-        toast({ variant: "destructive", title: "Fallo en Envío", description: "Revisa el aviso en pantalla para ver el error técnico." });
+        const technicalError = result.error || "Fallo crítico en el servidor de correos.";
+        setErrorDetail(technicalError);
+        toast({ 
+          variant: "destructive", 
+          title: "Fallo en Envío", 
+          description: `Error: ${technicalError.substring(0, 50)}...` 
+        });
         setLoading(false);
       }
     } catch (error: any) {
@@ -70,7 +75,7 @@ export default function ForgotPasswordPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle className="text-[10px] font-black uppercase tracking-widest">Error del Servidor</AlertTitle>
                 <AlertDescription className="text-xs font-bold leading-relaxed mt-1">
-                  {errorDetail}
+                  {errorDetail}. Revisa tu configuración de Gmail en el Panel Admin.
                 </AlertDescription>
               </Alert>
             )}
