@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ShoppingBag, Target, Loader2, Smartphone, ShieldCheck, UserCheck, ArrowLeft, ArrowRight, Mail } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
@@ -27,6 +28,7 @@ function RegisterContent() {
   const { toast } = useToast()
   const auth = useAuth()
   const db = useFirestore()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
@@ -57,43 +59,51 @@ function RegisterContent() {
       registeredAt: new Date().toISOString()
     };
 
-    if (role === 'affiliate') {
-      await setDoc(doc(db, 'affiliates', userId), {
-        ...commonData,
-        currentBalance: 0,
-        status: 'Pending',
-        examAnswers: answers || examData
-      });
+    try {
+      if (role === 'affiliate') {
+        await setDoc(doc(db, 'affiliates', userId), {
+          ...commonData,
+          currentBalance: 0,
+          status: 'Pending',
+          examAnswers: answers || examData
+        });
 
-      // Notificar al afiliado
-      await sendEmail({
-        to: data.email.toLowerCase().trim(),
-        subject: '¡Solicitud Recibida! - Sync Connect',
-        text: `Hola ${data.firstName}, hemos recibido tu solicitud para unirte como afiliado.\n\nActualmente tu cuenta está "En Revisión". Nuestro equipo analizará tu estrategia y te notificaremos en cuanto tu panel sea activado.`
-      });
+        // Notificar al afiliado (Silencioso si falla)
+        sendEmail({
+          to: data.email.toLowerCase().trim(),
+          subject: '¡Solicitud Recibida! - Sync Connect',
+          text: `Hola ${data.firstName}, hemos recibido tu solicitud para unirte como afiliado.\n\nActualmente tu cuenta está "En Revisión". Nuestro equipo analizará tu estrategia y te notificaremos en cuanto tu panel sea activado.`
+        }).catch(e => console.error("Email error:", e));
 
-      // Notificar al Administrador
-      const settingsSnap = await getDoc(doc(db, 'site_config', 'settings'));
-      const adminEmail = settingsSnap.data()?.smtp_user || 'affiliatesync0@gmail.com';
-      
-      await sendEmail({
-        to: adminEmail,
-        subject: '🔔 NUEVA SOLICITUD DE AFILIADO',
-        text: `Se ha registrado un nuevo postulante:\n\nNombre: ${data.firstName} ${data.lastName}\nEmail: ${data.email}\n\nRevisa el panel de administración para aprobar esta cuenta.`
-      });
+        // Notificar al Administrador (Silencioso si falla)
+        const settingsSnap = await getDoc(doc(db, 'site_config', 'settings'));
+        const adminEmail = settingsSnap.data()?.smtp_user || 'affiliatesync0@gmail.com';
+        
+        sendEmail({
+          to: adminEmail,
+          subject: '🔔 NUEVA SOLICITUD DE AFILIADO',
+          text: `Se ha registrado un nuevo postulante:\n\nNombre: ${data.firstName} ${data.lastName}\nEmail: ${data.email}\n\nRevisa el panel de administración para aprobar esta cuenta.`
+        }).catch(e => console.error("Admin Email error:", e));
 
-    } else {
-      await setDoc(doc(db, 'buyers', userId), {
-        ...commonData,
-        status: 'Active'
-      });
+        toast({ title: "Solicitud Enviada", description: "Tu cuenta entrará en fase de revisión." });
+        router.push('/dashboard/affiliate');
+      } else {
+        await setDoc(doc(db, 'buyers', userId), {
+          ...commonData,
+          status: 'Active'
+        });
+        toast({ title: "¡Bienvenido!", description: "Cuenta creada exitosamente." });
+        router.push('/dashboard/buyer');
+      }
+    } catch (e: any) {
+      console.error("Firestore Error:", e);
+      toast({ variant: "destructive", title: "Error de Guardado", description: "No pudimos crear tu perfil en la base de datos." });
     }
-    
-    toast({ title: "¡Cuenta Creada!", description: "Iniciando sesión..." });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (formData.phone.length < 8) {
       toast({ variant: "destructive", title: "WhatsApp Requerido", description: "Ingresa un número válido." });
       return;
@@ -101,10 +111,20 @@ function RegisterContent() {
 
     setLoading(true);
     try {
-      const cred = await createUserWithEmailAndPassword(auth, formData.email.toLowerCase().trim(), formData.password);
-      await handleRegisterSuccess(cred.user.uid, formData);
+      // Si ya hay un usuario (Google), procedemos directamente
+      if (auth.currentUser) {
+        await handleRegisterSuccess(auth.currentUser.uid, formData, role === 'affiliate' ? examData : undefined);
+      } else {
+        // Registro normal con email y contraseña
+        const cred = await createUserWithEmailAndPassword(auth, formData.email.toLowerCase().trim(), formData.password);
+        await handleRegisterSuccess(cred.user.uid, formData, role === 'affiliate' ? examData : undefined);
+      }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error en Registro", description: error.message });
+      console.error("Auth Error:", error.code);
+      let msg = error.message;
+      if (error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado. Intenta iniciar sesión.";
+      
+      toast({ variant: "destructive", title: "Error en Registro", description: msg });
       setLoading(false);
     }
   }
@@ -116,16 +136,18 @@ function RegisterContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      // Si ya existe en la base de datos, solo entrar
       const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
       const buySnap = await getDoc(doc(db, 'buyers', user.uid));
       
-      if (affSnap.exists() || buySnap.exists()) {
-        toast({ title: "Bienvenido de nuevo", description: "Detectamos que ya tienes una cuenta." });
+      if (affSnap.exists()) {
+        router.push('/dashboard/affiliate');
+        return;
+      }
+      if (buySnap.exists()) {
+        router.push('/dashboard/buyer');
         return;
       }
 
-      // Si es nuevo, completar con datos de Google pero pedir el resto
       const [fName, ...lNames] = (user.displayName || '').split(' ');
       setFormData({
         ...formData,
@@ -133,7 +155,7 @@ function RegisterContent() {
         lastName: lNames.join(' ') || '',
         email: user.email || ''
       });
-      setStep('info'); // Ir a pedir el teléfono y confirmar datos
+      setStep('info');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error con Google", description: error.message });
     } finally {
@@ -244,7 +266,7 @@ function RegisterContent() {
 
               <div className="space-y-2">
                 <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
-                <Input type="email" placeholder="tu@correo.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border px-5 font-bold" disabled={formData.email !== '' && googleLoading} />
+                <Input type="email" placeholder="tu@correo.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-14 rounded-2xl bg-muted/30 border-none ring-1 ring-border px-5 font-bold" disabled={formData.email !== '' && !!auth.currentUser} />
               </div>
               
               {!auth.currentUser && (
