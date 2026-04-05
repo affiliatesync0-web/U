@@ -19,6 +19,7 @@ import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
+import { sendEmail } from '@/lib/email'
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -41,7 +42,16 @@ export default function LoginPage() {
     if (!email || !password) return;
     setLoading(true)
     try {
-      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+      const user = userCredential.user;
+
+      // Enviar notificación de inicio de sesión por seguridad
+      sendEmail({
+        to: email.trim().toLowerCase(),
+        subject: '🔔 Nuevo Inicio de Sesión - Sync Connect',
+        text: `Hola, detectamos un nuevo inicio de sesión en tu cuenta de Sync Connect.\n\nFecha: ${new Date().toLocaleString()}\nUsuario: ${email}\n\nSi no fuiste tú, por favor restablece tu contraseña inmediatamente desde el panel de acceso.`
+      }).catch(err => console.error("Error enviando alerta de login:", err));
+
       toast({ title: t.welcomeBack, description: "Accediendo a tu panel..." });
       
       if (email.toLowerCase().trim() === 'affiliatesync0@gmail.com') {

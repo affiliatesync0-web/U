@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
+import { sendEmail } from '@/lib/email'
 
 export default function AdminLoginPage() {
   const { toast } = useToast()
@@ -36,8 +37,15 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+      
+      // Notificación de acceso administrativo por seguridad
+      sendEmail({
+        to: email.trim().toLowerCase(),
+        subject: '🛡️ Alerta: Acceso Maestro Detectado',
+        text: `Se ha iniciado sesión correctamente en el Panel Administrativo de Sync Connect.\n\nFecha y Hora: ${new Date().toLocaleString()}\n\nSi no reconoces este acceso, cambia la contraseña administrativa de inmediato.`
+      }).catch(err => console.error("Error enviando alerta admin:", err));
+
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
-      // Redirigir inmediatamente al panel admin
       router.push('/dashboard/admin');
     } catch (error: any) {
       console.error("Login Error:", error);
@@ -86,7 +94,7 @@ export default function AdminLoginPage() {
                   <Input 
                     type={showPassword ? "text" : "password"} 
                     value={password} 
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)} 
                     required 
                     className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all font-bold px-6" 
                     placeholder="••••••••" 
