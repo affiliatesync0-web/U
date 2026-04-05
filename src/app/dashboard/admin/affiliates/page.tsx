@@ -312,10 +312,13 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [generatedPass, setGeneratedPass] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleAutoReset = async () => {
     setLoading(true);
+    setErrorDetail(null);
+    
     // Generar clave segura
     const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
     
@@ -342,14 +345,16 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
       }
     } catch (e: any) {
       console.error(e);
-      toast({ variant: "destructive", title: "Fallo Automático", description: e.message || "No se pudo actualizar la clave en el servidor." });
+      const msg = e.message || "No se pudo actualizar la clave en el servidor.";
+      setErrorDetail(msg);
+      toast({ variant: "destructive", title: "Fallo Automático", description: msg });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) setGeneratedPass(null); }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) { setGeneratedPass(null); setErrorDetail(null); } }}>
       <DialogTrigger asChild>
         <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary">
           <KeyRound className="h-4 w-4" />
@@ -364,6 +369,16 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
         </div>
         
         <div className="p-8 space-y-6">
+          {errorDetail && (
+            <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle className="text-[10px] font-black uppercase">Detalle del Error</AlertTitle>
+              <AlertDescription className="text-[11px] font-medium leading-relaxed">
+                {errorDetail}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {!generatedPass ? (
             <div className="space-y-4 text-center">
               <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-inner">
