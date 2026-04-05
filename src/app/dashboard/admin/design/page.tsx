@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,13 +25,16 @@ import {
   KeyRound,
   ShieldAlert,
   Server,
-  Music2
+  Music2,
+  Upload,
+  Cloud
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import placeholderData from '@/app/lib/placeholder-images.json'
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase'
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser, initializeFirebase } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { testEmailConfig } from '@/lib/email'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -389,6 +392,37 @@ export default function AdminDesignPage() {
 function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isSaving, t }: any) {
   const [url, setUrl] = useState(defaultUrl);
   const [hint, setHint] = useState(defaultHint);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { storage } = initializeFirebase();
+      const storageRef = ref(storage, `site_assets/${id}_${Date.now()}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', null, 
+        (error) => {
+          console.error("Upload error:", error);
+          setUploading(false);
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setUrl(downloadURL);
+          setUploading(false);
+          // Auto-guardar tras subir
+          onSave(id, downloadURL, hint);
+        }
+      );
+    } catch (error) {
+      console.error("Storage error:", error);
+      setUploading(false);
+    }
+  };
 
   return (
     <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden group hover:scale-[1.02] transition-all duration-500 ring-1 ring-slate-100">
@@ -403,35 +437,48 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
             {id}
           </div>
         </div>
+        {uploading && (
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-white" />
+          </div>
+        )}
       </div>
       <CardContent className="p-8 space-y-6">
         <p className="text-[11px] font-bold text-slate-400 leading-relaxed min-h-[3rem]">{description}</p>
+        
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">URL de la Imagen</Label>
+            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Acción Rápida</Label>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1 h-11 rounded-xl border-dashed border-2 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload className="h-3.5 w-3.5 mr-2" /> {uploading ? "Subiendo..." : "Subir Archivo"}
+              </Button>
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">URL Directa (Opcional)</Label>
             <Input 
               value={url} 
               onChange={(e) => setUrl(e.target.value)} 
-              placeholder="https://drive.google.com/..." 
-              className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Concepto IA</Label>
-            <Input 
-              value={hint} 
-              onChange={(e) => setHint(e.target.value)} 
-              placeholder="Ej: tech network" 
+              placeholder="https://..." 
               className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
             />
           </div>
         </div>
+
         <Button 
           onClick={() => onSave(id, url, hint)} 
           className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all"
-          disabled={isSaving}
+          disabled={isSaving || uploading}
         >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "GUARDAR CAMBIOS"}
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "GUARDAR CONFIGURACIÓN"}
         </Button>
       </CardContent>
     </Card>
