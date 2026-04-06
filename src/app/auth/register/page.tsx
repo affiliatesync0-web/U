@@ -44,7 +44,7 @@ function RegisterContent() {
     password: ''
   })
 
-  const [examData, setExamData] = useState({ q1: '', q2: '', q3: '' })
+  const [examData, setExamData] = useState({ q1: '', q2: '', q3: 'N/A' })
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -80,22 +80,27 @@ function RegisterContent() {
       };
 
       // 2. Guardar perfil en Firestore
-      if (role === 'affiliate') {
-        await setDoc(doc(db, 'affiliates', user.uid), {
-          ...commonData,
-          currentBalance: 0,
-          status: 'Pending',
-          examAnswers: examData
-        });
-        toast({ title: "Solicitud Enviada", description: "Tu perfil está en revisión. Te avisaremos por Gmail." });
-        router.push('/dashboard/affiliate');
-      } else {
-        await setDoc(doc(db, 'buyers', user.uid), {
-          ...commonData,
-          status: 'Active'
-        });
-        toast({ title: "¡Bienvenido!", description: "Tu cuenta de comprador ha sido creada con éxito." });
-        router.push('/dashboard/buyer');
+      try {
+        if (role === 'affiliate') {
+          await setDoc(doc(db, 'affiliates', user.uid), {
+            ...commonData,
+            currentBalance: 0,
+            status: 'Pending',
+            examAnswers: examData
+          });
+          toast({ title: "Solicitud Enviada", description: "Tu perfil está en revisión. Te avisaremos por Gmail." });
+          router.push('/dashboard/affiliate');
+        } else {
+          await setDoc(doc(db, 'buyers', user.uid), {
+            ...commonData,
+            status: 'Active'
+          });
+          toast({ title: "¡Bienvenido!", description: "Tu cuenta de comprador ha sido creada con éxito." });
+          router.push('/dashboard/buyer');
+        }
+      } catch (dbErr: any) {
+        console.error("Firestore Error:", dbErr);
+        throw new Error(`Error al crear perfil en base de datos: ${dbErr.message}`);
       }
 
       // 3. Notificar al sistema
@@ -106,21 +111,27 @@ function RegisterContent() {
       }).catch(() => {});
 
     } catch (err: any) {
-      console.error("Register Error:", err.code);
+      console.error("Register Error Full:", err);
       let msg = "No pudimos crear tu cuenta en este momento.";
+      let detail = err.message || err.code || "Error desconocido";
       
       if (err.code === 'auth/email-already-in-use') {
         msg = "Este correo ya está registrado en nuestra red.";
       } else if (err.code === 'auth/invalid-email') {
         msg = "El formato del correo electrónico no es válido.";
       } else if (err.code === 'auth/operation-not-allowed') {
-        msg = "El registro por email está desactivado.";
-        setErrorDetail("Debes ir a la Consola de Firebase -> Authentication -> Sign-in method y habilitar el proveedor de 'Correo electrónico/contraseña'.");
+        msg = "El registro por email está desactivado en la Consola.";
+        detail = "Debes ir a la Consola de Firebase -> Authentication -> Sign-in method y habilitar el proveedor de 'Correo electrónico/contraseña'.";
       } else if (err.code === 'auth/weak-password') {
-        msg = "La contraseña es muy débil.";
+        msg = "La contraseña es muy débil (mínimo 6 caracteres).";
       }
 
-      toast({ variant: "destructive", title: "Fallo en Registro", description: msg });
+      setErrorDetail(detail);
+      toast({ 
+        variant: "destructive", 
+        title: "Fallo en Registro", 
+        description: `${msg} Detalle: ${err.code || 'System Error'}` 
+      });
     } finally {
       setLoading(false);
     }
@@ -147,7 +158,7 @@ function RegisterContent() {
         {errorDetail && (
           <Alert variant="destructive" className="mb-8 rounded-[2rem] bg-red-50 border-red-100 max-w-2xl mx-auto">
             <AlertCircle className="h-5 w-5" />
-            <AlertTitle className="font-black uppercase text-xs">Error de Configuración</AlertTitle>
+            <AlertTitle className="font-black uppercase text-xs">Atención: Error detectado</AlertTitle>
             <AlertDescription className="text-sm font-medium leading-relaxed">
               {errorDetail}
             </AlertDescription>
