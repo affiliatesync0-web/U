@@ -10,14 +10,16 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 - **ShadCN UI & Tailwind**: Interfaz moderna con soporte de Modo Claro/Oscuro.
 - **Nodemailer**: Envío de correos transaccionales y códigos de seguridad vía SMTP.
 
-## 🚀 Guía de Configuración Crítica
+## 🚀 Guía de Configuración Crítica (IMPORTANTE)
 
 ### 1. Habilitar Registro por Email
-Para que tus usuarios puedan crear cuentas, debes:
-1. Ir a **Consola de Firebase** > **Authentication** -> **Sign-in method**.
-2. Hacer clic en **"Agregar nuevo proveedor"**.
-3. Seleccionar **Correo electrónico/contraseña**.
-4. Habilitar la primera opción y hacer clic en **Guardar**.
+Si tus usuarios ven el error `auth/admin-restricted-operation`, es porque el registro está bloqueado en tu consola.
+1. Ve a **Consola de Firebase** > **Authentication** -> **Sign-in method**.
+2. Haz clic en **"Agregar nuevo proveedor"**.
+3. Selecciona **Correo electrónico/contraseña**.
+4. **Habilita la primera opción** (Correo electrónico/contraseña).
+5. **MUY IMPORTANTE**: Asegúrate de que la casilla que permite el registro de nuevos usuarios esté activa.
+6. Haz clic en **Guardar**.
 
 ### 2. Variables de Entorno
 Configura estas variables para habilitar todas las funciones administrativas:

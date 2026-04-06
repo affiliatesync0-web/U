@@ -113,15 +113,15 @@ function RegisterContent() {
     } catch (err: any) {
       console.error("Register Error Full:", err);
       let msg = "No pudimos crear tu cuenta en este momento.";
-      let detail = err.message || err.code || "Error desconocido";
+      let detail = err.code || "Error desconocido";
       
       if (err.code === 'auth/email-already-in-use') {
         msg = "Este correo ya está registrado en nuestra red.";
       } else if (err.code === 'auth/invalid-email') {
         msg = "El formato del correo electrónico no es válido.";
-      } else if (err.code === 'auth/operation-not-allowed') {
-        msg = "El registro por email está desactivado en la Consola.";
-        detail = "Debes ir a la Consola de Firebase -> Authentication -> Sign-in method y habilitar el proveedor de 'Correo electrónico/contraseña'.";
+      } else if (err.code === 'auth/operation-not-allowed' || err.code === 'auth/admin-restricted-operation') {
+        msg = "El registro público está desactivado en tu Consola de Firebase.";
+        detail = "SOLUCIÓN: Ve a Consola de Firebase -> Authentication -> Sign-in method. Edita 'Correo electrónico/contraseña' y asegúrate de que esté habilitado y que la opción 'Permitir que los usuarios se registren' esté ACTIVADA.";
       } else if (err.code === 'auth/weak-password') {
         msg = "La contraseña es muy débil (mínimo 6 caracteres).";
       }
@@ -130,7 +130,7 @@ function RegisterContent() {
       toast({ 
         variant: "destructive", 
         title: "Fallo en Registro", 
-        description: `${msg} Detalle: ${err.code || 'System Error'}` 
+        description: `${msg}` 
       });
     } finally {
       setLoading(false);
@@ -156,10 +156,10 @@ function RegisterContent() {
 
       <div className="w-full max-w-4xl">
         {errorDetail && (
-          <Alert variant="destructive" className="mb-8 rounded-[2rem] bg-red-50 border-red-100 max-w-2xl mx-auto">
+          <Alert variant="destructive" className="mb-8 rounded-[2rem] bg-red-50 border-red-100 max-w-2xl mx-auto border-2 shadow-xl animate-in shake-1">
             <AlertCircle className="h-5 w-5" />
-            <AlertTitle className="font-black uppercase text-xs">Atención: Error detectado</AlertTitle>
-            <AlertDescription className="text-sm font-medium leading-relaxed">
+            <AlertTitle className="font-black uppercase text-xs">Acción Requerida del Administrador</AlertTitle>
+            <AlertDescription className="text-sm font-medium leading-relaxed mt-2">
               {errorDetail}
             </AlertDescription>
           </Alert>
