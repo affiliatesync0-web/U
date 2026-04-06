@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, Target, Loader2, Smartphone, Mail, Lock, CheckCircle2, ShieldCheck, Zap } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, Smartphone, Mail, Lock, CheckCircle2, ShieldCheck, Zap, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -19,6 +20,7 @@ import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type UserRole = 'affiliate' | 'buyer'
 type RegStep = 'role' | 'info' | 'exam'
@@ -32,6 +34,7 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState<UserRole>('affiliate')
   const [step, setStep] = useState<RegStep>('role')
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -51,17 +54,27 @@ function RegisterContent() {
   const handleFinalRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorDetail(null);
+
+    const cleanEmail = formData.email.toLowerCase().trim();
+    const cleanPass = formData.password.trim();
+
+    if (cleanPass.length < 6) {
+      toast({ variant: "destructive", title: "Contraseña corta", description: "Debe tener al menos 6 caracteres." });
+      setLoading(false);
+      return;
+    }
 
     try {
       // 1. Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email.toLowerCase().trim(), formData.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
       const user = userCredential.user;
 
       const commonData = {
         id: user.uid,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.toLowerCase().trim(),
+        email: cleanEmail,
         whatsappNumber: formData.phone.replace(/\D/g, ''),
         registeredAt: new Date().toISOString()
       };
@@ -93,9 +106,20 @@ function RegisterContent() {
       }).catch(() => {});
 
     } catch (err: any) {
-      console.error(err);
+      console.error("Register Error:", err.code);
       let msg = "No pudimos crear tu cuenta en este momento.";
-      if (err.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado en nuestra red.";
+      
+      if (err.code === 'auth/email-already-in-use') {
+        msg = "Este correo ya está registrado en nuestra red.";
+      } else if (err.code === 'auth/invalid-email') {
+        msg = "El formato del correo electrónico no es válido.";
+      } else if (err.code === 'auth/operation-not-allowed') {
+        msg = "El registro por email está desactivado.";
+        setErrorDetail("Debes ir a la Consola de Firebase -> Authentication -> Sign-in method y habilitar el proveedor de 'Correo electrónico/contraseña'.");
+      } else if (err.code === 'auth/weak-password') {
+        msg = "La contraseña es muy débil.";
+      }
+
       toast({ variant: "destructive", title: "Fallo en Registro", description: msg });
     } finally {
       setLoading(false);
@@ -120,6 +144,16 @@ function RegisterContent() {
       </Link>
 
       <div className="w-full max-w-4xl">
+        {errorDetail && (
+          <Alert variant="destructive" className="mb-8 rounded-[2rem] bg-red-50 border-red-100 max-w-2xl mx-auto">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle className="font-black uppercase text-xs">Error de Configuración</AlertTitle>
+            <AlertDescription className="text-sm font-medium leading-relaxed">
+              {errorDetail}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {step === 'role' && (
           <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
             <div className="text-center">
