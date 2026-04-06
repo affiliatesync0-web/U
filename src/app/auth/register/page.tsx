@@ -120,8 +120,8 @@ function RegisterContent() {
       } else if (err.code === 'auth/invalid-email') {
         msg = "El formato del correo electrónico no es válido.";
       } else if (err.code === 'auth/operation-not-allowed' || err.code === 'auth/admin-restricted-operation') {
-        msg = "El registro público está desactivado en tu Consola de Firebase.";
-        detail = "SOLUCIÓN: Ve a Consola de Firebase -> Authentication -> Sign-in method. Edita 'Correo electrónico/contraseña' y asegúrate de que esté habilitado y que la opción 'Permitir que los usuarios se registren' esté ACTIVADA.";
+        msg = "El registro público está bloqueado en tu consola.";
+        detail = "Asegúrate de que en 'Sign-in method' del proveedor de Email, la opción 'Permitir que los usuarios se registren' esté ACTIVADA. Si ya lo está, ve a la pestaña 'Settings' dentro de Authentication y verifica que en 'User actions' el registro no esté deshabilitado.";
       } else if (err.code === 'auth/weak-password') {
         msg = "La contraseña es muy débil (mínimo 6 caracteres).";
       }
