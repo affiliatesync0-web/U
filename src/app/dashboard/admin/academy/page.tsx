@@ -127,8 +127,8 @@ export default function AdminAcademyPage() {
         </div>
 
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
-          <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-2xl overflow-hidden bg-white">
-            <div className="bg-slate-900 p-10 text-white">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-0 border-none shadow-2xl bg-white custom-scrollbar">
+            <div className="bg-slate-900 p-10 text-white sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
                   <GraduationCap className="h-6 w-6" />
@@ -185,7 +185,7 @@ export default function AdminAcademyPage() {
                     <input type="file" ref={videoInputRef} onChange={handleVideoFileChange} accept="video/*" className="hidden" />
                     
                     {uploadProgress !== null && (
-                      <div className="space-y-3 p-4 bg-primary/5 rounded-2xl">
+                      <div className="space-y-3 p-4 bg-primary/5 rounded-2xl animate-in fade-in">
                         <div className="flex justify-between items-center text-[10px] font-black text-primary uppercase">
                           <span>Subiendo a la nube...</span>
                           <span>{Math.round(uploadProgress)}%</span>
@@ -202,7 +202,7 @@ export default function AdminAcademyPage() {
               </div>
             </div>
 
-            <div className="p-10 border-t bg-slate-50 flex gap-4">
+            <div className="p-10 border-t bg-slate-50 flex gap-4 sticky bottom-0 z-10">
               <Button variant="ghost" onClick={() => setIsAdding(false)} className="flex-1 h-16 rounded-2xl font-black text-slate-400">CANCELAR</Button>
               <Button 
                 className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black shadow-xl hover:bg-slate-800 disabled:opacity-50" 
