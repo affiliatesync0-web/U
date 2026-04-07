@@ -54,33 +54,45 @@ export default function AdminAcademyPage() {
       return;
     }
 
-    const { storage } = initializeFirebase();
-    const storageRef = ref(storage, `academy/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-    
-    // Incluir metadata para asegurar reproducción correcta en navegadores
-    const metadata = {
-      contentType: file.type,
-    };
-
-    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
-
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-      }, 
-      (error) => {
-        console.error("Upload error:", error);
-        toast({ variant: "destructive", title: "Error de subida", description: "No se pudo cargar el video al servidor." });
-        setUploadProgress(null);
-      }, 
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setFormData(prev => ({ ...prev, videoUrl: downloadURL }));
-        setUploadProgress(null);
-        toast({ title: "¡Video Procesado!", description: "El video se ha subido correctamente a la nube." });
+    try {
+      const { storage } = initializeFirebase();
+      if (!storage) {
+        throw new Error("El servicio de almacenamiento no está disponible.");
       }
-    );
+
+      const storageRef = ref(storage, `academy/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
+      
+      const metadata = {
+        contentType: file.type,
+      };
+
+      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        }, 
+        (error: any) => {
+          console.error("Upload error details:", error);
+          let msg = "No se pudo cargar el video.";
+          if (error.code === 'storage/unauthorized') msg = "No tienes permisos para subir archivos. Revisa las reglas de Storage.";
+          if (error.code === 'storage/canceled') msg = "Subida cancelada.";
+          
+          toast({ variant: "destructive", title: "Error de subida", description: msg });
+          setUploadProgress(null);
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setFormData(prev => ({ ...prev, videoUrl: downloadURL }));
+          setUploadProgress(null);
+          toast({ title: "¡Video Procesado!", description: "El video se ha subido correctamente a la nube." });
+        }
+      );
+    } catch (err: any) {
+      console.error("Critical Storage Error:", err);
+      toast({ variant: "destructive", title: "Fallo Crítico", description: err.message || "Error al inicializar la subida." });
+    }
   };
 
   const handleSave = async () => {
@@ -127,15 +139,17 @@ export default function AdminAcademyPage() {
         </div>
 
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-0 border-none shadow-2xl bg-white custom-scrollbar">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] p-0 border-none shadow-2xl bg-white custom-scrollbar">
             <div className="bg-slate-900 p-10 text-white sticky top-0 z-10">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <GraduationCap className="h-6 w-6" />
-                </div>
-                <div>
-                  <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
-                  <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Contenido educativo para potenciar tus ventas</DialogDescription>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
+                    <GraduationCap className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
+                    <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Contenido educativo para potenciar tus ventas</DialogDescription>
+                  </div>
                 </div>
               </div>
             </div>
@@ -227,9 +241,9 @@ export default function AdminAcademyPage() {
             lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson) => (
               <Card key={lesson.id} className="border-none shadow-xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100 group">
                 <div className="aspect-video bg-slate-900 relative flex items-center justify-center overflow-hidden">
-                  <PlayCircle className="h-12 w-12 text-primary opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all z-10" />
+                  <PlayCircle className="h-12 w-12 text-white/20 group-hover:text-primary group-hover:scale-110 transition-all z-10" />
                   {lesson.videoUrl && (
-                    <div className="absolute inset-0 opacity-20">
+                    <div className="absolute inset-0 opacity-40">
                       {lesson.videoUrl.includes('firebasestorage') ? (
                         <video src={lesson.videoUrl} className="w-full h-full object-cover" />
                       ) : (
