@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
-import { Plus, Trash2, Loader2, Upload, GraduationCap, Video, PlayCircle, FileVideo, Edit3, ArrowRight } from 'lucide-react'
+import { Plus, Trash2, Loader2, Upload, GraduationCap, Video, PlayCircle, FileVideo, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, initializeFirebase } from '@/firebase'
-import { collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +25,7 @@ export default function AdminAcademyPage() {
   
   const [isAdding, setIsAdding] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [isFinalizing, setIsFinalizing] = useState(false)
   const videoInputRef = useRef<HTMLInputElement>(null)
   
   const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
@@ -41,14 +42,27 @@ export default function AdminAcademyPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validar tipo de archivo
+    if (!file.type.startsWith('video/')) {
+      toast({ variant: "destructive", title: "Formato no válido", description: "Por favor selecciona un archivo de video (MP4, MOV, etc)." });
+      return;
+    }
+
+    // Limite de 500MB
     if (file.size > 500 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "Archivo demasiado grande", description: "Máximo 500MB." });
+      toast({ variant: "destructive", title: "Archivo demasiado grande", description: "El tamaño máximo permitido es de 500MB." });
       return;
     }
 
     const { storage } = initializeFirebase();
-    const storageRef = ref(storage, `academy/${Date.now()}_${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const storageRef = ref(storage, `academy/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
+    
+    // Incluir metadata para asegurar reproducción correcta en navegadores
+    const metadata = {
+      contentType: file.type,
+    };
+
+    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
     uploadTask.on('state_changed', 
       (snapshot) => {
@@ -56,24 +70,26 @@ export default function AdminAcademyPage() {
         setUploadProgress(progress);
       }, 
       (error) => {
-        toast({ variant: "destructive", title: "Error de subida", description: "No se pudo cargar el video." });
+        console.error("Upload error:", error);
+        toast({ variant: "destructive", title: "Error de subida", description: "No se pudo cargar el video al servidor." });
         setUploadProgress(null);
       }, 
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         setFormData(prev => ({ ...prev, videoUrl: downloadURL }));
         setUploadProgress(null);
-        toast({ title: "¡Video Cargado!", description: "El archivo está listo para ser guardado." });
+        toast({ title: "¡Video Procesado!", description: "El video se ha subido correctamente a la nube." });
       }
     );
   };
 
   const handleSave = async () => {
     if (!formData.title || !formData.videoUrl) {
-      toast({ variant: "destructive", title: "Datos incompletos", description: "Asigna un título y sube un video." });
+      toast({ variant: "destructive", title: "Campos Requeridos", description: "Debes asignar un título y subir un video para publicar." });
       return;
     }
 
+    setIsFinalizing(true);
     try {
       addDocumentNonBlocking(collection(db, 'academy_lessons'), {
         ...formData,
@@ -81,17 +97,19 @@ export default function AdminAcademyPage() {
         order: (lessons?.length || 0) + 1
       });
 
-      toast({ title: "Lección Publicada", description: "Ya está disponible en la Academia para los afiliados." });
+      toast({ title: "Lección Publicada", description: "Ya está disponible en la Academia para todos tus afiliados." });
       setIsAdding(false);
       setFormData({ title: '', description: '', videoUrl: '', useLocalFile: true });
     } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la lección." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la lección en la base de datos." });
+    } finally {
+      setIsFinalizing(false);
     }
   }
 
   const handleDelete = (id: string) => {
     deleteDocumentNonBlocking(doc(db, 'academy_lessons', id));
-    toast({ title: "Lección eliminada" });
+    toast({ title: "Lección eliminada correctamente" });
   }
 
   return (
@@ -100,7 +118,7 @@ export default function AdminAcademyPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Academy</span> Manager</h1>
-            <p className="text-slate-500 font-medium">Sube videos educativos sobre Marketing Digital para tus afiliados.</p>
+            <p className="text-slate-500 font-medium">Sube tus entrenamientos exclusivos desde tu dispositivo para tus socios.</p>
           </div>
           
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
@@ -109,7 +127,7 @@ export default function AdminAcademyPage() {
         </div>
 
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
-          <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-2xl overflow-hidden">
+          <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-2xl overflow-hidden bg-white">
             <div className="bg-slate-900 p-10 text-white">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
@@ -117,53 +135,62 @@ export default function AdminAcademyPage() {
                 </div>
                 <div>
                   <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
-                  <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Sube contenido educativo para tus socios</DialogDescription>
+                  <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Contenido educativo para potenciar tus ventas</DialogDescription>
                 </div>
               </div>
             </div>
             
-            <div className="p-10 space-y-8 bg-white">
+            <div className="p-10 space-y-8">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 uppercase">{t.lessonTitle}</Label>
-                <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="h-14 rounded-2xl" placeholder="Ej: Fundamentos del Marketing de Afiliados" />
+                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Título de la Clase</Label>
+                <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="h-14 rounded-2xl font-bold text-slate-800" placeholder="Ej: Estrategias de Cierre en WhatsApp" />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 uppercase">{t.lessonDesc}</Label>
-                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="rounded-2xl min-h-[100px]" placeholder="Breve resumen de lo que aprenderán en este video..." />
+                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Descripción del Contenido</Label>
+                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="rounded-2xl min-h-[100px] font-medium" placeholder="Escribe un breve resumen de lo que aprenderán..." />
               </div>
 
               <div className="space-y-4">
-                <Label className="text-[10px] font-black text-slate-500 uppercase">{t.uploadVideo}</Label>
+                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Origen del Video</Label>
                 <div className="flex gap-4 p-1 bg-slate-50 rounded-2xl border">
                   <Button 
                     variant="ghost" 
-                    className={cn("flex-1 h-12 rounded-xl text-[10px] font-black uppercase transition-all", formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")}
+                    className={cn("flex-1 h-12 rounded-xl text-[10px] font-black uppercase transition-all", formData.useLocalFile ? "bg-slate-900 text-white shadow-lg" : "text-slate-400")}
                     onClick={() => setFormData({...formData, useLocalFile: true})}
-                  >Subir Archivo</Button>
+                  >SUBIR ARCHIVO</Button>
                   <Button 
                     variant="ghost" 
-                    className={cn("flex-1 h-12 rounded-xl text-[10px] font-black uppercase transition-all", !formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")}
+                    className={cn("flex-1 h-12 rounded-xl text-[10px] font-black uppercase transition-all", !formData.useLocalFile ? "bg-slate-900 text-white shadow-lg" : "text-slate-400")}
                     onClick={() => setFormData({...formData, useLocalFile: false})}
-                  >Pegar Enlace</Button>
+                  >PEGAR LINK</Button>
                 </div>
 
                 {formData.useLocalFile ? (
                   <div className="space-y-4">
                     <Button 
                       variant="outline" 
-                      className="w-full h-24 border-dashed border-4 rounded-3xl flex flex-col gap-2 text-primary hover:bg-primary/5 transition-all"
+                      className={cn(
+                        "w-full h-32 border-dashed border-4 rounded-3xl flex flex-col gap-2 transition-all",
+                        formData.videoUrl ? "border-green-200 bg-green-50 text-green-600" : "border-slate-200 text-primary hover:bg-primary/5"
+                      )}
                       onClick={() => videoInputRef.current?.click()}
                       disabled={uploadProgress !== null}
                     >
-                      {uploadProgress !== null ? <Loader2 className="h-8 w-8 animate-spin" /> : <Upload className="h-8 w-8" />}
-                      <span className="font-black text-[10px] uppercase tracking-widest">{formData.videoUrl ? "VIDEO LISTO ✓" : "SELECCIONAR VIDEO DE MI PC"}</span>
+                      {uploadProgress !== null ? <Loader2 className="h-8 w-8 animate-spin" /> : (formData.videoUrl ? <CheckCircle2 className="h-8 w-8" /> : <Upload className="h-8 w-8" />)}
+                      <span className="font-black text-[10px] uppercase tracking-widest">
+                        {formData.videoUrl ? "VIDEO LISTO PARA PUBLICAR" : "SELECCIONAR VIDEO DE MI DISPOSITIVO"}
+                      </span>
                     </Button>
                     <input type="file" ref={videoInputRef} onChange={handleVideoFileChange} accept="video/*" className="hidden" />
+                    
                     {uploadProgress !== null && (
-                      <div className="space-y-2">
-                        <Progress value={uploadProgress} className="h-2" />
-                        <p className="text-[10px] font-black text-primary text-center uppercase animate-pulse">CARGANDO AL SERVIDOR: {Math.round(uploadProgress)}%</p>
+                      <div className="space-y-3 p-4 bg-primary/5 rounded-2xl">
+                        <div className="flex justify-between items-center text-[10px] font-black text-primary uppercase">
+                          <span>Subiendo a la nube...</span>
+                          <span>{Math.round(uploadProgress)}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2 bg-slate-200" />
                       </div>
                     )}
                   </div>
@@ -177,8 +204,12 @@ export default function AdminAcademyPage() {
 
             <div className="p-10 border-t bg-slate-50 flex gap-4">
               <Button variant="ghost" onClick={() => setIsAdding(false)} className="flex-1 h-16 rounded-2xl font-black text-slate-400">CANCELAR</Button>
-              <Button className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black shadow-xl" onClick={handleSave} disabled={uploadProgress !== null}>
-                PUBLICAR EN LA ACADEMIA
+              <Button 
+                className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black shadow-xl hover:bg-slate-800 disabled:opacity-50" 
+                onClick={handleSave} 
+                disabled={uploadProgress !== null || isFinalizing || !formData.videoUrl}
+              >
+                {isFinalizing ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : "PUBLICAR LECCIÓN AHORA"}
               </Button>
             </div>
           </DialogContent>
@@ -188,16 +219,25 @@ export default function AdminAcademyPage() {
           {isLoading ? (
             <div className="col-span-full flex justify-center py-32"><Loader2 className="animate-spin h-12 w-12 text-primary opacity-50" /></div>
           ) : !lessons || lessons.length === 0 ? (
-            <div className="col-span-full text-center py-32 text-slate-400">
+            <div className="col-span-full text-center py-32 bg-white/50 rounded-[4rem] border-2 border-dashed">
               <GraduationCap className="h-20 w-20 mx-auto mb-4 opacity-10" />
-              <p className="font-black uppercase text-xs tracking-widest">No has subido ninguna lección todavía.</p>
+              <p className="font-black uppercase text-xs tracking-widest text-slate-400">Tu academia está vacía. ¡Sube tu primera clase!</p>
             </div>
           ) : (
             lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson) => (
               <Card key={lesson.id} className="border-none shadow-xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100 group">
-                <div className="aspect-video bg-slate-900 relative flex items-center justify-center">
-                  <PlayCircle className="h-12 w-12 text-primary opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all" />
-                  <div className="absolute top-4 left-4 bg-primary px-4 py-1.5 rounded-full text-[9px] font-black text-white uppercase shadow-xl">Lección {lesson.order}</div>
+                <div className="aspect-video bg-slate-900 relative flex items-center justify-center overflow-hidden">
+                  <PlayCircle className="h-12 w-12 text-primary opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all z-10" />
+                  {lesson.videoUrl && (
+                    <div className="absolute inset-0 opacity-20">
+                      {lesson.videoUrl.includes('firebasestorage') ? (
+                        <video src={lesson.videoUrl} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-800" />
+                      )}
+                    </div>
+                  )}
+                  <div className="absolute top-4 left-4 bg-primary px-4 py-1.5 rounded-full text-[9px] font-black text-white uppercase shadow-xl z-20">Clase {lesson.order}</div>
                 </div>
                 <CardContent className="p-8 space-y-4">
                   <div className="flex justify-between items-start gap-4">
@@ -206,7 +246,7 @@ export default function AdminAcademyPage() {
                       <Trash2 className="h-5 w-5" />
                     </Button>
                   </div>
-                  <p className="text-sm font-medium text-slate-500 line-clamp-3">{lesson.description}</p>
+                  <p className="text-sm font-medium text-slate-500 line-clamp-3 leading-relaxed">{lesson.description}</p>
                 </CardContent>
               </Card>
             ))
