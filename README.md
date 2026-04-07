@@ -21,14 +21,22 @@ Si tus usuarios ven el error `auth/admin-restricted-operation`, es porque el reg
 5. **MUY IMPORTANTE**: Asegúrate de que la casilla que permite el registro de nuevos usuarios esté activa.
 6. Haz clic en **Guardar**.
 
-### 2. Variables de Entorno
+### 2. Activar Subida de Videos (Storage)
+Para que puedas subir videos desde tu dispositivo:
+1. Ve a **Consola de Firebase** > **Storage** (en el menú lateral).
+2. Haz clic en el botón **"Comenzar"** (Get Started).
+3. Selecciona **"Comenzar en modo de prueba"** (esto permite subir archivos inmediatamente).
+4. Elige una ubicación de servidor (se recomienda `us-central1`).
+5. Una vez activo, ve a la pestaña **"Rules"** (Reglas) dentro de Storage y pega el contenido del archivo `storage.rules` de este proyecto.
+
+### 3. Variables de Entorno
 Configura estas variables para habilitar todas las funciones administrativas:
 - `FIREBASE_PROJECT_ID`: `studio-9886993662-50a10`
 - `FIREBASE_CLIENT_EMAIL`: Tu cuenta de servicio de Firebase.
 - `FIREBASE_PRIVATE_KEY`: Tu clave privada de Firebase (asegúrate de incluir los saltos de línea `\n`).
 - `GEMINI_API_KEY`: Tu clave de Google AI para las funciones de asistente de ventas.
 
-### 3. Configuración de Gmail (SMTP)
+### 4. Configuración de Gmail (SMTP)
 Para que las notificaciones de ventas y recuperación de contraseñas funcionen:
 1. Ve a tu **Panel de Administrador** -> **Diseño**.
 2. Configura los datos de tu Gmail en la sección **SMTP**.
