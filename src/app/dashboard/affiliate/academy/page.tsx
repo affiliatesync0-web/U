@@ -1,11 +1,10 @@
-
 "use client"
 
 import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { GraduationCap, PlayCircle, Loader2, CheckCircle2, ChevronRight, Sparkles, ShieldCheck, Video, FileVideo, Clock, ArrowLeft, ExternalLink, Flame, MonitorSmartphone } from 'lucide-react'
+import { GraduationCap, PlayCircle, Loader2, CheckCircle2, ChevronRight, Sparkles, ShieldCheck, Video, FileVideo, Clock, ArrowLeft, ExternalLink, Flame, MonitorSmartphone, ArrowRight } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection } from 'firebase/firestore'
