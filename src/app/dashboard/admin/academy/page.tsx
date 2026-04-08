@@ -17,6 +17,7 @@ import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, d
 import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminAcademyPage() {
   const { toast } = useToast()
@@ -26,6 +27,7 @@ export default function AdminAcademyPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [isFinalizing, setIsFinalizing] = useState(false)
+  const [storageError, setStorageError] = useState<string | null>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   
   const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
@@ -41,21 +43,22 @@ export default function AdminAcademyPage() {
   const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setStorageError(null);
 
     if (!file.type.startsWith('video/')) {
       toast({ variant: "destructive", title: "Formato no válido", description: "Selecciona un archivo de video (MP4, MOV, etc)." });
       return;
     }
 
-    if (file.size > 500 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "Archivo demasiado grande", description: "El tamaño máximo permitido es de 500MB." });
-      return;
-    }
-
     try {
       const { storage } = initializeFirebase();
-      if (!storage) {
-        throw new Error("El servicio de almacenamiento no está activo en tu configuración de Firebase.");
+      
+      // Verificar si el bucket de storage existe en la configuración
+      if (!storage || !storage.app.options.storageBucket) {
+        const errorMsg = "El servicio de almacenamiento no está configurado. Por favor, crea un bucket en tu Consola de Firebase -> Storage.";
+        setStorageError(errorMsg);
+        toast({ variant: "destructive", title: "Error de Configuración", description: errorMsg });
+        return;
       }
 
       const storageRef = ref(storage, `academy/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
@@ -68,9 +71,15 @@ export default function AdminAcademyPage() {
         }, 
         (error: any) => {
           console.error("Upload error:", error);
-          let msg = error.message || "Error al subir a la nube.";
-          if (error.code === 'storage/unauthorized') msg = "Permiso denegado. Debes activar las 'Rules' en tu Consola de Firebase Storage.";
+          let msg = "Error al subir el video.";
           
+          if (error.code === 'storage/unauthorized') {
+            msg = "Permiso denegado. Debes activar las 'Rules' en la pestaña 'Storage' de tu Consola de Firebase.";
+          } else if (error.code === 'storage/project-not-found' || error.code === 'storage/bucket-not-found') {
+            msg = "El cubo de almacenamiento no existe. Créalo en la consola de Firebase.";
+          }
+          
+          setStorageError(msg);
           toast({ variant: "destructive", title: "Fallo en la subida", description: msg });
           setUploadProgress(null);
         }, 
@@ -146,6 +155,16 @@ export default function AdminAcademyPage() {
             </div>
             
             <div className="p-10 space-y-8">
+              {storageError && (
+                <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="text-[10px] font-black uppercase">Acción Requerida</AlertTitle>
+                  <AlertDescription className="text-xs font-bold leading-relaxed">
+                    {storageError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Título de la Clase</Label>
                 <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="h-14 rounded-2xl font-bold" placeholder="Ej: Estrategias de Cierre" />

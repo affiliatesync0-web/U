@@ -21,26 +21,20 @@ Si tus usuarios ven el error `auth/admin-restricted-operation`, es porque el reg
 5. **MUY IMPORTANTE**: Asegúrate de que la casilla que permite el registro de nuevos usuarios esté activa.
 6. Haz clic en **Guardar**.
 
-### 2. Activar Subida de Videos (Storage)
-Para que puedas subir videos desde tu dispositivo:
-1. Ve a **Consola de Firebase** > **Storage** (en el menú lateral).
-2. Haz clic en el botón **"Comenzar"** (Get Started).
-3. Selecciona **"Comenzar en modo de prueba"** (esto permite subir archivos inmediatamente).
-4. Elige una ubicación de servidor (se recomienda `us-central1`).
-5. Una vez activo, ve a la pestaña **"Rules"** (Reglas) dentro de Storage y pega el contenido del archivo `storage.rules` de este proyecto.
+### 2. Activar Subida de Videos (Storage) - Error de Región
+Si ves el mensaje "La ubicación de tus datos se estableció en una región que no admite buckets sin costo":
+1. Ve a **Consola de Firebase** > **Storage**.
+2. Haz clic en **"Comenzar"** o **"Crea un bucket"**.
+3. Elige la ubicación **`us-central1`** (Estados Unidos) para asegurar la capa gratuita.
+4. Selecciona **"Comenzar en modo de prueba"**.
+5. Una vez activo, ve a la pestaña **"Rules"** (Reglas) y pega el contenido del archivo `storage.rules`.
 
 ### 3. Variables de Entorno
 Configura estas variables para habilitar todas las funciones administrativas:
 - `FIREBASE_PROJECT_ID`: `studio-9886993662-50a10`
 - `FIREBASE_CLIENT_EMAIL`: Tu cuenta de servicio de Firebase.
-- `FIREBASE_PRIVATE_KEY`: Tu clave privada de Firebase (asegúrate de incluir los saltos de línea `\n`).
-- `GEMINI_API_KEY`: Tu clave de Google AI para las funciones de asistente de ventas.
-
-### 4. Configuración de Gmail (SMTP)
-Para que las notificaciones de ventas y recuperación de contraseñas funcionen:
-1. Ve a tu **Panel de Administrador** -> **Diseño**.
-2. Configura los datos de tu Gmail en la sección **SMTP**.
-3. Es **OBLIGATORIO** usar una "Contraseña de Aplicación" de Google (16 dígitos), no tu contraseña normal.
+- `FIREBASE_PRIVATE_KEY`: Tu clave privada de Firebase.
+- `GEMINI_API_KEY`: Tu clave de Google AI.
 
 ---
 © 2024 Sync Connect. Desarrollado para escalar negocios digitales en Nicaragua.
