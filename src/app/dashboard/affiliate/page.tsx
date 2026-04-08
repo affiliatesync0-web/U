@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ExternalLink, Flame, Sparkles } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ExternalLink, Flame, Sparkles, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -23,6 +23,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDo
 import { collection, query, where, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
+import Link from 'next/link'
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
@@ -141,7 +142,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ACCESO DIRECTO AL CURSO - PROTAGONISTA */}
+        {/* ACCESO DIRECTO AL CURSO - NAVEGACIÓN INTERNA */}
         <Card className="relative border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden ring-4 ring-primary/10 group animate-in fade-in zoom-in duration-700">
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,93,27,0.15),transparent_50%)]" />
            <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
@@ -169,13 +170,13 @@ export default function AffiliateDashboard() {
                  
                  <div className="pt-4 flex flex-col sm:flex-row items-center gap-6">
                     <Button asChild className="h-20 px-14 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-base uppercase tracking-[0.2em] shadow-2xl shadow-primary/40 group/btn transition-all hover:scale-105 active:scale-95">
-                       <a href="https://syncacademy.systeme.io/school/course/syncacademy" target="_blank" rel="noopener noreferrer">
-                          ENTRAR AL CURSO AHORA <ExternalLink className="ml-4 h-6 w-6 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
-                       </a>
+                       <Link href="/dashboard/affiliate/academy">
+                          ENTRAR AL CURSO AHORA <ChevronRight className="ml-4 h-6 w-6 transition-transform group-hover/btn:translate-x-1" />
+                       </Link>
                     </Button>
                     <div className="flex items-center gap-3 opacity-50">
                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Acceso Permanente Habilitado</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest">Plataforma Integrada Sincronizada</span>
                     </div>
                  </div>
               </div>
@@ -273,7 +274,7 @@ export default function AffiliateDashboard() {
                        <Input readOnly value={inviteLink} className="h-14 text-[10px] font-mono bg-slate-50 border-none rounded-2xl px-5" />
                        <Button onClick={handleCopyLink} className="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2">
                           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                          {copied ? "COPIADO" : "COPIAR ENLACE"}
+                          {copied ? "COPIADIO" : "COPIAR ENLACE"}
                        </Button>
                     </div>
                  </div>

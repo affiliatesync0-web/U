@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { GraduationCap, PlayCircle, Loader2, CheckCircle2, ChevronRight, Sparkles, ShieldCheck, Video, FileVideo, Clock, ArrowRight, ExternalLink, Flame } from 'lucide-react'
+import { GraduationCap, PlayCircle, Loader2, CheckCircle2, ChevronRight, Sparkles, ShieldCheck, Video, FileVideo, Clock, ArrowLeft, ExternalLink, Flame, MonitorSmartphone } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection } from 'firebase/firestore'
@@ -17,9 +17,65 @@ import Link from 'next/link'
 export default function AffiliateAcademyPage() {
   const { t } = useLanguage()
   const db = useFirestore()
+  const [view, setView] = useState<'hub' | 'course'>('hub');
 
   const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
   const { data: lessons, isLoading } = useCollection(academyQuery);
+
+  const courseUrl = "https://syncacademy.systeme.io/school/course/syncacademy";
+
+  if (view === 'course') {
+    return (
+      <DashboardShell role="affiliate">
+        <div className="h-[calc(100vh-140px)] flex flex-col gap-6 animate-in fade-in duration-500">
+          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border shadow-sm shrink-0">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setView('hub')} 
+                className="h-10 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 border-slate-200 hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-4 w-4" /> VOLVER AL HUB
+              </Button>
+              <div className="h-8 w-px bg-slate-100 hidden sm:block" />
+              <div className="hidden sm:flex flex-col">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Viendo Ahora</span>
+                <span className="text-sm font-black text-primary uppercase italic">Sync Academy Official</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <span className="hidden md:inline-block text-[9px] font-black text-green-600 uppercase tracking-[0.2em] bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                Conexión Segura Activa
+              </span>
+              <Button asChild variant="ghost" className="h-10 w-10 p-0 text-slate-400 hover:text-primary">
+                <a href={courseUrl} target="_blank" rel="noopener noreferrer" title="Abrir en ventana externa">
+                  <ExternalLink className="h-5 w-5" />
+                </a>
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white rounded-[3rem] overflow-hidden border-4 border-white shadow-2xl relative ring-1 ring-slate-200">
+            <iframe 
+              src={courseUrl} 
+              className="w-full h-full border-none"
+              title="Sync Academy Course"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+            
+            {/* Overlay informativo discreto */}
+            <div className="absolute bottom-6 right-8 pointer-events-none">
+               <div className="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-xl text-[9px] font-black text-white uppercase tracking-widest shadow-2xl flex items-center gap-2 border border-white/10">
+                 <MonitorSmartphone className="h-3 w-3 text-primary" /> Modo Inmersivo Sync
+               </div>
+            </div>
+          </div>
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell role="affiliate">
@@ -47,7 +103,7 @@ export default function AffiliateAcademyPage() {
           </div>
         </div>
 
-        {/* SECCIÓN DESTACADA: CURSO SYNC DE MARKETING (SYSTEME.IO) */}
+        {/* SECCIÓN DESTACADA: CURSO SYNC DE MARKETING (EMBEDDED) */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-[3.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
           <Card className="relative border-none shadow-2xl rounded-[3.5rem] bg-white overflow-hidden ring-1 ring-slate-100">
@@ -69,14 +125,15 @@ export default function AffiliateAcademyPage() {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button asChild className="h-18 px-10 rounded-[1.75rem] bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 group transition-all hover:scale-[1.03]">
-                    <a href="https://syncacademy.systeme.io/school/course/syncacademy" target="_blank" rel="noopener noreferrer">
-                      ENTRAR AL CURSO AHORA <ExternalLink className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                    </a>
+                  <Button 
+                    onClick={() => setView('course')}
+                    className="h-18 px-10 rounded-[1.75rem] bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 group transition-all hover:scale-[1.03]"
+                  >
+                    ENTRAR AL CURSO AHORA <ChevronRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                   <div className="flex items-center gap-4 px-6 py-4 bg-slate-50 rounded-[1.75rem] border border-slate-100">
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plataforma Externa Sincronizada</span>
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Navegación Interna Habilitada</span>
                   </div>
                 </div>
               </div>
