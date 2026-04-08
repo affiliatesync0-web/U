@@ -53,11 +53,9 @@ export default function AdminAcademyPage() {
     try {
       const { storage } = initializeFirebase();
       
-      // Verificar si el bucket de storage existe en la configuración
       if (!storage || !storage.app.options.storageBucket) {
-        const errorMsg = "El servicio de almacenamiento no está configurado. Por favor, crea un bucket en tu Consola de Firebase -> Storage.";
+        const errorMsg = "Falta configurar el bucket en Firebase. Ve a la consola y activa 'Storage'.";
         setStorageError(errorMsg);
-        toast({ variant: "destructive", title: "Error de Configuración", description: errorMsg });
         return;
       }
 
@@ -70,34 +68,36 @@ export default function AdminAcademyPage() {
           setUploadProgress(progress);
         }, 
         (error: any) => {
-          console.error("Upload error:", error);
+          console.error("Upload error code:", error.code);
           let msg = "Error al subir el video.";
           
           if (error.code === 'storage/unauthorized') {
-            msg = "Permiso denegado. Debes activar las 'Rules' en la pestaña 'Storage' de tu Consola de Firebase.";
-          } else if (error.code === 'storage/project-not-found' || error.code === 'storage/bucket-not-found') {
-            msg = "El cubo de almacenamiento no existe. Créalo en la consola de Firebase.";
+            msg = "Acceso Denegado: Debes ir a la pestaña 'Rules' en tu Consola de Firebase Storage y cambiar 'allow read, write: if false' por 'if true'.";
+          } else if (error.code === 'storage/canceled') {
+            msg = "Subida cancelada por el usuario.";
+          } else if (error.code === 'storage/retry-limit-exceeded') {
+            msg = "La conexión es muy lenta. Intenta con un video más pequeño o mejor internet.";
           }
           
           setStorageError(msg);
-          toast({ variant: "destructive", title: "Fallo en la subida", description: msg });
+          toast({ variant: "destructive", title: "Fallo en la subida", description: "Revisa el mensaje de error en la ventana." });
           setUploadProgress(null);
         }, 
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           setFormData(prev => ({ ...prev, videoUrl: downloadURL }));
           setUploadProgress(null);
-          toast({ title: "¡Video Cargado!", description: "El video ya está listo para ser publicado." });
+          toast({ title: "¡Video Cargado!", description: "El video ya está en la nube de Google." });
         }
       );
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Fallo Crítico", description: err.message });
+      setStorageError(err.message);
     }
   };
 
   const handleSave = async () => {
     if (!formData.title || !formData.videoUrl) {
-      toast({ variant: "destructive", title: "Datos incompletos", description: "Asigna un título y sube un video antes de guardar." });
+      toast({ variant: "destructive", title: "Faltan datos", description: "Espera a que el video termine de subir." });
       return;
     }
 
@@ -109,11 +109,11 @@ export default function AdminAcademyPage() {
         order: (lessons?.length || 0) + 1
       });
 
-      toast({ title: "Lección Publicada", description: "Ya está disponible para todos tus socios." });
+      toast({ title: "Lección Publicada", description: "Ya está disponible para los socios." });
       setIsAdding(false);
       setFormData({ title: '', description: '', videoUrl: '', useLocalFile: true });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error de Base de Datos", description: e.message || "No se pudo guardar la lección." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar en la base de datos." });
     } finally {
       setIsFinalizing(false);
     }
@@ -158,8 +158,8 @@ export default function AdminAcademyPage() {
               {storageError && (
                 <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-[10px] font-black uppercase">Acción Requerida</AlertTitle>
-                  <AlertDescription className="text-xs font-bold leading-relaxed">
+                  <AlertTitle className="text-[10px] font-black uppercase">Fallo de Configuración</AlertTitle>
+                  <AlertDescription className="text-xs font-bold leading-relaxed mt-1">
                     {storageError}
                   </AlertDescription>
                 </Alert>
@@ -209,12 +209,13 @@ export default function AdminAcademyPage() {
                     <input type="file" ref={videoInputRef} onChange={handleVideoFileChange} accept="video/*" className="hidden" />
                     
                     {uploadProgress !== null && (
-                      <div className="space-y-3 p-4 bg-primary/5 rounded-2xl animate-in fade-in">
+                      <div className="space-y-3 p-6 bg-primary/5 rounded-2xl animate-in fade-in border border-primary/10">
                         <div className="flex justify-between items-center text-[10px] font-black text-primary uppercase">
-                          <span>Subiendo a la nube de Google...</span>
+                          <span>{uploadProgress < 100 ? "Subiendo a la nube..." : "Procesando en Google Cloud..."}</span>
                           <span>{Math.round(uploadProgress)}%</span>
                         </div>
-                        <Progress value={uploadProgress} className="h-2" />
+                        <Progress value={uploadProgress} className="h-3" />
+                        <p className="text-[9px] text-slate-400 font-bold uppercase text-center">No cierres esta ventana hasta completar el 100%</p>
                       </div>
                     )}
                   </div>
