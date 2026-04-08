@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ExternalLink, Flame, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -90,10 +90,8 @@ export default function AffiliateDashboard() {
     { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
     { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
     { title: "Ganancias Totales", value: `$${totalCommissions.toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
-    { title: "Estado", value: profile?.status === 'Blocked' ? t.blockedStatus : (profile?.status || t.active), icon: Users, color: profile?.status === 'Blocked' ? "text-red-500" : "text-slate-500", bg: "bg-slate-50" },
   ]
 
-  // Evitar renderizado de contenido dinámico hasta que el cliente esté montado
   if (!isMounted || isLoading) {
     return (
       <DashboardShell role="affiliate">
@@ -106,127 +104,199 @@ export default function AffiliateDashboard() {
 
   return (
     <DashboardShell role="affiliate">
-      <div className="space-y-12">
+      <div className="space-y-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             <div className="relative">
-              <Avatar className="h-28 w-28 border-8 border-white shadow-2xl rotate-3 transition-transform hover:rotate-0">
+              <Avatar className="h-20 w-20 border-4 border-white shadow-xl rotate-3 hover:rotate-0 transition-transform">
                 <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} className="object-cover" />
-                <AvatarFallback className="bg-primary text-white text-4xl font-black">
+                <AvatarFallback className="bg-primary text-white text-2xl font-black">
                   {profile?.firstName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <button 
                 onClick={() => setIsEditingPhoto(true)}
-                className="absolute -bottom-1 -right-1 bg-white p-3 rounded-2xl shadow-xl border hover:bg-slate-50 transition-all text-primary"
+                className="absolute -bottom-1 -right-1 bg-white p-2 rounded-xl shadow-lg border hover:bg-slate-50 transition-all text-primary"
               >
-                <Camera className="h-5 w-5" />
+                <Camera className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-4xl font-headline font-black text-slate-900 leading-tight tracking-tight">
-                {t.welcomeBack}, {profile?.firstName || 'Campeón'} 👋
+            <div className="space-y-1">
+              <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight leading-none">
+                {t.welcomeBack}, {profile?.firstName || 'Campeón'}
               </h1>
-              <div className="flex flex-wrap items-center gap-4">
-                <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.4em] flex items-center gap-3">
-                   <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Partner Verificado Sync
-                </p>
-                {profile?.whatsappNumber && (
-                  <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1 rounded-full border border-green-100 text-[10px] font-black uppercase tracking-widest">
-                    <Smartphone className="h-3 w-3" /> WhatsApp: +{profile.whatsappNumber}
-                  </div>
-                )}
-              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Workspace de Afiliado Sync</p>
             </div>
           </div>
           
-          <Card className="md:max-w-md border-none bg-white shadow-2xl rounded-[2.5rem] p-6 ring-1 ring-slate-100 relative overflow-hidden">
-             <div className="flex flex-col gap-4 relative z-10">
-                <div className="flex items-center gap-3">
-                   <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
-                      <LinkIcon className="h-5 w-5" />
-                   </div>
-                   <div className="space-y-0.5">
-                      <h3 className="text-sm font-black text-slate-900 tracking-tight">{t.inviteLink}</h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.inviteLinkDesc}</p>
-                   </div>
-                </div>
-                <div className="flex gap-2">
-                   <Input readOnly value={inviteLink} className="h-12 text-[10px] font-mono bg-slate-50 border-none rounded-xl" />
-                   <Button onClick={handleCopyLink} size="icon" className="h-12 w-12 rounded-xl shrink-0 bg-primary shadow-lg shadow-primary/20">
-                      {copied ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
-                   </Button>
-                </div>
+          <div className="flex flex-wrap items-center gap-3">
+             <div className="h-10 px-5 bg-white rounded-xl flex items-center gap-3 shadow-sm border border-slate-100">
+                <Wallet className="h-4 w-4 text-primary" />
+                <span className="text-xs font-black text-slate-900">${profile?.currentBalance?.toFixed(2) || '0.00'}</span>
              </div>
-          </Card>
+             <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl">
+                <Smartphone className="h-4 w-4 text-primary" />
+                <span className="text-[9px] font-black uppercase tracking-widest">+{profile?.whatsappNumber || 'Sin Vincular'}</span>
+             </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {stats.map((stat) => (
-            <Card key={stat.title} className="border-none shadow-sm hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] bg-white group overflow-hidden ring-1 ring-slate-50">
-              <CardContent className="p-10">
-                <div className="flex items-center justify-between mb-6">
-                  <div className={`p-4 rounded-[1.25rem] ${stat.bg} ${stat.color} shadow-inner`}>
-                    <stat.icon className="h-7 w-7" />
-                  </div>
-                  <ArrowUpRight className="h-6 w-6 text-slate-100 group-hover:text-primary transition-colors duration-500" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{stat.title}</p>
-                  <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-10">
-          <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-50">
-            <CardHeader className="px-10 py-8 border-b border-slate-50 bg-slate-50/30 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl font-headline font-black text-slate-900 tracking-tight">Ventas Recientes</CardTitle>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Últimos movimientos financieros</p>
+        {/* ACCESO DIRECTO AL CURSO - PROTAGONISTA */}
+        <Card className="relative border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden ring-4 ring-primary/10 group animate-in fade-in zoom-in duration-700">
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,93,27,0.15),transparent_50%)]" />
+           <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
+              <GraduationCap className="h-64 w-64" />
+           </div>
+           
+           <div className="flex flex-col lg:flex-row items-center relative z-10">
+              <div className="flex-1 p-10 md:p-14 space-y-8">
+                 <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                       <div className="bg-primary/20 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20 flex items-center gap-2">
+                          <Flame className="h-3 w-3 fill-current animate-pulse" /> ENTRENAMIENTO OFICIAL
+                       </div>
+                       <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                          <Sparkles className="h-3 w-3" /> Sync Academy Elite
+                       </div>
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-headline font-black tracking-tight leading-[1.1]">
+                       CURSO SYNC DE <span className="text-primary">MARKETING</span>
+                    </h2>
+                    <p className="text-slate-400 font-medium text-lg max-w-xl leading-relaxed">
+                       Domina las estrategias de ventas orgánicas y el cierre por WhatsApp para facturar tus primeros $1,000 USD con nuestra red.
+                    </p>
+                 </div>
+                 
+                 <div className="pt-4 flex flex-col sm:flex-row items-center gap-6">
+                    <Button asChild className="h-20 px-14 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-base uppercase tracking-[0.2em] shadow-2xl shadow-primary/40 group/btn transition-all hover:scale-105 active:scale-95">
+                       <a href="https://syncacademy.systeme.io/school/course/syncacademy" target="_blank" rel="noopener noreferrer">
+                          ENTRAR AL CURSO AHORA <ExternalLink className="ml-4 h-6 w-6 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
+                       </a>
+                    </Button>
+                    <div className="flex items-center gap-3 opacity-50">
+                       <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                       <span className="text-[10px] font-black uppercase tracking-widest">Acceso Permanente Habilitado</span>
+                    </div>
+                 </div>
               </div>
-              <Button variant="ghost" className="text-xs font-black uppercase text-primary tracking-widest">Ver Todo</Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              {salesLoading ? (
-                <div className="flex justify-center py-24"><Loader2 className="animate-spin h-10 w-10 text-primary opacity-50" /></div>
-              ) : !sales || sales.length === 0 ? (
-                <div className="text-center py-32">
-                  <ShoppingBag className="h-20 w-20 text-slate-100 mx-auto mb-6 rotate-12" />
-                  <p className="text-slate-400 font-black text-sm uppercase tracking-widest">Aún no has registrado ventas. ¡Es momento de empezar!</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                        <TableHead className="px-10 h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">ID Operación</TableHead>
-                        <TableHead className="h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">Producto / Servicio</TableHead>
-                        <TableHead className="h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">Importe</TableHead>
-                        <TableHead className="px-10 text-right h-16 uppercase text-[10px] font-black text-slate-400 tracking-widest">Comisión Neta</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sales.slice(0, 5).map((sale) => (
-                        <TableRow key={sale.id} className="hover:bg-slate-50/30 transition-colors h-20">
-                          <TableCell className="px-10 font-mono text-[10px] font-black text-slate-300">#{sale.id.substring(0, 8)}</TableCell>
-                          <TableCell className="font-black text-slate-800 tracking-tight">{sale.productName || sale.productId}</TableCell>
-                          <TableCell className="font-bold text-slate-500 tracking-tighter">${sale.saleAmount?.toFixed(2)}</TableCell>
-                          <TableCell className="px-10 text-right">
-                             <span className="bg-green-50 text-green-600 font-black px-4 py-2 rounded-xl text-lg tracking-tighter inline-block shadow-sm">
-                               ${sale.commissionEarned?.toFixed(2)}
-                             </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              <div className="lg:w-[30%] p-10 hidden lg:flex justify-center">
+                 <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
+                    <div className="h-48 w-48 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[3rem] flex items-center justify-center shadow-2xl rotate-6 transition-transform group-hover:rotate-0 duration-700">
+                       <GraduationCap className="h-24 w-24 text-primary" />
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+           <div className="lg:col-span-8 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {stats.map((stat) => (
+                  <Card key={stat.title} className="border-none shadow-xl rounded-[2.5rem] bg-white group hover:scale-[1.02] transition-all overflow-hidden ring-1 ring-slate-100">
+                    <CardContent className="p-8">
+                      <div className={`h-12 w-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6 shadow-inner`}>
+                        <stat.icon className="h-6 w-6" />
+                      </div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.title}</p>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stat.value}</h3>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
+                <CardHeader className="px-10 py-8 border-b border-slate-50 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-headline font-black text-slate-900 tracking-tight">Ventas Recientes</CardTitle>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Últimos movimientos financieros</p>
+                  </div>
+                  <Button asChild variant="ghost" className="text-[10px] font-black uppercase text-primary tracking-widest">
+                    <a href="/dashboard/affiliate/register-sale">Registrar Nueva Venta</a>
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {salesLoading ? (
+                    <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary opacity-50" /></div>
+                  ) : !sales || sales.length === 0 ? (
+                    <div className="text-center py-20 opacity-30">
+                      <ShoppingBag className="h-12 w-12 mx-auto mb-4" />
+                      <p className="text-xs font-black uppercase tracking-widest">Sin ventas registradas todavía</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                            <TableHead className="px-10 h-14 uppercase text-[9px] font-black text-slate-400 tracking-widest">Producto</TableHead>
+                            <TableHead className="h-14 uppercase text-[9px] font-black text-slate-400 tracking-widest">Monto</TableHead>
+                            <TableHead className="px-10 text-right h-14 uppercase text-[9px] font-black text-slate-400 tracking-widest">Comisión</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sales.slice(0, 4).map((sale) => (
+                            <TableRow key={sale.id} className="hover:bg-slate-50/30 transition-colors h-16">
+                              <TableCell className="px-10">
+                                <span className="font-black text-slate-800 text-xs uppercase tracking-tight">{sale.productName || 'Curso'}</span>
+                              </TableCell>
+                              <TableCell className="font-bold text-slate-500 text-xs">${sale.saleAmount?.toFixed(2)}</TableCell>
+                              <TableCell className="px-10 text-right">
+                                 <span className="text-green-600 font-black text-sm tracking-tighter">
+                                   +${sale.commissionEarned?.toFixed(2)}
+                                 </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+           </div>
+
+           <div className="lg:col-span-4 space-y-8">
+              <Card className="border-none bg-white shadow-2xl rounded-[3rem] p-10 ring-1 ring-slate-100 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12"><LinkIcon className="h-20 w-20" /></div>
+                 <div className="flex flex-col gap-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                       <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
+                          <LinkIcon className="h-6 w-6" />
+                       </div>
+                       <div className="space-y-0.5">
+                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t.inviteLink}</h3>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Tus prospectos se vinculan aquí</p>
+                       </div>
+                    </div>
+                    <div className="space-y-3">
+                       <Input readOnly value={inviteLink} className="h-14 text-[10px] font-mono bg-slate-50 border-none rounded-2xl px-5" />
+                       <Button onClick={handleCopyLink} className="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2">
+                          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          {copied ? "COPIADO" : "COPIAR ENLACE"}
+                       </Button>
+                    </div>
+                 </div>
+              </Card>
+
+              <Card className="border-none bg-blue-600 shadow-2xl rounded-[3rem] p-10 text-white relative overflow-hidden group">
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.1),transparent_70%)]" />
+                 <div className="relative z-10 space-y-6">
+                    <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl">
+                       <TrendingUp className="h-6 w-6" />
+                    </div>
+                    <div className="space-y-2">
+                       <h4 className="text-xl font-headline font-black uppercase tracking-tight">Potencial de Ganancia</h4>
+                       <p className="text-blue-100 text-sm font-medium leading-relaxed">
+                          Usa el material de nuestro laboratorio para triplicar tus resultados este mes.
+                       </p>
+                    </div>
+                    <Button asChild variant="outline" className="w-full h-12 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white hover:text-blue-600 font-black text-[10px] uppercase tracking-widest transition-all">
+                       <a href="/dashboard/affiliate/sales-lab">IR AL LABORATORIO</a>
+                    </Button>
+                 </div>
+              </Card>
+           </div>
         </div>
       </div>
 
