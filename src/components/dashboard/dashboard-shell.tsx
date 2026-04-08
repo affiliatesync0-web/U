@@ -142,6 +142,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     );
   }
 
+  const academyUrl = "https://syncacademy.systeme.io/es/login?redirectUrl=https%3A%2F%2Fsyncacademy.systeme.io%2Fschool%2Fcourse%2Fsyncacademy";
+
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
@@ -157,7 +159,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: t.syncAcademy, url: "/dashboard/affiliate/academy", icon: GraduationCap },
+    { title: t.syncAcademy, url: academyUrl, icon: GraduationCap },
     { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
@@ -219,7 +221,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <SidebarInset className="bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
         <header className="flex h-20 shrink-0 items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-6 transition-colors">
           <SidebarTrigger className="-ml-1 text-primary" />
-          <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100 dark:bg-slate-800" />
+          <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100 dark:border-slate-800" />
           <div className="flex-1">
              <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
                 {isUserAdmin ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}

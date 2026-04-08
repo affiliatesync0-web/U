@@ -37,6 +37,8 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
 
+  const academyUrl = "https://syncacademy.systeme.io/es/login?redirectUrl=https%3A%2F%2Fsyncacademy.systeme.io%2Fschool%2Fcourse%2Fsyncacademy";
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -151,17 +153,12 @@ export default function AffiliateDashboard() {
                        CENTRO DE <span className="text-primary">CAPACITACIÓN</span>
                     </h2>
                     <p className="text-slate-400 font-medium max-w-xl">
-                       Accede a tus lecciones guardadas y al entrenamiento oficial de Systeme.io para maximizar tus ventas.
+                       Accede a tu entrenamiento maestro para dominar el marketing digital y escalar tus resultados.
                     </p>
                  </div>
                  <div className="flex flex-wrap gap-4 pt-4">
                     <Button asChild className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-xl transition-all">
-                       <Link href="/dashboard/affiliate/academy">VER MIS LECCIONES</Link>
-                    </Button>
-                    <Button asChild variant="outline" className="h-16 px-10 rounded-2xl border-white/10 text-white hover:bg-white/5 font-black text-xs uppercase tracking-widest transition-all">
-                       <a href="https://syncacademy.systeme.io/school/course/syncacademy" target="_blank" rel="noopener noreferrer">
-                          CURSO SYSTEME.IO <ExternalLink className="ml-2 h-4 w-4" />
-                       </a>
+                       <a href={academyUrl}>ACCEDER A LA ACADEMIA <ExternalLink className="ml-3 h-4 w-4" /></a>
                     </Button>
                  </div>
               </div>
