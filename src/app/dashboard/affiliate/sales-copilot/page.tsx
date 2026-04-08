@@ -30,7 +30,8 @@ import {
   Globe,
   Flame,
   Target,
-  FileText
+  FileText,
+  GraduationCap
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -58,7 +59,7 @@ export default function SalesCopilotPage() {
   const [searchBuyer, setSearchBuyer] = useState('')
   const [copiedIndex, setCopiedId] = useState<number | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
-  const [activeTool, setActiveTool] = useState<'whatsapp' | 'google'>('whatsapp');
+  const [activeTool, setActiveTool] = useState<'whatsapp' | 'google' | 'course'>('whatsapp');
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -75,6 +76,8 @@ export default function SalesCopilotPage() {
   }, [db, user]);
   
   const { data: buyers, isLoading: buyersLoading } = useCollection(buyersQuery);
+
+  const courseUrl = "https://syncacademy.systeme.io/school/course/syncacademy";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -123,8 +126,12 @@ export default function SalesCopilotPage() {
   };
 
   const openExternalTool = () => {
-    const url = activeTool === 'whatsapp' ? 'https://web.whatsapp.com/' : 'https://www.google.com/';
-    window.open(url, '_blank', 'width=1200,height=800');
+    const urls = {
+      whatsapp: 'https://web.whatsapp.com/',
+      google: 'https://www.google.com/',
+      course: courseUrl
+    };
+    window.open(urls[activeTool], '_blank', 'width=1200,height=800');
   };
 
   const quickActions = [
@@ -170,22 +177,21 @@ export default function SalesCopilotPage() {
         <div className="flex-1 flex gap-4 overflow-hidden">
           
           {/* PANEL 1: Prospectos (Izquierda) */}
-          <div className="w-[300px] flex flex-col shrink-0 overflow-hidden">
+          <div className="w-[280px] flex flex-col shrink-0 overflow-hidden">
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-headline font-black tracking-tight text-white flex items-center gap-2">
                     <Users2 className="h-4 w-4 text-primary" /> Mis Prospectos
                   </h3>
-                  <Badge variant="outline" className="text-primary border-primary/20 text-[8px] font-black">VIPS</Badge>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <Input 
-                    placeholder="Buscar por nombre..." 
+                    placeholder="Buscar..." 
                     value={searchBuyer}
                     onChange={(e) => setSearchBuyer(e.target.value)}
-                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-10 pl-10 rounded-xl text-[10px] font-bold focus:ring-primary placeholder:text-slate-600"
+                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-10 pl-10 rounded-xl text-[10px] font-bold placeholder:text-slate-600"
                   />
                 </div>
               </CardHeader>
@@ -198,7 +204,7 @@ export default function SalesCopilotPage() {
                     ) : !buyers || buyers.length === 0 ? (
                       <div className="text-center py-10 opacity-20 space-y-3">
                         <Users2 className="h-10 w-10 mx-auto" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Sin prospectos registrados</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Vaciío</p>
                       </div>
                     ) : (
                       buyers
@@ -209,7 +215,6 @@ export default function SalesCopilotPage() {
                           onClick={() => {
                             setSelectedBuyer(buyer);
                             setInput(`Analiza a ${buyer.firstName}. ¿Qué script puedo usar para cerrarlo hoy mismo?`);
-                            toast({ title: "Prospecto Seleccionado", description: `Cargando perfil de ${buyer.firstName}` });
                           }}
                           className={cn(
                             "w-full text-left p-4 rounded-2xl bg-white border transition-all group relative overflow-hidden",
@@ -218,18 +223,17 @@ export default function SalesCopilotPage() {
                         >
                           <div className="flex items-center gap-4 relative z-10">
                             <div className={cn(
-                              "h-10 w-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg transition-transform group-hover:scale-110",
+                              "h-10 w-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg",
                               selectedBuyer?.id === buyer.id ? "bg-primary rotate-3" : "bg-slate-200 text-slate-500"
                             )}>
                               {buyer.firstName?.charAt(0)}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h4 className="text-[11px] font-black text-slate-800 truncate uppercase">{buyer.firstName} {buyer.lastName}</h4>
-                              <p className="text-[9px] text-slate-400 font-bold tracking-tight mt-0.5">
-                                {buyer.phone || 'WhatsApp Desconocido'}
+                              <h4 className="text-[11px] font-black text-slate-800 truncate uppercase">{buyer.firstName}</h4>
+                              <p className="text-[9px] text-slate-400 font-bold truncate">
+                                {buyer.phone || 'Sin número'}
                               </p>
                             </div>
-                            {selectedBuyer?.id === buyer.id && <div className="h-2 w-2 rounded-full bg-primary animate-ping" />}
                           </div>
                         </button>
                       ))
@@ -246,19 +250,15 @@ export default function SalesCopilotPage() {
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3 animate-in zoom-in duration-500">
+                    <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3">
                       <Bot className="h-6 w-6" />
                     </div>
                     <div>
                       <CardTitle className="text-xl font-headline font-black tracking-tight text-primary flex items-center gap-2 uppercase italic">
-                        IA Sales Expert <Sparkles className="h-4 w-4 fill-primary" />
+                        Expert IA <Sparkles className="h-4 w-4 fill-primary" />
                       </CardTitle>
-                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Asistente de Cierre de Ventas</p>
+                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Asistente de Cierre</p>
                     </div>
-                  </div>
-                  <div className="hidden lg:flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase">Motor de IA Optimizado</span>
                   </div>
                 </div>
               </CardHeader>
@@ -293,7 +293,7 @@ export default function SalesCopilotPage() {
                                 onClick={() => handleCopyScript(msg.content, i)}
                               >
                                 {copiedIndex === i ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                {copiedIndex === i ? "Copiado" : "Copiar Script"}
+                                {copiedIndex === i ? "Copiado" : "Copiar"}
                               </Button>
                             </div>
                           )}
@@ -316,7 +316,6 @@ export default function SalesCopilotPage() {
                   </div>
                 </ScrollArea>
 
-                {/* Acciones Rápidas */}
                 <div className="px-6 py-3 bg-white/50 border-t border-slate-100 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
                   {quickActions.map((action, i) => (
                     <Button 
@@ -334,10 +333,10 @@ export default function SalesCopilotPage() {
                 <div className="p-6 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shrink-0">
                   <form onSubmit={(e) => handleSendMessage(e)} className="flex gap-3">
                     <Input 
-                      placeholder="Escribe tu consulta o usa una acción rápida..." 
+                      placeholder="Consulta a la IA..." 
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      className="h-14 rounded-2xl px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 text-[12px] shadow-inner focus:ring-primary/20"
+                      className="h-14 rounded-2xl px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold text-slate-800 text-[12px] shadow-inner"
                     />
                     <Button 
                       type="submit" 
@@ -353,21 +352,21 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL 3: Navegador Dual (Derecha) */}
+          {/* PANEL 3: Navegador Triple (Derecha) */}
           {showRightPanel && (
-            <div className="flex-[1.4] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-8 duration-700">
+            <div className="flex-[1.6] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-8 duration-700">
               <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
                 <CardHeader className={cn(
                   "p-5 shrink-0 flex flex-col gap-4 transition-colors duration-500",
-                  activeTool === 'whatsapp' ? "bg-[#25D366]" : "bg-blue-600"
+                  activeTool === 'whatsapp' ? "bg-[#25D366]" : (activeTool === 'course' ? "bg-primary" : "bg-blue-600")
                 )}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-white">
                       <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                        {activeTool === 'whatsapp' ? <MessageSquare className="h-4 w-4 fill-white" /> : <Globe className="h-4 w-4" />}
+                        {activeTool === 'whatsapp' ? <MessageSquare className="h-4 w-4 fill-white" /> : (activeTool === 'course' ? <GraduationCap className="h-4 w-4" /> : <Globe className="h-4 w-4" />)}
                       </div>
                       <CardTitle className="text-[11px] font-headline font-black uppercase tracking-[0.2em] text-white">
-                        {activeTool === 'whatsapp' ? "WhatsApp Web Real" : "Google Command Center"}
+                        {activeTool === 'whatsapp' ? "WhatsApp Web" : (activeTool === 'course' ? "Sync Academy" : "Google Search")}
                       </CardTitle>
                     </div>
                     <Button 
@@ -389,7 +388,17 @@ export default function SalesCopilotPage() {
                         activeTool === 'whatsapp' ? "bg-white text-green-600 shadow-xl" : "text-white/60 hover:text-white"
                       )}
                     >
-                      <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
+                      WhatsApp
+                    </Button>
+                    <Button 
+                      onClick={() => setActiveTool('course')}
+                      variant="ghost" 
+                      className={cn(
+                        "flex-1 h-10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                        activeTool === 'course' ? "bg-white text-primary shadow-xl" : "text-white/60 hover:text-white"
+                      )}
+                    >
+                      Curso Sync
                     </Button>
                     <Button 
                       onClick={() => setActiveTool('google')}
@@ -399,7 +408,7 @@ export default function SalesCopilotPage() {
                         activeTool === 'google' ? "bg-white text-blue-600 shadow-xl" : "text-white/60 hover:text-white"
                       )}
                     >
-                      <Globe className="h-4 w-4 mr-2" /> Google
+                      Google
                     </Button>
                   </div>
                 </CardHeader>
@@ -407,17 +416,17 @@ export default function SalesCopilotPage() {
                 <CardContent className="flex-1 p-0 relative bg-slate-100">
                   <iframe 
                     key={activeTool}
-                    src={activeTool === 'whatsapp' ? "https://web.whatsapp.com/" : "https://www.google.com/search?igu=1"}
+                    src={activeTool === 'whatsapp' ? "https://web.whatsapp.com/" : (activeTool === 'course' ? courseUrl : "https://www.google.com/search?igu=1")}
                     className="w-full h-full border-none"
                     title={activeTool}
                   />
                   
-                  {/* Overlay de Bloqueo / Instrucción */}
-                  <div className="absolute top-0 left-0 right-0 p-4 bg-amber-50/95 backdrop-blur-md border-b border-amber-100 flex items-center justify-between gap-4 animate-in slide-in-from-top-4">
+                  {/* Overlay de Instrucción */}
+                  <div className="absolute top-0 left-0 right-0 p-3 bg-amber-50/95 backdrop-blur-md border-b border-amber-100 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
-                      <p className="text-[9px] text-amber-800 font-bold leading-tight">
-                        Si la página aparece en blanco, haz clic en <strong>"Abrir Externo"</strong> arriba para cargarla en una ventana lateral sincronizada.
+                      <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                      <p className="text-[8px] text-amber-800 font-bold leading-tight uppercase tracking-widest">
+                        Navegador Inmersivo Sync: Si el contenido no carga, usa "Abrir Externo" arriba.
                       </p>
                     </div>
                   </div>
