@@ -177,7 +177,7 @@ export default function AdminAcademyPage() {
                     {storageError}
                     <div className="mt-4 p-3 bg-white/50 rounded-xl border border-red-200">
                       <p className="text-[9px] uppercase font-black text-red-900">Solución Probable:</p>
-                      <p className="text-[10px] mt-1">Ve a tu <b>Consola de Firebase -> Storage -> Rules</b> y pega: <code className="block mt-1 p-2 bg-slate-100 rounded text-[9px]">allow read, write: if true;</code> luego dale a Publicar.</p>
+                      <p className="text-[10px] mt-1">Ve a tu <b>Consola de Firebase &rarr; Storage &rarr; Rules</b> y pega: <code className="block mt-1 p-2 bg-slate-100 rounded text-[9px]">allow read, write: if true;</code> luego dale a Publicar.</p>
                     </div>
                   </AlertDescription>
                 </Alert>
