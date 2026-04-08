@@ -156,7 +156,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: t.syncAcademy, url: "/dashboard/affiliate/academy", icon: GraduationCap },
+    { title: t.syncAcademy, url: "https://syncacademy.systeme.io/school/course/syncacademy", icon: GraduationCap },
     { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
