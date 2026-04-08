@@ -21,6 +21,7 @@ import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, d
 import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface VideoItem {
   id: string;
@@ -39,6 +40,7 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [storageError, setStorageError] = useState<string | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -104,6 +106,7 @@ export default function AdminProductsPage() {
   const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setStorageError(null);
 
     if (!file.type.startsWith('video/')) {
       toast({ variant: "destructive", title: "Solo videos", description: "Selecciona un archivo de video válido." });
@@ -111,8 +114,8 @@ export default function AdminProductsPage() {
     }
 
     const { storage } = initializeFirebase();
-    if (!storage) {
-      toast({ variant: "destructive", title: "Error", description: "Storage no configurado." });
+    if (!storage || !storage.app.options.storageBucket) {
+      setStorageError("Falta configurar Storage en Firebase. Ve a la consola y activa el servicio.");
       return;
     }
 
@@ -125,22 +128,27 @@ export default function AdminProductsPage() {
         setUploadProgress(progress);
       }, 
       (error: any) => {
-        console.error("Video Upload Error:", error);
-        toast({ variant: "destructive", title: "Fallo en Video", description: error.message || "No se pudo subir el archivo." });
+        console.error("Video Upload Error:", error.code);
+        let msg = "Error al subir video.";
+        if (error.code === 'storage/unauthorized') msg = "ACCESO DENEGADO: Revisa las 'Rules' de Storage en tu Consola.";
+        if (error.code === 'storage/retry-limit-exceeded') msg = "Conexión demasiado lenta o inestable.";
+        
+        setStorageError(msg);
+        toast({ variant: "destructive", title: "Fallo en Video", description: msg });
         setUploadProgress(null);
       }, 
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         setNewVideo(prev => ({ ...prev, url: downloadURL }));
         setUploadProgress(null);
-        toast({ title: "¡Video Cargado!", description: "Pulsa el botón 'Añadir' para incluirlo en la lista." });
+        toast({ title: "¡Video Cargado!", description: "Pulsa el botón 'Añadir a lista' para incluirlo." });
       }
     );
   };
 
   const handleAddVideo = () => {
     if (!newVideo.title || !newVideo.url) {
-      toast({ variant: "destructive", title: "Datos incompletos", description: "Asigna un título y sube un video." });
+      toast({ variant: "destructive", title: "Datos incompletos", description: "Asigna un título y sube un video primero." });
       return;
     }
     setVideos([...videos, { 
@@ -211,6 +219,7 @@ export default function AdminProductsPage() {
     setEditingId(null);
     setFormData({ name: '', category: 'Course', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', features: '', description: '', imageUrl: '' });
     setVideos([]);
+    setStorageError(null);
   }
 
   const handleDelete = (id: string) => {
@@ -249,6 +258,14 @@ export default function AdminProductsPage() {
             
             <div className="p-10 bg-white grid grid-cols-1 lg:grid-cols-3 gap-10">
               <div className="space-y-8">
+                {storageError && (
+                  <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle className="text-[10px] font-black uppercase">Fallo de Almacenamiento</AlertTitle>
+                    <AlertDescription className="text-xs font-bold mt-1">{storageError}</AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-6">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-3">1. Datos Generales</h3>
                   <div className="space-y-2">
@@ -368,6 +385,7 @@ export default function AdminProductsPage() {
             <div className="p-10 border-t bg-slate-50 flex flex-col gap-6 sticky bottom-0 z-10">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-slate-400 uppercase ml-1">Copy de Ventas</Label>
+                <span className="text-[8px] text-slate-400 uppercase italic ml-2">Este texto aparecerá en la página de producto para los afiliados.</span>
                 <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[120px] rounded-3xl bg-white border-none ring-1 ring-slate-200 p-6 font-medium text-sm" />
               </div>
               <div className="flex gap-4">

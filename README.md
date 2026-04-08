@@ -19,15 +19,27 @@ Si tus usuarios ven el error `auth/admin-restricted-operation`, es porque el reg
 3. Selecciona **Correo electrónico/contraseña**.
 4. **Habilita la primera opción** (Correo electrónico/contraseña).
 5. **MUY IMPORTANTE**: Asegúrate de que la casilla que permite el registro de nuevos usuarios esté activa.
-6. Haz clic en **Guardar**.
+6. Ve a la pestaña **Settings** (arriba) -> **User actions** (izquierda) -> Asegúrate de que **"Enable create (sign-up)"** esté activado.
+7. Haz clic en **Guardar**.
 
-### 2. Activar Subida de Videos (Storage) - Error de Región
-Si ves el mensaje "La ubicación de tus datos se estableció en una región que no admite buckets sin costo":
+### 2. Activar Subida de Videos (Storage) - Error de Región y Reglas
+Si la subida de videos falla o el sistema dice "Error Desconocido":
 1. Ve a **Consola de Firebase** > **Storage**.
 2. Haz clic en **"Comenzar"** o **"Crea un bucket"**.
-3. Elige la ubicación **`us-central1`** (Estados Unidos) para asegurar la capa gratuita.
+3. **UBICACIÓN CRÍTICA**: Elige **`us-central1`** (Estados Unidos). Otras regiones pueden ser lentas desde Nicaragua o no tener capa gratuita.
 4. Selecciona **"Comenzar en modo de prueba"**.
-5. Una vez activo, ve a la pestaña **"Rules"** (Reglas) y pega el contenido del archivo `storage.rules`.
+5. Una vez activo, ve a la pestaña **"Rules"** (Reglas) y pega exactamente esto:
+   ```rules
+   rules_version = '2';
+   service firebase.storage {
+     match /b/{bucket}/o {
+       match /{allPaths=**} {
+         allow read, write: if true;
+       }
+     }
+   }
+   ```
+6. Haz clic en **Publicar**.
 
 ### 3. Variables de Entorno
 Configura estas variables para habilitar todas las funciones administrativas:
