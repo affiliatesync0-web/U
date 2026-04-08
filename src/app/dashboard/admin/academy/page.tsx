@@ -42,13 +42,11 @@ export default function AdminAcademyPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de archivo
     if (!file.type.startsWith('video/')) {
-      toast({ variant: "destructive", title: "Formato no válido", description: "Por favor selecciona un archivo de video (MP4, MOV, etc)." });
+      toast({ variant: "destructive", title: "Formato no válido", description: "Selecciona un archivo de video (MP4, MOV, etc)." });
       return;
     }
 
-    // Limite de 500MB
     if (file.size > 500 * 1024 * 1024) {
       toast({ variant: "destructive", title: "Archivo demasiado grande", description: "El tamaño máximo permitido es de 500MB." });
       return;
@@ -57,16 +55,11 @@ export default function AdminAcademyPage() {
     try {
       const { storage } = initializeFirebase();
       if (!storage) {
-        throw new Error("El servicio de almacenamiento no está disponible.");
+        throw new Error("El servicio de almacenamiento no está activo en tu configuración de Firebase.");
       }
 
       const storageRef = ref(storage, `academy/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-      
-      const metadata = {
-        contentType: file.type,
-      };
-
-      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+      const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
 
       uploadTask.on('state_changed', 
         (snapshot) => {
@@ -74,30 +67,28 @@ export default function AdminAcademyPage() {
           setUploadProgress(progress);
         }, 
         (error: any) => {
-          console.error("Upload error details:", error);
-          let msg = "No se pudo cargar el video.";
-          if (error.code === 'storage/unauthorized') msg = "No tienes permisos para subir archivos. Revisa las reglas de Storage.";
-          if (error.code === 'storage/canceled') msg = "Subida cancelada.";
+          console.error("Upload error:", error);
+          let msg = error.message || "Error al subir a la nube.";
+          if (error.code === 'storage/unauthorized') msg = "Permiso denegado. Debes activar las 'Rules' en tu Consola de Firebase Storage.";
           
-          toast({ variant: "destructive", title: "Error de subida", description: msg });
+          toast({ variant: "destructive", title: "Fallo en la subida", description: msg });
           setUploadProgress(null);
         }, 
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           setFormData(prev => ({ ...prev, videoUrl: downloadURL }));
           setUploadProgress(null);
-          toast({ title: "¡Video Procesado!", description: "El video se ha subido correctamente a la nube." });
+          toast({ title: "¡Video Cargado!", description: "El video ya está listo para ser publicado." });
         }
       );
     } catch (err: any) {
-      console.error("Critical Storage Error:", err);
-      toast({ variant: "destructive", title: "Fallo Crítico", description: err.message || "Error al inicializar la subida." });
+      toast({ variant: "destructive", title: "Fallo Crítico", description: err.message });
     }
   };
 
   const handleSave = async () => {
     if (!formData.title || !formData.videoUrl) {
-      toast({ variant: "destructive", title: "Campos Requeridos", description: "Debes asignar un título y subir un video para publicar." });
+      toast({ variant: "destructive", title: "Datos incompletos", description: "Asigna un título y sube un video antes de guardar." });
       return;
     }
 
@@ -109,11 +100,11 @@ export default function AdminAcademyPage() {
         order: (lessons?.length || 0) + 1
       });
 
-      toast({ title: "Lección Publicada", description: "Ya está disponible en la Academia para todos tus afiliados." });
+      toast({ title: "Lección Publicada", description: "Ya está disponible para todos tus socios." });
       setIsAdding(false);
       setFormData({ title: '', description: '', videoUrl: '', useLocalFile: true });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la lección en la base de datos." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error de Base de Datos", description: e.message || "No se pudo guardar la lección." });
     } finally {
       setIsFinalizing(false);
     }
@@ -121,7 +112,7 @@ export default function AdminAcademyPage() {
 
   const handleDelete = (id: string) => {
     deleteDocumentNonBlocking(doc(db, 'academy_lessons', id));
-    toast({ title: "Lección eliminada correctamente" });
+    toast({ title: "Lección eliminada" });
   }
 
   return (
@@ -130,7 +121,7 @@ export default function AdminAcademyPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Academy</span> Manager</h1>
-            <p className="text-slate-500 font-medium">Sube tus entrenamientos exclusivos desde tu dispositivo para tus socios.</p>
+            <p className="text-slate-500 font-medium">Sube tus entrenamientos exclusivos directamente a la nube de Google.</p>
           </div>
           
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
@@ -148,7 +139,7 @@ export default function AdminAcademyPage() {
                   </div>
                   <div>
                     <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
-                    <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Contenido educativo para potenciar tus ventas</DialogDescription>
+                    <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Sube archivos de video o pega enlaces externos</DialogDescription>
                   </div>
                 </div>
               </div>
@@ -157,27 +148,27 @@ export default function AdminAcademyPage() {
             <div className="p-10 space-y-8">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Título de la Clase</Label>
-                <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="h-14 rounded-2xl font-bold text-slate-800" placeholder="Ej: Estrategias de Cierre en WhatsApp" />
+                <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="h-14 rounded-2xl font-bold" placeholder="Ej: Estrategias de Cierre" />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Descripción del Contenido</Label>
-                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="rounded-2xl min-h-[100px] font-medium" placeholder="Escribe un breve resumen de lo que aprenderán..." />
+                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Descripción</Label>
+                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="rounded-2xl min-h-[100px]" placeholder="¿Qué aprenderán en esta clase?" />
               </div>
 
               <div className="space-y-4">
-                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Origen del Video</Label>
+                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Fuente del Video</Label>
                 <div className="flex gap-4 p-1 bg-slate-50 rounded-2xl border">
                   <Button 
                     variant="ghost" 
                     className={cn("flex-1 h-12 rounded-xl text-[10px] font-black uppercase transition-all", formData.useLocalFile ? "bg-slate-900 text-white shadow-lg" : "text-slate-400")}
                     onClick={() => setFormData({...formData, useLocalFile: true})}
-                  >SUBIR ARCHIVO</Button>
+                  >SUBIR DE DISPOSITIVO</Button>
                   <Button 
                     variant="ghost" 
                     className={cn("flex-1 h-12 rounded-xl text-[10px] font-black uppercase transition-all", !formData.useLocalFile ? "bg-slate-900 text-white shadow-lg" : "text-slate-400")}
                     onClick={() => setFormData({...formData, useLocalFile: false})}
-                  >PEGAR LINK</Button>
+                  >LINK EXTERNO</Button>
                 </div>
 
                 {formData.useLocalFile ? (
@@ -193,7 +184,7 @@ export default function AdminAcademyPage() {
                     >
                       {uploadProgress !== null ? <Loader2 className="h-8 w-8 animate-spin" /> : (formData.videoUrl ? <CheckCircle2 className="h-8 w-8" /> : <Upload className="h-8 w-8" />)}
                       <span className="font-black text-[10px] uppercase tracking-widest">
-                        {formData.videoUrl ? "VIDEO LISTO PARA PUBLICAR" : "SELECCIONAR VIDEO DE MI DISPOSITIVO"}
+                        {formData.videoUrl ? "¡VIDEO CARGADO CON ÉXITO!" : "SELECCIONAR ARCHIVO DE VIDEO"}
                       </span>
                     </Button>
                     <input type="file" ref={videoInputRef} onChange={handleVideoFileChange} accept="video/*" className="hidden" />
@@ -201,16 +192,16 @@ export default function AdminAcademyPage() {
                     {uploadProgress !== null && (
                       <div className="space-y-3 p-4 bg-primary/5 rounded-2xl animate-in fade-in">
                         <div className="flex justify-between items-center text-[10px] font-black text-primary uppercase">
-                          <span>Subiendo a la nube...</span>
+                          <span>Subiendo a la nube de Google...</span>
                           <span>{Math.round(uploadProgress)}%</span>
                         </div>
-                        <Progress value={uploadProgress} className="h-2 bg-slate-200" />
+                        <Progress value={uploadProgress} className="h-2" />
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Input value={formData.videoUrl} onChange={e => setFormData({...formData, videoUrl: e.target.value})} placeholder="https://youtube.com/..." className="h-14 rounded-2xl" />
+                    <Input value={formData.videoUrl} onChange={e => setFormData({...formData, videoUrl: e.target.value})} placeholder="https://youtube.com/watch?v=..." className="h-14 rounded-2xl" />
                   </div>
                 )}
               </div>
@@ -242,16 +233,8 @@ export default function AdminAcademyPage() {
               <Card key={lesson.id} className="border-none shadow-xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100 group">
                 <div className="aspect-video bg-slate-900 relative flex items-center justify-center overflow-hidden">
                   <PlayCircle className="h-12 w-12 text-white/20 group-hover:text-primary group-hover:scale-110 transition-all z-10" />
-                  {lesson.videoUrl && (
-                    <div className="absolute inset-0 opacity-40">
-                      {lesson.videoUrl.includes('firebasestorage') ? (
-                        <video src={lesson.videoUrl} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-slate-800" />
-                      )}
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4 bg-primary px-4 py-1.5 rounded-full text-[9px] font-black text-white uppercase shadow-xl z-20">Clase {lesson.order}</div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-60" />
+                  <div className="absolute top-4 left-4 bg-primary px-4 py-1.5 rounded-full text-[9px] font-black text-white uppercase shadow-xl z-20">Lección {lesson.order}</div>
                 </div>
                 <CardContent className="p-8 space-y-4">
                   <div className="flex justify-between items-start gap-4">

@@ -3,8 +3,8 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      // PERMITIR ACCESO TOTAL PARA PROTOTIPADO
-      // IMPORTANTE: En producción, restringe esto a usuarios autenticados.
+      // PERMITIR ACCESO TOTAL DURANTE LA CONFIGURACIÓN
+      // Esto asegura que tus subidas no fallen por errores de permisos.
       allow read, write: if true;
     }
   }

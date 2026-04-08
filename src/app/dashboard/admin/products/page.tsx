@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Trash2, Wand2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Target, Users, FileVideo, Edit3 } from 'lucide-react'
+import { Plus, Trash2, Wand2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Target, Users, FileVideo, Edit3, AlertCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -110,35 +110,30 @@ export default function AdminProductsPage() {
       return;
     }
 
-    if (file.size > 300 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "Muy pesado", description: "Máximo 300MB." });
+    const { storage } = initializeFirebase();
+    if (!storage) {
+      toast({ variant: "destructive", title: "Error", description: "Storage no configurado." });
       return;
     }
 
-    const { storage } = initializeFirebase();
     const storageRef = ref(storage, `product_videos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-    
-    const metadata = {
-      contentType: file.type,
-    };
-
-    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+    const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
 
     uploadTask.on('state_changed', 
       (snapshot) => {
         const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setUploadProgress(progress);
       }, 
-      (error) => {
-        console.error(error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo subir el video." });
+      (error: any) => {
+        console.error("Video Upload Error:", error);
+        toast({ variant: "destructive", title: "Fallo en Video", description: error.message || "No se pudo subir el archivo." });
         setUploadProgress(null);
       }, 
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         setNewVideo(prev => ({ ...prev, url: downloadURL }));
         setUploadProgress(null);
-        toast({ title: "¡Video Cargado!", description: "Añádelo a la lista ahora." });
+        toast({ title: "¡Video Cargado!", description: "Pulsa el botón 'Añadir' para incluirlo en la lista." });
       }
     );
   };
@@ -185,27 +180,30 @@ export default function AdminProductsPage() {
       return;
     }
 
-    const productData = {
-      ...formData,
-      price: parseFloat(formData.price),
-      commissionRate: parseFloat(formData.commission),
-      code: (formData.code || formData.name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100)).toUpperCase(),
-      videos: videos,
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        commissionRate: parseFloat(formData.commission),
+        code: (formData.code || formData.name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100)).toUpperCase(),
+        videos: videos,
+        updatedAt: new Date().toISOString()
+      };
 
-    if (editingId) {
-      updateDocumentNonBlocking(doc(db, 'products', editingId), productData);
-      toast({ title: "Curso Actualizado" });
-    } else {
-      addDocumentNonBlocking(collection(db, 'products'), {
-        ...productData,
-        createdAt: new Date().toISOString()
-      });
-      toast({ title: "Curso Publicado" });
+      if (editingId) {
+        updateDocumentNonBlocking(doc(db, 'products', editingId), productData);
+        toast({ title: "Curso Actualizado" });
+      } else {
+        addDocumentNonBlocking(collection(db, 'products'), {
+          ...productData,
+          createdAt: new Date().toISOString()
+        });
+        toast({ title: "Curso Publicado" });
+      }
+      closeDialog();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error al Guardar", description: err.message });
     }
-
-    closeDialog();
   }
 
   const closeDialog = () => {
@@ -226,8 +224,8 @@ export default function AdminProductsPage() {
       <div className="space-y-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Gestión de <span className="text-primary">Academia</span></h1>
-            <p className="text-slate-500 font-medium">Sube lecciones y material estratégico para tus socios.</p>
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Gestión de <span className="text-primary">Cursos</span></h1>
+            <p className="text-slate-500 font-medium">Configura lecciones y material estratégico para alumnos y afiliados.</p>
           </div>
           
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
@@ -236,15 +234,15 @@ export default function AdminProductsPage() {
         </div>
 
         <Dialog open={isAdding} onOpenChange={(open) => !open && closeDialog()}>
-          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto rounded-[3.5rem] p-0 border-none shadow-2xl bg-white">
-            <div className="bg-slate-900 p-10 text-white">
+          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto rounded-[3.5rem] p-0 border-none shadow-2xl bg-white custom-scrollbar">
+            <div className="bg-slate-900 p-10 text-white sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
                   <GraduationCap className="h-6 w-6" />
                 </div>
                 <div>
                   <DialogTitle className="text-3xl font-headline font-black">{editingId ? 'Editar Curso' : 'Nuevo Curso Premium'}</DialogTitle>
-                  <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Configura lecciones para alumnos y afiliados</DialogDescription>
+                  <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Personaliza el acceso y las lecciones</DialogDescription>
                 </div>
               </div>
             </div>
@@ -254,7 +252,7 @@ export default function AdminProductsPage() {
                 <div className="space-y-6">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-3">1. Datos Generales</h3>
                   <div className="space-y-2">
-                    <Label className="text-[9px] font-black text-slate-500 uppercase">Nombre</Label>
+                    <Label className="text-[9px] font-black text-slate-500 uppercase">Nombre del Curso</Label>
                     <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-12 rounded-xl" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -282,10 +280,10 @@ export default function AdminProductsPage() {
                 <h3 className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-3 flex items-center gap-2">
                   <Video className="h-4 w-4" /> 3. Aula Virtual
                 </h3>
-                <div className="p-6 bg-slate-50 rounded-[2rem] space-y-4 border border-slate-100">
+                <div className="p-6 bg-slate-50 rounded-[2rem] space-y-4 border border-slate-100 shadow-inner">
                   <div className="space-y-2">
-                    <Label className="text-[9px] font-black text-slate-400 uppercase">Nombre de la Lección</Label>
-                    <Input value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} className="h-10 text-xs" placeholder="Ej: Bienvenida al curso" />
+                    <Label className="text-[9px] font-black text-slate-400 uppercase">Título de la Lección</Label>
+                    <Input value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} className="h-10 text-xs" placeholder="Ej: Introducción" />
                   </div>
                   
                   <div className="flex gap-2 p-1 bg-white rounded-xl border">
@@ -324,22 +322,22 @@ export default function AdminProductsPage() {
                     <Select value={newVideo.type} onValueChange={(v: any) => setNewVideo({...newVideo, type: v})}>
                       <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="content">Para el Alumno (Lección)</SelectItem>
+                        <SelectItem value="content">Para el Alumno (Clase)</SelectItem>
                         <SelectItem value="training">Para el Afiliado (Guía)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={handleAddVideo} className="w-full h-10 text-[10px] font-black bg-primary text-white shadow-lg" disabled={uploadProgress !== null}>AÑADIR VIDEO</Button>
+                  <Button onClick={handleAddVideo} className="w-full h-10 text-[10px] font-black bg-primary text-white shadow-lg" disabled={uploadProgress !== null}>AÑADIR A LISTA</Button>
                 </div>
 
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {videos.map((v) => (
                     <div key={v.id} className="flex items-center justify-between p-3 bg-white border rounded-2xl shadow-sm group">
                       <div className="flex items-center gap-3">
                         <PlayCircle className={cn("h-4 w-4", v.type === 'content' ? 'text-blue-500' : 'text-primary')} />
                         <div>
                           <p className="text-[10px] font-black text-slate-800 uppercase truncate max-w-[120px]">{v.title}</p>
-                          <p className="text-[8px] font-bold text-slate-400">{v.type === 'content' ? 'ALUMNO' : 'AFILIADO'}</p>
+                          <p className="text-[8px] font-bold text-slate-400">{v.type === 'content' ? 'CLASE ALUMNO' : 'GUÍA AFILIADO'}</p>
                         </div>
                       </div>
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:text-red-600" onClick={() => setVideos(videos.filter(vi => vi.id !== v.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -350,27 +348,27 @@ export default function AdminProductsPage() {
 
               <div className="space-y-8">
                 <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 space-y-4 shadow-inner">
-                  <h3 className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-2"><Landmark className="h-4 w-4" /> Pagos Nicaragua</h3>
+                  <h3 className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-2"><Landmark className="h-4 w-4" /> Cobros Nicaragua</h3>
                   <Input value={formData.bankAccount} onChange={e => setFormData({...formData, bankAccount: e.target.value})} placeholder="Número de cuenta" className="h-12 bg-white" />
                   <Select onValueChange={v => setFormData({...formData, bankType: v})} value={formData.bankType}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Banco" /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Banco Receptor" /></SelectTrigger>
                     <SelectContent>{NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Input value={formData.bankHolder} onChange={e => setFormData({...formData, bankHolder: e.target.value})} placeholder="Titular" className="h-12 bg-white" />
+                  <Input value={formData.bankHolder} onChange={e => setFormData({...formData, bankHolder: e.target.value})} placeholder="Nombre del Titular" className="h-12 bg-white" />
                 </div>
                 <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-4 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles className="h-20 w-20" /></div>
                   <h3 className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-2 relative z-10"><Sparkles className="h-4 w-4" /> Asistente IA</h3>
-                  <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="3 ventajas..." className="bg-white/5 border-none ring-1 ring-white/10 relative z-10" />
-                  <Button onClick={handleAIHelp} variant="outline" className="w-full h-14 border-primary text-primary font-black hover:bg-primary hover:text-white transition-all relative z-10" disabled={generating}>{generating ? "..." : "GENERAR CON IA"}</Button>
+                  <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="3 beneficios clave..." className="bg-white/5 border-none ring-1 ring-white/10 relative z-10 text-xs h-12" />
+                  <Button onClick={handleAIHelp} variant="outline" className="w-full h-14 border-primary text-primary font-black hover:bg-primary hover:text-white transition-all relative z-10" disabled={generating}>{generating ? "GENERANDO..." : "GENERAR DESCRIPCIÓN"}</Button>
                 </div>
               </div>
             </div>
 
-            <div className="p-10 border-t bg-slate-50 flex flex-col gap-6">
+            <div className="p-10 border-t bg-slate-50 flex flex-col gap-6 sticky bottom-0 z-10">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-400 uppercase ml-1">Descripción de Ventas</Label>
-                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[120px] rounded-3xl bg-white border-none ring-1 ring-slate-200 p-6 font-medium" />
+                <Label className="text-[10px] font-black text-slate-400 uppercase ml-1">Copy de Ventas</Label>
+                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[120px] rounded-3xl bg-white border-none ring-1 ring-slate-200 p-6 font-medium text-sm" />
               </div>
               <div className="flex gap-4">
                 <Button variant="ghost" onClick={closeDialog} className="flex-1 h-16 rounded-2xl font-black text-slate-400">CANCELAR</Button>
