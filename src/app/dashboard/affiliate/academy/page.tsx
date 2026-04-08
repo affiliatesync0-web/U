@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { GraduationCap, PlayCircle, Loader2, CheckCircle2, ChevronRight, Sparkles, ShieldCheck, Video, FileVideo, Clock, ArrowRight } from 'lucide-react'
+import { GraduationCap, PlayCircle, Loader2, CheckCircle2, ChevronRight, Sparkles, ShieldCheck, Video, FileVideo, Clock, ArrowRight, ExternalLink, Flame } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection } from 'firebase/firestore'
@@ -47,90 +47,144 @@ export default function AffiliateAcademyPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div className="lg:col-span-12">
-            {isLoading ? (
-              <div className="flex justify-center py-40"><Loader2 className="animate-spin h-12 w-12 text-primary opacity-50" /></div>
-            ) : !lessons || lessons.length === 0 ? (
-              <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
-                <Video className="h-20 w-20 text-slate-200 mb-8" />
-                <h3 className="text-2xl font-black text-slate-400">La academia está siendo actualizada.</h3>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Nuevas lecciones de marketing próximamente.</p>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson, idx) => (
-                  <Dialog key={lesson.id}>
-                    <DialogTrigger asChild>
-                      <button className="text-left group outline-none">
-                        <Card className="border-none shadow-xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)]">
-                          <div className="aspect-video bg-slate-900 relative overflow-hidden flex items-center justify-center">
-                            <PlayCircle className="h-16 w-16 text-white/20 group-hover:text-primary group-hover:scale-110 transition-all z-10" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-60" />
-                            <div className="absolute bottom-6 left-8 flex items-center gap-2">
-                               <div className="h-8 w-8 rounded-xl bg-primary/20 backdrop-blur-md flex items-center justify-center text-primary font-black text-[10px] shadow-xl">
-                                 {idx + 1}
-                               </div>
-                               <span className="text-[10px] font-black text-white uppercase tracking-widest">Lección Disponible</span>
-                            </div>
-                          </div>
-                          <CardContent className="p-10 space-y-4">
-                            <div className="flex items-center gap-3">
-                               <Badge className="bg-primary/10 text-primary border-none font-black text-[8px] uppercase tracking-widest px-3 py-1">Marketing Digital</Badge>
-                               <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-300 uppercase">
-                                 <Clock className="h-3 w-3" /> Entrenamiento
-                               </div>
-                            </div>
-                            <h3 className="text-xl font-headline font-black text-slate-900 uppercase leading-tight group-hover:text-primary transition-colors">{lesson.title}</h3>
-                            <p className="text-sm font-medium text-slate-500 line-clamp-2 leading-relaxed">{lesson.description}</p>
-                            <div className="pt-4 flex items-center text-primary font-black text-[10px] uppercase tracking-widest gap-2">
-                               VER CLASE AHORA <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-5xl p-0 overflow-hidden rounded-[3.5rem] border-none shadow-2xl bg-white">
-                       <div className="bg-slate-900 p-10 text-white flex items-center justify-between relative overflow-hidden">
-                          <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><GraduationCap className="h-40 w-40" /></div>
-                          <div className="flex items-center gap-4 relative z-10">
-                             <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl rotate-3">
-                               <GraduationCap className="h-6 w-6" />
-                             </div>
-                             <div>
-                               <h2 className="text-2xl font-headline font-black uppercase tracking-tight leading-none">{lesson.title}</h2>
-                               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Módulo de Especialización • Sync Academy</p>
-                             </div>
-                          </div>
-                       </div>
-                       <div className="p-10 bg-[#F8FAFC]">
-                          <div className="rounded-[3rem] overflow-hidden shadow-2xl bg-black aspect-video mb-8 ring-8 ring-white/50">
-                             {lesson.videoUrl.includes('firebasestorage') ? (
-                               <video 
-                                 src={lesson.videoUrl} 
-                                 controls 
-                                 controlsList="nodownload" 
-                                 className="w-full h-full" 
-                                 autoPlay 
-                                 playsInline
-                               />
-                             ) : (
-                               <iframe src={lesson.videoUrl} className="w-full h-full border-none" allowFullScreen />
-                             )}
-                          </div>
-                          <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
-                             <div className="flex items-center gap-2">
-                               <Sparkles className="h-4 w-4 text-primary" />
-                               <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Resumen de la Sesión</h4>
-                             </div>
-                             <p className="text-slate-600 font-medium leading-relaxed">{lesson.description}</p>
-                          </div>
-                       </div>
-                    </DialogContent>
-                  </Dialog>
-                ))}
+        {/* SECCIÓN DESTACADA: CURSO SYNC DE MARKETING (SYSTEME.IO) */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-[3.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+          <Card className="relative border-none shadow-2xl rounded-[3.5rem] bg-white overflow-hidden ring-1 ring-slate-100">
+            <div className="flex flex-col lg:flex-row">
+              <div className="flex-1 p-10 md:p-14 space-y-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-primary text-white font-black text-[10px] px-4 py-1.5 rounded-full uppercase tracking-widest border-none">OFICIAL</Badge>
+                    <div className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-widest animate-pulse">
+                      <Flame className="h-3 w-3 fill-current" /> Entrenamiento Maestro
+                    </div>
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-headline font-black text-slate-900 tracking-tight leading-[1.1]">
+                    CURSO SYNC DE <span className="text-primary">MARKETING</span>
+                  </h2>
+                  <p className="text-slate-500 font-medium text-lg max-w-xl leading-relaxed">
+                    Accede a nuestra plataforma principal de entrenamiento. Domina las ventas orgánicas, el tráfico pago y la mentalidad ganadora para facturar tus primeros $1,000 USD.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <Button asChild className="h-18 px-10 rounded-[1.75rem] bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 group transition-all hover:scale-[1.03]">
+                    <a href="https://syncacademy.systeme.io/school/course/syncacademy" target="_blank" rel="noopener noreferrer">
+                      ENTRAR AL CURSO AHORA <ExternalLink className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                    </a>
+                  </Button>
+                  <div className="flex items-center gap-4 px-6 py-4 bg-slate-50 rounded-[1.75rem] border border-slate-100">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plataforma Externa Sincronizada</span>
+                  </div>
+                </div>
               </div>
-            )}
+              <div className="lg:w-[40%] bg-slate-900 relative overflow-hidden flex items-center justify-center min-h-[300px]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,93,27,0.2),transparent_70%)] opacity-50" />
+                <GraduationCap className="h-48 w-48 text-primary opacity-10 rotate-12" />
+                <div className="relative z-10 text-center space-y-4">
+                  <div className="h-20 w-20 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl flex items-center justify-center mx-auto shadow-2xl rotate-3">
+                    <Sparkles className="h-10 w-10 text-primary" />
+                  </div>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Sync Academy Official</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="space-y-8">
+          <div className="flex items-center gap-4">
+            <div className="h-1 w-12 bg-slate-200 rounded-full" />
+            <h3 className="text-xl font-headline font-black text-slate-400 uppercase tracking-widest">Lecciones de Soporte y Actualizaciones</h3>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="lg:col-span-12">
+              {isLoading ? (
+                <div className="flex justify-center py-40"><Loader2 className="animate-spin h-12 w-12 text-primary opacity-50" /></div>
+              ) : !lessons || lessons.length === 0 ? (
+                <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
+                  <Video className="h-20 w-20 text-slate-200 mb-8" />
+                  <h3 className="text-2xl font-black text-slate-400">La academia está siendo actualizada.</h3>
+                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Nuevas lecciones de marketing próximamente.</p>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson, idx) => (
+                    <Dialog key={lesson.id}>
+                      <DialogTrigger asChild>
+                        <button className="text-left group outline-none">
+                          <Card className="border-none shadow-xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)]">
+                            <div className="aspect-video bg-slate-900 relative overflow-hidden flex items-center justify-center">
+                              <PlayCircle className="h-16 w-16 text-white/20 group-hover:text-primary group-hover:scale-110 transition-all z-10" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-60" />
+                              <div className="absolute bottom-6 left-8 flex items-center gap-2">
+                                 <div className="h-8 w-8 rounded-xl bg-primary/20 backdrop-blur-md flex items-center justify-center text-primary font-black text-[10px] shadow-xl">
+                                   {idx + 1}
+                                 </div>
+                                 <span className="text-[10px] font-black text-white uppercase tracking-widest">Lección Disponible</span>
+                              </div>
+                            </div>
+                            <CardContent className="p-10 space-y-4">
+                              <div className="flex items-center gap-3">
+                                 <Badge className="bg-primary/10 text-primary border-none font-black text-[8px] uppercase tracking-widest px-3 py-1">Marketing Digital</Badge>
+                                 <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-300 uppercase">
+                                   <Clock className="h-3 w-3" /> Entrenamiento
+                                 </div>
+                              </div>
+                              <h3 className="text-xl font-headline font-black text-slate-900 uppercase leading-tight group-hover:text-primary transition-colors">{lesson.title}</h3>
+                              <p className="text-sm font-medium text-slate-500 line-clamp-2 leading-relaxed">{lesson.description}</p>
+                              <div className="pt-4 flex items-center text-primary font-black text-[10px] uppercase tracking-widest gap-2">
+                                 VER CLASE AHORA <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-5xl p-0 overflow-hidden rounded-[3.5rem] border-none shadow-2xl bg-white">
+                         <div className="bg-slate-900 p-10 text-white flex items-center justify-between relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><GraduationCap className="h-40 w-40" /></div>
+                            <div className="flex items-center gap-4 relative z-10">
+                               <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl rotate-3">
+                                 <GraduationCap className="h-6 w-6" />
+                               </div>
+                               <div>
+                                 <h2 className="text-2xl font-headline font-black uppercase tracking-tight leading-none">{lesson.title}</h2>
+                                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Módulo de Especialización • Sync Academy</p>
+                               </div>
+                            </div>
+                         </div>
+                         <div className="p-10 bg-[#F8FAFC]">
+                            <div className="rounded-[3rem] overflow-hidden shadow-2xl bg-black aspect-video mb-8 ring-8 ring-white/50">
+                               {lesson.videoUrl.includes('firebasestorage') ? (
+                                 <video 
+                                   src={lesson.videoUrl} 
+                                   controls 
+                                   controlsList="nodownload" 
+                                   className="w-full h-full" 
+                                   autoPlay 
+                                   playsInline
+                                 />
+                               ) : (
+                                 <iframe src={lesson.videoUrl} className="w-full h-full border-none" allowFullScreen />
+                               )}
+                            </div>
+                            <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
+                               <div className="flex items-center gap-2">
+                                 <Sparkles className="h-4 w-4 text-primary" />
+                                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Resumen de la Sesión</h4>
+                               </div>
+                               <p className="text-slate-600 font-medium leading-relaxed">{lesson.description}</p>
+                            </div>
+                         </div>
+                      </DialogContent>
+                    </Dialog>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
