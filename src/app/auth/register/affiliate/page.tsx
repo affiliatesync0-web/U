@@ -6,22 +6,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Loader2, Target, ArrowLeft, Mail, Lock, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Loader2, Target, ArrowLeft, ShieldCheck, AlertCircle, FileCheck } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
+import { useAuth, useFirestore } from '@/firebase'
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
-import placeholderData from '@/app/lib/placeholder-images.json'
-import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
-type Step = 'info' | 'exam'
+type Step = 'info' | 'kyc' | 'exam'
 
 function AffiliateRegisterContent() {
   const { toast } = useToast()
@@ -39,6 +37,11 @@ function AffiliateRegisterContent() {
     email: '',
     phone: '',
     password: ''
+  })
+
+  const [kycData, setKycData] = useState({
+    idType: 'Cédula de Identidad',
+    idNumber: ''
   })
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: 'N/A' })
@@ -64,26 +67,24 @@ function AffiliateRegisterContent() {
         registeredAt: new Date().toISOString(),
         currentBalance: 0,
         status: 'Pending',
+        kyc: kycData,
         examAnswers: examData
       });
 
       sendEmail({
         to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Nueva Solicitud: AFILIADO`,
-        text: `Un nuevo prospecto de socio se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}`
+        subject: `🆕 Nueva Solicitud: AFILIADO (KYC)`,
+        text: `Un nuevo prospecto de socio se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
       }).catch(() => {});
 
-      // Cerramos sesión automáticamente tras el registro para forzar el login manual
       await signOut(auth);
-
-      toast({ title: "Solicitud Enviada", description: "Tu perfil está en revisión. Inicia sesión para ver tu estado." });
+      toast({ title: "Solicitud Enviada", description: "Tu perfil y KYC están en revisión. Inicia sesión para ver tu estado." });
       router.push('/auth/login');
 
     } catch (err: any) {
       console.error("Affiliate Register Error:", err);
       let msg = "No pudimos procesar tu solicitud.";
       if (err.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
-      
       setErrorDetail(err.code || "Fallo técnico");
       toast({ variant: "destructive", title: "Error", description: msg });
     } finally {
@@ -111,7 +112,7 @@ function AffiliateRegisterContent() {
           </Alert>
         )}
 
-        {step === 'info' ? (
+        {step === 'info' && (
           <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in slide-in-from-right-4">
             <div className="space-y-8">
               <div className="flex flex-col items-center text-center gap-4">
@@ -124,41 +125,99 @@ function AffiliateRegisterContent() {
                 </div>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); setStep('exam'); }} className="space-y-6">
+              <form onSubmit={(e) => { e.preventDefault(); setStep('kyc'); }} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nombre</Label>
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Nombre</Label>
                     <Input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="h-14 rounded-2xl font-bold" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Apellido</Label>
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Apellido</Label>
                     <Input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="h-14 rounded-2xl font-bold" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">WhatsApp (Sin +)</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">WhatsApp (Sin +)</Label>
                   <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="h-14 rounded-2xl font-bold" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Email</Label>
                   <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-14 rounded-2xl font-bold" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Contraseña</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
                   <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required className="h-14 rounded-2xl font-bold" />
                 </div>
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20">
-                  SIGUIENTE: EVALUACIÓN TÉCNICA
+                  SIGUIENTE: VERIFICACIÓN KYC
                 </Button>
               </form>
             </div>
           </Card>
-        ) : (
+        )}
+
+        {step === 'kyc' && (
+          <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in slide-in-from-right-4">
+            <div className="space-y-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="h-16 w-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
+                  <FileCheck className="h-8 w-8" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-headline font-black uppercase italic">Verificación <span className="text-blue-600">KYC</span></h2>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Requerido por regulaciones bancarias de Nicaragua</p>
+                </div>
+              </div>
+
+              <form onSubmit={(e) => { e.preventDefault(); setStep('exam'); }} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Tipo de Documento</Label>
+                    <Select value={kycData.idType} onValueChange={(v) => setKycData({...kycData, idType: v})}>
+                      <SelectTrigger className="h-14 rounded-2xl font-bold bg-slate-50 border-none ring-1 ring-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cédula de Identidad">Cédula de Identidad (NI)</SelectItem>
+                        <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                        <SelectItem value="Residencia">Residencia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Número de Identificación</Label>
+                    <Input 
+                      placeholder="Ej: 001-000000-0000A" 
+                      value={kycData.idNumber} 
+                      onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} 
+                      required 
+                      className="h-14 rounded-2xl font-bold uppercase" 
+                    />
+                  </div>
+                </div>
+                
+                <Alert className="bg-slate-50 border-slate-200 rounded-2xl">
+                  <ShieldCheck className="h-4 w-4 text-green-600" />
+                  <p className="text-[10px] font-bold text-slate-500 leading-relaxed">
+                    Tus datos están protegidos bajo nuestra política de privacidad y se usarán únicamente para la validación de tus pagos de comisiones.
+                  </p>
+                </Alert>
+
+                <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-blue-200">
+                  SIGUIENTE: EVALUACIÓN TÉCNICA
+                </Button>
+                <Button variant="ghost" className="w-full text-[10px] font-black uppercase" onClick={() => setStep('info')}>Volver</Button>
+              </form>
+            </div>
+          </Card>
+        )}
+
+        {step === 'exam' && (
           <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in slide-in-from-right-4">
             <div className="space-y-8">
               <div className="flex items-center justify-between border-b pb-6">
                 <h2 className="text-2xl font-headline font-black uppercase italic text-primary">Perfil de <span className="text-foreground">Socio</span></h2>
-                <Button variant="ghost" size="sm" onClick={() => setStep('info')} className="text-[10px] font-black uppercase">Volver</Button>
+                <Button variant="ghost" size="sm" onClick={() => setStep('kyc')} className="text-[10px] font-black uppercase">Volver</Button>
               </div>
               <form onSubmit={handleRegister} className="space-y-8">
                 <div className="space-y-2">

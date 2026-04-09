@@ -1,11 +1,10 @@
-
 "use client"
 
 import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -237,6 +236,7 @@ export default function AdminAffiliatesPage() {
 
 function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
   const answers = affiliate.examAnswers;
+  const kyc = affiliate.kyc;
   
   return (
     <Dialog>
@@ -269,16 +269,25 @@ function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-2">Datos Bancarios para Pago</h4>
-              <div className="bg-primary/5 p-4 rounded-xl space-y-2">
-                <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Banco:</span> {affiliate.bankId || 'N/A'}</p>
-                <p className="text-xs font-black text-primary"><span className="text-slate-400 uppercase text-[9px]">Cuenta:</span> {affiliate.bankAccountNumber || 'N/A'}</p>
-                <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Titular:</span> {affiliate.bankAccountHolderName || 'N/A'}</p>
+              <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2 flex items-center gap-2">
+                <FileCheck className="h-3 w-3" /> Verificación KYC
+              </h4>
+              <div className="bg-blue-50/50 p-4 rounded-xl space-y-2">
+                <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Tipo:</span> {kyc?.idType || 'N/A'}</p>
+                <p className="text-xs font-black text-blue-700"><span className="text-slate-400 uppercase text-[9px]">Número:</span> {kyc?.idNumber || 'N/A'}</p>
               </div>
             </div>
           </div>
 
-          {/* NUEVA SECCIÓN DE GEOLOCALIZACIÓN */}
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-2">Datos Bancarios para Pago</h4>
+            <div className="bg-primary/5 p-4 rounded-xl space-y-2">
+              <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Banco:</span> {affiliate.bankId || 'N/A'}</p>
+              <p className="text-xs font-black text-primary"><span className="text-slate-400 uppercase text-[9px]">Cuenta:</span> {affiliate.bankAccountNumber || 'N/A'}</p>
+              <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Titular:</span> {affiliate.bankAccountHolderName || 'N/A'}</p>
+            </div>
+          </div>
+
           {affiliate.lastLocation && (
             <div className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
@@ -339,18 +348,15 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
     setLoading(true);
     setErrorDetail(null);
     
-    // Generar clave segura
     const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
     
     try {
-      // 1. Aplicar cambio en Firebase Auth (Vía Admin SDK)
       const res = await adminResetUserPassword(user.email, newPass);
       
       if (!res.success) {
         throw new Error(res.error);
       }
 
-      // 2. Enviar por Gmail al usuario
       const emailRes = await sendNewPasswordAdmin({
         to: user.email,
         name: user.firstName,

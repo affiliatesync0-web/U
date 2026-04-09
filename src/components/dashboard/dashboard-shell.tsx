@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -13,7 +12,6 @@ import {
   LogOut,
   ShoppingBag,
   Palette,
-  Loader2,
   Users2,
   Image as ImageIcon,
   Flame,
@@ -23,8 +21,8 @@ import {
   ShieldCheck,
   UserCircle,
   Zap,
-  GraduationCap,
   MapPin,
+  MessageSquareShare,
 } from "lucide-react"
 import {
   Sidebar,
@@ -145,6 +143,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
+    { title: "Grupo de Apoyo", url: "/dashboard/admin/support", icon: MessageSquareShare },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
     { title: "Gestionar Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
@@ -157,6 +156,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
+    { title: "Grupo de Apoyo", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
