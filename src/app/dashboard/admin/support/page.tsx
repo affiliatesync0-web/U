@@ -15,6 +15,7 @@ import {
   Users, 
   Loader2, 
   Mic, 
+  MicOff,
   X, 
   ShieldAlert, 
   Flame,
@@ -45,14 +46,35 @@ export default function AdminSupportPage() {
   const { user } = useUser()
   const [msgInput, setMsgInput] = useState('')
   const [isInCall, setIsInCall] = useState(false)
+  const [isMicMuted, setIsMicMuted] = useState(false)
+  const [isVideoOff, setIsVideoOff] = useState(false)
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   const messagesQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(100)), 
   [db])
   const { data: messages, isLoading } = useCollection<Message>(messagesQuery)
+
+  // Pedir permisos inmediatamente al cargar la pestaña de soporte
+  useEffect(() => {
+    const requestInitialPermissions = async () => {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          setHasCameraPermission(true);
+          // Detener el stream inicial para no dejar la cámara encendida sin que el admin lo pida
+          stream.getTracks().forEach(track => track.stop());
+        }
+      } catch (error) {
+        console.error('Error inicial de permisos:', error);
+        setHasCameraPermission(false);
+      }
+    };
+    requestInitialPermissions();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -89,30 +111,56 @@ export default function AdminSupportPage() {
     setHasCameraPermission(null)
     
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Hardware de comunicación no detectado o navegador no compatible.");
-      }
-
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setHasCameraPermission(true);
+      streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (e: any) {
-      console.error('Error accessing hardware:', e);
+      console.error('Error al iniciar llamada:', e);
       setHasCameraPermission(false);
+      toast({
+        variant: "destructive",
+        title: "Error de Hardware",
+        description: "No se pudo acceder a la cámara o al micrófono.",
+      });
     }
   }
 
+  const toggleMic = () => {
+    if (streamRef.current) {
+      const audioTrack = streamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsMicMuted(!audioTrack.enabled);
+      }
+    }
+  };
+
+  const toggleVideo = () => {
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsVideoOff(!videoTrack.enabled);
+      }
+    }
+  };
+
   const endCall = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     setIsInCall(false);
     setHasCameraPermission(null);
+    setIsMicMuted(false);
+    setIsVideoOff(false);
   }
 
   return (
@@ -210,7 +258,16 @@ export default function AdminSupportPage() {
 
           {isInCall && (
             <Card className="w-[450px] border-none shadow-2xl rounded-[3rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4">
-              <video ref={videoRef} className={cn("w-full h-full object-cover", hasCameraPermission ? "opacity-100" : "opacity-0")} autoPlay muted playsInline />
+              <video 
+                ref={videoRef} 
+                className={cn(
+                  "w-full h-full object-cover transition-opacity duration-500", 
+                  hasCameraPermission && !isVideoOff ? "opacity-100" : "opacity-0"
+                )} 
+                autoPlay 
+                muted 
+                playsInline 
+              />
               
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 {hasCameraPermission === false ? (
@@ -221,12 +278,19 @@ export default function AdminSupportPage() {
                     <div className="space-y-2">
                       <h3 className="text-white font-black uppercase text-sm tracking-widest">Acceso Denegado</h3>
                       <p className="text-slate-400 text-xs font-medium leading-relaxed">
-                        Habilita los permisos de cámara y micrófono haciendo clic en el icono del candado en tu navegador.
+                        Habilita los permisos de **cámara y micrófono** haciendo clic en el icono del candado en tu navegador.
                       </p>
                     </div>
                     <Button onClick={startAdminCall} variant="outline" className="h-12 px-8 rounded-xl border-white/20 text-white font-black text-[10px] uppercase hover:bg-white/10">
                       REINTENTAR ACCESO
                     </Button>
+                  </div>
+                ) : isVideoOff ? (
+                  <div className="space-y-4">
+                    <div className="h-24 w-24 rounded-full bg-white/10 flex items-center justify-center mx-auto border border-white/20">
+                      <VideoOff className="h-10 w-10 text-white/40" />
+                    </div>
+                    <p className="text-white font-black uppercase text-[10px] tracking-widest">Cámara Desactivada</p>
                   </div>
                 ) : hasCameraPermission === null ? (
                   <div className="flex flex-col items-center gap-4">
@@ -245,11 +309,27 @@ export default function AdminSupportPage() {
 
               <div className="absolute bottom-10 left-0 right-0 px-10 flex flex-col gap-4">
                 <div className="flex justify-center gap-4">
-                   <Button size="icon" variant="ghost" className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20">
-                     <Mic className="h-6 w-6" />
+                   <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={toggleMic}
+                    className={cn(
+                      "h-14 w-14 rounded-full backdrop-blur-xl border transition-all",
+                      isMicMuted ? "bg-red-500/20 border-red-500/50 text-red-500" : "bg-white/10 border-white/10 text-white hover:bg-white/20"
+                    )}
+                   >
+                     {isMicMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                    </Button>
-                   <Button size="icon" variant="ghost" className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20">
-                     <VideoOff className="h-6 w-6" />
+                   <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={toggleVideo}
+                    className={cn(
+                      "h-14 w-14 rounded-full backdrop-blur-xl border transition-all",
+                      isVideoOff ? "bg-red-500/20 border-red-500/50 text-red-500" : "bg-white/10 border-white/10 text-white hover:bg-white/20"
+                    )}
+                   >
+                     {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Camera className="h-6 w-6" />}
                    </Button>
                 </div>
                 <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-2xl border-none transition-all hover:scale-[1.02]">
