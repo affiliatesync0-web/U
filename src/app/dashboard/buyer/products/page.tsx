@@ -5,7 +5,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, DollarSign, Loader2, Landmark, User, Info, Flame, Star, Sparkles, ShoppingCart } from 'lucide-react'
+import { Search, DollarSign, Loader2, Landmark, User, Info, Flame, Star, Sparkles, ShoppingCart, CreditCard, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
@@ -114,6 +114,22 @@ export default function BuyerProductsPage() {
                            </DialogHeader>
                         </div>
                         <div className="p-10 space-y-8">
+                          {product.paymentLink && (
+                            <div className="space-y-4">
+                              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] text-center">Opción Rápida Digital</p>
+                              <Button asChild className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 shadow-xl gap-3">
+                                <a href={product.paymentLink} target="_blank" rel="noopener noreferrer">
+                                  <CreditCard className="h-5 w-5" /> PAGAR AHORA CON LINK <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                              <div className="flex items-center gap-4 py-2">
+                                <div className="h-px bg-slate-100 flex-1" />
+                                <span className="text-[9px] font-black text-slate-300 uppercase">o mediante transferencia</span>
+                                <div className="h-px bg-slate-100 flex-1" />
+                              </div>
+                            </div>
+                          )}
+
                           <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-200 space-y-6">
                             <div className="space-y-2">
                                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">BANCO</p>

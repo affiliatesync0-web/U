@@ -208,6 +208,12 @@ function ProductDetailsDialog({ product }: any) {
                     <span className="opacity-50">Tu Comisión:</span>
                     <span className="bg-green-50 px-3 py-1 rounded-lg border border-green-100">${((product.price * product.commissionRate) / 100).toFixed(2)}</span>
                   </div>
+                  {product.paymentLink && (
+                    <div className="pt-2">
+                      <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Link de Pago Directo Activo:</p>
+                      <code className="text-[10px] text-slate-400 block truncate bg-slate-50 p-2 rounded-lg border">{product.paymentLink}</code>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Trash2, Wand2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Target, Users, FileVideo, Edit3, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Wand2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Target, Users, FileVideo, Edit3, AlertCircle, Link as LinkIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -61,6 +61,7 @@ export default function AdminProductsPage() {
     bankAccount: '',
     bankType: '',
     bankHolder: '',
+    paymentLink: '', // Nuevo campo
     features: '',
     description: '',
     imageUrl: ''
@@ -82,6 +83,7 @@ export default function AdminProductsPage() {
           bankAccount: p.bankAccount || '',
           bankType: p.bankType || '',
           bankHolder: p.bankHolder || '',
+          paymentLink: p.paymentLink || '', // Cargar link de pago
           features: p.features || '',
           description: p.description || '',
           imageUrl: p.imageUrl || ''
@@ -210,7 +212,7 @@ export default function AdminProductsPage() {
   const closeDialog = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', category: 'Course', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', features: '', description: '', imageUrl: '' });
+    setFormData({ name: '', category: 'Course', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '' });
     setVideos([]);
     setStorageError(null);
   }
@@ -361,6 +363,11 @@ export default function AdminProductsPage() {
                     <SelectContent>{NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                   </Select>
                   <Input value={formData.bankHolder} onChange={e => setFormData({...formData, bankHolder: e.target.value})} placeholder="Titular" className="h-12 bg-white" />
+                  
+                  <div className="pt-4 border-t border-primary/10">
+                    <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2"><LinkIcon className="h-4 w-4" /> Link de Pago Directo (Opcional)</h3>
+                    <Input value={formData.paymentLink} onChange={e => setFormData({...formData, paymentLink: e.target.value})} placeholder="https://..." className="h-12 bg-white text-xs" />
+                  </div>
                 </div>
                 <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-4">
                   <h3 className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-4 w-4" /> Asistente IA</h3>
