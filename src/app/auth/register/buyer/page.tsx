@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -12,7 +11,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -71,8 +70,11 @@ function BuyerRegisterContent() {
         text: `Un nuevo cliente se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}`
       }).catch(() => {});
 
-      toast({ title: "¡Bienvenido!", description: "Tu cuenta de comprador ha sido creada con éxito." });
-      router.push('/dashboard/buyer');
+      // Cerramos sesión automáticamente para forzar el login manual
+      await signOut(auth);
+
+      toast({ title: "¡Cuenta Creada!", description: "Ahora inicia sesión con tus datos." });
+      router.push('/auth/login');
 
     } catch (err: any) {
       console.error("Buyer Register Error:", err);

@@ -100,7 +100,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.replace('/auth/login');
+    // Redirección externa solicitada por el usuario
+    window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
   if (!mounted || isUserLoading) {

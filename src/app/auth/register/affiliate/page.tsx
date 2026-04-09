@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -13,7 +12,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -74,8 +73,11 @@ function AffiliateRegisterContent() {
         text: `Un nuevo prospecto de socio se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}`
       }).catch(() => {});
 
-      toast({ title: "Solicitud Enviada", description: "Tu perfil está en revisión. Te avisaremos por Gmail." });
-      router.push('/dashboard/affiliate');
+      // Cerramos sesión automáticamente tras el registro para forzar el login manual
+      await signOut(auth);
+
+      toast({ title: "Solicitud Enviada", description: "Tu perfil está en revisión. Inicia sesión para ver tu estado." });
+      router.push('/auth/login');
 
     } catch (err: any) {
       console.error("Affiliate Register Error:", err);
