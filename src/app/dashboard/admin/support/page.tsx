@@ -21,12 +21,14 @@ import {
   Camera,
   Trash2,
   ShieldCheck,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, getDocs } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Message {
   id: string
@@ -42,6 +44,7 @@ export default function AdminSupportPage() {
   const { user } = useUser()
   const [msgInput, setMsgInput] = useState('')
   const [isInCall, setIsInCall] = useState(false)
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -82,13 +85,32 @@ export default function AdminSupportPage() {
 
   const startAdminCall = async () => {
     setIsInCall(true)
+    setHasCameraPermission(null)
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      setHasCameraPermission(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
     } catch (e) {
-      toast({ variant: "destructive", title: "Acceso denegado a multimedia" });
-      setIsInCall(false);
+      console.error('Error accessing camera:', e);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Acceso Multimedia Denegado',
+        description: 'Por favor, habilita los permisos de cámara y micrófono en la configuración de tu navegador.',
+      });
     }
+  }
+
+  const endCall = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setIsInCall(false);
+    setHasCameraPermission(null);
   }
 
   return (
@@ -193,22 +215,43 @@ export default function AdminSupportPage() {
 
           {isInCall && (
             <Card className="w-[450px] border-none shadow-2xl rounded-[3rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20">
-              <video ref={videoRef} className="w-full h-full object-cover opacity-60" autoPlay muted />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center animate-ping absolute" />
-                <div className="relative z-10 text-center space-y-6">
-                  <div className="h-20 w-20 bg-primary rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(255,93,27,0.5)]">
-                    <Zap className="h-10 w-10 text-white fill-white" />
+              <video ref={videoRef} className="w-full h-full object-cover opacity-60" autoPlay muted playsInline />
+              
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                {hasCameraPermission === false ? (
+                  <div className="space-y-6 animate-in fade-in">
+                    <div className="h-20 w-20 rounded-3xl bg-red-500/20 flex items-center justify-center mx-auto border border-red-500/50">
+                      <AlertCircle className="h-10 w-10 text-red-500" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-white font-black uppercase text-sm tracking-widest">Permiso Denegado</h3>
+                      <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                        Haz clic en el icono del candado en la barra de tu navegador y selecciona "Permitir" para Cámara y Micrófono.
+                      </p>
+                    </div>
+                    <Button onClick={startAdminCall} variant="outline" className="h-12 px-8 rounded-xl border-white/20 text-white font-black text-[10px] uppercase">
+                      REINTENTAR ACCESO
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-white uppercase tracking-[0.5em]">Live Admin Stream</p>
-                    <p className="text-xs text-primary font-black uppercase">Transmitiendo a la Red</p>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center animate-ping absolute" />
+                    <div className="relative z-10 text-center space-y-6">
+                      <div className="h-20 w-20 bg-primary rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(255,93,27,0.5)]">
+                        <Zap className="h-10 w-10 text-white fill-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-white uppercase tracking-[0.5em]">Live Admin Stream</p>
+                        <p className="text-xs text-primary font-black uppercase">Transmitiendo a la Red</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
+
               <div className="absolute bottom-10 left-0 right-0 px-10">
-                <Button onClick={() => setIsInCall(false)} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-2xl border-none">
-                  FINALIZAR TRANSMISIÓN
+                <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-2xl border-none">
+                  {hasCameraPermission === false ? "SALIR DE LA SALA" : "FINALIZAR TRANSMISIÓN"}
                 </Button>
               </div>
             </Card>

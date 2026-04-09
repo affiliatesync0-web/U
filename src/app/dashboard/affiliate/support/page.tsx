@@ -21,7 +21,8 @@ import {
   ShieldCheck, 
   Zap,
   Camera,
-  Crown
+  Crown,
+  AlertCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase'
@@ -43,7 +44,7 @@ export default function AffiliateSupportPage() {
   const [msgInput, setMsgInput] = useState('')
   const [isInCall, setIsInCall] = useState(false)
   const [callType, setCallType] = useState<'voice' | 'video' | null>(null)
-  const [hasCameraPermission, setHasCameraPermission] = useState(false)
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -74,33 +75,38 @@ export default function AffiliateSupportPage() {
   const startCall = async (type: 'voice' | 'video') => {
     setCallType(type)
     setIsInCall(true)
+    setHasCameraPermission(null)
     
-    if (type === 'video') {
+    if (type === 'video' || type === 'voice') {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: type === 'video', 
+          audio: true 
+        });
         setHasCameraPermission(true);
-        if (videoRef.current) {
+        if (videoRef.current && type === 'video') {
           videoRef.current.srcObject = stream;
         }
       } catch (error) {
-        console.error('Error accessing camera:', error);
+        console.error('Error accessing multimedia:', error);
         setHasCameraPermission(false);
         toast({
           variant: 'destructive',
           title: 'Acceso Denegado',
-          description: 'Por favor habilita los permisos de cámara y micrófono.',
+          description: 'Habilita los permisos de cámara y micrófono en tu navegador para unirte.',
         });
       }
     }
   }
 
   const endCall = () => {
-    setIsInCall(false)
-    setCallType(null)
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
     }
+    setIsInCall(false);
+    setCallType(null);
+    setHasCameraPermission(null);
   }
 
   return (
@@ -200,22 +206,45 @@ export default function AffiliateSupportPage() {
           {isInCall && (
             <Card className="w-[400px] border-none shadow-2xl rounded-[3rem] bg-slate-900 overflow-hidden flex flex-col animate-in slide-in-from-right-8 duration-500 ring-4 ring-primary/10">
               <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-                {callType === 'video' ? (
-                  <>
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
-                    {!hasCameraPermission && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10 space-y-4">
-                        <Camera className="h-12 w-12 text-slate-700 animate-pulse" />
-                        <p className="text-xs font-black text-slate-500 uppercase">Esperando acceso a cámara...</p>
-                      </div>
-                    )}
-                  </>
-                ) : (
+                {/* VIDEO TAG SIEMPRE PRESENTE SEGÚN GUÍAS */}
+                <video 
+                  ref={videoRef} 
+                  className={cn("w-full h-full object-cover", callType !== 'video' || hasCameraPermission === false ? "hidden" : "block")} 
+                  autoPlay 
+                  muted 
+                  playsInline
+                />
+
+                {hasCameraPermission === false && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10 space-y-6">
+                    <div className="h-16 w-16 bg-red-500/20 rounded-2xl flex items-center justify-center border border-red-500/50">
+                      <AlertCircle className="h-8 w-8 text-red-500" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-white font-black uppercase text-[10px] tracking-widest">Permiso Requerido</p>
+                      <p className="text-slate-400 text-[11px] font-medium leading-relaxed">
+                        No podemos acceder a tu multimedia. Por favor, pulsa el candado en tu barra de direcciones y permite el acceso.
+                      </p>
+                    </div>
+                    <Button onClick={() => startCall(callType || 'video')} variant="outline" className="h-10 px-6 rounded-xl border-white/10 text-white font-black text-[9px] uppercase tracking-widest">
+                      REINTENTAR CONEXIÓN
+                    </Button>
+                  </div>
+                )}
+
+                {hasCameraPermission === true && callType === 'voice' && (
                   <div className="flex flex-col items-center gap-6">
                     <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
                       <Mic className="h-10 w-10 text-primary" />
                     </div>
                     <p className="text-xs font-black text-primary uppercase tracking-[0.3em]">Llamada de Voz Activa</p>
+                  </div>
+                )}
+
+                {hasCameraPermission === null && (
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
+                    <p className="text-[10px] font-black text-slate-500 uppercase">Solicitando Permisos...</p>
                   </div>
                 )}
                 
