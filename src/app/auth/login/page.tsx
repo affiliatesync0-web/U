@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -154,15 +155,10 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-4">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              ¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate</Link>
+          <CardFooter className="justify-center mt-6 p-0">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed text-center opacity-50">
+              Sistema de Seguridad Sync Activo
             </p>
-            <div className="flex items-center gap-2 opacity-30 mt-4">
-              <div className="h-px w-8 bg-slate-400" />
-              <Link href="/auth/admin-login" className="text-[8px] font-black uppercase tracking-widest hover:text-foreground transition-colors">Acceso Maestro</Link>
-              <div className="h-px w-8 bg-slate-400" />
-            </div>
           </CardFooter>
         </div>
       </Card>
