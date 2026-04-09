@@ -70,9 +70,9 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
-      <Link href="/" className="mb-10 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
+      <Link href="https://syncacademy.systeme.io/sync-connect" className="mb-10 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-        <span>Volver al inicio</span>
+        <span>Salir de Administración</span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-white p-2">

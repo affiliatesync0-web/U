@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Eye, EyeOff, Loader2, Image as ImageIcon, Mail, Lock, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Image as ImageIcon, Mail, Lock, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -96,16 +96,23 @@ export default function LoginPage() {
         <LanguageToggle />
       </div>
 
-      <Link href="/" className="mb-10 flex flex-col items-center gap-4 group transition-all">
-        <div className="relative h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
-           {displayLogoUrl ? (
-             <Image src={displayLogoUrl} alt="Sync Connect" width={80} height={80} className="object-contain p-3" unoptimized />
-           ) : (
-             <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
-           )}
-        </div>
-        <span className="font-headline font-black text-4xl text-foreground tracking-tight uppercase italic">Sync <span className="text-primary">Connect</span></span>
-      </Link>
+      <div className="mb-8 text-center space-y-6">
+        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          <span>Volver a Sync Academy</span>
+        </Link>
+
+        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex flex-col items-center gap-4 group transition-all">
+          <div className="relative h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
+            {displayLogoUrl ? (
+              <Image src={displayLogoUrl} alt="Sync Connect" width={80} height={80} className="object-contain p-3" unoptimized />
+            ) : (
+              <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
+            )}
+          </div>
+          <span className="font-headline font-black text-4xl text-foreground tracking-tight uppercase italic">Sync <span className="text-primary">Connect</span></span>
+        </Link>
+      </div>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">

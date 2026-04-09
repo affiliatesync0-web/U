@@ -2,7 +2,7 @@
 "use client"
 
 import { Suspense } from 'react'
-import { ShoppingBag, Target, Loader2 } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { doc } from 'firebase/firestore'
@@ -26,15 +26,22 @@ function RegisterSelectionContent() {
         <LanguageToggle />
       </div>
 
-      <Link href="/" className="mb-12 group transition-transform hover:scale-105">
-        <div className="h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card flex items-center justify-center ring-8 ring-primary/5 border border-border/50">
-          {displayLogoUrl ? (
-            <Image src={displayLogoUrl} alt="Logo" width={80} height={80} className="p-3 object-contain" unoptimized />
-          ) : (
-            <span className="text-primary text-2xl font-black">SC</span>
-          )}
-        </div>
-      </Link>
+      <div className="mb-12 flex flex-col items-center gap-6">
+        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          <span>Volver a Sync Academy</span>
+        </Link>
+
+        <Link href="https://syncacademy.systeme.io/sync-connect" className="group transition-transform hover:scale-105">
+          <div className="h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card flex items-center justify-center ring-8 ring-primary/5 border border-border/50">
+            {displayLogoUrl ? (
+              <Image src={displayLogoUrl} alt="Logo" width={80} height={80} className="p-3 object-contain" unoptimized />
+            ) : (
+              <span className="text-primary text-2xl font-black">SC</span>
+            )}
+          </div>
+        </Link>
+      </div>
 
       <div className="w-full max-w-4xl">
         <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
