@@ -96,7 +96,7 @@ function BuyerRegisterContent() {
         <LanguageToggle />
       </div>
 
-      <Link href="/auth/register" className="mb-10 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
+      <Link href="https://syncacademy.systeme.io/sync-connect" className="mb-10 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
         <span>Volver a selección</span>
       </Link>
