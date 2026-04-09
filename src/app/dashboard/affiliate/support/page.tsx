@@ -77,25 +77,23 @@ export default function AffiliateSupportPage() {
     setIsInCall(true)
     setHasCameraPermission(null)
     
-    if (type === 'video' || type === 'voice') {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: type === 'video', 
-          audio: true 
-        });
-        setHasCameraPermission(true);
-        if (videoRef.current && type === 'video') {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing multimedia:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Acceso Denegado',
-          description: 'Habilita los permisos de cámara y micrófono en tu navegador para unirte.',
-        });
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Navegador incompatible");
       }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: type === 'video', 
+        audio: true 
+      });
+      
+      setHasCameraPermission(true);
+      if (videoRef.current && type === 'video') {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing hardware:', error);
+      setHasCameraPermission(false);
     }
   }
 
@@ -103,6 +101,7 @@ export default function AffiliateSupportPage() {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
     setIsInCall(false);
     setCallType(null);
@@ -131,7 +130,6 @@ export default function AffiliateSupportPage() {
         </div>
 
         <div className="flex-1 flex gap-6 overflow-hidden">
-          {/* Chat Container */}
           <Card className="flex-1 border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
               <div className="flex items-center justify-between">
@@ -202,31 +200,29 @@ export default function AffiliateSupportPage() {
             </CardContent>
           </Card>
 
-          {/* Call / Video Interface */}
           {isInCall && (
             <Card className="w-[400px] border-none shadow-2xl rounded-[3rem] bg-slate-900 overflow-hidden flex flex-col animate-in slide-in-from-right-8 duration-500 ring-4 ring-primary/10">
               <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-                {/* VIDEO TAG SIEMPRE PRESENTE SEGÚN GUÍAS */}
                 <video 
                   ref={videoRef} 
-                  className={cn("w-full h-full object-cover", callType !== 'video' || hasCameraPermission === false ? "hidden" : "block")} 
+                  className={cn("w-full h-full object-cover transition-opacity duration-1000", hasCameraPermission ? "opacity-100" : "opacity-0")} 
                   autoPlay 
                   muted 
                   playsInline
                 />
 
                 {hasCameraPermission === false && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10 space-y-6">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10 space-y-6 bg-black/80 backdrop-blur-md">
                     <div className="h-16 w-16 bg-red-500/20 rounded-2xl flex items-center justify-center border border-red-500/50">
                       <AlertCircle className="h-8 w-8 text-red-500" />
                     </div>
                     <div className="space-y-2">
-                      <p className="text-white font-black uppercase text-[10px] tracking-widest">Permiso Requerido</p>
+                      <p className="text-white font-black uppercase text-[10px] tracking-widest">Permiso Denegado</p>
                       <p className="text-slate-400 text-[11px] font-medium leading-relaxed">
-                        No podemos acceder a tu multimedia. Por favor, pulsa el candado en tu barra de direcciones y permite el acceso.
+                        Habilita los permisos de cámara y micrófono en tu navegador para unirte a la sesión.
                       </p>
                     </div>
-                    <Button onClick={() => startCall(callType || 'video')} variant="outline" className="h-10 px-6 rounded-xl border-white/10 text-white font-black text-[9px] uppercase tracking-widest">
+                    <Button onClick={() => startCall(callType || 'video')} variant="outline" className="h-10 px-6 rounded-xl border-white/10 text-white font-black text-[9px] uppercase tracking-widest hover:bg-white/10">
                       REINTENTAR CONEXIÓN
                     </Button>
                   </div>
@@ -244,7 +240,7 @@ export default function AffiliateSupportPage() {
                 {hasCameraPermission === null && (
                   <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase">Solicitando Permisos...</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Solicitando Hardware...</p>
                   </div>
                 )}
                 

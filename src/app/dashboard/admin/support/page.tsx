@@ -22,7 +22,8 @@ import {
   Trash2,
   ShieldCheck,
   Zap,
-  AlertCircle
+  AlertCircle,
+  VideoOff
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
@@ -77,9 +78,9 @@ export default function AdminSupportPage() {
     try {
       const snap = await getDocs(collection(db, 'community_messages'));
       snap.docs.forEach(d => deleteDocumentNonBlocking(doc(db, 'community_messages', d.id)));
-      toast({ title: "Historial Limpiado", description: "El chat grupal ha sido reseteado." });
+      toast({ title: "Historial Limpiado" });
     } catch (e) {
-      toast({ variant: "destructive", title: "Error al limpiar chat" });
+      console.error(e);
     }
   }
 
@@ -88,19 +89,19 @@ export default function AdminSupportPage() {
     setHasCameraPermission(null)
     
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Hardware de comunicación no detectado o navegador no compatible.");
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setHasCameraPermission(true);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch (e) {
-      console.error('Error accessing camera:', e);
+    } catch (e: any) {
+      console.error('Error accessing hardware:', e);
       setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Acceso Multimedia Denegado',
-        description: 'Por favor, habilita los permisos de cámara y micrófono en la configuración de tu navegador.',
-      });
     }
   }
 
@@ -108,6 +109,7 @@ export default function AdminSupportPage() {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
     setIsInCall(false);
     setHasCameraPermission(null);
@@ -148,13 +150,6 @@ export default function AdminSupportPage() {
                       <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Servidor Maestro Activo
                     </p>
                   </div>
-                </div>
-                <div className="flex -space-x-2">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="h-8 w-8 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">
-                      +
-                    </div>
-                  ))}
                 </div>
               </div>
             </CardHeader>
@@ -198,7 +193,7 @@ export default function AdminSupportPage() {
               </ScrollArea>
 
               <div className="p-6 bg-white border-t border-slate-100 shrink-0">
-                <form onSubmit={handleSendMessage} className="flex gap-3 bg-slate-50 p-2 rounded-[2rem] ring-1 ring-slate-200 focus-within:ring-primary/30 transition-all shadow-inner">
+                <form onSubmit={handleSendMessage} className="flex gap-3 bg-slate-50 p-2 rounded-[2rem] ring-1 ring-slate-200">
                   <Input 
                     placeholder="Escribe un comunicado o responde a los socios..." 
                     value={msgInput}
@@ -214,44 +209,51 @@ export default function AdminSupportPage() {
           </Card>
 
           {isInCall && (
-            <Card className="w-[450px] border-none shadow-2xl rounded-[3rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20">
-              <video ref={videoRef} className="w-full h-full object-cover opacity-60" autoPlay muted playsInline />
+            <Card className="w-[450px] border-none shadow-2xl rounded-[3rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4">
+              <video ref={videoRef} className={cn("w-full h-full object-cover", hasCameraPermission ? "opacity-100" : "opacity-0")} autoPlay muted playsInline />
               
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 {hasCameraPermission === false ? (
-                  <div className="space-y-6 animate-in fade-in">
+                  <div className="space-y-6 animate-in fade-in duration-500 bg-black/80 backdrop-blur-md inset-0 absolute flex flex-col items-center justify-center p-10">
                     <div className="h-20 w-20 rounded-3xl bg-red-500/20 flex items-center justify-center mx-auto border border-red-500/50">
                       <AlertCircle className="h-10 w-10 text-red-500" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-white font-black uppercase text-sm tracking-widest">Permiso Denegado</h3>
+                      <h3 className="text-white font-black uppercase text-sm tracking-widest">Acceso Denegado</h3>
                       <p className="text-slate-400 text-xs font-medium leading-relaxed">
-                        Haz clic en el icono del candado en la barra de tu navegador y selecciona "Permitir" para Cámara y Micrófono.
+                        Habilita los permisos de cámara y micrófono haciendo clic en el icono del candado en tu navegador.
                       </p>
                     </div>
-                    <Button onClick={startAdminCall} variant="outline" className="h-12 px-8 rounded-xl border-white/20 text-white font-black text-[10px] uppercase">
+                    <Button onClick={startAdminCall} variant="outline" className="h-12 px-8 rounded-xl border-white/20 text-white font-black text-[10px] uppercase hover:bg-white/10">
                       REINTENTAR ACCESO
                     </Button>
                   </div>
+                ) : hasCameraPermission === null ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronizando Hardware...</p>
+                  </div>
                 ) : (
-                  <>
-                    <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center animate-ping absolute" />
-                    <div className="relative z-10 text-center space-y-6">
-                      <div className="h-20 w-20 bg-primary rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(255,93,27,0.5)]">
-                        <Zap className="h-10 w-10 text-white fill-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-white uppercase tracking-[0.5em]">Live Admin Stream</p>
-                        <p className="text-xs text-primary font-black uppercase">Transmitiendo a la Red</p>
-                      </div>
+                  <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-[9px] font-black text-white uppercase tracking-widest">Transmitiendo en Vivo</span>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
 
-              <div className="absolute bottom-10 left-0 right-0 px-10">
-                <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-2xl border-none">
-                  {hasCameraPermission === false ? "SALIR DE LA SALA" : "FINALIZAR TRANSMISIÓN"}
+              <div className="absolute bottom-10 left-0 right-0 px-10 flex flex-col gap-4">
+                <div className="flex justify-center gap-4">
+                   <Button size="icon" variant="ghost" className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20">
+                     <Mic className="h-6 w-6" />
+                   </Button>
+                   <Button size="icon" variant="ghost" className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20">
+                     <VideoOff className="h-6 w-6" />
+                   </Button>
+                </div>
+                <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-2xl border-none transition-all hover:scale-[1.02]">
+                  FINALIZAR SESIÓN
                 </Button>
               </div>
             </Card>
