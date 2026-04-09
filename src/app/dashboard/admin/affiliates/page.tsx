@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -277,6 +277,26 @@ function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
               </div>
             </div>
           </div>
+
+          {/* NUEVA SECCIÓN DE GEOLOCALIZACIÓN */}
+          {affiliate.lastLocation && (
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
+                <MapPin className="h-3 w-3 text-primary" /> Geolocalización (Última Conocida)
+              </h4>
+              <div className="bg-slate-50 p-5 rounded-2xl border flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-slate-700">Coordenadas: {affiliate.lastLocation.lat.toFixed(6)}, {affiliate.lastLocation.lng.toFixed(6)}</p>
+                  <p className="text-[9px] text-slate-400 font-black uppercase mt-1">Registrado el: {new Date(affiliate.lastLocation.updatedAt).toLocaleString()}</p>
+                </div>
+                <Button asChild variant="outline" className="h-10 px-4 rounded-xl border-primary/20 text-primary font-black text-[10px] uppercase gap-2 hover:bg-primary hover:text-white transition-all">
+                  <a href={`https://www.google.com/maps?q=${affiliate.lastLocation.lat},${affiliate.lastLocation.lng}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" /> VER EN MAPA
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Respuestas de Evaluación</h4>

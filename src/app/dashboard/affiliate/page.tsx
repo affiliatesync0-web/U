@@ -1,9 +1,10 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ExternalLink, Flame, Sparkles, ChevronRight } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ExternalLink, Flame, Sparkles, ChevronRight, MapPin } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -52,6 +53,30 @@ export default function AffiliateDashboard() {
   }, [db, user]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
+
+  // EFECTO DE GEOLOCALIZACIÓN: Solo para afiliados
+  useEffect(() => {
+    if (isMounted && user?.uid && profile && affiliateRef) {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            updateDocumentNonBlocking(affiliateRef, {
+              lastLocation: {
+                lat: latitude,
+                lng: longitude,
+                updatedAt: new Date().toISOString()
+              }
+            });
+          },
+          (error) => {
+            console.log("Ubicación no disponible:", error.message);
+          },
+          { enableHighAccuracy: true }
+        );
+      }
+    }
+  }, [isMounted, user, profile, affiliateRef]);
 
   const salesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
