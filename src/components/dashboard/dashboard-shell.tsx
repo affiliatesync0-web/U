@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -142,8 +141,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     );
   }
 
-  const academyUrl = "https://syncacademy.systeme.io/es/login?redirectUrl=https%3A%2F%2Fsyncacademy.systeme.io%2Fschool%2Fcourse%2Fsyncacademy";
-
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
@@ -159,7 +156,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: t.syncAcademy, url: academyUrl, icon: GraduationCap },
+    { title: t.syncAcademy, url: "/dashboard/affiliate/academy", icon: GraduationCap },
     { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -36,8 +35,6 @@ export default function AffiliateDashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-
-  const academyUrl = "https://syncacademy.systeme.io/es/login?redirectUrl=https%3A%2F%2Fsyncacademy.systeme.io%2Fschool%2Fcourse%2Fsyncacademy";
 
   useEffect(() => {
     setIsMounted(true);
@@ -143,7 +140,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ACCESO RÁPIDO A LA ACADEMIA */}
+        {/* ACCESO RÁPIDO A LA ACADEMIA INTEGRADA */}
         <Card className="relative border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden group">
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,93,27,0.15),transparent_50%)]" />
            <div className="flex flex-col lg:flex-row items-center relative z-10">
@@ -153,12 +150,14 @@ export default function AffiliateDashboard() {
                        CENTRO DE <span className="text-primary">CAPACITACIÓN</span>
                     </h2>
                     <p className="text-slate-400 font-medium max-w-xl">
-                       Accede a tu entrenamiento maestro para dominar el marketing digital y escalar tus resultados.
+                       Accede a tu entrenamiento maestro directamente dentro de la plataforma con nuestro navegador integrado.
                     </p>
                  </div>
                  <div className="flex flex-wrap gap-4 pt-4">
                     <Button asChild className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-xl transition-all">
-                       <a href={academyUrl}>ACCEDER A LA ACADEMIA <ExternalLink className="ml-3 h-4 w-4" /></a>
+                       <Link href="/dashboard/affiliate/academy">
+                          ENTRAR A LA ACADEMIA <ChevronRight className="ml-2 h-5 w-5" />
+                       </Link>
                     </Button>
                  </div>
               </div>
