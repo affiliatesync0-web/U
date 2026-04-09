@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle, Phone, MessageCircle } from 'lucide-react'
+import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle, Phone, MessageCircle, CreditCard, ArrowRight, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { sendEmail } from '@/lib/email'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 function CheckoutContent() {
   const params = useParams()
@@ -30,7 +31,6 @@ function CheckoutContent() {
   const productRef = useMemoFirebase(() => doc(db, 'products', productId), [db, productId])
   const { data: product, isLoading: productLoading } = useDoc(productRef)
 
-  // Obtener datos del afiliado para el botón de contacto
   const affiliateRef = useMemoFirebase(() => affiliateId !== 'admin' ? doc(db, 'affiliates', affiliateId) : null, [db, affiliateId])
   const { data: affiliateData } = useDoc(affiliateRef)
 
@@ -46,12 +46,8 @@ function CheckoutContent() {
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.voucherRef.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Voucher Requerido",
-        description: "Debes ingresar el número de referencia de tu depósito para continuar."
-      })
+    if (!formData.firstName || !formData.email || !formData.phone) {
+      toast({ variant: "destructive", title: "Datos Incompletos", description: "Por favor llena tus datos de contacto." })
       return
     }
 
@@ -86,84 +82,39 @@ function CheckoutContent() {
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
         status: 'Pending',
-        paymentMethod: 'transfer',
-        voucherReference: formData.voucherRef.trim()
+        paymentMethod: product?.paymentLink ? 'digital_link' : 'transfer',
+        voucherReference: formData.voucherRef.trim() || 'LINK_DIRECTO'
       }
 
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      const notificationsRef = collection(db, 'notifications')
-      
-      addDocumentNonBlocking(notificationsRef, {
-        userId: buyerId,
-        title: t.purchasePendingTitle,
-        message: t.purchasePendingMsg.replace('{product}', product?.name || '').replace('{ref}', formData.voucherRef),
-        type: 'system',
-        createdAt: new Date().toISOString(),
-        isRead: false
-      })
-
+      // Notificaciones y Emails
       await sendEmail({
         to: formData.email,
-        subject: `Compra Registrada - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos recibido tu registro de compra.
-        
-Producto: ${product?.name}
-Monto: $${product?.price}
-Referencia Bancaria: ${formData.voucherRef}
-
-Tu acceso será habilitado una vez que el administrador valide tu depósito bancario.`
+        subject: `Registro de Compra - ${product?.name}`,
+        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nSi pagaste mediante el link digital, tu acceso será validado en breve.\nSi prefieres transferencia manual, usa la referencia: ${formData.voucherRef || 'N/A'}`
       });
 
       if (affiliateId && affiliateId !== 'admin') {
-        const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
-        if (affiliateDoc.exists()) {
-          const affData = affiliateDoc.data();
-          
-          addDocumentNonBlocking(notificationsRef, {
-            userId: affiliateId,
-            title: t.saleConfirmedTitle,
-            message: `¡Felicidades! Se ha registrado una nueva venta de "${product?.name}". Voucher: ${formData.voucherRef}`,
-            type: 'sale',
-            createdAt: new Date().toISOString(),
-            isRead: false
-          });
-
-          await sendEmail({
-            to: affData.email,
-            subject: `¡Nueva Venta Realizada! - Sync Connect`,
-            text: `¡Felicidades ${affData.firstName}! 
-            
-Un cliente (${formData.firstName} ${formData.lastName}) acaba de registrar una compra de "${product?.name}" a través de tu link.
-
-Detalles de la Venta:
-- Importe: $${saleAmount}
-- Tu Comisión: $${commissionEarned}
-- Referencia: ${formData.voucherRef}
-
-La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
-          });
-
-          const affiliateRefUpdate = doc(db, 'affiliates', affiliateId)
-          updateDocumentNonBlocking(affiliateRefUpdate, {
-            currentBalance: increment(commissionEarned)
-          })
-        }
+        updateDocumentNonBlocking(doc(db, 'affiliates', affiliateId), {
+          currentBalance: increment(commissionEarned)
+        })
       }
 
-      toast({
-        title: t.purchaseSuccess,
-        description: "Se ha enviado un correo de confirmación a tu Gmail.",
-      })
+      toast({ title: "Registro Exitoso", description: "Redirigiendo a la pasarela de pago..." })
 
-      router.push('/auth/login?role=buyer')
+      // REDIRECCIÓN PRIORITARIA AL LINK DE PAGO
+      if (product?.paymentLink) {
+        setTimeout(() => {
+          window.location.href = product.paymentLink;
+        }, 1500);
+      } else {
+        router.push('/auth/login?role=buyer');
+      }
+
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No pudimos procesar tu compra."
-      })
+      toast({ variant: "destructive", title: "Error", description: "No pudimos procesar la solicitud." })
     } finally {
       setLoading(false)
     }
@@ -181,18 +132,17 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 relative">
-      {/* Botón de Ayuda WhatsApp del Afiliado */}
       {affiliateWhatsApp && (
         <a 
           href={`https://wa.me/${affiliateWhatsApp}?text=${encodeURIComponent(`Hola, estoy en el checkout del producto ${product.name} y tengo una duda...`)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-green-500 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-105 transition-transform animate-in fade-in slide-in-from-bottom-4"
+          className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-green-500 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-105 transition-transform"
         >
           <MessageCircle className="h-6 w-6" />
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-80">¿Necesitas ayuda?</span>
-            <span className="text-sm font-black">Habla con un asesor</span>
+          <div className="flex flex-col text-left">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Soporte Afiliado</span>
+            <span className="text-sm font-black">Hablar con un asesor</span>
           </div>
         </a>
       )}
@@ -205,11 +155,11 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
           </Link>
           
           <div className="space-y-6">
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none">
-              Finaliza tu <span className="text-primary">Compra</span>
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none italic">
+              Acceso <span className="text-primary">Instantáneo</span>
             </h1>
             <p className="text-slate-500 font-medium leading-relaxed">
-              Estás a un paso de acceder a <span className="font-bold text-slate-900">{product.name}</span>. Realiza tu depósito bancario para activar tu acceso.
+              Estás a un paso de obtener <span className="font-bold text-slate-900">{product.name}</span>. Completa tus datos para habilitar el pago digital.
             </p>
           </div>
 
@@ -224,16 +174,11 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-6 left-8 text-white">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen de Pedido</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen de Compra</p>
                 <h3 className="text-xl font-headline font-black tracking-tight">{product.name}</h3>
               </div>
             </div>
             <CardContent className="p-10 space-y-6">
-              <div className="flex justify-between items-center text-slate-500 font-bold uppercase text-[10px] tracking-widest">
-                <span>Precio del Producto</span>
-                <span>${product.price?.toFixed(2)}</span>
-              </div>
-              <div className="h-px bg-slate-100" />
               <div className="flex justify-between items-end">
                 <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Total a Pagar</span>
                 <span className="text-4xl font-black text-primary tracking-tighter">${product.price?.toFixed(2)}</span>
@@ -244,7 +189,7 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
                  <ShieldCheck className="h-6 w-6" />
                </div>
                <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
-                 Pago protegido por tecnología Sync Connect.
+                 Compra 100% segura procesada por Sync Connect.
                </p>
             </CardFooter>
           </Card>
@@ -260,43 +205,43 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
                     <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
                       <ShoppingBag className="h-5 w-5" />
                     </div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">{t.buyerInfo}</h3>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Tus Datos de Acceso</h3>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.firstName}</Label>
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre Completo</Label>
                       <Input 
                         required 
                         placeholder="Juan"
                         value={formData.firstName}
                         onChange={e => setFormData({...formData, firstName: e.target.value})}
-                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
+                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 px-6 font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.lastName}</Label>
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Apellido</Label>
                       <Input 
                         required 
                         placeholder="Perez"
                         value={formData.lastName}
                         onChange={e => setFormData({...formData, lastName: e.target.value})}
-                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
+                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 px-6 font-bold"
                       />
                     </div>
                     <div className="md:col-span-2 space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.email}</Label>
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Gmail de Alumno</Label>
                       <Input 
                         required 
                         type="email"
                         placeholder="tu@correo.com"
                         value={formData.email}
                         onChange={e => setFormData({...formData, email: e.target.value})}
-                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-bold"
+                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 px-6 font-bold"
                       />
                     </div>
                     <div className="md:col-span-2 space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">WhatsApp / Teléfono <span className="text-destructive">*</span></Label>
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">WhatsApp</Label>
                       <div className="relative">
                         <Phone className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input 
@@ -304,71 +249,67 @@ La comisión ya se ha sumado a tu saldo acumulado. ¡Sigue así!`
                           placeholder="50588888888"
                           value={formData.phone}
                           onChange={e => setFormData({...formData, phone: e.target.value})}
-                          className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all pl-12 pr-6 font-bold"
+                          className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 pl-12 font-bold"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-8">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
-                      <Landmark className="h-5 w-5" />
+                <div className="space-y-6">
+                  {product.paymentLink ? (
+                    <Button 
+                      type="submit" 
+                      disabled={loading}
+                      className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[2rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02]"
+                    >
+                      {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
+                        <span className="flex items-center gap-3">
+                          <CreditCard className="h-6 w-6" /> CONTINUAR AL PAGO SEGURO
+                        </span>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 text-center">
+                      <AlertTriangle className="h-8 w-8 text-amber-600 mx-auto mb-3" />
+                      <p className="text-xs font-black text-amber-900 uppercase">Sin Link Digital</p>
+                      <p className="text-[10px] text-amber-700 font-bold mt-1">Este producto requiere pago manual. Usa la sección de abajo.</p>
                     </div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">{t.paymentMethod}: {t.bankTransfer}</h3>
-                  </div>
+                  )}
 
-                  <div className="space-y-8">
-                    <div className="p-8 rounded-[2.5rem] bg-primary/5 border-2 border-dashed border-primary/20 space-y-6">
-                      <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center">Cuenta para Depósito</h4>
-                      <div className="space-y-4 text-center">
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.bankName}</p>
-                          <p className="text-xl font-black text-slate-900 tracking-tight">{product.payoutBankId}</p>
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="manual" className="border-none">
+                      <AccordionTrigger className="h-14 rounded-2xl bg-slate-100 px-6 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:no-underline">
+                        PAGO MANUAL (SOLO EMERGENCIAS)
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-6 space-y-6">
+                        <div className="p-6 rounded-[2rem] bg-white border-2 border-dashed border-slate-200 space-y-4 text-center">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.bankName}</p>
+                            <p className="text-sm font-black text-slate-800">{product.payoutBankId}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.accountNumber}</p>
+                            <p className="text-2xl font-black text-primary font-mono">{product.payoutBankAccountNumber}</p>
+                          </div>
+                          <div className="space-y-2 pt-4">
+                            <Label className="text-[9px] font-black uppercase text-slate-500">Nº de Referencia del Voucher</Label>
+                            <Input 
+                              placeholder="Escribe la referencia aquí" 
+                              value={formData.voucherRef}
+                              onChange={e => setFormData({...formData, voucherRef: e.target.value})}
+                              className="h-12 rounded-xl text-center font-bold"
+                            />
+                          </div>
+                          {!product.paymentLink && (
+                            <Button onClick={handlePurchase} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black text-xs">
+                              COMPLETAR CON VOUCHER
+                            </Button>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.accountNumber}</p>
-                          <p className="text-3xl font-black font-mono text-primary tracking-widest">{product.payoutBankAccountNumber}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.accountHolder}</p>
-                          <p className="text-sm font-black text-slate-700">{product.payoutBankAccountHolderName}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">{t.voucherReference} <span className="text-destructive">*</span></Label>
-                      <Input 
-                        required
-                        placeholder="Número de referencia del depósito"
-                        value={formData.voucherRef}
-                        onChange={e => setFormData({...formData, voucherRef: e.target.value})}
-                        className="h-16 rounded-2xl bg-white border-none ring-1 ring-slate-200 focus:ring-4 focus:ring-primary/10 transition-all px-6 font-black text-lg text-primary"
-                      />
-                    </div>
-
-                    <Alert className="bg-amber-50 border-amber-200">
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <AlertTitle className="text-amber-800 font-black text-[10px] uppercase tracking-widest">Aviso</AlertTitle>
-                      <AlertDescription className="text-amber-700 text-xs font-bold">
-                        Tu acceso se habilitará automáticamente tras la validación administrativa. Recibirás un email.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    disabled={loading}
-                    className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[2rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 mt-6"
-                  >
-                    {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
-                      <span className="flex items-center gap-3">
-                        <Sparkles className="h-6 w-6" /> {t.completePurchase.toUpperCase()}
-                      </span>
-                    )}
-                  </Button>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </div>
               </div>
             </Card>

@@ -1,11 +1,10 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, DollarSign, Loader2, Landmark, User, Info, Flame, Star, Sparkles, ShoppingCart, CreditCard, ExternalLink } from 'lucide-react'
+import { Search, DollarSign, Loader2, Landmark, User, Info, Flame, Star, Sparkles, ShoppingCart, CreditCard, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
@@ -13,6 +12,7 @@ import { collection } from 'firebase/firestore'
 import { useLanguage } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export default function BuyerProductsPage() {
   const { t } = useLanguage();
@@ -20,17 +20,6 @@ export default function BuyerProductsPage() {
   
   const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
-
-  const getPlaceholderImage = (category: string) => {
-    const mapping: Record<string, string> = {
-      'Service': 'product-social',
-      'Course': 'product-seo',
-      'Infoproduct': 'product-ads',
-      'Digital Product': 'product-email'
-    };
-    const imageId = mapping[category] || 'product-growth';
-    return placeholderData.placeholderImages.find(img => img.id === imageId) || placeholderData.placeholderImages[0];
-  }
 
   return (
     <DashboardShell role="buyer">
@@ -41,14 +30,14 @@ export default function BuyerProductsPage() {
               <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                 <ShoppingCart className="h-6 w-6" />
               </div>
-              <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Sync Connect Marketplace</span>
+              <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Tienda Sync Connect</span>
             </div>
-            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Explora <span className="text-primary">Soluciones</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Encuentra los mejores productos digitales y servicios premium seleccionados para ti.</p>
+            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight italic">Catálogo <span className="text-primary">VIP</span></h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Accede a las mejores soluciones digitales con pago 100% garantizado.</p>
           </div>
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
-            <Input className="pl-16 h-20 rounded-[2rem] border-none bg-white shadow-2xl shadow-slate-200/50 text-lg font-bold" placeholder="Buscar productos..." />
+            <Input className="pl-16 h-20 rounded-[2.5rem] border-none bg-white shadow-xl text-lg font-bold" placeholder="Buscar..." />
           </div>
         </div>
 
@@ -57,107 +46,110 @@ export default function BuyerProductsPage() {
             <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
           </div>
         ) : !products || products.length === 0 ? (
-          <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
-            <h3 className="text-2xl font-black text-slate-400">Catálogo próximamente disponible.</h3>
-          </Card>
+          <div className="text-center py-32 opacity-20">
+            <ShoppingCart className="h-20 w-20 mx-auto mb-4" />
+            <p className="font-black uppercase tracking-widest">Próximamente más productos</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {products.map((product) => {
-              const placeholderImg = getPlaceholderImage(product.category);
-              const displayImageUrl = product.imageUrl || placeholderImg.imageUrl;
-
-              return (
-                <Card key={product.id} className="border-none shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden flex flex-col rounded-[3rem] bg-white group ring-1 ring-slate-100">
-                  <div className="relative h-64 w-full overflow-hidden">
-                    <Image 
-                      src={displayImageUrl} 
-                      alt={product.name} 
-                      fill 
-                      className="object-cover transition-transform duration-1000 group-hover:scale-110" 
-                      unoptimized={product.imageUrl?.startsWith('data:')}
-                    />
-                    <div className="absolute top-6 right-6">
-                      <Badge className="bg-white/95 text-primary font-black px-5 py-2 rounded-2xl shadow-2xl border-none text-[10px] tracking-widest">
-                        {product.category.toUpperCase()}
-                      </Badge>
+            {products.map((product) => (
+              <Card key={product.id} className="border-none shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden flex flex-col rounded-[3.5rem] bg-white group ring-1 ring-slate-100">
+                <div className="relative h-64 w-full overflow-hidden">
+                  <Image 
+                    src={product.imageUrl || 'https://picsum.photos/seed/product/600/400'} 
+                    alt={product.name} 
+                    fill 
+                    className="object-cover group-hover:scale-110 transition-transform duration-1000" 
+                    unoptimized={product.imageUrl?.startsWith('data:')}
+                  />
+                  <div className="absolute top-6 right-6">
+                    <Badge className="bg-white/95 text-primary font-black px-5 py-2 rounded-2xl shadow-2xl border-none text-[9px] tracking-widest uppercase">
+                      {product.category}
+                    </Badge>
+                  </div>
+                </div>
+                <CardHeader className="pt-8 pb-3 px-8 text-center">
+                  <CardTitle className="text-2xl font-headline font-black text-slate-900 group-hover:text-primary transition-colors line-clamp-2 min-h-[4rem] tracking-tight uppercase">
+                    {product.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-8 pb-10 pt-3 flex-1 flex flex-col gap-8">
+                  <div className="flex items-center justify-center p-6 rounded-[2rem] bg-slate-50 border border-slate-100 shadow-inner">
+                    <div className="text-center">
+                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Inversión Única</p>
+                      <p className="font-black text-4xl text-slate-900 tracking-tighter">${product.price?.toFixed(2)}</p>
                     </div>
                   </div>
-                  <CardHeader className="pt-8 pb-3 px-8">
-                    <CardTitle className="text-2xl font-headline font-black text-slate-900 group-hover:text-primary transition-colors line-clamp-2 min-h-[4rem] tracking-tight">
-                      {product.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-8 pb-10 pt-3 flex-1 flex flex-col gap-8">
-                    <div className="flex items-center justify-between p-6 rounded-[2rem] bg-slate-50 border border-slate-100 shadow-inner">
-                      <div className="space-y-1.5">
-                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">PRECIO</p>
-                        <p className="font-black text-3xl text-slate-900 tracking-tighter">${product.price?.toFixed(2)}</p>
-                      </div>
-                      <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                         <Star className="h-5 w-5 text-primary fill-primary" />
-                      </div>
-                    </div>
 
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="w-full bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[1.75rem] h-20 shadow-2xl shadow-primary/30 transition-all active:scale-95 duration-500">
-                          {t.buyNow.toUpperCase()}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-lg rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-                        <div className="bg-primary p-12 text-white text-center">
-                           <ShoppingCart className="h-16 w-16 mx-auto mb-6" />
-                           <DialogHeader>
-                             <DialogTitle className="text-3xl font-headline font-black text-white text-center tracking-tighter">
-                               Instrucciones de Pago
-                             </DialogTitle>
-                           </DialogHeader>
-                        </div>
-                        <div className="p-10 space-y-8">
-                          {product.paymentLink && (
-                            <div className="space-y-4">
-                              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] text-center">Opción Rápida Digital</p>
-                              <Button asChild className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 shadow-xl gap-3">
-                                <a href={product.paymentLink} target="_blank" rel="noopener noreferrer">
-                                  <CreditCard className="h-5 w-5" /> PAGAR AHORA CON LINK <ExternalLink className="h-4 w-4" />
-                                </a>
-                              </Button>
-                              <div className="flex items-center gap-4 py-2">
-                                <div className="h-px bg-slate-100 flex-1" />
-                                <span className="text-[9px] font-black text-slate-300 uppercase">o mediante transferencia</span>
-                                <div className="h-px bg-slate-100 flex-1" />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[2rem] h-20 shadow-2xl shadow-primary/30 transition-all duration-500">
+                        COMPRAR AHORA
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+                      <div className="bg-slate-900 p-12 text-white text-center">
+                         <CreditCard className="h-16 w-16 mx-auto mb-6 text-primary shadow-2xl" />
+                         <DialogHeader>
+                           <DialogTitle className="text-3xl font-headline font-black text-white text-center tracking-tighter italic">
+                             Finalizar <span className="text-primary">Compra</span>
+                           </DialogTitle>
+                         </DialogHeader>
+                      </div>
+                      <div className="p-10 space-y-8">
+                        {product.paymentLink ? (
+                          <div className="space-y-4">
+                            <Button asChild className="w-full h-20 rounded-[2rem] bg-primary text-white font-black text-lg shadow-2xl shadow-primary/20 gap-3 hover:scale-105 transition-all">
+                              <a href={product.paymentLink} target="_blank" rel="noopener noreferrer">
+                                <CreditCard className="h-6 w-6" /> PAGAR CON LINK SEGURO
+                              </a>
+                            </Button>
+                            <p className="text-[9px] font-black text-slate-400 uppercase text-center tracking-widest">Habilitación instantánea al pagar con link</p>
+                          </div>
+                        ) : (
+                          <div className="p-8 bg-amber-50 rounded-3xl text-center border border-amber-100">
+                            <AlertTriangle className="h-8 w-8 text-amber-600 mx-auto mb-3" />
+                            <p className="text-xs font-black text-amber-900 uppercase">Aviso de Pago</p>
+                            <p className="text-[10px] font-bold text-amber-700 mt-1">Este curso solo acepta pago manual por el momento.</p>
+                          </div>
+                        )}
+
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="emergency" className="border-none">
+                            <AccordionTrigger className="h-14 rounded-2xl bg-slate-50 px-6 text-[10px] font-black uppercase text-slate-400 hover:no-underline">
+                              ¿PROBLEMAS? VER DATOS BANCARIOS (EMERGENCIA)
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-6">
+                              <div className="p-8 rounded-[2.5rem] bg-slate-50 border-2 border-dashed border-slate-200 space-y-6 text-center">
+                                <div className="space-y-1">
+                                   <p className="text-[10px] text-slate-400 uppercase font-black">{t.bankName}</p>
+                                   <p className="font-black text-lg text-slate-900">{product.payoutBankId}</p>
+                                </div>
+                                <div className="space-y-1">
+                                   <p className="text-[10px] text-slate-400 uppercase font-black">NÚMERO DE CUENTA</p>
+                                   <p className="font-mono font-black text-2xl text-primary">{product.payoutBankAccountNumber}</p>
+                                </div>
+                                <div className="space-y-1">
+                                   <p className="text-[10px] text-slate-400 uppercase font-black">TITULAR</p>
+                                   <p className="font-black text-sm text-slate-800">{product.payoutBankAccountHolderName}</p>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
 
-                          <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-200 space-y-6">
-                            <div className="space-y-2">
-                               <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">BANCO</p>
-                               <p className="font-black text-2xl text-slate-900">{product.payoutBankId}</p>
-                            </div>
-                            <div className="space-y-2">
-                               <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">NÚMERO DE CUENTA</p>
-                               <div className="p-6 bg-white rounded-[1.5rem] border-2 border-primary/20 font-mono font-black text-3xl tracking-widest text-primary text-center">
-                                 {product.payoutBankAccountNumber}
-                               </div>
-                            </div>
-                            <div className="space-y-2">
-                               <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">TITULAR</p>
-                               <p className="font-black text-lg text-slate-800">{product.payoutBankAccountHolderName}</p>
-                            </div>
-                          </div>
-                          <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100">
-                            <p className="text-xs text-amber-900 font-bold leading-relaxed">
-                              IMPORTANTE: Realiza el depósito y envía el voucher al asesor que te recomendó este producto para validar tu acceso inmediatamente.
-                            </p>
-                          </div>
+                        <div className="flex items-center gap-4 p-4 bg-green-50 rounded-2xl border border-green-100">
+                          <ShieldCheck className="h-6 w-6 text-green-600" />
+                          <p className="text-[9px] font-black text-green-800 uppercase tracking-widest leading-relaxed">
+                            Tu inversión está protegida por la tecnología Sync Connect.
+                          </p>
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
