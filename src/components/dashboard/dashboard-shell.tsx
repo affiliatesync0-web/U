@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -23,6 +24,7 @@ import {
   UserCircle,
   Zap,
   GraduationCap,
+  MapPin,
 } from "lucide-react"
 import {
   Sidebar,
@@ -100,7 +102,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const handleLogout = async () => {
     await signOut(auth);
-    // Redirección externa solicitada por el usuario
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
@@ -147,6 +148,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
     { title: "Gestionar Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
+    { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
     { title: t.affiliateGmailList, url: "/dashboard/admin/affiliates-contacts", icon: Mail },
     { title: t.buyers, url: "/dashboard/admin/buyers", icon: Users2 },
     { title: t.allSales, url: "/dashboard/admin/sales", icon: ShoppingBag },
