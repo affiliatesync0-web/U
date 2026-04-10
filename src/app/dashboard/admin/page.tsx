@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp, RefreshCcw, AlertTriangle, Bell } from 'lucide-react'
+import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartConfig,
@@ -14,24 +14,90 @@ import {
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDocs, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
+import { useRouter } from 'next/navigation'
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    // Solicitar permiso de notificaciones al Administrador para llamadas entrantes/pings
+    // Solicitar permiso de notificaciones al Administrador
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
-  }, []);
+
+    if (db && user) {
+      const now = new Date();
+      
+      // 1. Escuchar mensajes nuevos en la Comunidad
+      const qComm = query(
+        collection(db, 'community_messages'), 
+        orderBy('createdAt', 'desc'), 
+        limit(1)
+      );
+      
+      const unsubscribeComm = onSnapshot(qComm, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data();
+            // Evitar notificar si el mensaje es del admin o es antiguo (de antes de cargar la pág)
+            const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : new Date();
+            if (msg.userName !== "ADMINISTRADOR" && msgDate > now) {
+              toast({ 
+                title: `💬 Comunidad: ${msg.userName}`, 
+                description: msg.content,
+                action: <Button variant="outline" size="sm" className="h-8 rounded-lg font-black text-[10px] uppercase" onClick={() => router.push('/dashboard/admin/support')}>VER CHAT</Button>
+              });
+              if (Notification.permission === "granted") {
+                new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
+              }
+            }
+          }
+        });
+      });
+
+      // 2. Escuchar mensajes privados para el admin
+      const qPriv = query(
+        collection(db, 'private_messages'), 
+        where('receiverId', '==', 'affiliatesync0@gmail.com'),
+        orderBy('createdAt', 'desc'), 
+        limit(1)
+      );
+      
+      const unsubscribePriv = onSnapshot(qPriv, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data();
+            const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : new Date();
+            if (msgDate > now) {
+              toast({ 
+                variant: "default",
+                title: `📩 Privado de ${msg.userName}`, 
+                description: msg.content,
+                action: <Button variant="outline" size="sm" className="h-8 rounded-lg font-black text-[10px] uppercase" onClick={() => router.push('/dashboard/admin/support')}>RESPONDER</Button>
+              });
+              if (Notification.permission === "granted") {
+                new Notification(`Mensaje Privado: ${msg.userName}`, { body: msg.content });
+              }
+            }
+          }
+        });
+      });
+
+      return () => {
+        unsubscribeComm();
+        unsubscribePriv();
+      };
+    }
+  }, [db, user, toast, router]);
 
   const salesQuery = useMemoFirebase(() => {
     if (!db || isAuthLoading || !user) return null;
@@ -85,11 +151,12 @@ export default function AdminDashboard() {
     
     try {
       const salesSnap = await getDocs(collection(db, 'sales'));
+      const affSnap = await getDocs(collection(db, 'affiliates'));
+      
       salesSnap.docs.forEach(d => {
         deleteDocumentNonBlocking(doc(db, 'sales', d.id));
       });
 
-      const affSnap = await getDocs(collection(db, 'affiliates'));
       affSnap.docs.forEach(d => {
         updateDocumentNonBlocking(doc(db, 'affiliates', d.id), { currentBalance: 0 });
       });
@@ -134,7 +201,7 @@ export default function AdminDashboard() {
                   <div className="h-2 w-2 rounded-full bg-slate-100 group-hover:bg-primary transition-colors" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.title}</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.title}</p>
                   <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
                 </div>
               </CardContent>

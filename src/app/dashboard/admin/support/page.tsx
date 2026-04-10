@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
+import { collection, query, orderBy, limit, serverTimestamp, doc, where, onSnapshot } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -57,6 +57,7 @@ export default function AdminSupportPage() {
   const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
+    // Pedir permisos de notificación al entrar si no se tienen
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -85,6 +86,43 @@ export default function AdminSupportPage() {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [communityMessages, privateMessages, activeTab]);
 
+  // Escuchador de mensajes globales para notificar si el admin no está viendo ese chat
+  useEffect(() => {
+    if (db && user) {
+      const now = new Date();
+      
+      const qAllPriv = query(
+        collection(db, 'private_messages'), 
+        where('receiverId', '==', 'affiliatesync0@gmail.com'),
+        orderBy('createdAt', 'desc'), 
+        limit(1)
+      );
+
+      const unsubscribe = onSnapshot(qAllPriv, (snap) => {
+        snap.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data();
+            const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : new Date();
+            
+            // Notificar solo si es un mensaje nuevo y no es del afiliado que tengo seleccionado actualmente
+            if (msgDate > now && msg.senderId !== selectedAffiliate?.id) {
+              toast({ 
+                title: `📩 Nuevo mensaje de ${msg.userName}`, 
+                description: msg.content,
+                duration: 5000 
+              });
+              if (Notification.permission === "granted") {
+                new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content });
+              }
+            }
+          }
+        });
+      });
+
+      return () => unsubscribe();
+    }
+  }, [db, user, selectedAffiliate, toast]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!msgInput.trim() || !user) return
@@ -110,6 +148,7 @@ export default function AdminSupportPage() {
         createdAt: serverTimestamp()
       });
 
+      // Notificación de sistema interna para el socio
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
         title: '💬 Nuevo Mensaje del Administrador',
@@ -124,7 +163,6 @@ export default function AdminSupportPage() {
 
   const startCall = async (targetId?: string) => {
     try {
-      // Llamada de voz nativa: solo audio
       const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
       setHasMicPermission(true);
       streamRef.current = stream;
