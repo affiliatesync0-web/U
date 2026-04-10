@@ -1,10 +1,10 @@
 
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video, X, ShieldAlert } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video, X, ShieldAlert, Navigation } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,7 +40,8 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [incomingCall, setIncomingCall] = useState<any>(null);
-  const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied'>('pending');
+  const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied' | 'watching'>('pending');
+  const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -48,12 +50,10 @@ export default function AffiliateDashboard() {
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
-      // Solicitar permiso de notificaciones al entrar
       if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
 
-      // Notificaciones internas de Firestore
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -61,22 +61,20 @@ export default function AffiliateDashboard() {
             const notif = change.doc.data();
             toast({ title: notif.title, description: notif.message });
             
-            // Si el permiso está concedido, mostrar notificación de sistema
             if (Notification.permission === "granted") {
-              new Notification(notif.title, { body: notif.message, icon: '/favicon.ico' });
+              new Notification(notif.title, { body: notif.message });
             }
           }
         });
       });
 
-      // Escuchar estado de llamada individual
       const statusRef = doc(db, 'site_config', 'support_status');
       const unsubscribeCall = onSnapshot(statusRef, (snap) => {
         const data = snap.data();
         if (data?.isLive && (data?.type === 'group' || data?.targetUserId === user.uid)) {
           setIncomingCall(data);
           if (Notification.permission === "granted") {
-            new Notification("🚀 Llamada Entrante", { body: "El administrador ha iniciado una sesión de apoyo.", icon: '/favicon.ico' });
+            new Notification("🚀 Llamada Entrante", { body: "El administrador ha iniciado una sesión de apoyo." });
           }
         } else {
           setIncomingCall(null);
@@ -93,25 +91,44 @@ export default function AffiliateDashboard() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
-  // PERMISOS DE GEOLOCALIZACIÓN
+  // RASTREO DE UBICACIÓN EN TIEMPO REAL (Real-time tracking)
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
+        // Limpiar observador previo si existe
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+
+        watchIdRef.current = navigator.geolocation.watchPosition(
           (position) => {
-            setLocationStatus('granted');
+            setLocationStatus('watching');
             updateDocumentNonBlocking(affiliateRef, {
-              lastLocation: { lat: position.coords.latitude, lng: position.coords.longitude, updatedAt: new Date().toISOString() }
+              lastLocation: { 
+                lat: position.coords.latitude, 
+                lng: position.coords.longitude, 
+                updatedAt: new Date().toISOString() 
+              }
             });
           },
           (error) => {
-            console.warn("Location access denied");
+            console.warn("Location access denied or failed", error);
             setLocationStatus('denied');
           },
-          { enableHighAccuracy: true }
+          { 
+            enableHighAccuracy: true, 
+            maximumAge: 30000, // No usar cache de más de 30 segundos
+            timeout: 27000 
+          }
         );
       }
     }
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, [isMounted, user, profile]);
 
   const salesQuery = useMemoFirebase(() => (db && user ? query(collection(db, 'sales'), where('affiliateId', '==', user.uid)) : null), [db, user]);
@@ -152,15 +169,6 @@ export default function AffiliateDashboard() {
           </div>
         )}
 
-        {locationStatus === 'denied' && (
-          <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-2">
-            <ShieldAlert className="h-5 w-5 text-amber-600" />
-            <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest">
-              Ubicación Bloqueada: Habilita el permiso en tu navegador para ser visible en el Mapa de Red Sync.
-            </p>
-          </div>
-        )}
-
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex items-center gap-6">
             <div className="relative">
@@ -172,7 +180,15 @@ export default function AffiliateDashboard() {
             </div>
             <div className="space-y-1">
               <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">{t.welcomeBack}, {profile?.firstName}</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Workspace de Afiliado Sync</p>
+              <div className="flex items-center gap-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Workspace de Afiliado Sync</p>
+                {locationStatus === 'watching' && (
+                  <Badge className="bg-green-100 text-green-600 border-none text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                    RASTREO EN VIVO ACTIVO
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -180,6 +196,21 @@ export default function AffiliateDashboard() {
              <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl"><Smartphone className="h-4 w-4 text-primary" /><span className="text-[9px] font-black uppercase tracking-widest">ID: {profile?.id?.substring(0, 8)}</span></div>
           </div>
         </div>
+
+        {locationStatus === 'denied' && (
+          <div className="bg-amber-50 border border-amber-100 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-top-2">
+            <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 shrink-0 shadow-inner">
+              <MapPin className="h-6 w-6" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <p className="text-xs font-black text-amber-900 uppercase tracking-widest mb-1">Ubicación Desconectada</p>
+              <p className="text-[11px] font-medium text-amber-700 leading-relaxed">
+                Para que el administrador pueda localizarte en el Mapa de Red Sync y brindarte apoyo regional, habilita los permisos de ubicación en tu navegador.
+              </p>
+            </div>
+            <Button onClick={() => window.location.reload()} variant="outline" className="h-12 px-6 rounded-xl border-amber-200 text-amber-700 font-black text-[10px] uppercase">ACTIVAR AHORA</Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
            <div className="lg:col-span-8 space-y-8">
