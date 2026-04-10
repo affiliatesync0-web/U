@@ -22,7 +22,8 @@ import {
   Zap,
   Camera,
   Crown,
-  AlertCircle
+  AlertCircle,
+  Bell
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase'
@@ -47,15 +48,39 @@ export default function AffiliateSupportPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const lastMessageId = useRef<string | null>(null)
 
   const messagesQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(100)), 
   [db])
   const { data: messages, isLoading } = useCollection<Message>(messagesQuery)
 
+  // 1. Permisos de Notificación al entrar
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // 2. Scroll y Notificación de nuevos mensajes
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    
+    const latestMsg = messages[messages.length - 1];
+    
+    // Si hay un mensaje nuevo y no es mío
+    if (lastMessageId.current && lastMessageId.current !== latestMsg.id) {
+      if (latestMsg.userId !== user?.uid && Notification.permission === "granted" && document.visibilityState === "hidden") {
+        new Notification(`Sync Hub: ${latestMsg.userName}`, {
+          body: latestMsg.content,
+          icon: '/favicon.ico'
+        });
+      }
+    }
+    
+    lastMessageId.current = latestMsg.id;
+    if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, user]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,7 +141,7 @@ export default function AffiliateSupportPage() {
           <div className="space-y-1">
             <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Support Hub</span></h1>
             <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Chat comunitario y mentoría activa
+              <Bell className="h-3 w-3 text-primary animate-pulse" /> Notificaciones activas para el equipo.
             </p>
           </div>
           <div className="flex gap-3">
