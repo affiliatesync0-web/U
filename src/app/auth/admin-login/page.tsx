@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -6,12 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ShieldAlert, ArrowLeft, Loader2, LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/firebase'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth'
 import { sendEmail } from '@/lib/email'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -23,6 +23,7 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('affiliatesync0@gmail.com')
   const [password, setPassword] = useState('')
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true)
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -41,6 +42,9 @@ export default function AdminLoginPage() {
 
     setLoading(true);
     try {
+      // Configurar persistencia administrativa
+      await setPersistence(auth, keepLoggedIn ? browserLocalPersistence : browserSessionPersistence);
+
       await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
       
       sendEmail({
@@ -128,6 +132,22 @@ export default function AdminLoginPage() {
                   </button>
                 </div>
               </div>
+
+              <div className="flex items-center space-x-2 px-1">
+                <Checkbox 
+                  id="keepLoggedInAdmin" 
+                  checked={keepLoggedIn} 
+                  onCheckedChange={(checked) => setKeepLoggedIn(checked as boolean)}
+                  className="border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                />
+                <label 
+                  htmlFor="keepLoggedInAdmin" 
+                  className="text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none"
+                >
+                  Mantener sesión maestra abierta
+                </label>
+              </div>
+
               <Button 
                 type="submit"
                 className="w-full h-18 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95" 

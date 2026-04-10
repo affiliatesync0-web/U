@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff, Loader2, Image as ImageIcon, Mail, Lock, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
@@ -32,6 +32,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -76,6 +77,9 @@ export default function LoginPage() {
     if (!cleanEmail || !cleanPass) return;
     setLoading(true)
     try {
+      // Configurar persistencia según elección del usuario
+      await setPersistence(auth, keepLoggedIn ? browserLocalPersistence : browserSessionPersistence);
+      
       const result = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       await handleLoginSuccess(cleanEmail, result.user.uid);
     } catch (error: any) {
@@ -159,6 +163,22 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            <div className="flex items-center space-x-2 px-1">
+              <Checkbox 
+                id="keepLoggedIn" 
+                checked={keepLoggedIn} 
+                onCheckedChange={(checked) => setKeepLoggedIn(checked as boolean)}
+                className="rounded-md border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <label 
+                htmlFor="keepLoggedIn" 
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer select-none"
+              >
+                Mantener sesión iniciada
+              </label>
+            </div>
+
             <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
               {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ACCEDER AHORA"}
             </Button>
