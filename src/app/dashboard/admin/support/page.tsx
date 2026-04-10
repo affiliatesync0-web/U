@@ -124,6 +124,7 @@ export default function AdminSupportPage() {
 
   const startCall = async (targetId?: string) => {
     try {
+      // Llamada de voz nativa: solo audio
       const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
       setHasMicPermission(true);
       streamRef.current = stream;
@@ -143,7 +144,7 @@ export default function AdminSupportPage() {
       toast({
         variant: "destructive",
         title: "Permisos Denegados",
-        description: "Habilita el micrófono para iniciar la llamada de voz."
+        description: "Habilita el micrófono para iniciar la llamada de voz nativa."
       });
     }
   }

@@ -81,7 +81,7 @@ export default function AffiliateSupportPage() {
 
   useEffect(() => {
     if (supportStatus?.isLive && (supportStatus.type === 'group' || supportStatus.targetUserId === user?.uid)) {
-      toast({ title: "📞 Llamada Entrante de Admin", description: "El administrador solicita una sesión de voz contigo." });
+      toast({ title: "📞 Llamada de Voz Entrante", description: "El administrador ha iniciado una sesión de audio." });
       if (Notification.permission === "granted") {
         new Notification("🚀 Llamada en Vivo", { body: "Únete ahora a la sesión de apoyo del administrador." });
       }

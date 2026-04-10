@@ -47,10 +47,12 @@ export default function AffiliateDashboard() {
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
+      // Solicitar permiso de notificaciones al inicio
       if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
 
+      // Escuchar notificaciones en tiempo real
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -64,6 +66,7 @@ export default function AffiliateDashboard() {
         });
       });
 
+      // Escuchar estado de llamadas de voz
       const statusRef = doc(db, 'site_config', 'support_status');
       const unsubscribeCall = onSnapshot(statusRef, (snap) => {
         const data = snap.data();
@@ -87,6 +90,7 @@ export default function AffiliateDashboard() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
+  // Geolocalización en tiempo real (segundo plano)
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {

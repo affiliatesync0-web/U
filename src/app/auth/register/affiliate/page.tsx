@@ -67,7 +67,7 @@ function AffiliateRegisterContent() {
       toast({
         variant: 'destructive',
         title: 'Acceso a Cámara Denegado',
-        description: 'Por favor, habilita los permisos de cámara en tu navegador para continuar con el KYC.',
+        description: 'Por favor, habilita los permisos de cámara en tu navegador para continuar con el KYC facial.',
       });
     }
   };
@@ -116,13 +116,14 @@ function AffiliateRegisterContent() {
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
       const user = userCredential.user;
 
+      // El selfie capturado se guarda como photoUrl para que aparezca en el perfil
       await setDoc(doc(db, 'affiliates', user.uid), {
         id: user.uid,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: cleanEmail,
         whatsappNumber: formData.phone.replace(/\D/g, ''),
-        photoUrl: capturedPhoto, // La selfie capturada se convierte en la foto de perfil
+        photoUrl: capturedPhoto, 
         registeredAt: new Date().toISOString(),
         currentBalance: 0,
         status: 'Pending',
@@ -132,12 +133,12 @@ function AffiliateRegisterContent() {
 
       sendEmail({
         to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Nueva Solicitud: AFILIADO (KYC Completo)`,
-        text: `Un nuevo prospecto de socio se ha registrado con verificación facial.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
+        subject: `🆕 Nueva Solicitud: AFILIADO (KYC con Selfie)`,
+        text: `Un nuevo prospecto de socio se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}\nIdentificación: ${kycData.idNumber}`
       }).catch(() => {});
 
       await signOut(auth);
-      toast({ title: "Solicitud Enviada", description: "Tu perfil, KYC y verificación facial están en revisión." });
+      toast({ title: "Solicitud Enviada", description: "Tu perfil y verificación facial están en revisión." });
       router.push('/auth/login');
 
     } catch (err: any) {
@@ -152,7 +153,7 @@ function AffiliateRegisterContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4">
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4 transition-colors">
       <div className="fixed top-6 right-6 flex items-center gap-2">
         <ThemeToggle />
         <LanguageToggle />
@@ -165,7 +166,7 @@ function AffiliateRegisterContent() {
 
       <div className="w-full max-w-2xl">
         {errorDetail && (
-          <Alert variant="destructive" className="mb-6 rounded-2xl bg-red-50 border-red-100">
+          <Alert variant="destructive" className="mb-6 rounded-2xl">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-xs font-bold">{errorDetail}</AlertDescription>
           </Alert>
@@ -258,7 +259,7 @@ function AffiliateRegisterContent() {
                 <Alert className="bg-slate-50 border-slate-200 rounded-2xl">
                   <ShieldCheck className="h-4 w-4 text-green-600" />
                   <p className="text-[10px] font-bold text-slate-500 leading-relaxed">
-                    Tus datos están protegidos bajo nuestra política de privacidad y se usarán únicamente para la validación de tus pagos de comisiones.
+                    Tus datos están protegidos y se usarán únicamente para la validación de tus pagos de comisiones.
                   </p>
                 </Alert>
 
@@ -318,7 +319,7 @@ function AffiliateRegisterContent() {
                   <div className="space-y-4">
                     <Alert className="bg-green-50 border-green-100 rounded-2xl">
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <p className="text-[10px] font-black text-green-700 uppercase">¡Foto capturada con éxito!</p>
+                      <p className="text-[10px] font-black text-green-700 uppercase">¡Identidad capturada con éxito!</p>
                     </Alert>
                     <div className="grid grid-cols-2 gap-4">
                       <Button variant="outline" onClick={() => setCapturedPhoto(null)} className="h-14 rounded-2xl font-black text-[10px] uppercase gap-2">
@@ -345,11 +346,11 @@ function AffiliateRegisterContent() {
               <form onSubmit={handleRegister} className="space-y-8">
                 <div className="space-y-2">
                   <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cómo planeas promocionar los productos?</Label>
-                  <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Ej: Redes sociales, anuncios, marketing de guerrilla..." />
+                  <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Ej: Redes sociales, anuncios..." />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cuál es tu experiencia previa en ventas?</Label>
-                  <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Cuéntanos un poco sobre tus logros anteriores..." />
+                  <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Cuéntanos un poco sobre tus logros..." />
                 </div>
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading || !capturedPhoto}>
                   {loading ? <Loader2 className="animate-spin" /> : "ENVIAR SOLICITUD DE AFILIADO"}
