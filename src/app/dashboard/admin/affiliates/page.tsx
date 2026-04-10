@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck, MessageCircle, Video } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck, MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -49,12 +49,11 @@ export default function AdminAffiliatesPage() {
   ) || [];
 
   const handleInternalContact = (affId: string, type: 'message' | 'call') => {
-    // 1. Notificar al afiliado de forma interna
     addDocumentNonBlocking(collection(db, 'notifications'), {
       userId: affId,
       title: type === 'call' ? '🚀 Llamada Entrante: ADMIN' : '💬 Mensaje del Administrador',
       message: type === 'call' 
-        ? 'El administrador ha iniciado una sesión contigo. Entra al Grupo de Apoyo ahora.' 
+        ? 'El administrador ha iniciado una llamada de voz contigo. Entra al Grupo de Apoyo ahora.' 
         : 'Tienes un nuevo mensaje prioritario en el chat comunitario.',
       type: 'system',
       createdAt: new Date().toISOString(),
@@ -62,13 +61,13 @@ export default function AdminAffiliatesPage() {
       actionUrl: '/dashboard/affiliate/support'
     });
 
-    // 2. Si es llamada, actualizar estado global de soporte para alertar al socio
     if (type === 'call') {
       const supportStatusRef = doc(db, 'site_config', 'support_status');
       setDocumentNonBlocking(supportStatusRef, {
         isLive: true,
         targetUserId: affId,
-        startedAt: new Date().toISOString()
+        startedAt: new Date().toISOString(),
+        type: 'private'
       }, { merge: true });
     }
 
@@ -77,7 +76,6 @@ export default function AdminAffiliatesPage() {
       description: "El socio ha sido notificado dentro de su panel Sync." 
     });
 
-    // 3. Redirigir al admin al hub de soporte para iniciar la interacción
     router.push('/dashboard/admin/support');
   };
 
@@ -152,8 +150,8 @@ export default function AdminAffiliatesPage() {
                         <Button size="icon" variant="ghost" className="h-10 w-10 text-primary hover:bg-primary/5" title="Enviar Mensaje Interno" onClick={() => handleInternalContact(aff.id, 'message')}>
                           <MessageCircle className="h-5 w-5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-10 w-10 text-blue-600 hover:bg-blue-50" title="Llamada de Video Interna" onClick={() => handleInternalContact(aff.id, 'call')}>
-                          <Video className="h-5 w-5" />
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-blue-600 hover:bg-blue-50" title="Llamada de Voz Interna" onClick={() => handleInternalContact(aff.id, 'call')}>
+                          <Phone className="h-5 w-5" />
                         </Button>
                         <AffiliateDetailsDialog affiliate={aff} t={t} onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} />
                         <AdminPasswordResetDialog user={aff} />

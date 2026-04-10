@@ -11,24 +11,22 @@ import { Badge } from '@/components/ui/badge'
 import { 
   MessageSquare, 
   Send, 
-  Video, 
+  Phone, 
   Loader2, 
   Mic, 
   MicOff,
   Trash2,
   ShieldCheck,
   Flame,
-  Camera,
   AlertCircle,
-  VideoOff,
   Bell,
   Users,
   User,
   Search,
   ChevronRight,
   MoreVertical,
-  Phone,
-  RefreshCw
+  RefreshCw,
+  PhoneOff
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
@@ -56,15 +54,12 @@ export default function AdminSupportPage() {
   
   const [isInCall, setIsInCall] = useState(false)
   const [isMicMuted, setIsMicMuted] = useState(false)
-  const [isVideoOff, setIsVideoOff] = useState(false)
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null)
   
-  const videoRef = useRef<HTMLVideoElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
-    // Pedir permiso de notificaciones al entrar al hub
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -132,10 +127,9 @@ export default function AdminSupportPage() {
 
   const startCall = async (targetId?: string) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setHasCameraPermission(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+      setHasMicPermission(true);
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setIsInCall(true);
 
       const callData = {
@@ -149,11 +143,11 @@ export default function AdminSupportPage() {
       const statusRef = doc(db, 'site_config', 'support_status');
       setDocumentNonBlocking(statusRef, callData, { merge: true });
     } catch (e) {
-      setHasCameraPermission(false);
+      setHasMicPermission(false);
       toast({
         variant: "destructive",
         title: "Permisos Denegados",
-        description: "Habilita cámara y micrófono en el icono del candado de tu navegador para iniciar la llamada."
+        description: "Habilita el micrófono en el icono del candado de tu navegador para iniciar la llamada."
       });
     }
   }
@@ -259,7 +253,7 @@ export default function AdminSupportPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Button onClick={() => startCall(selectedAffiliate?.id)} size="icon" className="h-12 w-12 rounded-xl bg-primary text-white shadow-xl hover:scale-105 transition-all">
-                  <Video className="h-5 w-5" />
+                  <Phone className="h-5 w-5" />
                 </Button>
               </div>
             </CardHeader>
@@ -310,34 +304,33 @@ export default function AdminSupportPage() {
         </div>
 
         {isInCall && (
-          <Card className="w-[450px] border-none shadow-2xl rounded-[3.5rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4 shrink-0">
-            <video 
-              ref={videoRef} 
-              className={cn(
-                "w-full h-full object-cover transition-opacity duration-500", 
-                hasCameraPermission && !isVideoOff ? "opacity-100" : "opacity-0"
-              )} 
-              autoPlay 
-              muted 
-              playsInline 
-            />
+          <Card className="w-[450px] border-none shadow-2xl rounded-[3.5rem] bg-slate-900 overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4 shrink-0">
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              {hasCameraPermission === false ? (
-                <div className="space-y-6 bg-black/80 backdrop-blur-md inset-0 absolute flex flex-col items-center justify-center p-10 text-white">
-                  <AlertCircle className="h-10 w-10 text-red-500" />
-                  <p className="font-black uppercase text-sm">Hardware Bloqueado</p>
-                  <p className="text-slate-400 text-xs font-medium mb-4">Habilita cámara y micrófono en el candado de la URL.</p>
+              <div className="relative mb-8">
+                <div className="h-32 w-32 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                  <User className="h-16 w-16 text-primary" />
+                </div>
+                <div className="absolute inset-0 rounded-full border-4 border-primary/40 animate-ping" />
+              </div>
+              
+              <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Llamada de Voz en Curso</h3>
+              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+                {selectedAffiliate ? `${selectedAffiliate.firstName} ${selectedAffiliate.lastName}` : "Socio Sync"}
+              </p>
+
+              {hasMicPermission === false && (
+                <div className="mt-8 space-y-4 px-10">
+                  <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
+                  <p className="text-red-400 text-xs font-medium">Micrófono bloqueado. Habilita el acceso en tu navegador.</p>
                   <Button onClick={() => startCall(selectedAffiliate?.id)} size="sm" className="bg-primary text-white rounded-xl gap-2 font-black text-[10px] uppercase">
-                    <RefreshCw className="h-3.5 w-3.5" /> REINTENTAR CONEXIÓN
+                    <RefreshCw className="h-3.5 w-3.5" /> REINTENTAR
                   </Button>
                 </div>
-              ) : isVideoOff && (
-                <VideoOff className="h-10 w-10 text-white/40" />
               )}
             </div>
             
             <div className="absolute top-10 left-10 right-10 flex justify-between items-center">
-               <Badge className="bg-red-500 text-white border-none px-4 py-1.5 rounded-full text-[9px] font-black uppercase animate-pulse">EN VIVO</Badge>
+               <Badge className="bg-red-500 text-white border-none px-4 py-1.5 rounded-full text-[9px] font-black uppercase animate-pulse">EN LLAMADA</Badge>
                <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white"><MoreVertical className="h-5 w-5" /></div>
             </div>
 
@@ -346,12 +339,9 @@ export default function AdminSupportPage() {
                  <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("h-14 w-14 rounded-full backdrop-blur-xl border", isMicMuted ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white")}>
                    {isMicMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                  </Button>
-                 <Button size="icon" variant="ghost" onClick={() => setIsVideoOff(!isVideoOff)} className={cn("h-14 w-14 rounded-full backdrop-blur-xl border", isVideoOff ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white")}>
-                   {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Camera className="h-6 w-6" />}
-                 </Button>
               </div>
-              <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl">
-                FINALIZAR LLAMADA
+              <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                <PhoneOff className="h-6 w-6" /> FINALIZAR LLAMADA
               </Button>
             </div>
           </Card>

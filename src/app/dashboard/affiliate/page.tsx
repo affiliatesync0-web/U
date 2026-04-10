@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video, X, ShieldAlert, Navigation } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Phone, X, ShieldAlert, Navigation } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -45,7 +45,6 @@ export default function AffiliateDashboard() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  // PERMISOS DE NOTIFICACIONES Y ESCUCHADORES
   useEffect(() => {
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
@@ -91,11 +90,9 @@ export default function AffiliateDashboard() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
-  // RASTREO DE UBICACIÓN EN TIEMPO REAL (Real-time tracking)
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {
-        // Limpiar observador previo si existe
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
         }
@@ -117,7 +114,7 @@ export default function AffiliateDashboard() {
           },
           { 
             enableHighAccuracy: true, 
-            maximumAge: 30000, // No usar cache de más de 30 segundos
+            maximumAge: 30000, 
             timeout: 27000 
           }
         );
@@ -149,11 +146,11 @@ export default function AffiliateDashboard() {
         {incomingCall && (
           <div className="bg-slate-900 border-2 border-primary/50 rounded-[3rem] p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 animate-in zoom-in-95 duration-500 shadow-2xl shadow-primary/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Video className="h-40 w-40 text-primary" />
+              <Phone className="h-40 w-40 text-primary" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
               <div className="h-20 w-20 bg-primary rounded-3xl flex items-center justify-center shadow-xl animate-pulse">
-                <Video className="h-10 w-10 text-white" />
+                <Phone className="h-10 w-10 text-white" />
               </div>
               <div className="text-center md:text-left">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic">

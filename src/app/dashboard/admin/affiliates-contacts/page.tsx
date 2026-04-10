@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle, Phone, Smartphone, Video } from 'lucide-react'
+import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle, Phone, Smartphone } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -56,7 +56,7 @@ export default function AdminAffiliateContactsPage() {
     addDocumentNonBlocking(collection(db, 'notifications'), {
       userId: affId,
       title: type === 'call' ? '🚀 Llamada Sync' : '💬 Mensaje Directo Admin',
-      message: type === 'call' ? 'Únete a la sesión de video iniciada por el administrador.' : 'Revisa el canal de soporte para un nuevo comunicado.',
+      message: type === 'call' ? 'Únete a la llamada de voz iniciada por el administrador.' : 'Revisa el canal de soporte para un nuevo comunicado.',
       type: 'system',
       createdAt: new Date().toISOString(),
       isRead: false,
@@ -67,7 +67,8 @@ export default function AdminAffiliateContactsPage() {
       setDocumentNonBlocking(doc(db, 'site_config', 'support_status'), {
         isLive: true,
         targetUserId: affId,
-        startedAt: new Date().toISOString()
+        startedAt: new Date().toISOString(),
+        type: 'private'
       }, { merge: true });
     }
 
@@ -145,7 +146,7 @@ export default function AdminAffiliateContactsPage() {
                               <MessageCircle className="h-4 w-4" /> Mensaje
                             </Button>
                             <Button variant="outline" className="h-12 px-5 rounded-2xl border-blue-200 text-blue-600 hover:bg-blue-50 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id, 'call')}>
-                              <Video className="h-4 w-4" /> Video Llamada
+                              <Phone className="h-4 w-4" /> Llamada Voz
                             </Button>
                             <Button variant="ghost" className="h-12 px-5 rounded-2xl font-black text-[10px] uppercase tracking-widest" onClick={() => handleCopyEmail(aff.email)}>
                               {copiedEmail === aff.email ? "Copiado" : "Copiar Email"}
