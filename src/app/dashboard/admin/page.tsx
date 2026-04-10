@@ -1,10 +1,10 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp, RefreshCcw, AlertTriangle } from 'lucide-react'
+import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp, RefreshCcw, AlertTriangle, Bell } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartConfig,
@@ -25,6 +25,13 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [resetting, setResetting] = useState(false);
+
+  useEffect(() => {
+    // Solicitar permiso de notificaciones al Administrador para llamadas entrantes/pings
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const salesQuery = useMemoFirebase(() => {
     if (!db || isAuthLoading || !user) return null;
@@ -77,13 +84,11 @@ export default function AdminDashboard() {
     setResetting(true);
     
     try {
-      // 1. Eliminar todas las ventas (Manual loop para prototipo)
       const salesSnap = await getDocs(collection(db, 'sales'));
       salesSnap.docs.forEach(d => {
         deleteDocumentNonBlocking(doc(db, 'sales', d.id));
       });
 
-      // 2. Resetear saldos de afiliados
       const affSnap = await getDocs(collection(db, 'affiliates'));
       affSnap.docs.forEach(d => {
         updateDocumentNonBlocking(doc(db, 'affiliates', d.id), { currentBalance: 0 });
@@ -194,7 +199,6 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* MANTENIMIENTO DEL SISTEMA */}
         <Card className="border-none shadow-2xl rounded-[3rem] bg-amber-50 border border-amber-100 overflow-hidden">
           <CardContent className="p-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-6">

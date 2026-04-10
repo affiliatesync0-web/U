@@ -27,7 +27,8 @@ import {
   Search,
   ChevronRight,
   MoreVertical,
-  Phone
+  Phone,
+  RefreshCw
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
@@ -62,7 +63,13 @@ export default function AdminSupportPage() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  // Consultas de datos
+  useEffect(() => {
+    // Pedir permiso de notificaciones al entrar al hub
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
   const { data: affiliates } = useCollection(affiliatesQuery)
 
@@ -111,7 +118,6 @@ export default function AdminSupportPage() {
         createdAt: serverTimestamp()
       });
 
-      // Notificar al afiliado
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
         title: '💬 Nuevo mensaje privado',
@@ -125,26 +131,30 @@ export default function AdminSupportPage() {
   }
 
   const startCall = async (targetId?: string) => {
-    setIsInCall(true)
-    
-    const callData = {
-      isLive: true,
-      startedAt: new Date().toISOString(),
-      adminId: user?.uid,
-      type: targetId ? 'private' : 'group',
-      targetUserId: targetId || null
-    };
-
-    const statusRef = doc(db, 'site_config', 'support_status');
-    setDocumentNonBlocking(statusRef, callData, { merge: true });
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setHasCameraPermission(true);
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
+      setIsInCall(true);
+
+      const callData = {
+        isLive: true,
+        startedAt: new Date().toISOString(),
+        adminId: user?.uid,
+        type: targetId ? 'private' : 'group',
+        targetUserId: targetId || null
+      };
+
+      const statusRef = doc(db, 'site_config', 'support_status');
+      setDocumentNonBlocking(statusRef, callData, { merge: true });
     } catch (e) {
       setHasCameraPermission(false);
+      toast({
+        variant: "destructive",
+        title: "Permisos Denegados",
+        description: "Habilita cámara y micrófono en el icono del candado de tu navegador para iniciar la llamada."
+      });
     }
   }
 
@@ -165,7 +175,6 @@ export default function AdminSupportPage() {
     <DashboardShell role="admin">
       <div className="h-[calc(100vh-140px)] flex gap-6 overflow-hidden">
         
-        {/* SIDEBAR DE CONTACTOS */}
         <div className="w-80 flex flex-col gap-4 shrink-0 h-full">
           <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 p-6 space-y-4">
@@ -232,7 +241,6 @@ export default function AdminSupportPage() {
           </Card>
         </div>
 
-        {/* ÁREA DE CHAT PRINCIPAL */}
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-6 shrink-0 flex flex-row items-center justify-between">
@@ -253,11 +261,6 @@ export default function AdminSupportPage() {
                 <Button onClick={() => startCall(selectedAffiliate?.id)} size="icon" className="h-12 w-12 rounded-xl bg-primary text-white shadow-xl hover:scale-105 transition-all">
                   <Video className="h-5 w-5" />
                 </Button>
-                {activeTab === 'community' && (
-                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-red-400 hover:bg-red-50" onClick={() => {/* Limpiar chat log */}}>
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                )}
               </div>
             </CardHeader>
 
@@ -306,7 +309,6 @@ export default function AdminSupportPage() {
           </Card>
         </div>
 
-        {/* VENTANA DE VIDEOLLAMADA */}
         {isInCall && (
           <Card className="w-[450px] border-none shadow-2xl rounded-[3.5rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4 shrink-0">
             <video 
@@ -324,7 +326,10 @@ export default function AdminSupportPage() {
                 <div className="space-y-6 bg-black/80 backdrop-blur-md inset-0 absolute flex flex-col items-center justify-center p-10 text-white">
                   <AlertCircle className="h-10 w-10 text-red-500" />
                   <p className="font-black uppercase text-sm">Hardware Bloqueado</p>
-                  <p className="text-slate-400 text-xs font-medium">Habilita cámara y micrófono en el candado de la URL.</p>
+                  <p className="text-slate-400 text-xs font-medium mb-4">Habilita cámara y micrófono en el candado de la URL.</p>
+                  <Button onClick={() => startCall(selectedAffiliate?.id)} size="sm" className="bg-primary text-white rounded-xl gap-2 font-black text-[10px] uppercase">
+                    <RefreshCw className="h-3.5 w-3.5" /> REINTENTAR CONEXIÓN
+                  </Button>
                 </div>
               ) : isVideoOff && (
                 <VideoOff className="h-10 w-10 text-white/40" />

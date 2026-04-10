@@ -25,7 +25,8 @@ import {
   VideoOff,
   User,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
@@ -54,6 +55,13 @@ export default function AffiliateSupportPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    // Solicitar permiso de notificaciones
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   // Mensajes de Comunidad
   const communityQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(50)), 
@@ -65,20 +73,22 @@ export default function AffiliateSupportPage() {
     if (!user) return null;
     return query(
       collection(db, 'private_messages'),
-      where('chatId', 'in', [`affiliatesync0@gmail.com_${user.uid}`, `${user.uid}_affiliatesync0@gmail.com`]), // Simplificado por prototipo usando el email admin como ID
+      where('chatId', 'in', [`affiliatesync0@gmail.com_${user.uid}`, `${user.uid}_affiliatesync0@gmail.com`]),
       orderBy('createdAt', 'asc'),
       limit(50)
     );
   }, [db, user]);
   const { data: privateMessages } = useCollection<Message>(privateQuery)
 
-  // Estado de Soporte/Llamadas
   const supportStatusRef = useMemoFirebase(() => doc(db, 'site_config', 'support_status'), [db]);
   const { data: supportStatus } = useDoc(supportStatusRef);
 
   useEffect(() => {
     if (supportStatus?.isLive && (supportStatus.type === 'group' || supportStatus.targetUserId === user?.uid)) {
       toast({ title: "📞 Llamada de Admin", description: "El administrador ha iniciado una sesión. Haz clic en el botón de video para unirte." });
+      if (Notification.permission === "granted") {
+        new Notification("🚀 Sesión en Vivo", { body: "Únete ahora a la llamada del administrador.", icon: '/favicon.ico' });
+      }
     }
   }, [supportStatus?.isLive, user?.uid]);
 
@@ -114,19 +124,27 @@ export default function AffiliateSupportPage() {
   }
 
   const joinCall = async () => {
-    setIsInCall(true)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setHasCameraPermission(true);
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch (error) { setHasCameraPermission(false); }
+      setIsInCall(true);
+      setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      }, 100);
+    } catch (error) { 
+      setHasCameraPermission(false);
+      toast({
+        variant: "destructive",
+        title: "Error Multimedia",
+        description: "No se pudo acceder a la cámara. Revisa los permisos en el icono del candado de tu navegador."
+      });
+    }
   }
 
   return (
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-140px)] flex gap-6 overflow-hidden">
         
-        {/* BARRA LATERAL AFILIADO */}
         <div className="w-72 shrink-0 flex flex-col gap-4">
           <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 p-6">
@@ -166,7 +184,6 @@ export default function AffiliateSupportPage() {
           </Card>
         </div>
 
-        {/* CHAT PRINCIPAL */}
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-6 shrink-0 flex items-center justify-between">
@@ -227,16 +244,18 @@ export default function AffiliateSupportPage() {
             </CardContent>
           </Card>
 
-          {/* OVERLAY DE VIDEO AFILIADO */}
           {isInCall && (
             <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-10 animate-in fade-in duration-500">
               <div className="max-w-4xl w-full aspect-video bg-slate-900 rounded-[4rem] overflow-hidden shadow-2xl relative border-4 border-primary/20">
                 <video ref={videoRef} className={cn("w-full h-full object-cover", hasCameraPermission ? "opacity-100" : "opacity-0")} autoPlay muted playsInline />
-                {!hasCameraPermission && (
+                {hasCameraPermission === false && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-10 text-center">
                     <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
                     <p className="text-white font-black uppercase text-sm">Hardware no detectado</p>
-                    <p className="text-slate-400 text-xs mt-2">Permite el acceso en tu navegador para ver la transmisión.</p>
+                    <p className="text-slate-400 text-xs mt-2 mb-6">Permite el acceso en tu navegador para ver la transmisión.</p>
+                    <Button onClick={joinCall} size="sm" className="bg-primary text-white rounded-xl gap-2 font-black text-[10px] uppercase">
+                      <RefreshCw className="h-3.5 w-3.5" /> REINTENTAR CONEXIÓN
+                    </Button>
                   </div>
                 )}
                 <div className="absolute top-10 left-10">

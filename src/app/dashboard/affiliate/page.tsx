@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video, X } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video, X, ShieldAlert } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -39,20 +39,32 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [incomingCall, setIncomingCall] = useState<any>(null);
+  const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied'>('pending');
 
   useEffect(() => { setIsMounted(true); }, []);
 
+  // PERMISOS DE NOTIFICACIONES Y ESCUCHADORES
   useEffect(() => {
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
-      // Notificaciones en tiempo real
+      // Solicitar permiso de notificaciones al entrar
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+
+      // Notificaciones internas de Firestore
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const notif = change.doc.data();
             toast({ title: notif.title, description: notif.message });
+            
+            // Si el permiso está concedido, mostrar notificación de sistema
+            if (Notification.permission === "granted") {
+              new Notification(notif.title, { body: notif.message, icon: '/favicon.ico' });
+            }
           }
         });
       });
@@ -63,6 +75,9 @@ export default function AffiliateDashboard() {
         const data = snap.data();
         if (data?.isLive && (data?.type === 'group' || data?.targetUserId === user.uid)) {
           setIncomingCall(data);
+          if (Notification.permission === "granted") {
+            new Notification("🚀 Llamada Entrante", { body: "El administrador ha iniciado una sesión de apoyo.", icon: '/favicon.ico' });
+          }
         } else {
           setIncomingCall(null);
         }
@@ -78,15 +93,22 @@ export default function AffiliateDashboard() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
+  // PERMISOS DE GEOLOCALIZACIÓN
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            setLocationStatus('granted');
             updateDocumentNonBlocking(affiliateRef, {
               lastLocation: { lat: position.coords.latitude, lng: position.coords.longitude, updatedAt: new Date().toISOString() }
             });
-          }
+          },
+          (error) => {
+            console.warn("Location access denied");
+            setLocationStatus('denied');
+          },
+          { enableHighAccuracy: true }
         );
       }
     }
@@ -127,6 +149,15 @@ export default function AffiliateDashboard() {
               <Button onClick={() => router.push('/dashboard/affiliate/support')} className="flex-1 h-16 px-10 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/30 hover:scale-105 transition-all">ACEPTAR LLAMADA</Button>
               <Button variant="ghost" onClick={() => setIncomingCall(null)} className="h-16 px-8 rounded-2xl font-black text-slate-500 hover:text-white">RECHAZAR</Button>
             </div>
+          </div>
+        )}
+
+        {locationStatus === 'denied' && (
+          <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-2">
+            <ShieldAlert className="h-5 w-5 text-amber-600" />
+            <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest">
+              Ubicación Bloqueada: Habilita el permiso en tu navegador para ser visible en el Mapa de Red Sync.
+            </p>
           </div>
         )}
 
