@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video, X } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -38,7 +38,7 @@ export default function AffiliateDashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-  const [incomingCall, setIncomingCall] = useState<boolean>(false);
+  const [incomingCall, setIncomingCall] = useState<any>(null);
 
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -46,28 +46,25 @@ export default function AffiliateDashboard() {
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
-      // Escuchar notificaciones en tiempo real
+      // Notificaciones en tiempo real
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const notif = change.doc.data();
-            if ("Notification" in window && Notification.permission === "granted") {
-              new Notification(notif.title, { body: notif.message });
-            }
             toast({ title: notif.title, description: notif.message });
           }
         });
       });
 
-      // Escuchar estado de llamada dirigida a este usuario
+      // Escuchar estado de llamada individual
       const statusRef = doc(db, 'site_config', 'support_status');
       const unsubscribeCall = onSnapshot(statusRef, (snap) => {
         const data = snap.data();
-        if (data?.isLive && data?.targetUserId === user.uid) {
-          setIncomingCall(true);
+        if (data?.isLive && (data?.type === 'group' || data?.targetUserId === user.uid)) {
+          setIncomingCall(data);
         } else {
-          setIncomingCall(false);
+          setIncomingCall(null);
         }
       });
 
@@ -111,19 +108,24 @@ export default function AffiliateDashboard() {
       <div className="space-y-10">
         
         {incomingCall && (
-          <div className="bg-slate-900 border-2 border-primary/50 rounded-[3rem] p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 animate-in zoom-in-95 duration-500 shadow-2xl shadow-primary/20">
-            <div className="flex items-center gap-6">
+          <div className="bg-slate-900 border-2 border-primary/50 rounded-[3rem] p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 animate-in zoom-in-95 duration-500 shadow-2xl shadow-primary/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Video className="h-40 w-40 text-primary" />
+            </div>
+            <div className="flex items-center gap-6 relative z-10">
               <div className="h-20 w-20 bg-primary rounded-3xl flex items-center justify-center shadow-xl animate-pulse">
                 <Video className="h-10 w-10 text-white" />
               </div>
               <div className="text-center md:text-left">
-                <h2 className="text-2xl font-black uppercase tracking-tight italic">¡Llamada de <span className="text-primary">Admin</span>!</h2>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Sesión de apoyo privada activa</p>
+                <h2 className="text-2xl font-black uppercase tracking-tight italic">
+                  {incomingCall.type === 'private' ? '📞 ¡Llamada Directa de Admin!' : '🚀 Sesión de Apoyo en Vivo'}
+                </h2>
+                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Conexión Segura Sync Connect</p>
               </div>
             </div>
-            <div className="flex gap-4 w-full md:w-auto">
-              <Button onClick={() => router.push('/dashboard/affiliate/support')} className="flex-1 h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl">ACEPTAR LLAMADA</Button>
-              <Button variant="ghost" onClick={() => setIncomingCall(false)} className="h-16 px-8 rounded-2xl font-black text-slate-500 hover:text-white">IGNORAR</Button>
+            <div className="flex gap-4 w-full md:w-auto relative z-10">
+              <Button onClick={() => router.push('/dashboard/affiliate/support')} className="flex-1 h-16 px-10 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/30 hover:scale-105 transition-all">ACEPTAR LLAMADA</Button>
+              <Button variant="ghost" onClick={() => setIncomingCall(null)} className="h-16 px-8 rounded-2xl font-black text-slate-500 hover:text-white">RECHAZAR</Button>
             </div>
           </div>
         )}
