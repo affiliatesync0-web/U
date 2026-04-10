@@ -10,19 +10,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   MessageSquare, 
   Send, 
-  Phone, 
   Video, 
-  Users, 
   Loader2, 
   Mic, 
   MicOff,
-  X, 
-  ShieldAlert, 
-  Flame,
-  Camera,
   Trash2,
   ShieldCheck,
-  Zap,
+  Flame,
+  Camera,
   AlertCircle,
   VideoOff
 } from 'lucide-react'
@@ -30,7 +25,6 @@ import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, getDocs } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Message {
   id: string
@@ -58,14 +52,12 @@ export default function AdminSupportPage() {
   [db])
   const { data: messages, isLoading } = useCollection<Message>(messagesQuery)
 
-  // Pedir permisos inmediatamente al cargar la pestaña de soporte
   useEffect(() => {
     const requestInitialPermissions = async () => {
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
           setHasCameraPermission(true);
-          // Detener el stream inicial para no dejar la cámara encendida sin que el admin lo pida
           stream.getTracks().forEach(track => track.stop());
         }
       } catch (error) {
@@ -121,11 +113,6 @@ export default function AdminSupportPage() {
     } catch (e: any) {
       console.error('Error al iniciar llamada:', e);
       setHasCameraPermission(false);
-      toast({
-        variant: "destructive",
-        title: "Error de Hardware",
-        description: "No se pudo acceder a la cámara o al micrófono.",
-      });
     }
   }
 
@@ -154,9 +141,6 @@ export default function AdminSupportPage() {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
     setIsInCall(false);
     setHasCameraPermission(null);
     setIsMicMuted(false);
@@ -170,15 +154,13 @@ export default function AdminSupportPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
           <div className="space-y-1">
             <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Centro de <span className="text-primary">Mando Grupal</span></h1>
-            <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-primary" /> Modera la comunidad y supervisa la red en tiempo real.
-            </p>
+            <p className="text-slate-500 font-medium text-sm">Modera la comunidad y supervisa la red en tiempo real.</p>
           </div>
           <div className="flex gap-3">
             <Button onClick={clearChat} variant="ghost" className="h-12 rounded-xl text-red-500 gap-2 font-black text-[10px] uppercase tracking-widest hover:bg-red-50">
               <Trash2 className="h-4 w-4" /> LIMPIAR CHAT
             </Button>
-            <Button onClick={startAdminCall} className="h-12 px-8 rounded-xl bg-slate-900 text-white gap-2 font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:scale-105 transition-all">
+            <Button onClick={startAdminCall} className="h-12 px-8 rounded-xl bg-slate-900 text-white gap-2 font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200">
               <Video className="h-4 w-4 text-primary" /> INICIAR SESIÓN EN VIVO
             </Button>
           </div>
@@ -187,18 +169,11 @@ export default function AdminSupportPage() {
         <div className="flex-1 flex gap-6 overflow-hidden">
           <Card className="flex-1 border-none shadow-2xl rounded-[3.5rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white rotate-3 shadow-lg">
-                    <Flame className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest">Chat Comunitario Sync</CardTitle>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Servidor Maestro Activo
-                    </p>
-                  </div>
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white rotate-3">
+                  <Flame className="h-5 w-5" />
                 </div>
+                <CardTitle className="text-sm font-headline font-black uppercase tracking-widest">Chat Comunitario Sync</CardTitle>
               </div>
             </CardHeader>
 
@@ -207,11 +182,6 @@ export default function AdminSupportPage() {
                 <div className="space-y-6">
                   {isLoading ? (
                     <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary opacity-20" /></div>
-                  ) : messages?.length === 0 ? (
-                    <div className="text-center py-20 opacity-20 space-y-4">
-                      <MessageSquare className="h-12 w-12 mx-auto" />
-                      <p className="text-xs font-black uppercase tracking-widest">Sin mensajes previos</p>
-                    </div>
                   ) : (
                     messages?.map((msg) => (
                       <div key={msg.id} className={cn(
@@ -243,7 +213,7 @@ export default function AdminSupportPage() {
               <div className="p-6 bg-white border-t border-slate-100 shrink-0">
                 <form onSubmit={handleSendMessage} className="flex gap-3 bg-slate-50 p-2 rounded-[2rem] ring-1 ring-slate-200">
                   <Input 
-                    placeholder="Escribe un comunicado o responde a los socios..." 
+                    placeholder="Escribe un comunicado..." 
                     value={msgInput}
                     onChange={(e) => setMsgInput(e.target.value)}
                     className="h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-6"
@@ -257,7 +227,7 @@ export default function AdminSupportPage() {
           </Card>
 
           {isInCall && (
-            <Card className="w-[450px] border-none shadow-2xl rounded-[3rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4">
+            <Card className="w-[450px] border-none shadow-2xl rounded-[3.5rem] bg-black overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4">
               <video 
                 ref={videoRef} 
                 className={cn(
@@ -271,68 +241,27 @@ export default function AdminSupportPage() {
               
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 {hasCameraPermission === false ? (
-                  <div className="space-y-6 animate-in fade-in duration-500 bg-black/80 backdrop-blur-md inset-0 absolute flex flex-col items-center justify-center p-10">
-                    <div className="h-20 w-20 rounded-3xl bg-red-500/20 flex items-center justify-center mx-auto border border-red-500/50">
-                      <AlertCircle className="h-10 w-10 text-red-500" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-white font-black uppercase text-sm tracking-widest">Acceso Denegado</h3>
-                      <p className="text-slate-400 text-xs font-medium leading-relaxed">
-                        Habilita los permisos de **cámara y micrófono** haciendo clic en el icono del candado en tu navegador.
-                      </p>
-                    </div>
-                    <Button onClick={startAdminCall} variant="outline" className="h-12 px-8 rounded-xl border-white/20 text-white font-black text-[10px] uppercase hover:bg-white/10">
-                      REINTENTAR ACCESO
-                    </Button>
+                  <div className="space-y-6 bg-black/80 backdrop-blur-md inset-0 absolute flex flex-col items-center justify-center p-10">
+                    <AlertCircle className="h-10 w-10 text-red-500" />
+                    <p className="text-white font-black uppercase text-sm">Acceso Denegado</p>
+                    <p className="text-slate-400 text-xs font-medium">Habilita cámara y micrófono en tu navegador.</p>
+                    <Button onClick={startAdminCall} variant="outline" className="text-white border-white/20">REINTENTAR</Button>
                   </div>
-                ) : isVideoOff ? (
-                  <div className="space-y-4">
-                    <div className="h-24 w-24 rounded-full bg-white/10 flex items-center justify-center mx-auto border border-white/20">
-                      <VideoOff className="h-10 w-10 text-white/40" />
-                    </div>
-                    <p className="text-white font-black uppercase text-[10px] tracking-widest">Cámara Desactivada</p>
-                  </div>
-                ) : hasCameraPermission === null ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronizando Hardware...</p>
-                  </div>
-                ) : (
-                  <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                      <span className="text-[9px] font-black text-white uppercase tracking-widest">Transmitiendo en Vivo</span>
-                    </div>
-                  </div>
+                ) : isVideoOff && (
+                  <VideoOff className="h-10 w-10 text-white/40" />
                 )}
               </div>
 
               <div className="absolute bottom-10 left-0 right-0 px-10 flex flex-col gap-4">
                 <div className="flex justify-center gap-4">
-                   <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    onClick={toggleMic}
-                    className={cn(
-                      "h-14 w-14 rounded-full backdrop-blur-xl border transition-all",
-                      isMicMuted ? "bg-red-500/20 border-red-500/50 text-red-500" : "bg-white/10 border-white/10 text-white hover:bg-white/20"
-                    )}
-                   >
+                   <Button size="icon" variant="ghost" onClick={toggleMic} className={cn("h-14 w-14 rounded-full backdrop-blur-xl border", isMicMuted ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white")}>
                      {isMicMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                    </Button>
-                   <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    onClick={toggleVideo}
-                    className={cn(
-                      "h-14 w-14 rounded-full backdrop-blur-xl border transition-all",
-                      isVideoOff ? "bg-red-500/20 border-red-500/50 text-red-500" : "bg-white/10 border-white/10 text-white hover:bg-white/20"
-                    )}
-                   >
+                   <Button size="icon" variant="ghost" onClick={toggleVideo} className={cn("h-14 w-14 rounded-full backdrop-blur-xl border", isVideoOff ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white")}>
                      {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Camera className="h-6 w-6" />}
                    </Button>
                 </div>
-                <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-2xl border-none transition-all hover:scale-[1.02]">
+                <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest">
                   FINALIZAR SESIÓN
                 </Button>
               </div>

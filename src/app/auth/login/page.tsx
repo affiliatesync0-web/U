@@ -38,6 +38,8 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
+  const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
+
   const handleLoginSuccess = async (userEmail: string, uid: string) => {
     sendEmail({
       to: 'affiliatesync0@gmail.com',
@@ -82,7 +84,7 @@ export default function LoginPage() {
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         msg = "Email o contraseña no coinciden con nuestros registros.";
       } else if (error.code === 'auth/too-many-requests') {
-        msg = "Demasiados intentos. Tu cuenta ha sido bloqueada temporalmente por seguridad.";
+        msg = "Demasiados intentos. Tu cuenta ha sido bloqueada temporalmente.";
       }
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
       setLoading(false)
@@ -97,12 +99,12 @@ export default function LoginPage() {
       </div>
 
       <div className="mb-8 text-center space-y-6">
-        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
+        <Link href={EXTERNAL_HOME} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span>Volver a Sync Academy</span>
         </Link>
 
-        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex flex-col items-center gap-4 group transition-all">
+        <Link href={EXTERNAL_HOME} className="flex flex-col items-center gap-4 group transition-all">
           <div className="relative h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
             {displayLogoUrl ? (
               <Image src={displayLogoUrl} alt="Sync Connect" width={80} height={80} className="object-contain p-3" unoptimized />

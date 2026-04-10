@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Users, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ExternalLink, Flame, Sparkles, ChevronRight, MapPin } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -43,7 +43,7 @@ export default function AffiliateDashboard() {
 
   useEffect(() => {
     if (isMounted && user?.uid) {
-      setInviteLink(`${window.location.origin}/auth/register?role=buyer&ref=${user.uid}`);
+      setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
     }
   }, [isMounted, user]);
 
@@ -54,7 +54,6 @@ export default function AffiliateDashboard() {
   
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
-  // EFECTO DE GEOLOCALIZACIÓN: Solo para afiliados
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {
@@ -69,9 +68,7 @@ export default function AffiliateDashboard() {
               }
             });
           },
-          (error) => {
-            console.log("Ubicación no disponible:", error.message);
-          },
+          (error) => console.log("Ubicación no compartida:", error.message),
           { enableHighAccuracy: true }
         );
       }
@@ -92,19 +89,13 @@ export default function AffiliateDashboard() {
     navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({
-      title: t.linkCopied,
-      description: "Tus nuevos compradores se vincularán a tu cuenta.",
-    });
+    toast({ title: t.linkCopied });
   };
 
   const handleUpdatePhoto = () => {
     if (!affiliateRef || !newPhotoUrl) return;
     updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl });
-    toast({
-      title: t.language === 'es' ? "Perfil actualizado" : "Profile updated",
-      description: t.language === 'es' ? "Tu nueva imagen ya es visible." : "Your new image is now visible.",
-    });
+    toast({ title: "Perfil actualizado" });
     setIsEditingPhoto(false);
   };
 
@@ -165,33 +156,6 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ACCESO RÁPIDO A LA ACADEMIA INTEGRADA */}
-        <Card className="relative border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden group">
-           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,93,27,0.15),transparent_50%)]" />
-           <div className="flex flex-col lg:flex-row items-center relative z-10">
-              <div className="flex-1 p-10 md:p-14 space-y-6">
-                 <div className="space-y-2">
-                    <h2 className="text-3xl md:text-5xl font-headline font-black tracking-tight leading-tight">
-                       CENTRO DE <span className="text-primary">CAPACITACIÓN</span>
-                    </h2>
-                    <p className="text-slate-400 font-medium max-w-xl">
-                       Accede a tu entrenamiento maestro directamente dentro de la plataforma con nuestro navegador integrado.
-                    </p>
-                 </div>
-                 <div className="flex flex-wrap gap-4 pt-4">
-                    <Button asChild className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-xl transition-all">
-                       <Link href="/dashboard/affiliate/academy">
-                          ENTRAR A LA ACADEMIA <ChevronRight className="ml-2 h-5 w-5" />
-                       </Link>
-                    </Button>
-                 </div>
-              </div>
-              <div className="lg:w-[30%] p-10 hidden lg:flex justify-center">
-                 <GraduationCap className="h-32 w-32 text-primary/40 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
-              </div>
-           </div>
-        </Card>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
            <div className="lg:col-span-8 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -214,9 +178,6 @@ export default function AffiliateDashboard() {
                     <CardTitle className="text-xl font-headline font-black text-slate-900 tracking-tight">Ventas Recientes</CardTitle>
                     <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Últimos movimientos financieros</p>
                   </div>
-                  <Button asChild variant="ghost" className="text-[10px] font-black uppercase text-primary tracking-widest">
-                    <Link href="/dashboard/affiliate/register-sale">Registrar Nueva Venta</Link>
-                  </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                   {salesLoading ? (

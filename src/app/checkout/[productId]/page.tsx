@@ -1,19 +1,19 @@
+
 "use client"
 
-import { useState, Suspense, useEffect } from 'react'
+import { useState, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { doc, collection, increment, getDoc } from 'firebase/firestore'
+import { doc, collection, increment } from 'firebase/firestore'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, Landmark, ShieldCheck, ShoppingBag, Sparkles, ChevronLeft, AlertCircle, Phone, MessageCircle, CreditCard, ArrowRight, AlertTriangle } from 'lucide-react'
+import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { sendEmail } from '@/lib/email'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
@@ -89,11 +89,10 @@ function CheckoutContent() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // Notificaciones y Emails
       await sendEmail({
         to: formData.email,
         subject: `Registro de Compra - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nSi pagaste mediante el link digital, tu acceso será validado en breve.\nSi prefieres transferencia manual, usa la referencia: ${formData.voucherRef || 'N/A'}`
+        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nSi pagaste mediante el link digital, tu acceso será validado en breve.`
       });
 
       if (affiliateId && affiliateId !== 'admin') {
@@ -104,13 +103,12 @@ function CheckoutContent() {
 
       toast({ title: "Registro Exitoso", description: "Redirigiendo a la pasarela de pago..." })
 
-      // REDIRECCIÓN PRIORITARIA AL LINK DE PAGO
       if (product?.paymentLink) {
         setTimeout(() => {
           window.location.href = product.paymentLink;
         }, 1500);
       } else {
-        router.push('/auth/login?role=buyer');
+        router.push('/auth/login');
       }
 
     } catch (error) {
@@ -134,7 +132,7 @@ function CheckoutContent() {
     <div className="min-h-screen bg-slate-50 py-12 px-4 relative">
       {affiliateWhatsApp && (
         <a 
-          href={`https://wa.me/${affiliateWhatsApp}?text=${encodeURIComponent(`Hola, estoy en el checkout del producto ${product.name} y tengo una duda...`)}`}
+          href={`https://wa.me/${affiliateWhatsApp}`}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-green-500 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-105 transition-transform"
@@ -150,7 +148,7 @@ function CheckoutContent() {
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
         
         <div className="lg:col-span-5 space-y-8">
-          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
+          <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
             <ChevronLeft className="h-4 w-4" /> Volver
           </Link>
           
@@ -159,7 +157,7 @@ function CheckoutContent() {
               Acceso <span className="text-primary">Instantáneo</span>
             </h1>
             <p className="text-slate-500 font-medium leading-relaxed">
-              Estás a un paso de obtener <span className="font-bold text-slate-900">{product.name}</span>. Completa tus datos para habilitar el pago digital.
+              Completa tus datos para habilitar el pago de <span className="font-bold text-slate-900">{product.name}</span>.
             </p>
           </div>
 
@@ -272,8 +270,7 @@ function CheckoutContent() {
                   ) : (
                     <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 text-center">
                       <AlertTriangle className="h-8 w-8 text-amber-600 mx-auto mb-3" />
-                      <p className="text-xs font-black text-amber-900 uppercase">Sin Link Digital</p>
-                      <p className="text-[10px] text-amber-700 font-bold mt-1">Este producto requiere pago manual. Usa la sección de abajo.</p>
+                      <p className="text-[10px] text-amber-700 font-bold mt-1">Este producto requiere pago manual.</p>
                     </div>
                   )}
 
@@ -301,11 +298,9 @@ function CheckoutContent() {
                               className="h-12 rounded-xl text-center font-bold"
                             />
                           </div>
-                          {!product.paymentLink && (
-                            <Button onClick={handlePurchase} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black text-xs">
-                              COMPLETAR CON VOUCHER
-                            </Button>
-                          )}
+                          <Button onClick={handlePurchase} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black text-xs">
+                            COMPLETAR CON VOUCHER
+                          </Button>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
