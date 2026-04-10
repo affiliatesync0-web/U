@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -25,6 +24,7 @@ import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin } from '@/lib/email'
 import { adminResetUserPassword } from '@/lib/auth-actions'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { cn } from '@/lib/utils'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
