@@ -1,13 +1,14 @@
+
 "use client"
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, Target, ArrowLeft, ShieldCheck, AlertCircle, FileCheck } from 'lucide-react'
+import { Loader2, Target, ArrowLeft, ShieldCheck, AlertCircle, FileCheck, Camera, CheckCircle2, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
@@ -17,9 +18,10 @@ import { doc, setDoc } from 'firebase/firestore'
 import { sendEmail } from '@/lib/email'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { cn } from '@/lib/utils'
 
-type Step = 'info' | 'kyc' | 'exam'
+type Step = 'info' | 'kyc' | 'selfie' | 'exam'
 
 function AffiliateRegisterContent() {
   const { toast } = useToast()
@@ -31,6 +33,11 @@ function AffiliateRegisterContent() {
   const [step, setStep] = useState<Step>('info')
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   
+  // Camera States
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -45,6 +52,57 @@ function AffiliateRegisterContent() {
   })
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: 'N/A' })
+
+  // Camera Functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setHasCameraPermission(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Acceso a Cámara Denegado',
+        description: 'Por favor, habilita los permisos de cámara en tu navegador para continuar con el KYC.',
+      });
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const dataUri = canvas.toDataURL('image/jpeg', 0.8);
+        setCapturedPhoto(dataUri);
+        stopCamera();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'selfie') {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [step]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +122,7 @@ function AffiliateRegisterContent() {
         lastName: formData.lastName.trim(),
         email: cleanEmail,
         whatsappNumber: formData.phone.replace(/\D/g, ''),
+        photoUrl: capturedPhoto, // La selfie capturada se convierte en la foto de perfil
         registeredAt: new Date().toISOString(),
         currentBalance: 0,
         status: 'Pending',
@@ -73,12 +132,12 @@ function AffiliateRegisterContent() {
 
       sendEmail({
         to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Nueva Solicitud: AFILIADO (KYC)`,
-        text: `Un nuevo prospecto de socio se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
+        subject: `🆕 Nueva Solicitud: AFILIADO (KYC Completo)`,
+        text: `Un nuevo prospecto de socio se ha registrado con verificación facial.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
       }).catch(() => {});
 
       await signOut(auth);
-      toast({ title: "Solicitud Enviada", description: "Tu perfil y KYC están en revisión. Inicia sesión para ver tu estado." });
+      toast({ title: "Solicitud Enviada", description: "Tu perfil, KYC y verificación facial están en revisión." });
       router.push('/auth/login');
 
     } catch (err: any) {
@@ -169,7 +228,7 @@ function AffiliateRegisterContent() {
                 </div>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); setStep('exam'); }} className="space-y-6">
+              <form onSubmit={(e) => { e.preventDefault(); setStep('selfie'); }} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Tipo de Documento</Label>
@@ -204,10 +263,74 @@ function AffiliateRegisterContent() {
                 </Alert>
 
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-blue-200">
-                  SIGUIENTE: EVALUACIÓN TÉCNICA
+                  SIGUIENTE: RECONOCIMIENTO FACIAL
                 </Button>
                 <Button variant="ghost" className="w-full text-[10px] font-black uppercase" onClick={() => setStep('info')}>Volver</Button>
               </form>
+            </div>
+          </Card>
+        )}
+
+        {step === 'selfie' && (
+          <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in slide-in-from-right-4">
+            <div className="space-y-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="h-16 w-16 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner">
+                  <Camera className="h-8 w-8" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-headline font-black uppercase italic">Verificación <span className="text-orange-600">Facial</span></h2>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Esta foto será tu perfil oficial</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="relative aspect-square max-w-[320px] mx-auto rounded-full overflow-hidden bg-slate-900 ring-8 ring-primary/5 shadow-2xl border-4 border-white">
+                  <video 
+                    ref={videoRef} 
+                    className={cn("w-full h-full object-cover", capturedPhoto ? "hidden" : "block")} 
+                    autoPlay 
+                    muted 
+                    playsInline
+                  />
+                  {capturedPhoto && (
+                    <img src={capturedPhoto} alt="Selfie capturada" className="w-full h-full object-cover animate-in fade-in" />
+                  )}
+                  
+                  {!(hasCameraPermission) && !capturedPhoto && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900/80">
+                      <AlertCircle className="h-10 w-10 text-orange-500 mb-4" />
+                      <p className="text-xs font-black uppercase tracking-widest">Cámara Requerida</p>
+                      <Button onClick={startCamera} size="sm" className="mt-4 bg-orange-600 font-black text-[10px]">REINTENTAR ACCESO</Button>
+                    </div>
+                  )}
+                </div>
+
+                {!capturedPhoto ? (
+                  <Button 
+                    onClick={capturePhoto} 
+                    disabled={!hasCameraPermission}
+                    className="w-full h-18 rounded-[1.5rem] bg-slate-900 text-white font-black text-lg shadow-xl"
+                  >
+                    TOMAR FOTO AHORA
+                  </Button>
+                ) : (
+                  <div className="space-y-4">
+                    <Alert className="bg-green-50 border-green-100 rounded-2xl">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <p className="text-[10px] font-black text-green-700 uppercase">¡Foto capturada con éxito!</p>
+                    </Alert>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" onClick={() => setCapturedPhoto(null)} className="h-14 rounded-2xl font-black text-[10px] uppercase gap-2">
+                        <RefreshCw className="h-4 w-4" /> REPETIR
+                      </Button>
+                      <Button onClick={() => setStep('exam')} className="h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase">
+                        CONTINUAR
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
         )}
@@ -217,7 +340,7 @@ function AffiliateRegisterContent() {
             <div className="space-y-8">
               <div className="flex items-center justify-between border-b pb-6">
                 <h2 className="text-2xl font-headline font-black uppercase italic text-primary">Perfil de <span className="text-foreground">Socio</span></h2>
-                <Button variant="ghost" size="sm" onClick={() => setStep('kyc')} className="text-[10px] font-black uppercase">Volver</Button>
+                <Button variant="ghost" size="sm" onClick={() => setStep('selfie')} className="text-[10px] font-black uppercase">Volver</Button>
               </div>
               <form onSubmit={handleRegister} className="space-y-8">
                 <div className="space-y-2">
@@ -228,7 +351,7 @@ function AffiliateRegisterContent() {
                   <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cuál es tu experiencia previa en ventas?</Label>
                   <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 border-none ring-1 ring-border p-5 text-sm font-medium" placeholder="Cuéntanos un poco sobre tus logros anteriores..." />
                 </div>
-                <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading}>
+                <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading || !capturedPhoto}>
                   {loading ? <Loader2 className="animate-spin" /> : "ENVIAR SOLICITUD DE AFILIADO"}
                 </Button>
               </form>
