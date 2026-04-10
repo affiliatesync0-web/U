@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, ArrowUpRight, Camera, GraduationCap, ChevronRight, MapPin, Bell, MessageCircle, Video } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -17,17 +17,19 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase'
 import { collection, query, where, doc, onSnapshot } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const router = useRouter();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const db = useFirestore();
 
@@ -36,6 +38,7 @@ export default function AffiliateDashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
+  const [incomingCall, setIncomingCall] = useState<boolean>(false);
 
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -45,7 +48,7 @@ export default function AffiliateDashboard() {
       
       // Escuchar notificaciones en tiempo real
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const notif = change.doc.data();
@@ -56,7 +59,22 @@ export default function AffiliateDashboard() {
           }
         });
       });
-      return () => unsubscribe();
+
+      // Escuchar estado de llamada dirigida a este usuario
+      const statusRef = doc(db, 'site_config', 'support_status');
+      const unsubscribeCall = onSnapshot(statusRef, (snap) => {
+        const data = snap.data();
+        if (data?.isLive && data?.targetUserId === user.uid) {
+          setIncomingCall(true);
+        } else {
+          setIncomingCall(false);
+        }
+      });
+
+      return () => {
+        unsubscribeNotifs();
+        unsubscribeCall();
+      };
     }
   }, [isMounted, user]);
 
@@ -91,6 +109,25 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-10">
+        
+        {incomingCall && (
+          <div className="bg-slate-900 border-2 border-primary/50 rounded-[3rem] p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 animate-in zoom-in-95 duration-500 shadow-2xl shadow-primary/20">
+            <div className="flex items-center gap-6">
+              <div className="h-20 w-20 bg-primary rounded-3xl flex items-center justify-center shadow-xl animate-pulse">
+                <Video className="h-10 w-10 text-white" />
+              </div>
+              <div className="text-center md:text-left">
+                <h2 className="text-2xl font-black uppercase tracking-tight italic">¡Llamada de <span className="text-primary">Admin</span>!</h2>
+                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Sesión de apoyo privada activa</p>
+              </div>
+            </div>
+            <div className="flex gap-4 w-full md:w-auto">
+              <Button onClick={() => router.push('/dashboard/affiliate/support')} className="flex-1 h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl">ACEPTAR LLAMADA</Button>
+              <Button variant="ghost" onClick={() => setIncomingCall(false)} className="h-16 px-8 rounded-2xl font-black text-slate-500 hover:text-white">IGNORAR</Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex items-center gap-6">
             <div className="relative">
@@ -107,7 +144,7 @@ export default function AffiliateDashboard() {
           </div>
           <div className="flex items-center gap-3">
              <div className="h-10 px-5 bg-white rounded-xl flex items-center gap-3 shadow-sm border border-slate-100"><Wallet className="h-4 w-4 text-primary" /><span className="text-xs font-black">${profile?.currentBalance?.toFixed(2)}</span></div>
-             <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl"><Smartphone className="h-4 w-4 text-primary" /><span className="text-[9px] font-black uppercase tracking-widest">+{profile?.whatsappNumber}</span></div>
+             <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl"><Smartphone className="h-4 w-4 text-primary" /><span className="text-[9px] font-black uppercase tracking-widest">ID: {profile?.id?.substring(0, 8)}</span></div>
           </div>
         </div>
 

@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle, Phone, Smartphone } from 'lucide-react'
+import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle, Phone, Smartphone, Video } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -15,14 +15,16 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from '@/components/ui/button'
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
-import { collection } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
+import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function AdminAffiliateContactsPage() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
@@ -50,6 +52,29 @@ export default function AdminAffiliateContactsPage() {
     });
   };
 
+  const handleInternalContact = (affId: string, type: 'message' | 'call') => {
+    addDocumentNonBlocking(collection(db, 'notifications'), {
+      userId: affId,
+      title: type === 'call' ? '🚀 Llamada Sync' : '💬 Mensaje Directo Admin',
+      message: type === 'call' ? 'Únete a la sesión de video iniciada por el administrador.' : 'Revisa el canal de soporte para un nuevo comunicado.',
+      type: 'system',
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      actionUrl: '/dashboard/affiliate/support'
+    });
+
+    if (type === 'call') {
+      setDocumentNonBlocking(doc(db, 'site_config', 'support_status'), {
+        isLive: true,
+        targetUserId: affId,
+        startedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    toast({ title: "Contacto Notificado" });
+    router.push('/dashboard/admin/support');
+  };
+
   return (
     <DashboardShell role="admin">
       <div className="space-y-10">
@@ -59,10 +84,10 @@ export default function AdminAffiliateContactsPage() {
               <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                 <Mail className="h-6 w-6" />
               </div>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Directorio de Comunicación</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Directorio Interno</span>
             </div>
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.affiliateContacts}</h1>
-            <p className="text-slate-500 font-medium">Lista simplificada para contactar rápidamente a tus afiliados por Gmail o WhatsApp.</p>
+            <p className="text-slate-500 font-medium">Comunícate con tus socios de forma 100% privada dentro de Sync Academy.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
@@ -82,8 +107,8 @@ export default function AdminAffiliateContactsPage() {
         ) : filteredAffiliates.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
             <Users className="h-20 w-20 text-slate-200 mb-8" />
-            <h3 className="text-2xl font-black text-slate-400 mb-2">Sin afiliados para mostrar</h3>
-            <p className="text-slate-400 max-w-sm font-bold text-sm leading-relaxed">Tu red de contactos se llenará a medida que nuevos socios se unan.</p>
+            <h3 className="text-2xl font-black text-slate-400 mb-2">Sin contactos</h3>
+            <p className="text-slate-400 max-w-sm font-bold text-sm leading-relaxed">Tu red interna aparecerá aquí automáticamente.</p>
           </Card>
         ) : (
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
@@ -93,8 +118,8 @@ export default function AdminAffiliateContactsPage() {
                   <TableHeader>
                     <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-100">
                       <TableHead className="px-10 h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.firstName} {t.lastName}</TableHead>
-                      <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Gmail / Contacto</TableHead>
-                      <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Comunicación Privada</TableHead>
+                      <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Cuenta de Usuario</TableHead>
+                      <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Acciones en Plataforma</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -102,52 +127,28 @@ export default function AdminAffiliateContactsPage() {
                       <TableRow key={aff.id} className="hover:bg-slate-50/30 transition-all h-24 border-b border-slate-50 last:border-0 group">
                         <TableCell className="px-10">
                           <div className="flex items-center gap-5">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm shadow-inner group-hover:rotate-3 transition-transform">
+                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm shadow-inner">
                               {aff.firstName?.charAt(0)}
                             </div>
                             <span className="font-black text-slate-800 text-lg tracking-tight uppercase">{aff.firstName} {aff.lastName}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-3 text-sm font-bold text-primary hover:underline cursor-pointer">
-                              <Mail className="h-4 w-4 opacity-40" /> 
-                              <a href={`mailto:${aff.email}`}>{aff.email}</a>
-                            </div>
-                            {aff.whatsappNumber && (
-                              <div className="flex items-center gap-3 text-xs font-bold text-slate-400">
-                                <Smartphone className="h-3.5 w-3.5 opacity-40" />
-                                <span>+{aff.whatsappNumber}</span>
-                              </div>
-                            )}
+                          <div className="flex items-center gap-3 text-sm font-bold text-slate-500">
+                            <Mail className="h-4 w-4 opacity-40" /> 
+                            {aff.email}
                           </div>
                         </TableCell>
                         <TableCell className="px-10 text-right">
                           <div className="flex justify-end gap-3">
-                            {aff.whatsappNumber && (
-                              <>
-                                <Button asChild variant="outline" className="h-12 px-5 rounded-2xl border-green-100 text-green-600 hover:bg-green-50 gap-2 font-black text-[10px] uppercase">
-                                  <a href={`https://wa.me/${aff.whatsappNumber.replace(/\D/g, '')}`} target="_blank">
-                                    <MessageCircle className="h-4 w-4" /> WhatsApp
-                                  </a>
-                                </Button>
-                                <Button asChild variant="outline" className="h-12 px-5 rounded-2xl border-blue-100 text-blue-600 hover:bg-blue-50 gap-2 font-black text-[10px] uppercase">
-                                  <a href={`tel:${aff.whatsappNumber.replace(/\D/g, '')}`}>
-                                    <Phone className="h-4 w-4" /> Llamar
-                                  </a>
-                                </Button>
-                              </>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              className="h-12 px-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all gap-2"
-                              onClick={() => handleCopyEmail(aff.email)}
-                            >
-                              {copiedEmail === aff.email ? (
-                                <><Check className="h-3 w-3" /> Copiado</>
-                              ) : (
-                                <><Copy className="h-3 w-3" /> Copiar Gmail</>
-                              )}
+                            <Button variant="outline" className="h-12 px-5 rounded-2xl border-primary/20 text-primary hover:bg-primary/5 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id, 'message')}>
+                              <MessageCircle className="h-4 w-4" /> Mensaje
+                            </Button>
+                            <Button variant="outline" className="h-12 px-5 rounded-2xl border-blue-200 text-blue-600 hover:bg-blue-50 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id, 'call')}>
+                              <Video className="h-4 w-4" /> Video Llamada
+                            </Button>
+                            <Button variant="ghost" className="h-12 px-5 rounded-2xl font-black text-[10px] uppercase tracking-widest" onClick={() => handleCopyEmail(aff.email)}>
+                              {copiedEmail === aff.email ? "Copiado" : "Copiar Email"}
                             </Button>
                           </div>
                         </TableCell>

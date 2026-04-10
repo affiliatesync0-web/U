@@ -1,10 +1,11 @@
+
 "use client"
 
 import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck, MessageCircle } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck, MessageCircle, Video } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -18,17 +19,19 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
-import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin } from '@/lib/email'
 import { adminResetUserPassword } from '@/lib/auth-actions'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,16 +48,37 @@ export default function AdminAffiliatesPage() {
     aff.email.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNotifyContact = (affId: string, type: 'whatsapp' | 'call') => {
-    // Enviar una notificación interna al afiliado para que vea un aviso en su panel
+  const handleInternalContact = (affId: string, type: 'message' | 'call') => {
+    // 1. Notificar al afiliado de forma interna
     addDocumentNonBlocking(collection(db, 'notifications'), {
       userId: affId,
-      title: '📞 Intento de Contacto Admin',
-      message: `El administrador está intentando contactarte por ${type === 'whatsapp' ? 'WhatsApp' : 'Llamada Directa'}. Por favor, mantente atento.`,
+      title: type === 'call' ? '🚀 Llamada Entrante: ADMIN' : '💬 Mensaje del Administrador',
+      message: type === 'call' 
+        ? 'El administrador ha iniciado una sesión contigo. Entra al Grupo de Apoyo ahora.' 
+        : 'Tienes un nuevo mensaje prioritario en el chat comunitario.',
       type: 'system',
       createdAt: new Date().toISOString(),
-      isRead: false
+      isRead: false,
+      actionUrl: '/dashboard/affiliate/support'
     });
+
+    // 2. Si es llamada, actualizar estado global de soporte para alertar al socio
+    if (type === 'call') {
+      const supportStatusRef = doc(db, 'site_config', 'support_status');
+      setDocumentNonBlocking(supportStatusRef, {
+        isLive: true,
+        targetUserId: affId,
+        startedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    toast({ 
+      title: type === 'call' ? "Llamada Iniciada" : "Mensaje Enviado", 
+      description: "El socio ha sido notificado dentro de su panel Sync." 
+    });
+
+    // 3. Redirigir al admin al hub de soporte para iniciar la interacción
+    router.push('/dashboard/admin/support');
   };
 
   const handleApprove = async (affId: string, affEmail: string, affName: string) => {
@@ -83,7 +107,7 @@ export default function AdminAffiliatesPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none italic">{t.affiliateDirectory}</h1>
-            <p className="text-slate-500 font-medium">Control total de la red de socios y verificación KYC.</p>
+            <p className="text-slate-500 font-medium">Control total de la red de socios y comunicación interna.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
@@ -106,7 +130,7 @@ export default function AdminAffiliatesPage() {
                   <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Afiliado</TableHead>
                   <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Estatus</TableHead>
                   <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Saldo</TableHead>
-                  <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
+                  <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones Internas</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>{filteredAffiliates.map((aff) => (
                   <TableRow key={aff.id} className="h-24 border-b last:border-0 group">
@@ -125,16 +149,12 @@ export default function AdminAffiliatesPage() {
                     <TableCell className="font-black text-lg text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                     <TableCell className="px-10 text-right">
                       <div className="flex justify-end items-center gap-2">
-                        {aff.whatsappNumber && (
-                          <>
-                            <Button asChild size="icon" variant="ghost" className="h-10 w-10 text-green-600 hover:bg-green-50" onClick={() => handleNotifyContact(aff.id, 'whatsapp')}>
-                              <a href={`https://wa.me/${aff.whatsappNumber.replace(/\D/g, '')}`} target="_blank"><MessageCircle className="h-5 w-5" /></a>
-                            </Button>
-                            <Button asChild size="icon" variant="ghost" className="h-10 w-10 text-blue-600 hover:bg-blue-50" onClick={() => handleNotifyContact(aff.id, 'call')}>
-                              <a href={`tel:${aff.whatsappNumber.replace(/\D/g, '')}`}><Phone className="h-5 w-5" /></a>
-                            </Button>
-                          </>
-                        )}
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-primary hover:bg-primary/5" title="Enviar Mensaje Interno" onClick={() => handleInternalContact(aff.id, 'message')}>
+                          <MessageCircle className="h-5 w-5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-blue-600 hover:bg-blue-50" title="Llamada de Video Interna" onClick={() => handleInternalContact(aff.id, 'call')}>
+                          <Video className="h-5 w-5" />
+                        </Button>
                         <AffiliateDetailsDialog affiliate={aff} t={t} onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} />
                         <AdminPasswordResetDialog user={aff} />
                         <Button size="icon" variant="ghost" className="h-10 w-10 text-amber-600" onClick={() => handleToggleBlock(aff.id, aff.status)}>
