@@ -23,7 +23,7 @@ import {
   Bell
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, getDocs } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
@@ -54,15 +54,11 @@ export default function AdminSupportPage() {
   [db])
   const { data: messages, isLoading } = useCollection<Message>(messagesQuery)
 
-  // 1. Permisos de Notificación y Hardware
   useEffect(() => {
     const requestInitialPermissions = async () => {
-      // Notificaciones
-      if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      if ("Notification" in window && Notification.permission !== "granted") {
         await Notification.requestPermission();
       }
-
-      // Cámara/Micro
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -70,28 +66,22 @@ export default function AdminSupportPage() {
           stream.getTracks().forEach(track => track.stop());
         }
       } catch (error) {
-        console.error('Error inicial de permisos:', error);
         setHasCameraPermission(false);
       }
     };
     requestInitialPermissions();
   }, []);
 
-  // 2. Notificar nuevos mensajes
   useEffect(() => {
     if (!messages || messages.length === 0) return;
-    
     const latestMsg = messages[messages.length - 1];
-    
     if (lastMessageId.current && lastMessageId.current !== latestMsg.id) {
       if (latestMsg.userId !== user?.uid && Notification.permission === "granted" && document.visibilityState === "hidden") {
         new Notification(`Sync Connect: ${latestMsg.userName}`, {
           body: latestMsg.content,
-          icon: '/favicon.ico'
         });
       }
     }
-    
     lastMessageId.current = latestMsg.id;
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, user]);
@@ -126,17 +116,18 @@ export default function AdminSupportPage() {
     setIsInCall(true)
     setHasCameraPermission(null)
     
-    if (Notification.permission === "granted") {
-      new Notification("🚀 Sesión en Vivo Iniciada", {
-        body: "El administrador ha iniciado una mentoría grupal. ¡Únete ahora!",
-      });
-    }
+    // Notificar a Firebase para que los afiliados vean el aviso
+    const supportStatusRef = doc(db, 'site_config', 'support_status');
+    setDocumentNonBlocking(supportStatusRef, {
+      isLive: true,
+      startedAt: new Date().toISOString(),
+      adminId: user?.uid
+    }, { merge: true });
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setHasCameraPermission(true);
       streamRef.current = stream;
-      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -144,6 +135,22 @@ export default function AdminSupportPage() {
       console.error('Error al iniciar llamada:', e);
       setHasCameraPermission(false);
     }
+  }
+
+  const endCall = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    // Finalizar estado live en Firebase
+    const supportStatusRef = doc(db, 'site_config', 'support_status');
+    updateDocumentNonBlocking(supportStatusRef, { isLive: false });
+
+    setIsInCall(false);
+    setHasCameraPermission(null);
+    setIsMicMuted(false);
+    setIsVideoOff(false);
   }
 
   const toggleMic = () => {
@@ -166,21 +173,9 @@ export default function AdminSupportPage() {
     }
   };
 
-  const endCall = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsInCall(false);
-    setHasCameraPermission(null);
-    setIsMicMuted(false);
-    setIsVideoOff(false);
-  }
-
   return (
     <DashboardShell role="admin">
       <div className="h-[calc(100vh-140px)] flex flex-col gap-6">
-        
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
           <div className="space-y-1">
             <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight">Centro de <span className="text-primary">Mando Grupal</span></h1>
@@ -270,20 +265,18 @@ export default function AdminSupportPage() {
                 muted 
                 playsInline 
               />
-              
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 {hasCameraPermission === false ? (
                   <div className="space-y-6 bg-black/80 backdrop-blur-md inset-0 absolute flex flex-col items-center justify-center p-10">
                     <AlertCircle className="h-10 w-10 text-red-500" />
                     <p className="text-white font-black uppercase text-sm">Acceso Denegado</p>
-                    <p className="text-slate-400 text-xs font-medium">Habilita cámara y micrófono en tu navegador.</p>
+                    <p className="text-slate-400 text-xs font-medium">Habilita cámara y micrófono.</p>
                     <Button onClick={startAdminCall} variant="outline" className="text-white border-white/20">REINTENTAR</Button>
                   </div>
                 ) : isVideoOff && (
                   <VideoOff className="h-10 w-10 text-white/40" />
                 )}
               </div>
-
               <div className="absolute bottom-10 left-0 right-0 px-10 flex flex-col gap-4">
                 <div className="flex justify-center gap-4">
                    <Button size="icon" variant="ghost" onClick={toggleMic} className={cn("h-14 w-14 rounded-full backdrop-blur-xl border", isMicMuted ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white")}>

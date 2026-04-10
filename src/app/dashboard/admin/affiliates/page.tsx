@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
-import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin } from '@/lib/email'
@@ -45,75 +45,50 @@ export default function AdminAffiliatesPage() {
     aff.email.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const getStatusLabel = (status: string) => {
-    switch(status) {
-      case 'Active': return t.active;
-      case 'Pending': return t.pending;
-      case 'Blocked': return t.blockedStatus;
-      default: return status || 'Inactivo';
-    }
-  }
+  const handleNotifyContact = (affId: string, type: 'whatsapp' | 'call') => {
+    // Enviar una notificación interna al afiliado para que vea un aviso en su panel
+    addDocumentNonBlocking(collection(db, 'notifications'), {
+      userId: affId,
+      title: '📞 Intento de Contacto Admin',
+      message: `El administrador está intentando contactarte por ${type === 'whatsapp' ? 'WhatsApp' : 'Llamada Directa'}. Por favor, mantente atento.`,
+      type: 'system',
+      createdAt: new Date().toISOString(),
+      isRead: false
+    });
+  };
 
   const handleApprove = async (affId: string, affEmail: string, affName: string) => {
     const affRef = doc(db, 'affiliates', affId);
     updateDocumentNonBlocking(affRef, { status: 'Active' });
-    
     try {
       await sendEmail({
         to: affEmail,
         subject: `✅ ¡Cuenta Activada! - Sync Connect`,
-        text: `¡Felicidades ${affName}! Tu solicitud de afiliado ha sido revisada y aprobada por nuestro equipo.\n\nYa puedes acceder a tu panel administrativo para obtener tus links de divulgación y empezar a generar comisiones reales.\n\nInicia sesión aquí: ${window.location.origin}/auth/login\n\n¡Bienvenido a la red de marketing más potente de Nicaragua!`
+        text: `¡Felicidades ${affName}! Tu solicitud ha sido aprobada. Inicia sesión en: ${window.location.origin}/auth/login`
       });
-      toast({ title: "Afiliado Aprobado", description: `Se ha enviado el correo de activación a ${affEmail}.` });
+      toast({ title: "Afiliado Aprobado" });
     } catch (error) {
-      toast({ title: "Afiliado Aprobado", description: "La cuenta está activa, pero hubo un error enviando el email de aviso." });
+      toast({ title: "Afiliado Activo" });
     }
-  };
-
-  const handleReject = (affId: string) => {
-    const affRef = doc(db, 'affiliates', affId);
-    updateDocumentNonBlocking(affRef, { status: 'Blocked' });
-    toast({ variant: "destructive", title: "Solicitud Rechazada", description: "Se ha denegado el acceso al postulante." });
   };
 
   const handleToggleBlock = (affId: string, currentStatus: string) => {
     const affRef = doc(db, 'affiliates', affId);
-    const newStatus = currentStatus === 'Blocked' ? 'Active' : 'Blocked';
-    updateDocumentNonBlocking(affRef, { status: newStatus });
-    toast({
-      title: newStatus === 'Blocked' ? "Afiliado bloqueado" : "Afiliado desbloqueado",
-      description: `La cuenta ha sido ${newStatus === 'Blocked' ? 'suspensa' : 'activada'} correctamente.`,
-    });
-  };
-
-  const handleMarkAsPaid = (affId: string) => {
-    const affRef = doc(db, 'affiliates', affId);
-    updateDocumentNonBlocking(affRef, { currentBalance: 0 });
-    toast({ title: t.paymentSuccess, description: t.paymentSuccessDesc });
-  };
-
-  const handleDeleteAffiliate = (affId: string) => {
-    if (!db) return;
-    const affRef = doc(db, 'affiliates', affId);
-    deleteDocumentNonBlocking(affRef);
-    toast({ 
-      title: "Solicitud de borrado", 
-      description: "Se ha procesado la eliminación del afiliado.",
-    });
+    updateDocumentNonBlocking(affRef, { status: currentStatus === 'Blocked' ? 'Active' : 'Blocked' });
   };
 
   return (
     <DashboardShell role="admin">
-      <div className="space-y-6 md:space-y-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-headline font-bold text-primary mb-2">{t.affiliateDirectory}</h1>
-            <p className="text-sm md:text-base text-muted-foreground">{t.manageNetwork}</p>
+      <div className="space-y-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none italic">{t.affiliateDirectory}</h1>
+            <p className="text-slate-500 font-medium">Control total de la red de socios y verificación KYC.</p>
           </div>
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
             <Input 
-              className="pl-10 h-10" 
+              className="pl-14 h-16 rounded-[1.5rem] border-none bg-white shadow-xl text-sm font-bold" 
               placeholder={t.search} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -121,141 +96,55 @@ export default function AdminAffiliatesPage() {
           </div>
         </div>
 
-        {isLoading || isUserLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : filteredAffiliates.length === 0 ? (
-          <Card className="border-dashed border-2 flex flex-col items-center justify-center p-12 text-center">
-            <p className="text-muted-foreground mb-4">No se encontraron afiliados.</p>
-          </Card>
+        {isLoading ? (
+          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
         ) : (
-          <Card className="border-none shadow-sm overflow-hidden">
+          <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead>Afiliado</TableHead>
-                      <TableHead>Estatus</TableHead>
-                      <TableHead>Saldo</TableHead>
-                      <TableHead className="text-right">Contacto / Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAffiliates.map((aff) => (
-                      <TableRow key={aff.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-semibold">{aff.firstName} {aff.lastName}</span>
-                            <span className="text-xs text-muted-foreground">{aff.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={aff.status === 'Active' ? 'default' : (aff.status === 'Blocked' ? 'destructive' : 'secondary')} 
-                            className={aff.status === 'Active' ? 'bg-green-500' : (aff.status === 'Pending' ? 'bg-amber-500 text-white' : '')}
-                          >
-                            {getStatusLabel(aff.status || 'Pending')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-bold text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                           <div className="flex justify-end items-center gap-2">
-                             {/* Acciones de contacto rápido */}
-                             {aff.whatsappNumber && (
-                               <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:bg-green-50">
-                                 <a href={`https://wa.me/${aff.whatsappNumber.replace(/\D/g, '')}`} target="_blank" title="WhatsApp Privado">
-                                   <MessageCircle className="h-4 w-4" />
-                                 </a>
-                               </Button>
-                             )}
-                             {aff.whatsappNumber && (
-                               <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
-                                 <a href={`tel:${aff.whatsappNumber.replace(/\D/g, '')}`} title="Llamada Directa">
-                                   <Phone className="h-4 w-4" />
-                                 </a>
-                               </Button>
-                             )}
-
-                             <div className="w-px h-4 bg-slate-200 mx-1" />
-
-                             <AdminPasswordResetDialog user={aff} />
-                             
-                             <AffiliateDetailsDialog 
-                                affiliate={aff} 
-                                t={t} 
-                                onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} 
-                                onReject={() => handleReject(aff.id)} 
-                             />
-                             
-                             {aff.status === 'Pending' ? (
-                               <>
-                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => handleApprove(aff.id, aff.email, aff.firstName)} title="Aprobar">
-                                   <CheckCircle2 className="h-4 w-4" />
-                                 </Button>
-                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600" onClick={() => handleReject(aff.id)} title="Rechazar">
-                                   <XCircle className="h-4 w-4" />
-                                 </Button>
-                               </>
-                             ) : (
-                               <>
-                                 <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" disabled={aff.currentBalance === 0} title="Marcar como Pagado">
-                                        <Banknote className="h-4 w-4" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Confirmar Pago a {aff.firstName}?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Esto reseteará el saldo acumulado de <strong>${aff.currentBalance?.toFixed(2)}</strong> a cero. Realiza esta acción solo después de haber transferido el dinero a su cuenta bancaria.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <div className="bg-slate-50 p-4 rounded-xl space-y-2 border">
-                                         <p className="text-[10px] font-black uppercase text-slate-400">Datos del Afiliado:</p>
-                                         <p className="text-xs font-bold">Banco: {aff.bankId || 'No definido'}</p>
-                                         <p className="text-xs font-bold">Cuenta: {aff.bankAccountNumber || 'No definida'}</p>
-                                         <p className="text-xs font-bold">Titular: {aff.bankAccountHolderName || 'No definido'}</p>
-                                      </div>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleMarkAsPaid(aff.id)} className="bg-green-600">CONFIRMAR PAGO</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                 </AlertDialog>
-                                 <Button size="icon" variant="ghost" className={`h-8 w-8 ${aff.status === 'Blocked' ? 'text-green-600' : 'text-amber-600'}`} onClick={() => handleToggleBlock(aff.id, aff.status)} title={aff.status === 'Blocked' ? 'Desbloquear' : 'Bloquear'}>
-                                   {aff.status === 'Blocked' ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                                 </Button>
-                               </>
-                             )}
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Eliminar">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>{t.confirmDeleteTitle}</AlertDialogTitle>
-                                    <AlertDialogDescription>{t.confirmDeleteDesc}</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteAffiliate(aff.id)} className="bg-destructive text-white hover:bg-destructive/90">ELIMINAR DEFINITIVAMENTE</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                             </AlertDialog>
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <Table>
+                <TableHeader><TableRow className="bg-slate-50/50 h-20">
+                  <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Afiliado</TableHead>
+                  <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Estatus</TableHead>
+                  <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Saldo</TableHead>
+                  <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>{filteredAffiliates.map((aff) => (
+                  <TableRow key={aff.id} className="h-24 border-b last:border-0 group">
+                    <TableCell className="px-10">
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-800 uppercase tracking-tight">{aff.firstName} {aff.lastName}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{aff.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn("rounded-full font-black text-[9px] px-3 py-1 uppercase tracking-widest", 
+                        aff.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600')}>
+                        {aff.status || 'Pending'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-black text-lg text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
+                    <TableCell className="px-10 text-right">
+                      <div className="flex justify-end items-center gap-2">
+                        {aff.whatsappNumber && (
+                          <>
+                            <Button asChild size="icon" variant="ghost" className="h-10 w-10 text-green-600 hover:bg-green-50" onClick={() => handleNotifyContact(aff.id, 'whatsapp')}>
+                              <a href={`https://wa.me/${aff.whatsappNumber.replace(/\D/g, '')}`} target="_blank"><MessageCircle className="h-5 w-5" /></a>
+                            </Button>
+                            <Button asChild size="icon" variant="ghost" className="h-10 w-10 text-blue-600 hover:bg-blue-50" onClick={() => handleNotifyContact(aff.id, 'call')}>
+                              <a href={`tel:${aff.whatsappNumber.replace(/\D/g, '')}`}><Phone className="h-5 w-5" /></a>
+                            </Button>
+                          </>
+                        )}
+                        <AffiliateDetailsDialog affiliate={aff} t={t} onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} />
+                        <AdminPasswordResetDialog user={aff} />
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-amber-600" onClick={() => handleToggleBlock(aff.id, aff.status)}>
+                          {aff.status === 'Blocked' ? <Unlock className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
@@ -264,214 +153,51 @@ export default function AdminAffiliatesPage() {
   )
 }
 
-function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
-  const answers = affiliate.examAnswers;
+function AffiliateDetailsDialog({ affiliate, t, onApprove }: any) {
   const kyc = affiliate.kyc;
-  
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 px-2 text-primary border-primary/20">
-          <Info className="mr-2 h-4 w-4" /> Ver Detalles
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-0 border-none shadow-2xl">
-        <div className="bg-slate-900 p-8 text-white">
-           <DialogHeader>
-             <DialogTitle className="text-2xl font-headline font-black text-primary">Perfil del Afiliado</DialogTitle>
-             <p className="text-slate-400 font-bold">{affiliate.firstName} {affiliate.lastName}</p>
-           </DialogHeader>
-        </div>
-        
-        <div className="p-8 space-y-8 bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Contacto Directo</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-600"><Mail className="h-4 w-4 opacity-40" /> {affiliate.email}</div>
-                <div className="flex gap-2">
-                  <Button asChild size="sm" className="bg-green-600 hover:bg-green-700 flex-1">
-                    <a href={`https://wa.me/${affiliate.whatsappNumber?.replace(/\D/g, '')}`} target="_blank">
-                      <MessageCircle className="h-4 w-4 mr-2" /> WHATSAPP
-                    </a>
-                  </Button>
-                  <Button asChild size="sm" variant="outline" className="flex-1 border-blue-200 text-blue-600">
-                    <a href={`tel:${affiliate.whatsappNumber?.replace(/\D/g, '')}`}>
-                      <Phone className="h-4 w-4 mr-2" /> LLAMAR
-                    </a>
-                  </Button>
-                </div>
-              </div>
+      <DialogTrigger asChild><Button variant="outline" size="sm" className="h-10 rounded-xl font-black text-[10px] uppercase">Detalles</Button></DialogTrigger>
+      <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
+        <div className="bg-slate-900 p-10 text-white"><h2 className="text-2xl font-black text-primary uppercase">Perfil de Verificación</h2></div>
+        <div className="p-10 space-y-8 bg-white">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 bg-slate-50 rounded-2xl border">
+              <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Identidad (KYC)</p>
+              <p className="text-xs font-black">{kyc?.idType || 'N/A'}</p>
+              <p className="text-lg font-black text-primary font-mono">{kyc?.idNumber || 'N/A'}</p>
             </div>
-
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2 flex items-center gap-2">
-                <FileCheck className="h-3 w-3" /> Verificación KYC
-              </h4>
-              <div className="bg-blue-50/50 p-4 rounded-xl space-y-2">
-                <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Tipo:</span> {kyc?.idType || 'N/A'}</p>
-                <p className="text-xs font-black text-blue-700"><span className="text-slate-400 uppercase text-[9px]">Número:</span> {kyc?.idNumber || 'N/A'}</p>
-              </div>
+            <div className="p-6 bg-slate-50 rounded-2xl border">
+              <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Cuenta Bancaria</p>
+              <p className="text-xs font-black">{affiliate.bankId || 'Sin definir'}</p>
+              <p className="text-sm font-black text-slate-800">{affiliate.bankAccountNumber || 'N/A'}</p>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-2">Datos Bancarios para Pago</h4>
-            <div className="bg-primary/5 p-4 rounded-xl space-y-2">
-              <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Banco:</span> {affiliate.bankId || 'N/A'}</p>
-              <p className="text-xs font-black text-primary"><span className="text-slate-400 uppercase text-[9px]">Cuenta:</span> {affiliate.bankAccountNumber || 'N/A'}</p>
-              <p className="text-xs font-black text-slate-700"><span className="text-slate-400 uppercase text-[9px]">Titular:</span> {affiliate.bankAccountHolderName || 'N/A'}</p>
-            </div>
-          </div>
-
-          {affiliate.lastLocation && (
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
-                <MapPin className="h-3 w-3 text-primary" /> Geolocalización (Última Conocida)
-              </h4>
-              <div className="bg-slate-50 p-5 rounded-2xl border flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-700">Coordenadas: {affiliate.lastLocation.lat.toFixed(6)}, {affiliate.lastLocation.lng.toFixed(6)}</p>
-                  <p className="text-[9px] text-slate-400 font-black uppercase mt-1">Registrado el: {new Date(affiliate.lastLocation.updatedAt).toLocaleString()}</p>
-                </div>
-                <Button asChild variant="outline" className="h-10 px-4 rounded-xl border-primary/20 text-primary font-black text-[10px] uppercase gap-2 hover:bg-primary hover:text-white transition-all">
-                  <a href={`https://www.google.com/maps?q=${affiliate.lastLocation.lat},${affiliate.lastLocation.lng}`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3.5 w-3.5" /> VER EN MAPA
-                  </a>
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Respuestas de Evaluación</h4>
-            {!answers ? (
-              <p className="text-xs text-muted-foreground italic">No completó el examen técnico.</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-slate-50 border">
-                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Estrategia:</p>
-                  <p className="text-xs font-medium text-slate-700 italic">"{answers.q1}"</p>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-50 border">
-                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Experiencia:</p>
-                  <p className="text-xs font-medium text-slate-700 italic">"{answers.q2}"</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {affiliate.status === 'Pending' && (
-            <div className="flex gap-4 border-t pt-6">
-              <Button className="flex-1 bg-green-600 hover:bg-green-700 font-bold" onClick={onApprove}>APROBAR AHORA</Button>
-              <Button variant="destructive" className="flex-1 font-bold" onClick={onReject}>RECHAZAR</Button>
-            </div>
-          )}
+          {affiliate.status === 'Pending' && <Button className="w-full h-16 bg-green-600 text-white font-black rounded-2xl shadow-xl" onClick={onApprove}>APROBAR SOCIO</Button>}
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-function AdminPasswordResetDialog({ user }: { user: any }) {
+function AdminPasswordResetDialog({ user }: any) {
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [generatedPass, setGeneratedPass] = useState<string | null>(null);
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const { toast } = useToast();
-
   const handleAutoReset = async () => {
     setLoading(true);
-    setErrorDetail(null);
-    
     const newPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
-    
     try {
       const res = await adminResetUserPassword(user.email, newPass);
-      
-      if (!res.success) {
-        throw new Error(res.error);
+      if (res.success) {
+        await sendNewPasswordAdmin({ to: user.email, name: user.firstName, newPassword: newPass });
+        toast({ title: "Clave Actualizada y Enviada" });
       }
-
-      const emailRes = await sendNewPasswordAdmin({
-        to: user.email,
-        name: user.firstName,
-        newPassword: newPass
-      });
-
-      if (emailRes.success) {
-        setGeneratedPass(newPass);
-        toast({ title: "Contraseña Sincronizada", description: "Se ha cambiado en el sistema y enviado por correo automáticamente." });
-      } else {
-        toast({ variant: "destructive", title: "Error Email", description: "Se cambió la clave pero falló el envío del correo." });
-      }
-    } catch (e: any) {
-      console.error(e);
-      const msg = e.message || "No se pudo actualizar la clave en el servidor.";
-      setErrorDetail(msg);
-      toast({ variant: "destructive", title: "Fallo Automático", description: msg });
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { toast({ variant: "destructive", title: "Error al resetear" }); }
+    finally { setLoading(false); }
   };
-
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) { setGeneratedPass(null); setErrorDetail(null); } }}>
-      <DialogTrigger asChild>
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary">
-          <KeyRound className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-        <div className="bg-slate-900 p-8 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-headline font-black text-primary uppercase">Reseteo Automático</DialogTitle>
-            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase">Control Maestro para {user.firstName}</DialogDescription>
-          </DialogHeader>
-        </div>
-        
-        <div className="p-8 space-y-6">
-          {errorDetail && (
-            <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle className="text-[10px] font-black uppercase">Detalle del Error</AlertTitle>
-              <AlertDescription className="text-[11px] font-medium leading-relaxed">
-                {errorDetail}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {!generatedPass ? (
-            <div className="space-y-4 text-center">
-              <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-inner">
-                <Zap className="h-8 w-8 fill-primary" />
-              </div>
-              <p className="text-sm font-medium text-slate-500 leading-relaxed px-4">
-                Al confirmar, el sistema cambiará la contraseña en los servidores de Firebase y enviará las nuevas credenciales al Gmail del afiliado.
-              </p>
-              <Button onClick={handleAutoReset} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase text-xs shadow-xl shadow-slate-200" disabled={loading}>
-                {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : "GENERAR Y APLICAR CAMBIO"}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-6 animate-in zoom-in-95 duration-300">
-              <div className="p-6 bg-green-50 border border-green-200 rounded-2xl space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <p className="text-xs font-black text-green-900 uppercase">¡Cambio Exitoso!</p>
-                </div>
-                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-dashed border-green-300 gap-2">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Nueva clave aplicada:</span>
-                  <code className="text-2xl font-black text-slate-900 tracking-widest">{generatedPass}</code>
-                </div>
-              </div>
-              <Button onClick={() => setOpen(false)} className="w-full h-14 rounded-xl bg-green-600 text-white font-black uppercase text-xs shadow-xl">
-                LISTO, CERRAR VENTANA
-              </Button>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Button size="icon" variant="ghost" className="h-10 w-10 text-slate-400" onClick={handleAutoReset} disabled={loading}>
+      {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <KeyRound className="h-5 w-5" />}
+    </Button>
   );
 }
