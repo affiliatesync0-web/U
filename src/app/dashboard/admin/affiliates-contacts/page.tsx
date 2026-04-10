@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, Loader2, User, Copy, Check, Users } from 'lucide-react'
+import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle, Phone, Smartphone } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -26,6 +26,7 @@ export default function AdminAffiliateContactsPage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const affiliatesQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -33,6 +34,11 @@ export default function AdminAffiliateContactsPage() {
   }, [db, user, isUserLoading]);
 
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
+
+  const filteredAffiliates = affiliates?.filter(aff => 
+    aff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${aff.firstName} ${aff.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const handleCopyEmail = (email: string) => {
     navigator.clipboard.writeText(email);
@@ -56,11 +62,16 @@ export default function AdminAffiliateContactsPage() {
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Directorio de Comunicación</span>
             </div>
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.affiliateContacts}</h1>
-            <p className="text-slate-500 font-medium">Lista simplificada para contactar rápidamente a tus afiliados por Gmail.</p>
+            <p className="text-slate-500 font-medium">Lista simplificada para contactar rápidamente a tus afiliados por Gmail o WhatsApp.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
-            <Input className="pl-14 h-16 rounded-[1.5rem] border-none bg-white shadow-xl text-sm font-bold" placeholder="Buscar por Gmail..." />
+            <Input 
+              className="pl-14 h-16 rounded-[1.5rem] border-none bg-white shadow-xl text-sm font-bold" 
+              placeholder="Buscar por nombre o gmail..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -68,7 +79,7 @@ export default function AdminAffiliateContactsPage() {
           <div className="flex justify-center py-32">
             <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
           </div>
-        ) : !affiliates || affiliates.length === 0 ? (
+        ) : filteredAffiliates.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
             <Users className="h-20 w-20 text-slate-200 mb-8" />
             <h3 className="text-2xl font-black text-slate-400 mb-2">Sin afiliados para mostrar</h3>
@@ -83,11 +94,11 @@ export default function AdminAffiliateContactsPage() {
                     <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-100">
                       <TableHead className="px-10 h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.firstName} {t.lastName}</TableHead>
                       <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Gmail / Contacto</TableHead>
-                      <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Acción Rápida</TableHead>
+                      <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Comunicación Privada</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {affiliates.map((aff) => (
+                    {filteredAffiliates.map((aff) => (
                       <TableRow key={aff.id} className="hover:bg-slate-50/30 transition-all h-24 border-b border-slate-50 last:border-0 group">
                         <TableCell className="px-10">
                           <div className="flex items-center gap-5">
@@ -98,23 +109,47 @@ export default function AdminAffiliateContactsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-3 text-base font-bold text-primary hover:underline cursor-pointer">
-                            <Mail className="h-4 w-4 opacity-40" /> 
-                            <a href={`mailto:${aff.email}`}>{aff.email}</a>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3 text-sm font-bold text-primary hover:underline cursor-pointer">
+                              <Mail className="h-4 w-4 opacity-40" /> 
+                              <a href={`mailto:${aff.email}`}>{aff.email}</a>
+                            </div>
+                            {aff.whatsappNumber && (
+                              <div className="flex items-center gap-3 text-xs font-bold text-slate-400">
+                                <Smartphone className="h-3.5 w-3.5 opacity-40" />
+                                <span>+{aff.whatsappNumber}</span>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="px-10 text-right">
-                          <Button 
-                            variant="outline" 
-                            className="h-12 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-100 hover:bg-primary hover:text-white transition-all gap-2"
-                            onClick={() => handleCopyEmail(aff.email)}
-                          >
-                            {copiedEmail === aff.email ? (
-                              <><Check className="h-3 w-3" /> Copiado</>
-                            ) : (
-                              <><Copy className="h-3 w-3" /> Copiar Gmail</>
+                          <div className="flex justify-end gap-3">
+                            {aff.whatsappNumber && (
+                              <>
+                                <Button asChild variant="outline" className="h-12 px-5 rounded-2xl border-green-100 text-green-600 hover:bg-green-50 gap-2 font-black text-[10px] uppercase">
+                                  <a href={`https://wa.me/${aff.whatsappNumber.replace(/\D/g, '')}`} target="_blank">
+                                    <MessageCircle className="h-4 w-4" /> WhatsApp
+                                  </a>
+                                </Button>
+                                <Button asChild variant="outline" className="h-12 px-5 rounded-2xl border-blue-100 text-blue-600 hover:bg-blue-50 gap-2 font-black text-[10px] uppercase">
+                                  <a href={`tel:${aff.whatsappNumber.replace(/\D/g, '')}`}>
+                                    <Phone className="h-4 w-4" /> Llamar
+                                  </a>
+                                </Button>
+                              </>
                             )}
-                          </Button>
+                            <Button 
+                              variant="ghost" 
+                              className="h-12 px-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all gap-2"
+                              onClick={() => handleCopyEmail(aff.email)}
+                            >
+                              {copiedEmail === aff.email ? (
+                                <><Check className="h-3 w-3" /> Copiado</>
+                              ) : (
+                                <><Copy className="h-3 w-3" /> Copiar Gmail</>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

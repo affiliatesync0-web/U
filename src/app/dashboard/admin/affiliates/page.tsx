@@ -1,10 +1,11 @@
+
 "use client"
 
 import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck } from 'lucide-react'
+import { Search, Mail, ShieldCheck, Loader2, User, Landmark, Calendar, DollarSign, Lock, Unlock, Trash2, Banknote, ClipboardCheck, CheckCircle2, XCircle, Phone, Smartphone, Info, KeyRound, Copy, ExternalLink, AlertTriangle, Zap, MapPin, FileCheck, MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -30,6 +31,7 @@ export default function AdminAffiliatesPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const affiliatesQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -37,6 +39,11 @@ export default function AdminAffiliatesPage() {
   }, [db, user, isUserLoading]);
 
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
+
+  const filteredAffiliates = affiliates?.filter(aff => 
+    `${aff.firstName} ${aff.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    aff.email.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const getStatusLabel = (status: string) => {
     switch(status) {
@@ -105,7 +112,12 @@ export default function AdminAffiliatesPage() {
           </div>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-10 h-10" placeholder={t.search} />
+            <Input 
+              className="pl-10 h-10" 
+              placeholder={t.search} 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -113,9 +125,9 @@ export default function AdminAffiliatesPage() {
           <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : !affiliates || affiliates.length === 0 ? (
+        ) : filteredAffiliates.length === 0 ? (
           <Card className="border-dashed border-2 flex flex-col items-center justify-center p-12 text-center">
-            <p className="text-muted-foreground mb-4">No hay afiliados registrados todavía.</p>
+            <p className="text-muted-foreground mb-4">No se encontraron afiliados.</p>
           </Card>
         ) : (
           <Card className="border-none shadow-sm overflow-hidden">
@@ -127,11 +139,11 @@ export default function AdminAffiliatesPage() {
                       <TableHead>Afiliado</TableHead>
                       <TableHead>Estatus</TableHead>
                       <TableHead>Saldo</TableHead>
-                      <TableHead className="text-right">{t.actions}</TableHead>
+                      <TableHead className="text-right">Contacto / Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {affiliates.map((aff) => (
+                    {filteredAffiliates.map((aff) => (
                       <TableRow key={aff.id}>
                         <TableCell>
                           <div className="flex flex-col">
@@ -151,7 +163,25 @@ export default function AdminAffiliatesPage() {
                           <div className="font-bold text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</div>
                         </TableCell>
                         <TableCell className="text-right">
-                           <div className="flex justify-end gap-2">
+                           <div className="flex justify-end items-center gap-2">
+                             {/* Acciones de contacto rápido */}
+                             {aff.whatsappNumber && (
+                               <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:bg-green-50">
+                                 <a href={`https://wa.me/${aff.whatsappNumber.replace(/\D/g, '')}`} target="_blank" title="WhatsApp Privado">
+                                   <MessageCircle className="h-4 w-4" />
+                                 </a>
+                               </Button>
+                             )}
+                             {aff.whatsappNumber && (
+                               <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
+                                 <a href={`tel:${aff.whatsappNumber.replace(/\D/g, '')}`} title="Llamada Directa">
+                                   <Phone className="h-4 w-4" />
+                                 </a>
+                               </Button>
+                             )}
+
+                             <div className="w-px h-4 bg-slate-200 mx-1" />
+
                              <AdminPasswordResetDialog user={aff} />
                              
                              <AffiliateDetailsDialog 
@@ -197,14 +227,14 @@ export default function AdminAffiliatesPage() {
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                  </AlertDialog>
-                                 <Button size="icon" variant="ghost" className={`h-8 w-8 ${aff.status === 'Blocked' ? 'text-green-600' : 'text-amber-600'}`} onClick={() => handleToggleBlock(aff.id, aff.status)}>
+                                 <Button size="icon" variant="ghost" className={`h-8 w-8 ${aff.status === 'Blocked' ? 'text-green-600' : 'text-amber-600'}`} onClick={() => handleToggleBlock(aff.id, aff.status)} title={aff.status === 'Blocked' ? 'Desbloquear' : 'Bloquear'}>
                                    {aff.status === 'Blocked' ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                                  </Button>
                                </>
                              )}
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Eliminar">
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </AlertDialogTrigger>
@@ -256,14 +286,20 @@ function AffiliateDetailsDialog({ affiliate, t, onApprove, onReject }: any) {
         <div className="p-8 space-y-8 bg-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Contacto</h4>
-              <div className="space-y-2">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Contacto Directo</h4>
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-bold text-slate-600"><Mail className="h-4 w-4 opacity-40" /> {affiliate.email}</div>
-                <div className="flex items-center gap-2 text-sm font-bold text-green-600">
-                  <Smartphone className="h-4 w-4" /> 
-                  <a href={`https://wa.me/${affiliate.whatsappNumber?.replace(/\D/g, '')}`} target="_blank" className="hover:underline">
-                    +{affiliate.whatsappNumber || 'Sin número'}
-                  </a>
+                <div className="flex gap-2">
+                  <Button asChild size="sm" className="bg-green-600 hover:bg-green-700 flex-1">
+                    <a href={`https://wa.me/${affiliate.whatsappNumber?.replace(/\D/g, '')}`} target="_blank">
+                      <MessageCircle className="h-4 w-4 mr-2" /> WHATSAPP
+                    </a>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="flex-1 border-blue-200 text-blue-600">
+                    <a href={`tel:${affiliate.whatsappNumber?.replace(/\D/g, '')}`}>
+                      <Phone className="h-4 w-4 mr-2" /> LLAMAR
+                    </a>
+                  </Button>
                 </div>
               </div>
             </div>
