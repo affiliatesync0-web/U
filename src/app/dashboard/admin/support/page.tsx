@@ -15,22 +15,19 @@ import {
   Loader2, 
   Mic, 
   MicOff,
-  Trash2,
   ShieldCheck,
   Flame,
   AlertCircle,
-  Bell,
   Users,
   User,
   Search,
   ChevronRight,
-  MoreVertical,
-  RefreshCw,
-  PhoneOff
+  PhoneOff,
+  RefreshCw
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
-import { collection, query, orderBy, limit, serverTimestamp, doc, getDocs, where } from 'firebase/firestore'
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -71,7 +68,7 @@ export default function AdminSupportPage() {
   const communityQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(50)), 
   [db])
-  const { data: communityMessages, isLoading: loadingCommunity } = useCollection<Message>(communityQuery)
+  const { data: communityMessages } = useCollection<Message>(communityQuery)
 
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !user) return null;
@@ -82,7 +79,7 @@ export default function AdminSupportPage() {
       limit(50)
     );
   }, [db, selectedAffiliate, user]);
-  const { data: privateMessages, isLoading: loadingPrivate } = useCollection<Message>(privateQuery)
+  const { data: privateMessages } = useCollection<Message>(privateQuery)
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -115,8 +112,8 @@ export default function AdminSupportPage() {
 
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
-        title: '💬 Nuevo mensaje privado',
-        message: 'El administrador te ha enviado un mensaje personal.',
+        title: '💬 Nuevo Mensaje del Administrador',
+        message: 'Has recibido un mensaje privado prioritario.',
         type: 'system',
         createdAt: new Date().toISOString(),
         isRead: false,
@@ -140,14 +137,13 @@ export default function AdminSupportPage() {
         targetUserId: targetId || null
       };
 
-      const statusRef = doc(db, 'site_config', 'support_status');
-      setDocumentNonBlocking(statusRef, callData, { merge: true });
+      setDocumentNonBlocking(doc(db, 'site_config', 'support_status'), callData, { merge: true });
     } catch (e) {
       setHasMicPermission(false);
       toast({
         variant: "destructive",
         title: "Permisos Denegados",
-        description: "Habilita el micrófono en el icono del candado de tu navegador para iniciar la llamada."
+        description: "Habilita el micrófono para iniciar la llamada de voz."
       });
     }
   }
@@ -173,7 +169,7 @@ export default function AdminSupportPage() {
           <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 p-6 space-y-4">
               <div className="flex items-center justify-between text-white">
-                <h2 className="text-sm font-black uppercase tracking-widest">Mensajería Sync</h2>
+                <h2 className="text-sm font-black uppercase tracking-widest">Sincronización Sync</h2>
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               </div>
               <div className="relative">
@@ -194,7 +190,7 @@ export default function AdminSupportPage() {
                     onClick={() => { setActiveTab('community'); setSelectedAffiliate(null); }}
                     className={cn(
                       "w-full flex items-center gap-4 p-4 rounded-2xl transition-all",
-                      activeTab === 'community' ? "bg-primary text-white shadow-xl shadow-primary/20 rotate-1" : "hover:bg-white text-slate-600"
+                      activeTab === 'community' ? "bg-primary text-white shadow-xl rotate-1" : "hover:bg-white text-slate-600"
                     )}
                   >
                     <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-inner", activeTab === 'community' ? "bg-white/20" : "bg-primary/10 text-primary")}>
@@ -202,12 +198,12 @@ export default function AdminSupportPage() {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-xs font-black uppercase">Comunidad Sync</p>
-                      <p className={cn("text-[9px] font-bold", activeTab === 'community' ? "text-white/70" : "text-slate-400")}>Chat Grupal Abierto</p>
+                      <p className={cn("text-[9px] font-bold", activeTab === 'community' ? "text-white/70" : "text-slate-400")}>Canal Abierto</p>
                     </div>
                   </button>
 
                   <div className="pt-4 pb-2 px-4">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">SOCIOS ACTIVOS</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">MENSAJERÍA PRIVADA</p>
                   </div>
 
                   {filteredAffiliates.map((aff) => (
@@ -224,7 +220,7 @@ export default function AdminSupportPage() {
                       </div>
                       <div className="flex-1 text-left truncate">
                         <p className="text-xs font-black uppercase truncate">{aff.firstName} {aff.lastName}</p>
-                        <p className={cn("text-[9px] font-bold", selectedAffiliate?.id === aff.id ? "text-slate-400" : "text-slate-400")}>{aff.status}</p>
+                        <p className="text-[9px] font-bold text-slate-400">{aff.status}</p>
                       </div>
                       {selectedAffiliate?.id === aff.id && <ChevronRight className="h-4 w-4 text-primary" />}
                     </button>
@@ -246,9 +242,7 @@ export default function AdminSupportPage() {
                   <CardTitle className="text-sm font-headline font-black uppercase tracking-widest">
                     {activeTab === 'community' ? "Chat Comunitario" : `${selectedAffiliate?.firstName} ${selectedAffiliate?.lastName}`}
                   </CardTitle>
-                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
-                    {activeTab === 'community' ? "Sincronización de Estrategias" : "Conversación Privada"}
-                  </p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Centro de Apoyo Sync Academy</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -289,7 +283,7 @@ export default function AdminSupportPage() {
               <div className="p-6 bg-white border-t border-slate-100 shrink-0">
                 <form onSubmit={handleSendMessage} className="flex gap-3 bg-slate-50 p-2 rounded-[2rem] ring-1 ring-slate-200">
                   <Input 
-                    placeholder={activeTab === 'community' ? "Escribe un comunicado grupal..." : `Mensaje privado para ${selectedAffiliate?.firstName}...`}
+                    placeholder={activeTab === 'community' ? "Escribe a la comunidad..." : `Mensaje privado para ${selectedAffiliate?.firstName}...`}
                     value={msgInput}
                     onChange={(e) => setMsgInput(e.target.value)}
                     className="h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-6"
@@ -304,47 +298,43 @@ export default function AdminSupportPage() {
         </div>
 
         {isInCall && (
-          <Card className="w-[450px] border-none shadow-2xl rounded-[3.5rem] bg-slate-900 overflow-hidden flex flex-col relative ring-4 ring-primary/20 animate-in slide-in-from-right-4 shrink-0">
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              <div className="relative mb-8">
-                <div className="h-32 w-32 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+          <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-10 animate-in fade-in duration-500">
+            <Card className="w-full max-w-md border-none shadow-2xl rounded-[4rem] bg-slate-800 overflow-hidden flex flex-col relative ring-4 ring-primary/20 text-center p-12">
+              <div className="relative mb-10 mx-auto w-32 h-32">
+                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                <div className="relative z-10 h-full w-full rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/30">
                   <User className="h-16 w-16 text-primary" />
                 </div>
-                <div className="absolute inset-0 rounded-full border-4 border-primary/40 animate-ping" />
               </div>
-              
-              <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Llamada de Voz en Curso</h3>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
-                {selectedAffiliate ? `${selectedAffiliate.firstName} ${selectedAffiliate.lastName}` : "Socio Sync"}
-              </p>
+
+              <div className="space-y-4 mb-12">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">Llamada de Voz en Curso</h3>
+                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Sincronización con el Afiliado</p>
+                <Badge className="bg-red-500/20 text-red-500 border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase animate-pulse">AUDIO ACTIVO</Badge>
+              </div>
 
               {hasMicPermission === false && (
-                <div className="mt-8 space-y-4 px-10">
+                <div className="mb-8 space-y-4">
                   <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
-                  <p className="text-red-400 text-xs font-medium">Micrófono bloqueado. Habilita el acceso en tu navegador.</p>
+                  <p className="text-red-400 text-xs font-medium">Micrófono bloqueado por el sistema.</p>
                   <Button onClick={() => startCall(selectedAffiliate?.id)} size="sm" className="bg-primary text-white rounded-xl gap-2 font-black text-[10px] uppercase">
                     <RefreshCw className="h-3.5 w-3.5" /> REINTENTAR
                   </Button>
                 </div>
               )}
-            </div>
-            
-            <div className="absolute top-10 left-10 right-10 flex justify-between items-center">
-               <Badge className="bg-red-500 text-white border-none px-4 py-1.5 rounded-full text-[9px] font-black uppercase animate-pulse">EN LLAMADA</Badge>
-               <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white"><MoreVertical className="h-5 w-5" /></div>
-            </div>
 
-            <div className="absolute bottom-10 left-0 right-0 px-10 flex flex-col gap-4">
-              <div className="flex justify-center gap-4">
-                 <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("h-14 w-14 rounded-full backdrop-blur-xl border", isMicMuted ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white")}>
-                   {isMicMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-                 </Button>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-center gap-4">
+                  <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("h-16 w-16 rounded-full border-2", isMicMuted ? "bg-red-500/20 border-red-500 text-red-500" : "bg-white/10 border-white/10 text-white")}>
+                    {isMicMuted ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+                  </Button>
+                </div>
+                <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                  <PhoneOff className="h-6 w-6" /> FINALIZAR LLAMADA
+                </Button>
               </div>
-              <Button onClick={endCall} className="w-full h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
-                <PhoneOff className="h-6 w-6" /> FINALIZAR LLAMADA
-              </Button>
-            </div>
-          </Card>
+            </Card>
+          </div>
         )}
       </div>
     </DashboardShell>

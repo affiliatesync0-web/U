@@ -22,11 +22,9 @@ import {
   AlertCircle,
   Bell,
   User,
-  MoreVertical,
-  ChevronRight,
-  RefreshCw,
   PhoneOff,
-  MicOff
+  MicOff,
+  RefreshCw
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking } from '@/firebase'
@@ -83,9 +81,9 @@ export default function AffiliateSupportPage() {
 
   useEffect(() => {
     if (supportStatus?.isLive && (supportStatus.type === 'group' || supportStatus.targetUserId === user?.uid)) {
-      toast({ title: "📞 Llamada de Admin", description: "El administrador ha iniciado una sesión de voz. Haz clic para unirte." });
+      toast({ title: "📞 Llamada Entrante de Admin", description: "El administrador solicita una sesión de voz contigo." });
       if (Notification.permission === "granted") {
-        new Notification("🚀 Llamada en Vivo", { body: "Únete ahora a la llamada del administrador." });
+        new Notification("🚀 Llamada en Vivo", { body: "Únete ahora a la sesión de apoyo del administrador." });
       }
     }
   }, [supportStatus?.isLive, user?.uid]);
@@ -99,7 +97,7 @@ export default function AffiliateSupportPage() {
     if (!msgInput.trim() || !user) return
 
     const content = msgInput.trim();
-    const userName = user.firstName || "SOCIO";
+    const userName = `${user.firstName || "SOCIO"}`;
     setMsgInput('')
 
     if (activeTab === 'community') {
@@ -112,10 +110,10 @@ export default function AffiliateSupportPage() {
     } else {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        receiverId: 'admin',
+        receiverId: 'affiliatesync0@gmail.com',
         userName,
         content,
-        chatId: `${user.uid}_admin`,
+        chatId: `${user.uid}_affiliatesync0@gmail.com`,
         createdAt: serverTimestamp()
       });
     }
@@ -132,7 +130,7 @@ export default function AffiliateSupportPage() {
       toast({
         variant: "destructive",
         title: "Error de Micrófono",
-        description: "No se pudo acceder al audio. Revisa los permisos en tu navegador."
+        description: "Habilita los permisos de audio en tu navegador para hablar."
       });
     }
   }
@@ -165,7 +163,7 @@ export default function AffiliateSupportPage() {
                 <Users className="h-5 w-5" />
                 <div className="text-left">
                   <p className="text-[10px] font-black uppercase">Comunidad</p>
-                  <p className="text-[8px] opacity-70">Sincronización Grupal</p>
+                  <p className="text-[8px] opacity-70">Grupal</p>
                 </div>
               </button>
 
@@ -181,7 +179,7 @@ export default function AffiliateSupportPage() {
                 </div>
                 <div className="text-left">
                   <p className="text-[10px] font-black uppercase">Mensaje Admin</p>
-                  <p className="text-[8px] opacity-70">Consulta Privada</p>
+                  <p className="text-[8px] opacity-70">Privado</p>
                 </div>
               </button>
             </CardContent>
@@ -197,15 +195,15 @@ export default function AffiliateSupportPage() {
                 </div>
                 <div>
                   <CardTitle className="text-sm font-headline font-black uppercase tracking-widest">
-                    {activeTab === 'community' ? "Grupo de Apoyo Oficial" : "Conversación con Admin"}
+                    {activeTab === 'community' ? "Grupo de Apoyo Oficial" : "Conversación con Administrador"}
                   </CardTitle>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Sincronización Sync Connect</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Sync Connect Support</p>
                 </div>
               </div>
               <div className="flex gap-2">
                 {(supportStatus?.isLive && (supportStatus.type === 'group' || supportStatus.targetUserId === user?.uid)) && (
                   <Button onClick={joinCall} className="h-10 px-6 rounded-xl bg-red-500 hover:bg-red-600 text-white gap-2 font-black text-[10px] uppercase animate-pulse shadow-lg shadow-red-200">
-                    <Phone className="h-4 w-4" /> UNIRME A LLAMADA
+                    <Phone className="h-4 w-4" /> UNIRME AHORA
                   </Button>
                 )}
               </div>
@@ -260,15 +258,15 @@ export default function AffiliateSupportPage() {
 
                 <div className="space-y-4 mb-12">
                   <h3 className="text-2xl font-black text-white uppercase tracking-tight">Llamada de Voz Activa</h3>
-                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Sincronización en curso con el Administrador</p>
+                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Mentoría en curso con el Administrador</p>
                   <Badge className="bg-red-500/20 text-red-500 border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase animate-pulse">EN VIVO</Badge>
                 </div>
 
                 {hasMicPermission === false && (
                   <div className="mb-8">
                     <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
-                    <p className="text-white text-sm font-black uppercase">Hardware Desconectado</p>
-                    <p className="text-slate-400 text-[10px] font-medium mt-1 mb-4">Habilita el micrófono para que el admin pueda escucharte.</p>
+                    <p className="text-white text-sm font-black uppercase">Audio Desconectado</p>
+                    <p className="text-slate-400 text-[10px] font-medium mt-1 mb-4">Habilita el micrófono para que el administrador pueda escucharte.</p>
                     <Button onClick={joinCall} size="sm" className="bg-primary text-white rounded-xl gap-2 font-black text-[10px] uppercase">
                       <RefreshCw className="h-3.5 w-3.5" /> REINTENTAR
                     </Button>
