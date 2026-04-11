@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -29,7 +30,8 @@ import {
   ExternalLink,
   ShieldAlert,
   SendHorizontal,
-  Zap
+  Zap,
+  MoreHorizontal
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -77,21 +79,21 @@ export default function AdminAffiliatesPage() {
 
   return (
     <DashboardShell role="admin">
-      <div className="space-y-10">
+      <div className="space-y-8 md:space-y-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
               <ShieldCheck className="h-4 w-4 text-primary" />
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Gestión de Red de Mercadeo</span>
             </div>
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Panel de <span className="text-primary">Socios</span></h1>
-            <p className="text-slate-500 font-medium">Control total sobre los perfiles, pagos y seguridad de tus afiliados.</p>
+            <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Panel de <span className="text-primary">Socios</span></h1>
+            <p className="text-slate-500 font-medium text-sm md:text-base">Control total sobre los perfiles, pagos y seguridad de tus afiliados.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
             <Input 
-              className="pl-14 h-16 rounded-[1.5rem] border-none bg-white shadow-xl text-[16px] font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
-              placeholder="Buscar por nombre o gmail..." 
+              className="pl-14 h-14 md:h-16 rounded-2xl md:rounded-[1.5rem] border-none bg-white shadow-xl text-[16px] font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+              placeholder="Buscar socio..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -101,70 +103,111 @@ export default function AdminAffiliatesPage() {
         {isLoading ? (
           <div className="flex justify-center py-32"><Loader2 className="animate-spin text-primary h-12 w-12 opacity-50" /></div>
         ) : filteredAffiliates.length === 0 ? (
-          <Card className="border-dashed border-4 flex flex-col items-center justify-center p-32 text-center bg-white/50 rounded-[4rem] border-slate-100">
-            <User className="h-20 w-20 text-slate-200 mb-8" />
-            <h3 className="text-2xl font-black text-slate-400 mb-2">Sin socios registrados</h3>
-            <p className="text-slate-400 max-w-sm font-bold text-sm leading-relaxed">Tu red de afiliados aparecerá aquí conforme se registren los nuevos prospectos.</p>
+          <Card className="border-dashed border-4 flex flex-col items-center justify-center p-20 md:p-32 text-center bg-white/50 rounded-[3rem] md:rounded-[4rem] border-slate-100">
+            <User className="h-16 w-16 md:h-20 md:w-20 text-slate-200 mb-8" />
+            <h3 className="text-xl md:text-2xl font-black text-slate-400 mb-2">Sin socios registrados</h3>
+            <p className="text-slate-400 max-w-sm font-bold text-xs md:text-sm leading-relaxed">Tu red de afiliados aparecerá aquí conforme se registren.</p>
           </Card>
         ) : (
-          <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50 h-20 hover:bg-slate-50/50">
-                      <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Perfil del Afiliado</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Estatus</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Saldo Disponible</TableHead>
-                      <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Gestión Maestra</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAffiliates.map((aff) => (
-                      <TableRow key={aff.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30 transition-colors">
-                        <TableCell className="px-10">
-                          <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm shadow-inner group-hover:rotate-3 transition-transform overflow-hidden">
-                              {aff.photoUrl ? (
-                                <img src={aff.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
-                              ) : (
-                                aff.firstName?.charAt(0)
-                              )}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-800 uppercase tracking-tight">{aff.firstName} {aff.lastName}</span>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{aff.email}</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={cn(
-                            "rounded-full font-black text-[9px] px-4 py-1.5 uppercase tracking-widest border-none shadow-sm", 
-                            aff.status === 'Active' ? 'bg-green-100 text-green-600' : (aff.status === 'Blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600 animate-pulse')
-                          )}>
-                            {aff.status === 'Pending' ? 'POR APROBAR' : (aff.status === 'Active' ? 'ACTIVO ✓' : 'BLOQUEADO')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-black text-lg text-primary tracking-tighter">
-                          ${aff.currentBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
-                        </TableCell>
-                        <TableCell className="px-10 text-right">
-                          <PartnerControlCenter affiliate={aff} />
-                        </TableCell>
+          <div className="space-y-4">
+            {/* VISTA TABLET/DESKTOP */}
+            <Card className="hidden md:block border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 h-20 hover:bg-slate-50/50">
+                        <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Perfil del Afiliado</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Estatus</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Saldo Disponible</TableHead>
+                        <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Gestión Maestra</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAffiliates.map((aff) => (
+                        <TableRow key={aff.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30 transition-colors">
+                          <TableCell className="px-10">
+                            <div className="flex items-center gap-4">
+                              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm shadow-inner group-hover:rotate-3 transition-transform overflow-hidden">
+                                {aff.photoUrl ? (
+                                  <img src={aff.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
+                                ) : (
+                                  aff.firstName?.charAt(0)
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-black text-slate-800 uppercase tracking-tight">{aff.firstName} {aff.lastName}</span>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{aff.email}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={aff.status} />
+                          </TableCell>
+                          <TableCell className="font-black text-lg text-primary tracking-tighter">
+                            ${aff.currentBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                          </TableCell>
+                          <TableCell className="px-10 text-right">
+                            <PartnerControlCenter affiliate={aff} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* VISTA MÓVIL (CARDS) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {filteredAffiliates.map((aff) => (
+                <Card key={aff.id} className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-slate-100 p-6 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black overflow-hidden shadow-inner">
+                        {aff.photoUrl ? (
+                          <img src={aff.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
+                        ) : (
+                          aff.firstName?.charAt(0)
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-800 uppercase text-sm leading-tight">{aff.firstName} {aff.lastName}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{aff.email}</span>
+                      </div>
+                    </div>
+                    <StatusBadge status={aff.status} />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Saldo Pendiente</p>
+                      <p className="text-xl font-black text-primary tracking-tighter">${aff.currentBalance?.toFixed(2) || '0.00'}</p>
+                    </div>
+                    <PartnerControlCenter affiliate={aff} isMobile />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </DashboardShell>
   )
 }
 
-function PartnerControlCenter({ affiliate }: { affiliate: any }) {
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <Badge className={cn(
+      "rounded-full font-black text-[9px] px-3 md:px-4 py-1.5 uppercase tracking-widest border-none shadow-sm", 
+      status === 'Active' ? 'bg-green-100 text-green-600' : (status === 'Blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600 animate-pulse')
+    )}>
+      {status === 'Pending' ? 'POR APROBAR' : (status === 'Active' ? 'ACTIVO ✓' : 'BLOQUEADO')}
+    </Badge>
+  );
+}
+
+function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobile?: boolean }) {
   const db = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -206,7 +249,7 @@ function PartnerControlCenter({ affiliate }: { affiliate: any }) {
       return;
     }
 
-    if (!confirm(`¿Confirmas que has realizado la transferencia de $${affiliate.currentBalance.toFixed(2)} a ${affiliate.bankId || 'su cuenta'}?`)) return;
+    if (!confirm(`¿Confirmas que has realizado la transferencia de $${affiliate.currentBalance.toFixed(2)}?`)) return;
 
     setIsProcessing(true);
     const amountPaid = affiliate.currentBalance;
@@ -231,7 +274,7 @@ function PartnerControlCenter({ affiliate }: { affiliate: any }) {
         bank: bankName
       });
 
-      toast({ title: "¡Pago Registrado!", description: "Saldo reseteado y notificación enviada por Gmail." });
+      toast({ title: "¡Pago Registrado!", description: "Notificación enviada." });
     } catch (error) {
       toast({ variant: "destructive", title: "Error al procesar pago" });
     } finally {
@@ -242,8 +285,12 @@ function PartnerControlCenter({ affiliate }: { affiliate: any }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest shadow-xl gap-2 transition-all hover:scale-105 active:scale-95">
-          <Settings2 className="h-4 w-4 text-primary" /> GESTIONAR SOCIO
+        <Button variant="default" size="sm" className={cn(
+          "rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95",
+          isMobile ? "h-12 w-12 p-0" : "h-12 px-6 text-[10px] gap-2"
+        )}>
+          <Settings2 className={cn(isMobile ? "h-5 w-5 text-primary" : "h-4 w-4 text-primary")} /> 
+          {!isMobile && "GESTIONAR SOCIO"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl w-full h-[100dvh] md:h-[90vh] md:rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white flex flex-col">
@@ -260,9 +307,7 @@ function PartnerControlCenter({ affiliate }: { affiliate: any }) {
               <div className="space-y-1">
                 <h2 className="text-3xl md:text-4xl font-headline font-black text-white leading-tight uppercase italic">{affiliate.firstName} <span className="text-primary">{affiliate.lastName}</span></h2>
                 <div className="flex items-center gap-3">
-                  <Badge className={cn("border-none text-[9px] font-black uppercase tracking-widest px-3 py-1", affiliate.status === 'Active' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white')}>
-                    {affiliate.status === 'Active' ? 'AFILIADO ACTIVO ✓' : (affiliate.status === 'Pending' ? 'SOLICITUD PENDIENTE' : 'ACCESO BLOQUEADO')}
-                  </Badge>
+                  <StatusBadge status={affiliate.status} />
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline">UID: {affiliate.id.substring(0, 10)}</span>
                 </div>
               </div>
@@ -279,8 +324,8 @@ function PartnerControlCenter({ affiliate }: { affiliate: any }) {
         </div>
 
         <Tabs defaultValue="payments" className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-8 md:px-12 bg-slate-50 border-b shrink-0">
-            <TabsList className="h-16 bg-transparent p-0 gap-8">
+          <div className="px-8 md:px-12 bg-slate-50 border-b shrink-0 overflow-x-auto no-scrollbar">
+            <TabsList className="h-16 bg-transparent p-0 gap-8 min-w-max">
               <TabsTrigger value="payments" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">PAGOS Y COMISIONES</TabsTrigger>
               <TabsTrigger value="kyc" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">EXPEDIENTE / KYC</TabsTrigger>
               <TabsTrigger value="security" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">SEGURIDAD ACCESO</TabsTrigger>
@@ -315,7 +360,7 @@ function PartnerControlCenter({ affiliate }: { affiliate: any }) {
                     </div>
                     <div className="pt-6 border-t border-slate-200">
                       <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Número de Cuenta</p>
-                      <p className="text-4xl font-black text-slate-900 font-mono tracking-tighter">{affiliate.bankAccountNumber || '----------------'}</p>
+                      <p className="text-3xl md:text-4xl font-black text-slate-900 font-mono tracking-tighter break-all">{affiliate.bankAccountNumber || '----------------'}</p>
                       <p className="text-[11px] font-bold text-slate-400 uppercase mt-2 italic">Titular: {affiliate.bankAccountHolderName || affiliate.firstName + ' ' + affiliate.lastName}</p>
                     </div>
                   </div>
