@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Link as LinkIcon, Edit3, AlertCircle, Save, X } from 'lucide-react'
+import { Plus, Trash2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Link as LinkIcon, Edit3, AlertCircle, Save, X, Package } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -214,7 +214,7 @@ export default function AdminProductsPage() {
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Catálogo de <span className="text-primary">Productos</span></h1>
+            <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Catálogo de <span className="text-primary">Productos</span></h1>
             <p className="text-slate-500 font-medium mt-2">Sube tus cursos y configura las ganancias de tus socios.</p>
           </div>
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary hover:bg-primary/90 rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest gap-2">
@@ -224,10 +224,11 @@ export default function AdminProductsPage() {
 
         <Dialog open={isAdding} onOpenChange={(open) => !open && closeDialog()}>
           <DialogContent className="max-w-full w-full h-[100dvh] md:max-w-6xl md:h-[90vh] md:rounded-[3.5rem] p-0 border-none shadow-2xl bg-white overflow-hidden flex flex-col">
+            {/* CABECERA ADAPTABLE */}
             <div className="bg-slate-900 p-6 md:p-10 text-white shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <GraduationCap className="h-6 w-6" />
+                <div className="h-10 w-10 md:h-12 md:w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
+                  <GraduationCap className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
                 <div>
                   <DialogTitle className="text-xl md:text-3xl font-headline font-black">{editingId ? 'Editar Producto' : 'Cargar Producto Digital'}</DialogTitle>
@@ -239,6 +240,7 @@ export default function AdminProductsPage() {
               </Button>
             </div>
             
+            {/* CONTENIDO SCROLLABLE */}
             <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 pb-32">
               {storageError && (
                 <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
@@ -268,21 +270,21 @@ export default function AdminProductsPage() {
 
                   <div className="space-y-4">
                     <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Imagen de Portada (Miniatura)</Label>
-                    <div className="relative h-64 rounded-[2.5rem] bg-slate-50 border-4 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
+                    <div className="relative h-48 md:h-64 rounded-[2.5rem] bg-slate-50 border-4 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
                       {formData.imageUrl ? (
                         <img src={formData.imageUrl} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" alt="preview" />
                       ) : (
                         <div className="flex flex-col items-center gap-2 opacity-30">
-                          <ImageIcon className="h-12 w-12 text-slate-400" />
+                          <ImageIcon className="h-10 w-10 md:h-12 md:w-12 text-slate-400" />
                           <p className="text-[10px] font-black uppercase">Click para subir imagen</p>
                         </div>
                       )}
-                      <Button variant="secondary" size="sm" className="absolute bottom-6 right-6 shadow-2xl rounded-xl font-black text-[10px] uppercase h-10 px-6" onClick={() => fileInputRef.current?.click()}>CAMBIAR IMAGEN</Button>
+                      <Button variant="secondary" size="sm" className="absolute bottom-4 right-4 md:bottom-6 md:right-6 shadow-2xl rounded-xl font-black text-[9px] md:text-[10px] uppercase h-10 px-4 md:px-6" onClick={() => fileInputRef.current?.click()}>CAMBIAR IMAGEN</Button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
                   </div>
 
-                  <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-6">
+                  <div className="p-6 md:p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-6">
                     <div className="flex items-center gap-3">
                       <Sparkles className="h-5 w-5 text-primary" />
                       <h3 className="text-sm font-headline font-black uppercase tracking-widest">Generador de Copy IA</h3>
@@ -296,14 +298,14 @@ export default function AdminProductsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black text-slate-400 uppercase">Descripción / Copy Final</Label>
-                      <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[180px] rounded-2xl bg-white/5 border-none ring-1 ring-white/10 text-[16px] p-6 leading-relaxed" placeholder="Escribe o deja que la IA redacte tu oferta irresistible..." />
+                      <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[150px] md:min-h-[180px] rounded-2xl bg-white/5 border-none ring-1 ring-white/10 text-[16px] p-6 leading-relaxed" placeholder="Escribe o deja que la IA redacte tu oferta irresistible..." />
                     </div>
                   </div>
                 </div>
 
                 {/* COLUMNA DERECHA: Aula Virtual & Pagos */}
                 <div className="lg:col-span-5 space-y-10">
-                  <div className="p-8 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-6">
+                  <div className="p-6 md:p-8 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-6">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
                         <Video className="h-5 w-5" />
@@ -350,7 +352,7 @@ export default function AdminProductsPage() {
                       <Button onClick={handleAddVideo} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl" disabled={uploadProgress !== null}>AÑADIR CLASE AL CURSO</Button>
                     </div>
 
-                    <div className="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
+                    <div className="space-y-3 max-h-[300px] md:max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
                       {videos.length === 0 ? (
                         <div className="text-center py-10 opacity-20">
                           <PlayCircle className="h-10 w-10 mx-auto mb-2" />
@@ -377,7 +379,7 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  <div className="p-8 bg-slate-50 rounded-[2.5rem] border space-y-6">
+                  <div className="p-6 md:p-8 bg-slate-50 rounded-[2.5rem] border space-y-6">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border">
                         <Landmark className="h-5 w-5" />
@@ -390,7 +392,7 @@ export default function AdminProductsPage() {
                         <Label className="text-[10px] font-black text-slate-500 uppercase">Banco Local Receptor</Label>
                         <Select onValueChange={v => setFormData({...formData, bankType: v})} value={formData.bankType}>
                           <SelectTrigger className="h-14 bg-white text-[16px] rounded-xl border-slate-200">
-                            <SelectValue placeholder="Selecciona un banco de Nicaragua" />
+                            <SelectValue placeholder="Selecciona un banco" />
                           </SelectTrigger>
                           <SelectContent>
                             {NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
@@ -416,16 +418,17 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
-            {/* ACTION BAR FIJA */}
-            <div className="p-6 md:p-10 border-t bg-slate-50/80 backdrop-blur-md flex gap-4 absolute bottom-0 left-0 right-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-              <Button variant="ghost" onClick={closeDialog} className="flex-1 h-16 rounded-[1.5rem] font-black text-xs uppercase text-slate-400 hover:bg-slate-100 transition-all">SALIR SIN GUARDAR</Button>
-              <Button className="flex-[2] h-16 rounded-[1.5rem] bg-slate-900 text-white font-black text-xs uppercase shadow-2xl shadow-slate-200 hover:scale-[1.02] active:scale-95 transition-all gap-3" onClick={handleSave}>
+            {/* ACTION BAR FIJA (VISIBLE EN AMBOS DISPOSITIVOS) */}
+            <div className="p-4 md:p-8 border-t bg-white/90 backdrop-blur-md flex flex-col md:flex-row gap-3 absolute bottom-0 left-0 right-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+              <Button variant="ghost" onClick={closeDialog} className="order-2 md:order-1 flex-1 h-14 md:h-16 rounded-2xl font-black text-[10px] md:text-xs uppercase text-slate-400 hover:bg-slate-100 transition-all">SALIR SIN GUARDAR</Button>
+              <Button className="order-1 md:order-2 flex-[2] h-14 md:h-16 rounded-2xl bg-slate-900 text-white font-black text-[10px] md:text-xs uppercase shadow-2xl shadow-slate-200 hover:scale-[1.02] active:scale-95 transition-all gap-3" onClick={handleSave}>
                 <Save className="h-5 w-5 text-primary" /> {editingId ? 'ACTUALIZAR CURSO' : 'PUBLICAR CURSO DIGITAL'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
+        {/* TABLA RESPONSIVA */}
         <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
           <CardContent className="p-0">
             {isLoading ? (
@@ -440,39 +443,39 @@ export default function AdminProductsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50/50 h-20 border-b">
-                      <TableHead className="px-10 font-black uppercase text-[10px] text-slate-400 tracking-widest">Curso / Producto</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest">Categoría</TableHead>
+                      <TableHead className="px-6 md:px-10 font-black uppercase text-[10px] text-slate-400 tracking-widest">Curso / Producto</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest hidden md:table-cell">Categoría</TableHead>
                       <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest">Precio</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest">Comisión</TableHead>
-                      <TableHead className="px-10 text-right font-black uppercase text-[10px] text-slate-400 tracking-widest">Acciones</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest hidden sm:table-cell">Comisión</TableHead>
+                      <TableHead className="px-6 md:px-10 text-right font-black uppercase text-[10px] text-slate-400 tracking-widest">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {products.map((p) => (
                       <TableRow key={p.id} className="h-24 border-b last:border-0 hover:bg-slate-50/30 transition-colors group">
-                        <TableCell className="px-10">
-                          <div className="flex items-center gap-5">
-                            <div className="h-14 w-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border shadow-inner group-hover:rotate-3 transition-transform">
+                        <TableCell className="px-6 md:px-10">
+                          <div className="flex items-center gap-4 md:gap-5">
+                            <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border shadow-inner group-hover:rotate-3 transition-transform">
                               {p.imageUrl ? <img src={p.imageUrl} className="h-full w-full object-cover" alt="thumb" /> : <GraduationCap className="h-6 w-6 text-slate-300 m-auto mt-4" />}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-black text-slate-800 uppercase tracking-tight text-sm truncate max-w-[250px]">{p.name}</p>
-                              <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">ID: {p.code}</p>
+                              <p className="font-black text-slate-800 uppercase tracking-tight text-xs md:text-sm truncate max-w-[150px] md:max-w-[250px]">{p.name}</p>
+                              <p className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-[0.2em]">ID: {p.code}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-3 py-1 rounded-lg border">{p.category}</span>
                         </TableCell>
-                        <TableCell className="font-black text-lg text-slate-900">${p.price?.toFixed(2)}</TableCell>
-                        <TableCell className="font-black text-lg text-green-600">{p.commissionRate}%</TableCell>
-                        <TableCell className="px-10 text-right">
-                          <div className="flex justify-end gap-3">
-                            <Button variant="ghost" size="icon" className="h-12 w-12 text-blue-500 bg-blue-50 rounded-2xl hover:bg-blue-500 hover:text-white transition-all" onClick={() => setEditingId(p.id)}>
-                              <Edit3 className="h-5 w-5" />
+                        <TableCell className="font-black text-sm md:text-lg text-slate-900">${p.price?.toFixed(2)}</TableCell>
+                        <TableCell className="font-black text-sm md:text-lg text-green-600 hidden sm:table-cell">{p.commissionRate}%</TableCell>
+                        <TableCell className="px-6 md:px-10 text-right">
+                          <div className="flex justify-end gap-2 md:gap-3">
+                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-blue-500 bg-blue-50 rounded-xl md:rounded-2xl hover:bg-blue-500 hover:text-white transition-all" onClick={() => setEditingId(p.id)}>
+                              <Edit3 className="h-4 w-4 md:h-5 md:w-5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive bg-red-50 rounded-2xl hover:bg-destructive hover:text-white transition-all" onClick={() => handleDelete(p.id)}>
-                              <Trash2 className="h-5 w-5" />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-destructive bg-red-50 rounded-xl md:rounded-2xl hover:bg-destructive hover:text-white transition-all" onClick={() => handleDelete(p.id)}>
+                              <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
                             </Button>
                           </div>
                         </TableCell>
@@ -488,5 +491,3 @@ export default function AdminProductsPage() {
     </DashboardShell>
   )
 }
-
-import { Package } from 'lucide-react'
