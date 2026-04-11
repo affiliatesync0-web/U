@@ -23,7 +23,8 @@ import {
   PhoneOff,
   MessageCircle,
   ArrowLeft,
-  Crown
+  Crown,
+  Clock
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
@@ -131,6 +132,12 @@ export default function AdminSupportPage() {
     }
   }
 
+  const formatTime = (createdAt: any) => {
+    if (!createdAt) return "";
+    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const startCall = async (targetId: string) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -209,12 +216,18 @@ export default function AdminSupportPage() {
                           {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}
                         </div>
                         <div className={cn(
-                          "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed",
+                          "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
                           msg.userId === user?.uid 
                             ? "bg-slate-900 text-white rounded-tr-none" 
                             : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
                         )}>
                           {msg.content}
+                          <div className={cn(
+                            "mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40",
+                            msg.userId === user?.uid ? "justify-end text-white" : "justify-start text-slate-500"
+                          )}>
+                            <Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -314,12 +327,18 @@ export default function AdminSupportPage() {
                               msg.senderId === user?.uid ? "ml-auto items-end" : "items-start"
                             )}>
                               <div className={cn(
-                                "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed",
+                                "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
                                 msg.senderId === user?.uid 
                                   ? "bg-slate-900 text-white rounded-tr-none" 
                                   : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
                               )}>
                                 {msg.content}
+                                <div className={cn(
+                                  "mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40",
+                                  msg.senderId === user?.uid ? "justify-end text-white" : "justify-start text-slate-500"
+                                )}>
+                                  <Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}
+                                </div>
                               </div>
                             </div>
                           ))}
