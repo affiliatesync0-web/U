@@ -23,7 +23,8 @@ import {
   X,
   Check,
   MoreVertical,
-  Eraser
+  Eraser,
+  Bell
 } from 'lucide-react'
 import { 
   useFirestore, 
@@ -70,6 +71,7 @@ export default function AdminSupportPage() {
   
   const [editingMsgId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
 
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
@@ -95,8 +97,11 @@ export default function AdminSupportPage() {
     .slice(-200)
 
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermission(Notification.permission);
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then(setNotifPermission);
+      }
     }
 
     if (!db) return;
@@ -143,7 +148,10 @@ export default function AdminSupportPage() {
       if (isToday) {
         return `Hoy, ${timeStr}`;
       } else {
-        return `${date.toLocaleDateString([], { day: '2-digit', month: 'short' })}, ${timeStr}`;
+        const day = date.getDate().toString().padStart(2, '0');
+        const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const month = months[date.getMonth()];
+        return `${day} ${month}, ${timeStr}`;
       }
     } catch (e) { 
       return '--:--';
@@ -199,17 +207,26 @@ export default function AdminSupportPage() {
   return (
     <DashboardShell role="admin">
       <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
-        <Tabs defaultValue="community" className="flex-1 flex flex-col" onValueChange={(v: any) => setActiveTab(v)}>
-          <TabsList className="h-14 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm w-fit self-center">
-            <TabsTrigger value="community" className="w-48 rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
-              <Users className="h-4 w-4" /> GRUPO OFICIAL
-            </TabsTrigger>
-            <TabsTrigger value="private" className="w-48 rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
-              <MessageCircle className="h-4 w-4" /> CHATS PRIVADOS
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex justify-between items-center px-4">
+          <Tabs defaultValue="community" className="flex-1 flex flex-col" onValueChange={(v: any) => setActiveTab(v)}>
+            <TabsList className="h-14 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm w-fit self-center">
+              <TabsTrigger value="community" className="w-48 rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
+                <Users className="h-4 w-4" /> GRUPO OFICIAL
+              </TabsTrigger>
+              <TabsTrigger value="private" className="w-48 rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
+                <MessageCircle className="h-4 w-4" /> CHATS PRIVADOS
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {notifPermission !== 'granted' && (
+            <Button onClick={() => Notification.requestPermission().then(setNotifPermission)} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
+              <Bell className="mr-2 h-3 w-3" /> Activar Alertas
+            </Button>
+          )}
+        </div>
 
-          <TabsContent value="community" className="flex-1 mt-4 overflow-hidden">
+        <div className="flex-1 mt-4 overflow-hidden">
+          {activeTab === 'community' ? (
             <Card className="h-full border-none shadow-2xl rounded-[3.5rem] bg-[#E5DDD5] overflow-hidden flex flex-col relative">
               <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.06] pointer-events-none" />
               <CardHeader className="bg-[#075E54] text-white p-6 shrink-0 z-10 flex flex-row items-center justify-between">
@@ -266,9 +283,7 @@ export default function AdminSupportPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="private" className="flex-1 mt-4 overflow-hidden h-full">
+          ) : (
             <div className="flex flex-col md:flex-row gap-4 h-full">
               <Card className={cn("w-full md:w-80 shrink-0 border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col", mobileShowChat ? "hidden md:flex" : "flex")}>
                 <CardHeader className="p-6 bg-slate-50 border-b">
@@ -363,8 +378,8 @@ export default function AdminSupportPage() {
                 )}
               </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
     </DashboardShell>
   )

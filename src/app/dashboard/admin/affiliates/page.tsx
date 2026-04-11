@@ -31,7 +31,7 @@ import {
   ShieldAlert,
   SendHorizontal,
   Zap,
-  MoreHorizontal,
+  MoreVertical,
   Scan,
   UserCheck
 } from 'lucide-react'

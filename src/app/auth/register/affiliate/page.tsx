@@ -53,7 +53,6 @@ function AffiliateRegisterContent() {
 
   const [examData, setExamData] = useState({ q1: '', q2: '', q3: 'N/A' })
 
-  // Manejo de Cámara
   useEffect(() => {
     if (step === 'id_capture' || step === 'selfie') {
       const getCameraPermission = async () => {
@@ -118,8 +117,8 @@ function AffiliateRegisterContent() {
         lastName: formData.lastName.trim(),
         email: cleanEmail,
         whatsappNumber: formData.phone.replace(/\D/g, ''),
-        photoUrl: capturedSelfie, // El escaneo facial queda como foto de perfil
-        idPhotoUrl: capturedID, // Foto del documento para auditoría
+        photoUrl: capturedSelfie,
+        idPhotoUrl: capturedID,
         registeredAt: new Date().toISOString(),
         currentBalance: 0,
         status: 'Pending',
