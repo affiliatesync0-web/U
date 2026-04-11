@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -20,7 +21,8 @@ import {
   PhoneOff,
   MicOff,
   MessageCircle,
-  Clock
+  Clock,
+  Flame
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking } from '@/firebase'
@@ -31,11 +33,11 @@ interface Message {
   id: string
   userId?: string
   senderId?: string
-  receiverId?: string
+  affiliateId?: string
   userName: string
   content: string
   createdAt: any
-  chatId?: string
+  fromAdmin?: boolean
 }
 
 export default function AffiliateSupportPage() {
@@ -54,12 +56,8 @@ export default function AffiliateSupportPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  const getChatId = (uid1: string, uid2: string) => {
-    return [uid1, uid2].sort().join('_');
-  }
-
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(50)), 
+    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(100)), 
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
@@ -71,15 +69,13 @@ export default function AffiliateSupportPage() {
 
   const privateQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const adminId = 'ZpYInIs0vVMv06lsWhBeZ6Z6To93'; // ID genérico para el admin o sacado de config
-    const chatId = getChatId(user.uid, adminId);
     return query(
       collection(db, 'private_messages'),
-      where('chatId', '==', chatId),
+      where('affiliateId', '==', user.uid),
       orderBy('createdAt', 'asc'),
-      limit(50)
+      limit(100)
     );
-  }, [db, user, supportStatus]);
+  }, [db, user]);
   
   const { data: privateMessages } = useCollection<Message>(privateQuery)
 
@@ -90,7 +86,7 @@ export default function AffiliateSupportPage() {
       } else if (activeTab === 'private' && scrollRefPriv.current) {
         scrollRefPriv.current.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 150);
+    }, 200);
     return () => clearTimeout(timer);
   }, [communityMessages, privateMessages, activeTab]);
 
@@ -118,15 +114,12 @@ export default function AffiliateSupportPage() {
         createdAt: serverTimestamp()
       })
     } else {
-      const adminId = 'ZpYInIs0vVMv06lsWhBeZ6Z6To93'; 
-      const chatId = getChatId(user.uid, adminId);
-
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        receiverId: adminId,
+        affiliateId: user.uid,
         userName,
         content,
-        chatId,
+        fromAdmin: false,
         createdAt: serverTimestamp()
       });
     }
@@ -143,9 +136,9 @@ export default function AffiliateSupportPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setIsInCall(true);
-      toast({ title: "Audio Conectado", description: "Ya estás en la llamada con el administrador." });
+      toast({ title: "Llamada Conectada", description: "El audio está activo." });
     } catch (error) { 
-      toast({ variant: "destructive", title: "Acceso Denegado", description: "Habilita el micrófono para hablar." });
+      toast({ variant: "destructive", title: "Permiso Denegado", description: "Habilita el micrófono para hablar." });
     }
   }
 
@@ -170,7 +163,7 @@ export default function AffiliateSupportPage() {
                 <Users className="h-3.5 w-3.5 md:h-4 md:w-4" /> COMUNIDAD
               </TabsTrigger>
               <TabsTrigger value="private" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4" /> SOPORTE
+                <ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4" /> CHAT PRIVADO ADMIN
               </TabsTrigger>
             </TabsList>
 
@@ -186,11 +179,11 @@ export default function AffiliateSupportPage() {
               <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0">
                 <div className="flex items-center gap-3 md:gap-4">
                   <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary shadow-xl">
-                    <Users className="h-5 w-5 md:h-6 md:w-6" />
+                    <Flame className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
                   <div>
                     <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial Sync</CardTitle>
-                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Centro de Ayuda</p>
+                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Soporte Colectivo</p>
                   </div>
                 </div>
               </CardHeader>
@@ -212,7 +205,7 @@ export default function AffiliateSupportPage() {
                           "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
                           msg.userName === "ADMINISTRADOR" 
                             ? "bg-slate-900 text-white rounded-tl-none border border-primary/20" 
-                            : (msg.userId === user?.uid ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")
+                            : (msg.userId === user?.uid ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/10" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")
                         )}>
                           {msg.content}
                           <div className={cn(
@@ -229,8 +222,8 @@ export default function AffiliateSupportPage() {
                 </ScrollArea>
                 <div className="p-4 md:p-6 bg-white border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
-                    <Input placeholder="Escribe..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+                    <Input placeholder="Escribe al grupo..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0 transition-all active:scale-90"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
                   </form>
                 </div>
               </CardContent>
@@ -245,8 +238,8 @@ export default function AffiliateSupportPage() {
                     <ShieldCheck className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Chat Directo Admin</CardTitle>
-                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Atención 1 a 1</p>
+                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Chat Directo con Administración</CardTitle>
+                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Soporte Personalizado</p>
                   </div>
                 </div>
               </CardHeader>
@@ -285,8 +278,8 @@ export default function AffiliateSupportPage() {
                 </ScrollArea>
                 <div className="p-4 md:p-6 bg-white border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
-                    <Input placeholder="Mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+                    <Input placeholder="Escribe un mensaje privado al administrador..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0 transition-all active:scale-90"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
                   </form>
                 </div>
               </CardContent>
@@ -304,11 +297,11 @@ export default function AffiliateSupportPage() {
                 </div>
               </div>
               <div className="space-y-2 md:space-y-4 mb-8 md:mb-12">
-                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Llamada en Vivo</h3>
+                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Llamada en Curso</h3>
                 <Badge className="bg-red-500/20 text-red-500 border-none px-4 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase animate-pulse">AUDIO ACTIVO</Badge>
               </div>
               <div className="flex flex-col gap-4">
-                <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("mx-auto h-14 w-14 md:h-16 md:w-16 rounded-full border-2", isMicMuted ? "bg-red-500/20 border-red-500 text-red-500" : "bg-white/10 text-white")}>
+                <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("mx-auto h-14 w-14 md:h-16 md:w-16 rounded-full border-2 transition-all", isMicMuted ? "bg-red-500/20 border-red-500 text-red-500" : "bg-white/10 text-white hover:bg-white/20")}>
                   {isMicMuted ? <MicOff className="h-6 w-6 md:h-8 md:w-8" /> : <Mic className="h-6 w-6 md:h-8 md:w-8" />}
                 </Button>
                 <Button onClick={endCall} variant="destructive" className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">

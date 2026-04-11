@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -34,10 +35,11 @@ interface Message {
   id: string
   userId?: string
   senderId?: string
+  affiliateId?: string
   userName: string
   content: string
   createdAt: any
-  chatId?: string
+  fromAdmin?: boolean
 }
 
 export default function AdminSupportPage() {
@@ -62,22 +64,17 @@ export default function AdminSupportPage() {
   const { data: affiliates } = useCollection(affiliatesQuery)
 
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(50)), 
+    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(100)), 
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
-  const getChatId = (uid1: string, uid2: string) => {
-    return [uid1, uid2].sort().join('_');
-  }
-
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !user) return null;
-    const chatId = getChatId(user.uid, selectedAffiliate.id);
     return query(
       collection(db, 'private_messages'),
-      where('chatId', '==', chatId),
+      where('affiliateId', '==', selectedAffiliate.id),
       orderBy('createdAt', 'asc'),
-      limit(50)
+      limit(100)
     );
   }, [db, selectedAffiliate, user]);
   
@@ -90,7 +87,7 @@ export default function AdminSupportPage() {
       } else if (activeTab === 'private' && scrollRefPriv.current) {
         scrollRefPriv.current.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 150);
+    }, 200);
     return () => clearTimeout(timer);
   }, [communityMessages, privateMessages, activeTab, selectedAffiliate, mobileShowChat]);
 
@@ -109,20 +106,19 @@ export default function AdminSupportPage() {
         createdAt: serverTimestamp()
       })
     } else if (selectedAffiliate) {
-      const chatId = getChatId(user.uid, selectedAffiliate.id);
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        receiverId: selectedAffiliate.id,
+        affiliateId: selectedAffiliate.id,
         userName: "ADMINISTRADOR",
         content,
-        chatId,
+        fromAdmin: true,
         createdAt: serverTimestamp()
       });
 
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
-        title: '💬 Mensaje Privado Admin',
-        message: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
+        title: '💬 Nuevo Mensaje de Administrador',
+        message: content.substring(0, 60) + (content.length > 60 ? '...' : ''),
         type: 'system',
         createdAt: new Date().toISOString(),
         isRead: false,
@@ -151,9 +147,9 @@ export default function AdminSupportPage() {
         targetUserId: targetId
       }, { merge: true });
 
-      toast({ title: "Iniciando audio...", description: "Esperando a que el socio conteste." });
+      toast({ title: "Iniciando Llamada", description: "El socio recibirá la alerta en su panel." });
     } catch (e) {
-      toast({ variant: "destructive", title: "Acceso Denegado", description: "Habilita el micrófono para llamar." });
+      toast({ variant: "destructive", title: "Error de Audio", description: "Habilita el micrófono para llamar." });
     }
   }
 
@@ -181,21 +177,21 @@ export default function AdminSupportPage() {
                 <Users className="h-3.5 w-3.5 md:h-4 md:w-4" /> COMUNIDAD
               </TabsTrigger>
               <TabsTrigger value="private" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2">
-                <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" /> PRIVADOS
+                <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" /> MENSAJERÍA PRIVADA
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="community" className="flex-1 mt-0 outline-none">
             <Card className="h-full border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0 flex items-center justify-between">
+              <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0">
                 <div className="flex items-center gap-3 md:gap-4">
                   <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary shadow-xl">
                     <Flame className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial Sync</CardTitle>
-                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Comunicados para la red</p>
+                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial de Apoyo</CardTitle>
+                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Difusión para toda la red</p>
                   </div>
                 </div>
               </CardHeader>
@@ -205,7 +201,7 @@ export default function AdminSupportPage() {
                   <div className="space-y-4 md:space-y-6">
                     {communityMessages?.map((msg) => (
                       <div key={msg.id} className={cn(
-                        "flex flex-col max-w-[85%] md:max-w-[70%] animate-in fade-in slide-in-from-bottom-2",
+                        "flex flex-col max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-2",
                         msg.userId === user?.uid ? "ml-auto items-end" : "items-start"
                       )}>
                         <div className="flex items-center gap-2 mb-1 px-2">
@@ -235,8 +231,8 @@ export default function AdminSupportPage() {
                 </ScrollArea>
                 <div className="p-4 md:p-6 bg-white border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
-                    <Input placeholder="Escribe..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+                    <Input placeholder="Escribe un mensaje al grupo..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
                   </form>
                 </div>
               </CardContent>
@@ -253,7 +249,7 @@ export default function AdminSupportPage() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
-                      placeholder="Buscar socio..." 
+                      placeholder="Buscar afiliado..." 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="h-10 bg-white border-none ring-1 ring-slate-200 pl-10 rounded-xl text-xs font-bold"
@@ -272,12 +268,12 @@ export default function AdminSupportPage() {
                             selectedAffiliate?.id === aff.id ? "bg-slate-900 text-white shadow-xl" : "hover:bg-slate-50 text-slate-600"
                           )}
                         >
-                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs", selectedAffiliate?.id === aff.id ? "bg-primary text-white" : "bg-slate-200 text-slate-500")}>
+                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs", selectedAffiliate?.id === aff.id ? "bg-primary text-white shadow-lg rotate-3" : "bg-slate-200 text-slate-500")}>
                             {aff.firstName?.charAt(0)}
                           </div>
                           <div className="flex-1 text-left truncate">
                             <p className="text-xs font-black uppercase truncate">{aff.firstName} {aff.lastName}</p>
-                            <p className="text-[8px] font-bold opacity-50 uppercase">{aff.status}</p>
+                            <p className="text-[8px] font-bold opacity-50 uppercase tracking-widest">{aff.status}</p>
                           </div>
                           {selectedAffiliate?.id === aff.id && <ChevronRight className="h-4 w-4 text-primary" />}
                         </button>
@@ -294,7 +290,7 @@ export default function AdminSupportPage() {
                 {!selectedAffiliate ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-slate-50/50">
                     <MessageCircle className="h-12 w-12 text-slate-200 mb-4" />
-                    <h3 className="text-lg font-black text-slate-400 uppercase">Selecciona un socio</h3>
+                    <h3 className="text-lg font-black text-slate-400 uppercase tracking-widest leading-none">Selecciona un socio para<br/>iniciar conversación</h3>
                   </div>
                 ) : (
                   <>
@@ -308,12 +304,12 @@ export default function AdminSupportPage() {
                         </div>
                         <div>
                           <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest truncate max-w-[120px] md:max-w-none">
-                            {selectedAffiliate.firstName}
+                            {selectedAffiliate.firstName} {selectedAffiliate.lastName}
                           </CardTitle>
-                          <p className="text-[8px] md:text-[9px] text-primary font-black uppercase tracking-widest">Chat Privado</p>
+                          <p className="text-[8px] md:text-[9px] text-primary font-black uppercase tracking-widest">Chat Privado Seguro</p>
                         </div>
                       </div>
-                      <Button onClick={() => startCall(selectedAffiliate.id)} size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary text-white shadow-xl">
+                      <Button onClick={() => startCall(selectedAffiliate.id)} size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 transition-all">
                         <Phone className="h-4 w-4 md:h-5 md:w-5" />
                       </Button>
                     </CardHeader>
@@ -352,8 +348,8 @@ export default function AdminSupportPage() {
                       </ScrollArea>
                       <div className="p-4 md:p-6 bg-white border-t">
                         <form onSubmit={handleSendMessage} className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
-                          <Input placeholder="Escribe..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-                          <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+                          <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
+                          <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
                         </form>
                       </div>
                     </CardContent>
@@ -374,15 +370,15 @@ export default function AdminSupportPage() {
                 </div>
               </div>
               <div className="space-y-2 md:space-y-4 mb-8 md:mb-12">
-                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Llamada Privada</h3>
-                <Badge className="bg-red-500/20 text-red-500 border-none px-4 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase animate-pulse">AUDIO ACTIVO</Badge>
+                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Llamada de Voz</h3>
+                <Badge className="bg-red-500/20 text-red-500 border-none px-4 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase animate-pulse">MICRÓFONO ABIERTO</Badge>
               </div>
               <div className="flex flex-col gap-4">
-                <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("mx-auto h-14 w-14 md:h-16 md:w-16 rounded-full border-2", isMicMuted ? "bg-red-500/20 border-red-500 text-red-500" : "bg-white/10 text-white")}>
+                <Button size="icon" variant="ghost" onClick={() => setIsMicMuted(!isMicMuted)} className={cn("mx-auto h-14 w-14 md:h-16 md:w-16 rounded-full border-2 transition-all", isMicMuted ? "bg-red-500/20 border-red-500 text-red-500" : "bg-white/10 text-white hover:bg-white/20")}>
                   {isMicMuted ? <MicOff className="h-6 w-6 md:h-8 md:w-8" /> : <Mic className="h-6 w-6 md:h-8 md:w-8" />}
                 </Button>
                 <Button onClick={endCall} className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
-                  <PhoneOff className="h-5 w-5 md:h-6 md:w-6" /> FINALIZAR
+                  <PhoneOff className="h-5 w-5 md:h-6 md:w-6" /> FINALIZAR LLAMADA
                 </Button>
               </div>
             </Card>
