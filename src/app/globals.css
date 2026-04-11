@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -85,9 +86,9 @@
     @apply font-headline font-black;
   }
   
-  /* PREVENCION DE ZOOM NATIVO: IMPORTANTE PARA EXPERIENCIA APP */
-  input, textarea, select {
-    font-size: 16px !important; 
+  /* PREVENCION GLOBAL DE ZOOM: CRÍTICO PARA APP EXPERIENCE */
+  input, textarea, select, button {
+    font-size: 16px !important;
   }
   
   @media screen and (max-width: 768px) {

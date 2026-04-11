@@ -112,7 +112,6 @@ export default function AdminAffiliatesPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {/* VISTA TABLET/DESKTOP */}
             <Card className="hidden md:block border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -160,7 +159,6 @@ export default function AdminAffiliatesPage() {
               </CardContent>
             </Card>
 
-            {/* VISTA MÓVIL (CARDS) */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
               {filteredAffiliates.map((aff) => (
                 <Card key={aff.id} className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-slate-100 p-6 space-y-6">
@@ -383,7 +381,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                       <Alert className="bg-primary/10 border-primary/20 rounded-2xl">
                         <ShieldAlert className="h-4 w-4 text-primary" />
                         <AlertDescription className="text-[10px] font-bold text-primary uppercase leading-tight">
-                          Verifica que el discurso sea coherente antes de dar acceso al marketplace.
+                          Verifica siempre que el número de cuenta coincida con el banco seleccionado antes de enviar el dinero.
                         </AlertDescription>
                       </Alert>
                     </div>
