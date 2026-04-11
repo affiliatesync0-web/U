@@ -79,8 +79,11 @@ export default function AdminSupportPage() {
       }
     }
 
+    if (!db) return;
+
     const now = new Date().toISOString();
     
+    // Escuchar mensajes nuevos en comunidad para notificar
     const unsubComm = onSnapshot(collection(db, 'community_messages'), (snap) => {
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
@@ -94,6 +97,7 @@ export default function AdminSupportPage() {
       });
     });
 
+    // Escuchar mensajes nuevos en privado para notificar
     const unsubPriv = onSnapshot(collection(db, 'private_messages'), (snap) => {
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
@@ -198,7 +202,7 @@ export default function AdminSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {communityMessages?.map((msg) => (
+                    {(communityMessages || []).map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.userName === "ADMINISTRADOR" ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
@@ -249,7 +253,7 @@ export default function AdminSupportPage() {
                   <ScrollArea className="h-full">
                     {loadingAffs ? (
                       <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-                    ) : filteredAffiliates.length === 0 ? (
+                    ) : (filteredAffiliates || []).length === 0 ? (
                       <div className="text-center py-10 text-slate-400 text-[10px] font-black uppercase">No hay socios</div>
                     ) : (
                       <div className="p-2 space-y-1">
@@ -295,7 +299,7 @@ export default function AdminSupportPage() {
                     <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                       <ScrollArea className="flex-1 p-6 md:p-10">
                         <div className="space-y-4">
-                          {privateMessages?.map((msg) => (
+                          {(privateMessages || []).map((msg) => (
                             <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
                               <div className={cn("p-4 rounded-[1.5rem] text-[13px] font-medium shadow-sm leading-relaxed relative", 
                                 msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
