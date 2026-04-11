@@ -24,11 +24,14 @@ import {
   MessageCircle,
   ArrowLeft,
   Crown,
-  Clock
+  Clock,
+  StopCircle,
+  Play
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -38,6 +41,7 @@ interface Message {
   affiliateId?: string
   userName: string
   content: string
+  type?: 'text' | 'audio'
   createdAt: any
   fromAdmin?: boolean
 }
@@ -55,6 +59,12 @@ export default function AdminSupportPage() {
   
   const [isInCall, setIsInCall] = useState(false)
   const [isMicMuted, setIsMicMuted] = useState(false)
+
+  // Audio Recording States
+  const [isRecording, setIsRecording] = useState(false)
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
   
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
@@ -103,20 +113,20 @@ export default function AdminSupportPage() {
         userId: user.uid,
         userName: "ADMINISTRADOR",
         content,
+        type: 'text',
         createdAt: serverTimestamp()
       })
     } else if (selectedAffiliate) {
-      // Guardar mensaje privado
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
         affiliateId: selectedAffiliate.id,
         userName: "ADMINISTRADOR",
         content,
+        type: 'text',
         fromAdmin: true,
         createdAt: serverTimestamp()
       });
 
-      // Notificar al afiliado
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
         title: '💬 Mensaje Directo Admin',
@@ -128,6 +138,65 @@ export default function AdminSupportPage() {
       });
     }
   }
+
+  // Audio Recording Functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await uploadAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo acceder al micrófono." });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const uploadAudio = async (blob: Blob) => {
+    if (!selectedAffiliate || !user) return;
+    setIsUploadingAudio(true);
+    try {
+      const { storage } = initializeFirebase();
+      const audioRef = ref(storage, `support_audios/${Date.now()}.webm`);
+      await uploadBytes(audioRef, blob);
+      const downloadURL = await getDownloadURL(audioRef);
+
+      addDocumentNonBlocking(collection(db, 'private_messages'), {
+        senderId: user.uid,
+        affiliateId: selectedAffiliate.id,
+        userName: "ADMINISTRADOR",
+        content: downloadURL,
+        type: 'audio',
+        fromAdmin: true,
+        createdAt: serverTimestamp()
+      });
+
+      toast({ title: "Audio enviado" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error al subir audio" });
+    } finally {
+      setIsUploadingAudio(false);
+    }
+  };
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
@@ -335,7 +404,11 @@ export default function AdminSupportPage() {
                                   ? "bg-slate-900 text-white rounded-tr-none" 
                                   : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
                               )}>
-                                {msg.content}
+                                {msg.type === 'audio' ? (
+                                  <audio src={msg.content} controls className="max-w-full h-8" />
+                                ) : (
+                                  msg.content
+                                )}
                                 <div className={cn(
                                   "mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40",
                                   msg.fromAdmin ? "justify-end text-white" : "justify-start text-slate-500"
@@ -349,9 +422,31 @@ export default function AdminSupportPage() {
                         </div>
                       </ScrollArea>
                       <div className="p-4 md:p-6 bg-white border-t">
-                        <form onSubmit={handleSendMessage} className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
-                          <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-                          <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+                        <form onSubmit={handleSendMessage} className="flex gap-2 items-center bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
+                          <Button 
+                            type="button" 
+                            size="icon" 
+                            className={cn(
+                              "h-10 w-10 md:h-12 md:w-12 rounded-xl transition-all shrink-0",
+                              isRecording ? "bg-red-500 animate-pulse text-white" : "bg-white text-slate-400 hover:bg-slate-50"
+                            )}
+                            onMouseDown={startRecording}
+                            onMouseUp={stopRecording}
+                            onTouchStart={startRecording}
+                            onTouchEnd={stopRecording}
+                          >
+                            {isRecording ? <StopCircle className="h-5 w-5" /> : (isUploadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />)}
+                          </Button>
+                          <Input 
+                            placeholder={isRecording ? "Grabando audio..." : "Escribe un mensaje privado..."} 
+                            value={msgInput} 
+                            onChange={(e) => setMsgInput(e.target.value)} 
+                            disabled={isRecording}
+                            className="h-10 md:h-12 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" 
+                          />
+                          <Button type="submit" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording}>
+                            <Send className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                          </Button>
                         </form>
                       </div>
                     </CardContent>
