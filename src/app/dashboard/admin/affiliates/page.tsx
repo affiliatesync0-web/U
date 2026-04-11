@@ -52,6 +52,7 @@ import { adminResetUserPassword } from '@/lib/auth-actions'
 import { cn, getGoogleDriveDirectLink } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
