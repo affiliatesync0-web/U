@@ -121,7 +121,7 @@ export default function AdminSupportPage() {
 
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
-        title: '💬 Mensaje Directo Admin',
+        title: '💬 Mensaje Privado Admin',
         message: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
         type: 'system',
         createdAt: new Date().toISOString(),
@@ -203,7 +203,7 @@ export default function AdminSupportPage() {
                         msg.userId === user?.uid ? "ml-auto items-end" : "items-start"
                       )}>
                         <div className="flex items-center gap-2 mb-1 px-2">
-                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userId === user?.uid ? "text-primary" : "text-slate-500")}>
+                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>
                             {msg.userName}
                           </span>
                           {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}

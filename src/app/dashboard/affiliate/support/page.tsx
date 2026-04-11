@@ -35,6 +35,7 @@ interface Message {
   userName: string
   content: string
   createdAt: any
+  chatId?: string
 }
 
 export default function AffiliateSupportPage() {
@@ -50,6 +51,8 @@ export default function AffiliateSupportPage() {
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   const getChatId = (uid1: string, uid2: string) => {
     return [uid1, uid2].sort().join('_');
@@ -96,8 +99,15 @@ export default function AffiliateSupportPage() {
     if (!msgInput.trim() || !user) return
 
     const content = msgInput.trim();
-    // Usamos el nombre del perfil de Firestore para mayor precisión
-    const userName = profile?.firstName ? `${profile.firstName} ${profile.lastName}` : "SOCIO";
+    
+    // DETERMINAR NOMBRE DE USUARIO
+    let userName = "SOCIO";
+    if (user.email === ADMIN_EMAIL) {
+      userName = "ADMINISTRADOR";
+    } else if (profile?.firstName) {
+      userName = `${profile.firstName} ${profile.lastName}`.trim().toUpperCase();
+    }
+
     setMsgInput('')
 
     if (activeTab === 'community') {
