@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -7,25 +6,19 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  MessageSquare, 
   Send, 
-  Phone, 
   Users, 
   Loader2, 
-  Mic, 
   ShieldCheck, 
   Crown,
   Flame,
-  StopCircle,
   CheckCheck
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, initializeFirebase } from '@/firebase'
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -35,7 +28,7 @@ interface Message {
   affiliateId?: string
   userName: string
   content: string
-  type?: 'text' | 'audio'
+  type?: 'text'
   createdAt: any
   fromAdmin?: boolean
 }
@@ -47,10 +40,6 @@ export default function AffiliateSupportPage() {
   
   const [activeTab, setActiveTab] = useState<'community' | 'private'>('community')
   const [msgInput, setMsgInput] = useState('')
-  const [isRecording, setIsRecording] = useState(false)
-  const [isUploadingAudio, setIsUploadingAudio] = useState(false)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
   
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
@@ -125,87 +114,6 @@ export default function AffiliateSupportPage() {
     }
   }
 
-  const toggleRecording = async () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        if (audioBlob.size > 500) {
-          await uploadAudio(audioBlob);
-        }
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      toast({ variant: "destructive", title: "Error Micrófono", description: "Por favor, concede permisos de audio." });
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const uploadAudio = async (blob: Blob) => {
-    if (!user || !db) return;
-    setIsUploadingAudio(true);
-    try {
-      const { storage } = initializeFirebase();
-      const audioRef = ref(storage, `support_audios/aff_${user.uid}_${Date.now()}.webm`);
-      
-      const uploadResult = await uploadBytes(audioRef, blob);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
-
-      const isAdmin = user.email?.toLowerCase().trim() === ADMIN_EMAIL;
-      let nameToUse = isAdmin ? "ADMINISTRADOR" : (profile?.firstName ? `${profile.firstName} ${profile.lastName}`.trim().toUpperCase() : "SOCIO");
-
-      if (activeTab === 'community') {
-        await addDocumentNonBlocking(collection(db, 'community_messages'), {
-          userId: user.uid,
-          userName: nameToUse,
-          content: downloadURL,
-          type: 'audio',
-          createdAt: serverTimestamp()
-        });
-      } else {
-        await addDocumentNonBlocking(collection(db, 'private_messages'), {
-          senderId: user.uid,
-          affiliateId: user.uid,
-          userName: nameToUse,
-          content: downloadURL,
-          type: 'audio',
-          fromAdmin: isAdmin,
-          createdAt: serverTimestamp()
-        });
-      }
-    } catch (err) {
-      console.error("Audio error:", err);
-      toast({ variant: "destructive", title: "Fallo al enviar audio" });
-    } finally {
-      setIsUploadingAudio(false);
-    }
-  };
-
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-4 h-[calc(100vh-160px)] md:h-[calc(100vh-140px)] flex flex-col">
@@ -240,7 +148,7 @@ export default function AffiliateSupportPage() {
                           msg.userName === "ADMINISTRADOR" ? "bg-white text-slate-800 rounded-tl-none border border-amber-100" : 
                           (msg.userId === user?.uid ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")
                         )}>
-                          {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
+                          {msg.content}
                           <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end", msg.userId === user?.uid ? "text-slate-600" : "text-slate-500")}>
                             {formatTime(msg.createdAt)}
                             {msg.userId === user?.uid && <CheckCheck className="h-2.5 w-2.5 text-blue-500 ml-1" />}
@@ -251,14 +159,26 @@ export default function AffiliateSupportPage() {
                     <div ref={scrollRefComm} />
                   </div>
                 </ScrollArea>
-                <ChatInputArea 
-                  msgInput={msgInput} 
-                  setMsgInput={setMsgInput} 
-                  onSend={handleSendMessage} 
-                  isRecording={isRecording} 
-                  isUploading={isUploadingAudio} 
-                  onMicClick={toggleRecording} 
-                />
+                <div className="p-3 md:p-4 bg-[#F0F2F5] shrink-0 border-t">
+                  <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
+                    <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
+                      <Input 
+                        placeholder="Escribe un mensaje..." 
+                        value={msgInput} 
+                        onChange={(e) => setMsgInput(e.target.value)} 
+                        className="h-12 bg-transparent border-none shadow-none focus-visible:ring-0 font-medium text-slate-800 px-6 pr-14" 
+                      />
+                      <Button 
+                        type="submit" 
+                        size="icon" 
+                        className="absolute right-1 top-1 h-10 w-10 rounded-full bg-transparent hover:bg-slate-50 text-[#075E54] shadow-none shrink-0" 
+                        disabled={!msgInput.trim()}
+                      >
+                        <Send className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -281,7 +201,7 @@ export default function AffiliateSupportPage() {
                         <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", 
                           msg.fromAdmin ? "bg-white text-slate-800 rounded-tl-none border border-slate-100" : "bg-[#DCF8C6] text-slate-800 rounded-tr-none"
                         )}>
-                          {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
+                          {msg.content}
                           <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end", msg.fromAdmin ? "text-slate-500" : "text-slate-600")}>
                             {formatTime(msg.createdAt)}
                             {!msg.fromAdmin && <CheckCheck className="h-2.5 w-2.5 text-blue-500 ml-1" />}
@@ -292,14 +212,26 @@ export default function AffiliateSupportPage() {
                     <div ref={scrollRefPriv} />
                   </div>
                 </ScrollArea>
-                <ChatInputArea 
-                  msgInput={msgInput} 
-                  setMsgInput={setMsgInput} 
-                  onSend={handleSendMessage} 
-                  isRecording={isRecording} 
-                  isUploading={isUploadingAudio} 
-                  onMicClick={toggleRecording} 
-                />
+                <div className="p-3 md:p-4 bg-[#F0F2F5] shrink-0 border-t">
+                  <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
+                    <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
+                      <Input 
+                        placeholder="Escribe un mensaje..." 
+                        value={msgInput} 
+                        onChange={(e) => setMsgInput(e.target.value)} 
+                        className="h-12 bg-transparent border-none shadow-none focus-visible:ring-0 font-medium text-slate-800 px-6 pr-14" 
+                      />
+                      <Button 
+                        type="submit" 
+                        size="icon" 
+                        className="absolute right-1 top-1 h-10 w-10 rounded-full bg-transparent hover:bg-slate-50 text-[#075E54] shadow-none shrink-0" 
+                        disabled={!msgInput.trim()}
+                      >
+                        <Send className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -307,39 +239,4 @@ export default function AffiliateSupportPage() {
       </div>
     </DashboardShell>
   )
-}
-
-function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading, onMicClick }: any) {
-  return (
-    <div className="p-3 md:p-4 bg-[#F0F2F5] shrink-0 border-t">
-      <form onSubmit={onSend} className="flex gap-2 items-center">
-        <Button 
-          type="button" 
-          size="icon" 
-          className={cn("h-12 w-12 rounded-full transition-all shrink-0 shadow-sm", isRecording ? "bg-red-500 text-white animate-pulse" : "bg-white text-slate-500 hover:bg-slate-50")}
-          onClick={onMicClick}
-        >
-          {isRecording ? <StopCircle className="h-6 w-6" /> : (isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Mic className="h-6 w-6" />)}
-        </Button>
-        
-        <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
-          <Input 
-            placeholder={isRecording ? "Grabando..." : (isUploading ? "Enviando..." : "Escribe un mensaje...")} 
-            value={msgInput} 
-            onChange={(e) => setMsgInput(e.target.value)} 
-            disabled={isRecording || isUploading} 
-            className="h-12 bg-transparent border-none shadow-none focus-visible:ring-0 font-medium text-slate-800 px-6 pr-14" 
-          />
-          <Button 
-            type="submit" 
-            size="icon" 
-            className="absolute right-1 top-1 h-10 w-10 rounded-full bg-transparent hover:bg-slate-50 text-[#075E54] shadow-none shrink-0" 
-            disabled={!msgInput.trim() || isRecording || isUploading}
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
 }
