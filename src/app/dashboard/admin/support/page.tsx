@@ -57,7 +57,7 @@ export default function AdminSupportPage() {
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
-  // 3. Chat Privado Filtrado por Socio Seleccionado
+  // 3. Chat Privado Filtrado por Socio Seleccionado (Ambas partes ven esto)
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
     return query(
@@ -105,7 +105,7 @@ export default function AdminSupportPage() {
     } else if (selectedAffiliate) {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        affiliateId: selectedAffiliate.id,
+        affiliateId: selectedAffiliate.id, // ID del canal único
         userName: "ADMINISTRADOR",
         content,
         type: 'text',
@@ -125,7 +125,7 @@ export default function AdminSupportPage() {
         <Tabs defaultValue="community" className="flex-1 flex flex-col" onValueChange={(v: any) => setActiveTab(v)}>
           <TabsList className="h-14 bg-white border border-slate-100 rounded-2xl p-1 shadow-sm w-full md:w-fit self-center">
             <TabsTrigger value="community" className="flex-1 md:w-48 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
-              <Users className="h-4 w-4" /> COMUNIDAD
+              <Users className="h-4 w-4" /> GRUPO OFICIAL
             </TabsTrigger>
             <TabsTrigger value="private" className="flex-1 md:w-48 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
               <MessageCircle className="h-4 w-4" /> CHATS PRIVADOS
@@ -140,8 +140,8 @@ export default function AdminSupportPage() {
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white shadow-xl"><Flame className="h-6 w-6" /></div>
                   <div>
-                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">Grupo Oficial Sync</CardTitle>
-                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Soporte Maestro Activo</p>
+                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">Soporte Maestro Sync</CardTitle>
+                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Chat Global Activo</p>
                   </div>
                 </div>
               </CardHeader>
@@ -189,7 +189,7 @@ export default function AdminSupportPage() {
 
           <TabsContent value="private" className="flex-1 mt-4 overflow-hidden h-full">
             <div className="flex gap-4 h-full">
-              {/* Lista de Contactos */}
+              {/* Lista de Contactos (WhatsApp Style) */}
               <Card className={cn("w-full md:w-80 shrink-0 border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100", mobileShowChat ? "hidden md:flex" : "flex")}>
                 <CardHeader className="p-6 bg-slate-50 border-b">
                   <div className="relative">
@@ -204,15 +204,15 @@ export default function AdminSupportPage() {
                     ) : filteredAffiliates.length === 0 ? (
                       <div className="text-center py-10 text-slate-400 text-[10px] font-black uppercase">No hay socios</div>
                     ) : (
-                      <div className="p-3 space-y-2">
+                      <div className="p-2 space-y-1">
                         {filteredAffiliates.map((aff) => (
-                          <button key={aff.id} onClick={() => { setSelectedAffiliate(aff); setMobileShowChat(true); }} className={cn("w-full flex items-center gap-4 p-4 rounded-2xl transition-all", selectedAffiliate?.id === aff.id ? "bg-[#075E54]/5 ring-1 ring-[#075E54]/10 shadow-sm" : "hover:bg-slate-50 text-slate-600")}>
+                          <button key={aff.id} onClick={() => { setSelectedAffiliate(aff); setMobileShowChat(true); }} className={cn("w-full flex items-center gap-4 p-4 rounded-2xl transition-all", selectedAffiliate?.id === aff.id ? "bg-[#075E54]/10" : "hover:bg-slate-50")}>
                             <div className={cn("h-12 w-12 rounded-full flex items-center justify-center font-black text-xs shadow-md shrink-0", selectedAffiliate?.id === aff.id ? "bg-[#075E54] text-white" : "bg-slate-200 text-slate-500")}>
                               {aff.firstName?.charAt(0)}
                             </div>
                             <div className="flex-1 text-left min-w-0">
                               <p className="text-[11px] font-black text-slate-800 uppercase truncate">{aff.firstName} {aff.lastName}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{aff.status || 'Active'}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">Chat Directo</p>
                             </div>
                           </button>
                         ))}
@@ -222,7 +222,7 @@ export default function AdminSupportPage() {
                 </CardContent>
               </Card>
 
-              {/* Chat Privado Seleccionado */}
+              {/* Chat Privado Seleccionado (WhatsApp Style) */}
               <Card className={cn("flex-1 border-none shadow-2xl rounded-[3rem] bg-[#E5DDD5] overflow-hidden flex flex-col h-full relative ring-1 ring-slate-100", !mobileShowChat ? "hidden md:flex" : "flex")}>
                 <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.06] pointer-events-none" />
                 
@@ -230,7 +230,7 @@ export default function AdminSupportPage() {
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-white/50 backdrop-blur-sm z-10">
                     <div className="h-32 w-32 bg-slate-200 rounded-full flex items-center justify-center mb-8 shadow-inner"><MessageCircle className="h-16 w-16 text-slate-400" /></div>
                     <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest leading-none">Canal Privado</h3>
-                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio de la lista para iniciar una conversación 1 a 1.</p>
+                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio de la lista para ver la conversación completa.</p>
                   </div>
                 ) : (
                   <>
@@ -240,7 +240,7 @@ export default function AdminSupportPage() {
                         <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center text-white shadow-xl font-black text-sm">{selectedAffiliate.firstName?.charAt(0)}</div>
                         <div>
                           <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">{selectedAffiliate.firstName} {selectedAffiliate.lastName}</CardTitle>
-                          <p className="text-[9px] text-white/60 font-black uppercase">Chat Directo Privado</p>
+                          <p className="text-[9px] text-white/60 font-black uppercase">Chat 1 a 1</p>
                         </div>
                       </div>
                     </CardHeader>

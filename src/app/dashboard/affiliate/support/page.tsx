@@ -48,11 +48,11 @@ export default function AffiliateSupportPage() {
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
-  // 2. Perfil del Afiliado (para el nombre)
+  // 2. Perfil del Afiliado
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 3. Chat Privado con Admin (Solo mensajes relacionados con este usuario)
+  // 3. Chat Privado con Admin (Historial compartido basado en el ID del afiliado)
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(
@@ -102,7 +102,7 @@ export default function AffiliateSupportPage() {
     } else {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        affiliateId: user.uid,
+        affiliateId: user.uid, // Canal único para este afiliado
         userName: userName,
         content,
         type: 'text',
@@ -188,8 +188,8 @@ export default function AffiliateSupportPage() {
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white shadow-xl"><ShieldCheck className="h-6 w-6" /></div>
                   <div>
-                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">Chat con Administración</CardTitle>
-                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Soporte Privado 1 a 1</p>
+                    <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">Soporte Privado Admin</CardTitle>
+                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Conversación Directa</p>
                   </div>
                 </div>
               </CardHeader>
