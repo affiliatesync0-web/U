@@ -71,7 +71,7 @@ export default function AffiliateSupportPage() {
 
   const privateQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const adminId = supportStatus?.adminId || 'affiliatesync0_admin_id';
+    const adminId = 'ZpYInIs0vVMv06lsWhBeZ6Z6To93'; // ID genérico para el admin o sacado de config
     const chatId = getChatId(user.uid, adminId);
     return query(
       collection(db, 'private_messages'),
@@ -118,7 +118,7 @@ export default function AffiliateSupportPage() {
         createdAt: serverTimestamp()
       })
     } else {
-      const adminId = supportStatus?.adminId || 'affiliatesync0_admin_id';
+      const adminId = 'ZpYInIs0vVMv06lsWhBeZ6Z6To93'; 
       const chatId = getChatId(user.uid, adminId);
 
       addDocumentNonBlocking(collection(db, 'private_messages'), {
@@ -181,7 +181,7 @@ export default function AffiliateSupportPage() {
             )}
           </div>
 
-          <TabsContent value="community" className="flex-1 mt-0 outline-none">
+          <TabsContent value="community" className="flex-1 mt-0 outline-none h-full">
             <Card className="h-full border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0">
                 <div className="flex items-center gap-3 md:gap-4">
@@ -237,7 +237,7 @@ export default function AffiliateSupportPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="private" className="flex-1 mt-0 outline-none">
+          <TabsContent value="private" className="flex-1 mt-0 outline-none h-full">
             <Card className="h-full border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0">
                 <div className="flex items-center gap-3 md:gap-4">

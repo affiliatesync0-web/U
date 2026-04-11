@@ -288,7 +288,7 @@ export default function AdminSupportPage() {
               </Card>
 
               <Card className={cn(
-                "flex-1 border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100",
+                "flex-1 border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100",
                 !mobileShowChat ? "hidden md:flex" : "flex"
               )}>
                 {!selectedAffiliate ? (
@@ -366,7 +366,7 @@ export default function AdminSupportPage() {
 
         {isInCall && (
           <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in">
-            <Card className="w-full max-w-sm border-none shadow-2xl rounded-[3rem] bg-slate-800 p-8 md:p-12 text-center ring-4 ring-primary/20">
+            <Card className="w-full max-sm:max-w-xs border-none shadow-2xl rounded-[3rem] bg-slate-800 p-8 md:p-12 text-center ring-4 ring-primary/20">
               <div className="relative mb-8 mx-auto w-24 h-24 md:w-32 md:h-32">
                 <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
                 <div className="relative z-10 h-full w-full rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/30">
