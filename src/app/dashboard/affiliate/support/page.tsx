@@ -51,10 +51,6 @@ export default function AffiliateSupportPage() {
   const scrollRefPriv = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  // El administrador principal tiene este ID de correo para notificaciones, pero usaremos su UID real para el chat
-  // En este sistema, asumimos que el admin siempre es el mismo
-  const ADMIN_UID = 'affiliatesync0_admin_id'; // Placeholder o ID real del admin
-
   const getChatId = (uid1: string, uid2: string) => {
     return [uid1, uid2].sort().join('_');
   }
@@ -64,13 +60,15 @@ export default function AffiliateSupportPage() {
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
+  const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
+  const { data: profile } = useDoc(affiliateRef);
+
   const supportStatusRef = useMemoFirebase(() => doc(db, 'site_config', 'support_status'), [db]);
   const { data: supportStatus } = useDoc(supportStatusRef);
 
-  // Consulta bidireccional usando ChatId ordenado
   const privateQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const adminId = supportStatus?.adminId || 'admin_default';
+    const adminId = supportStatus?.adminId || 'affiliatesync0_admin_id';
     const chatId = getChatId(user.uid, adminId);
     return query(
       collection(db, 'private_messages'),
@@ -98,7 +96,8 @@ export default function AffiliateSupportPage() {
     if (!msgInput.trim() || !user) return
 
     const content = msgInput.trim();
-    const userName = `${user.firstName || "SOCIO"}`;
+    // Usamos el nombre del perfil de Firestore para mayor precisión
+    const userName = profile?.firstName ? `${profile.firstName} ${profile.lastName}` : "SOCIO";
     setMsgInput('')
 
     if (activeTab === 'community') {
@@ -109,7 +108,7 @@ export default function AffiliateSupportPage() {
         createdAt: serverTimestamp()
       })
     } else {
-      const adminId = supportStatus?.adminId || privateMessages?.[0]?.senderId || 'admin_default';
+      const adminId = supportStatus?.adminId || 'affiliatesync0_admin_id';
       const chatId = getChatId(user.uid, adminId);
 
       addDocumentNonBlocking(collection(db, 'private_messages'), {
@@ -188,7 +187,7 @@ export default function AffiliateSupportPage() {
                         msg.userId === user?.uid ? "ml-auto items-end" : "items-start"
                       )}>
                         <div className="flex items-center gap-2 mb-1 px-2">
-                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-400")}>
+                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>
                             {msg.userName}
                           </span>
                           {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}

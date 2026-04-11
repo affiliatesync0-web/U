@@ -22,7 +22,8 @@ import {
   ChevronRight,
   PhoneOff,
   MessageCircle,
-  ArrowLeft
+  ArrowLeft,
+  Crown
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
@@ -65,12 +66,10 @@ export default function AdminSupportPage() {
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
-  // Función para generar un chatId consistente basado en orden alfabético de UIDs
   const getChatId = (uid1: string, uid2: string) => {
     return [uid1, uid2].sort().join('_');
   }
 
-  // Consulta para chat privado bidireccional usando ID único consistente
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !user) return null;
     const chatId = getChatId(user.uid, selectedAffiliate.id);
@@ -138,7 +137,6 @@ export default function AdminSupportPage() {
       streamRef.current = stream;
       setIsInCall(true);
       
-      // Actualizar estado global para que el afiliado vea la llamada
       setDocumentNonBlocking(doc(db, 'site_config', 'support_status'), {
         isLive: true,
         startedAt: new Date().toISOString(),
@@ -204,9 +202,12 @@ export default function AdminSupportPage() {
                         "flex flex-col max-w-[85%] md:max-w-[70%] animate-in fade-in slide-in-from-bottom-2",
                         msg.userId === user?.uid ? "ml-auto items-end" : "items-start"
                       )}>
-                        <span className={cn("text-[8px] md:text-[9px] font-black uppercase mb-1 px-2", msg.userId === user?.uid ? "text-primary" : "text-slate-400")}>
-                          {msg.userName} {msg.userId === user?.uid && "✓"}
-                        </span>
+                        <div className="flex items-center gap-2 mb-1 px-2">
+                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userId === user?.uid ? "text-primary" : "text-slate-500")}>
+                            {msg.userName}
+                          </span>
+                          {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}
+                        </div>
                         <div className={cn(
                           "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed",
                           msg.userId === user?.uid 
@@ -232,7 +233,6 @@ export default function AdminSupportPage() {
 
           <TabsContent value="private" className="flex-1 mt-0 outline-none h-full">
             <div className="flex gap-4 h-full relative">
-              {/* Lista de Afiliados */}
               <Card className={cn(
                 "w-full md:w-80 shrink-0 border-none shadow-xl rounded-2xl md:rounded-[2.5rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100",
                 mobileShowChat ? "hidden md:flex" : "flex"
@@ -275,7 +275,6 @@ export default function AdminSupportPage() {
                 </CardContent>
               </Card>
 
-              {/* Chat Privado */}
               <Card className={cn(
                 "flex-1 border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100",
                 !mobileShowChat ? "hidden md:flex" : "flex"
