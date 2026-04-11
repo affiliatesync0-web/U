@@ -20,11 +20,9 @@ import {
   Crown,
   PhoneOff,
   MicOff,
-  MessageCircle,
   Clock,
   Flame,
-  StopCircle,
-  Play
+  StopCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
@@ -100,6 +98,12 @@ export default function AffiliateSupportPage() {
     return () => clearTimeout(timer);
   }, [communityMessages, privateMessages, activeTab]);
 
+  const formatTime = (createdAt: any) => {
+    if (!createdAt) return "Ahora";
+    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!msgInput.trim() || !user || !db) return
@@ -148,6 +152,10 @@ export default function AffiliateSupportPage() {
       };
 
       mediaRecorder.onstop = async () => {
+        if (audioChunksRef.current.length === 0) {
+          setIsRecording(false);
+          return;
+        }
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await uploadAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
@@ -177,7 +185,9 @@ export default function AffiliateSupportPage() {
       const downloadURL = await getDownloadURL(audioRef);
 
       let nameToUse = "SOCIO";
-      if (profile?.firstName) {
+      if (user.email?.toLowerCase().trim() === ADMIN_EMAIL) {
+        nameToUse = "ADMINISTRADOR";
+      } else if (profile?.firstName) {
         nameToUse = `${profile.firstName} ${profile.lastName}`.trim().toUpperCase();
       }
 
@@ -203,16 +213,11 @@ export default function AffiliateSupportPage() {
 
       toast({ title: "Audio enviado" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Error al subir audio" });
+      console.error("Error subiendo audio:", err);
+      toast({ variant: "destructive", title: "Error al enviar audio" });
     } finally {
       setIsUploadingAudio(false);
     }
-  };
-
-  const formatTime = (createdAt: any) => {
-    if (!createdAt) return "";
-    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const joinCall = async () => {
@@ -324,8 +329,16 @@ export default function AffiliateSupportPage() {
                     >
                       {isRecording ? <StopCircle className="h-5 w-5" /> : (isUploadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />)}
                     </Button>
-                    <Input placeholder="Escribe al grupo..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} disabled={isRecording} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording}><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+                    <Input 
+                      placeholder={isRecording ? "Grabando audio..." : "Escribe al grupo..."} 
+                      value={msgInput} 
+                      onChange={(e) => setMsgInput(e.target.value)} 
+                      disabled={isRecording || isUploadingAudio}
+                      className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" 
+                    />
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording || isUploadingAudio}>
+                      <Send className="h-4 w-4 md:h-6 md:w-6 text-white" />
+                    </Button>
                   </form>
                 </div>
               </CardContent>
@@ -402,10 +415,10 @@ export default function AffiliateSupportPage() {
                       placeholder={isRecording ? "Grabando audio..." : "Escribe un mensaje privado..."} 
                       value={msgInput} 
                       onChange={(e) => setMsgInput(e.target.value)} 
-                      disabled={isRecording}
+                      disabled={isRecording || isUploadingAudio}
                       className="h-10 md:h-12 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" 
                     />
-                    <Button type="submit" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording}>
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording || isUploadingAudio}>
                       <Send className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </Button>
                   </form>

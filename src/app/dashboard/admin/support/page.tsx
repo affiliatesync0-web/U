@@ -25,8 +25,7 @@ import {
   ArrowLeft,
   Crown,
   Clock,
-  StopCircle,
-  Play
+  StopCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
@@ -101,6 +100,12 @@ export default function AdminSupportPage() {
     return () => clearTimeout(timer);
   }, [communityMessages, privateMessages, activeTab, selectedAffiliate, mobileShowChat]);
 
+  const formatTime = (createdAt: any) => {
+    if (!createdAt) return "Ahora";
+    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!msgInput.trim() || !user || !db) return
@@ -108,10 +113,12 @@ export default function AdminSupportPage() {
     const content = msgInput.trim();
     setMsgInput('')
 
+    const nameToUse = "ADMINISTRADOR";
+
     if (activeTab === 'community') {
       addDocumentNonBlocking(collection(db, 'community_messages'), {
         userId: user.uid,
-        userName: "ADMINISTRADOR",
+        userName: nameToUse,
         content,
         type: 'text',
         createdAt: serverTimestamp()
@@ -120,7 +127,7 @@ export default function AdminSupportPage() {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
         affiliateId: selectedAffiliate.id,
-        userName: "ADMINISTRADOR",
+        userName: nameToUse,
         content,
         type: 'text',
         fromAdmin: true,
@@ -151,6 +158,10 @@ export default function AdminSupportPage() {
       };
 
       mediaRecorder.onstop = async () => {
+        if (audioChunksRef.current.length === 0) {
+          setIsRecording(false);
+          return;
+        }
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await uploadAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
@@ -181,10 +192,12 @@ export default function AdminSupportPage() {
       await uploadBytes(audioRef, blob);
       const downloadURL = await getDownloadURL(audioRef);
 
+      const nameToUse = "ADMINISTRADOR";
+
       if (activeTab === 'community') {
         addDocumentNonBlocking(collection(db, 'community_messages'), {
           userId: user.uid,
-          userName: "ADMINISTRADOR",
+          userName: nameToUse,
           content: downloadURL,
           type: 'audio',
           createdAt: serverTimestamp()
@@ -193,7 +206,7 @@ export default function AdminSupportPage() {
         addDocumentNonBlocking(collection(db, 'private_messages'), {
           senderId: user.uid,
           affiliateId: selectedAffiliate.id,
-          userName: "ADMINISTRADOR",
+          userName: nameToUse,
           content: downloadURL,
           type: 'audio',
           fromAdmin: true,
@@ -203,16 +216,11 @@ export default function AdminSupportPage() {
 
       toast({ title: "Audio enviado" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Error al subir audio" });
+      console.error("Error subiendo audio:", err);
+      toast({ variant: "destructive", title: "Error al enviar audio" });
     } finally {
       setIsUploadingAudio(false);
     }
-  };
-
-  const formatTime = (createdAt: any) => {
-    if (!createdAt) return "";
-    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const startCall = async (targetId: string) => {
@@ -335,10 +343,10 @@ export default function AdminSupportPage() {
                       placeholder={isRecording ? "Grabando audio..." : "Escribe al grupo..."} 
                       value={msgInput} 
                       onChange={(e) => setMsgInput(e.target.value)} 
-                      disabled={isRecording}
+                      disabled={isRecording || isUploadingAudio}
                       className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" 
                     />
-                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording}>
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording || isUploadingAudio}>
                       <Send className="h-4 w-4 md:h-6 md:w-6 text-white" />
                     </Button>
                   </form>
@@ -474,15 +482,14 @@ export default function AdminSupportPage() {
                           >
                             {isRecording ? <StopCircle className="h-5 w-5" /> : (isUploadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />)}
                           </Button>
-                          <input type="hidden" name="dummy" />
                           <Input 
                             placeholder={isRecording ? "Grabando audio..." : "Escribe un mensaje privado..."} 
                             value={msgInput} 
                             onChange={(e) => setMsgInput(e.target.value)} 
-                            disabled={isRecording}
+                            disabled={isRecording || isUploadingAudio}
                             className="h-10 md:h-12 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" 
                           />
-                          <Button type="submit" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording}>
+                          <Button type="submit" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording || isUploadingAudio}>
                             <Send className="h-4 w-4 md:h-5 md:w-5 text-white" />
                           </Button>
                         </form>
