@@ -25,7 +25,9 @@ import {
   ArrowLeft,
   Crown,
   Clock,
-  StopCircle
+  StopCircle,
+  Check,
+  CheckCheck
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
@@ -56,9 +58,6 @@ export default function AdminSupportPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [mobileShowChat, setMobileShowChat] = useState(false)
   
-  const [isInCall, setIsInCall] = useState(false)
-  const [isMicMuted, setIsMicMuted] = useState(false)
-
   const [isRecording, setIsRecording] = useState(false)
   const [isUploadingAudio, setIsUploadingAudio] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -66,7 +65,8 @@ export default function AdminSupportPage() {
   
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
+
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
   const { data: affiliates } = useCollection(affiliatesQuery)
@@ -78,6 +78,7 @@ export default function AdminSupportPage() {
 
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
+    // IMPORTANTE: Filtrar por affiliateId para que coincida con lo que el afiliado ve
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', selectedAffiliate.id),
@@ -125,7 +126,7 @@ export default function AdminSupportPage() {
     } else if (selectedAffiliate) {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        affiliateId: selectedAffiliate.id,
+        affiliateId: selectedAffiliate.id, // Referencia clave para sincronizar
         userName: nameToUse,
         content,
         type: 'text',
@@ -180,7 +181,7 @@ export default function AdminSupportPage() {
       const nameToUse = "ADMINISTRADOR";
 
       if (activeTab === 'community') {
-        addDocumentNonBlocking(collection(db, 'community_messages'), {
+        await addDocumentNonBlocking(collection(db, 'community_messages'), {
           userId: user.uid,
           userName: nameToUse,
           content: downloadURL,
@@ -188,7 +189,7 @@ export default function AdminSupportPage() {
           createdAt: serverTimestamp()
         });
       } else if (selectedAffiliate) {
-        addDocumentNonBlocking(collection(db, 'private_messages'), {
+        await addDocumentNonBlocking(collection(db, 'private_messages'), {
           senderId: user.uid,
           affiliateId: selectedAffiliate.id,
           userName: nameToUse,
@@ -199,6 +200,7 @@ export default function AdminSupportPage() {
         });
       }
     } catch (err) {
+      console.error("Audio upload error:", err);
       toast({ variant: "destructive", title: "Fallo al enviar audio" });
     } finally {
       setIsUploadingAudio(false);
@@ -225,25 +227,26 @@ export default function AdminSupportPage() {
           </div>
 
           <TabsContent value="community" className="flex-1 mt-0 h-full">
-            <Card className="h-full border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0">
+            <Card className="h-full border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-[#E5DDD5] overflow-hidden flex flex-col ring-1 ring-slate-100">
+              <CardHeader className="bg-[#075E54] text-white p-4 md:p-6 shrink-0 border-b border-white/10">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary shadow-xl"><Flame className="h-5 w-5 md:h-6 md:w-6" /></div>
-                  <div><CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial Sync Academy</CardTitle><p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Control Maestro</p></div>
+                  <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/10 flex items-center justify-center text-white shadow-xl"><Flame className="h-5 w-5 md:h-6 md:w-6" /></div>
+                  <div><CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest text-white">Grupo Oficial Sync Academy</CardTitle><p className="text-[8px] md:text-[9px] text-white/60 font-bold uppercase tracking-widest mt-0.5">Centro de Control</p></div>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30 flex flex-col">
-                <ScrollArea className="flex-1 p-4 md:p-8">
+              <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col">
+                <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.06] pointer-events-none" />
+                <ScrollArea className="flex-1 p-4 md:p-8 relative z-10">
                   <div className="space-y-4">
                     {communityMessages?.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[75%]", msg.userName === "ADMINISTRADOR" ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-2">
-                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>{msg.userName}</span>
-                          {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}
+                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
+                          {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-amber-500" />}
                         </div>
-                        <div className={cn("p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed", msg.userName === "ADMINISTRADOR" ? "bg-slate-900 text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")}>
+                        <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[12px] md:text-[13px] font-medium shadow-md leading-relaxed relative", msg.userName === "ADMINISTRADOR" ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
                           {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
-                          <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40", msg.userName === "ADMINISTRADOR" ? "justify-end text-white" : "justify-start text-slate-500")}><Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}</div>
+                          <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end", msg.userName === "ADMINISTRADOR" ? "text-slate-600" : "text-slate-500")}><Clock className="h-2 w-2" /> {formatTime(msg.createdAt)} {msg.userName === "ADMINISTRADOR" && <CheckCheck className="h-2 w-2 text-blue-500 ml-1" />}</div>
                         </div>
                       </div>
                     ))}
@@ -271,9 +274,9 @@ export default function AdminSupportPage() {
                   <ScrollArea className="h-full">
                     <div className="p-2 space-y-1">
                       {filteredAffiliates.map((aff) => (
-                        <button key={aff.id} onClick={() => { setSelectedAffiliate(aff); setMobileShowChat(true); }} className={cn("w-full flex items-center gap-3 p-3 rounded-xl transition-all", selectedAffiliate?.id === aff.id ? "bg-slate-900 text-white shadow-xl" : "hover:bg-slate-50 text-slate-600")}>
-                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs", selectedAffiliate?.id === aff.id ? "bg-primary text-white shadow-lg rotate-3" : "bg-slate-200 text-slate-500")}>{aff.firstName?.charAt(0)}</div>
-                          <div className="flex-1 text-left truncate"><p className="text-xs font-black uppercase truncate">{aff.firstName} {aff.lastName}</p><p className="text-[8px] font-bold opacity-50 uppercase tracking-widest">{aff.status}</p></div>
+                        <button key={aff.id} onClick={() => { setSelectedAffiliate(aff); setMobileShowChat(true); }} className={cn("w-full flex items-center gap-3 p-3 rounded-xl transition-all", selectedAffiliate?.id === aff.id ? "bg-slate-100 shadow-sm" : "hover:bg-slate-50 text-slate-600")}>
+                          <div className={cn("h-12 w-12 rounded-full flex items-center justify-center font-black text-xs shadow-md", selectedAffiliate?.id === aff.id ? "bg-[#075E54] text-white" : "bg-slate-200 text-slate-500")}>{aff.firstName?.charAt(0)}</div>
+                          <div className="flex-1 text-left truncate border-b border-slate-100 pb-2"><p className="text-sm font-black text-slate-800 uppercase truncate">{aff.firstName} {aff.lastName}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{aff.status}</p></div>
                         </button>
                       ))}
                     </div>
@@ -281,23 +284,34 @@ export default function AdminSupportPage() {
                 </CardContent>
               </Card>
 
-              <Card className={cn("flex-1 border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-white overflow-hidden flex flex-col h-full", !mobileShowChat ? "hidden md:flex" : "flex")}>
+              <Card className={cn("flex-1 border-none shadow-2xl rounded-2xl md:rounded-[3rem] bg-[#E5DDD5] overflow-hidden flex flex-col h-full", !mobileShowChat ? "hidden md:flex" : "flex")}>
                 {!selectedAffiliate ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-slate-50/50"><MessageCircle className="h-12 w-12 text-slate-200 mb-4" /><h3 className="text-lg font-black text-slate-400 uppercase tracking-widest leading-none">Selecciona un socio para<br/>iniciar conversación</h3></div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-[#F0F2F5]">
+                    <div className="h-32 w-32 bg-slate-200 rounded-full flex items-center justify-center mb-6"><MessageCircle className="h-16 w-16 text-slate-400" /></div>
+                    <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest leading-none">WhatsApp Web para Admin</h3>
+                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio para ver su historial completo y enviar mensajes privados o audios.</p>
+                  </div>
                 ) : (
                   <>
-                    <CardHeader className="bg-slate-900 text-white p-4 md:p-6 shrink-0 flex items-center justify-between">
-                      <div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="md:hidden text-white h-8 w-8" onClick={() => setMobileShowChat(false)}><ArrowLeft className="h-5 w-5" /></Button><div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-xl font-black text-xs">{selectedAffiliate.firstName?.charAt(0)}</div><div><CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">{selectedAffiliate.firstName} {selectedAffiliate.lastName}</CardTitle><p className="text-[8px] md:text-[9px] text-primary font-black uppercase">Privado</p></div></div>
+                    <CardHeader className="bg-[#075E54] text-white p-4 md:p-6 shrink-0 flex items-center justify-between border-b border-white/10">
+                      <div className="flex items-center gap-3">
+                        <Button variant="ghost" size="icon" className="md:hidden text-white h-8 w-8" onClick={() => setMobileShowChat(false)}><ArrowLeft className="h-5 w-5" /></Button>
+                        <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white shadow-xl font-black text-xs">{selectedAffiliate.firstName?.charAt(0)}</div>
+                        <div><CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest text-white">{selectedAffiliate.firstName} {selectedAffiliate.lastName}</CardTitle><p className="text-[8px] md:text-[9px] text-white/60 font-black uppercase">En Línea</p></div>
+                      </div>
                     </CardHeader>
-                    <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30 flex flex-col">
-                      <ScrollArea className="flex-1 p-4 md:p-8">
+                    <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col">
+                      <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.06] pointer-events-none" />
+                      <ScrollArea className="flex-1 p-4 md:p-8 relative z-10">
                         <div className="space-y-4">
                           {privateMessages?.map((msg) => (
                             <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[75%]", msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
-                              <div className="flex items-center gap-2 mb-1 px-2"><span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.fromAdmin ? "text-primary" : "text-slate-500")}>{msg.userName}</span>{msg.fromAdmin && <Crown className="h-3 w-3 text-primary" />}</div>
-                              <div className={cn("p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed", msg.fromAdmin ? "bg-slate-900 text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")}>
+                              <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[12px] md:text-[13px] font-medium shadow-md leading-relaxed relative", msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
                                 {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
-                                <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40", msg.fromAdmin ? "justify-end text-white" : "justify-start text-slate-500")}><Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}</div>
+                                <div className="mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end">
+                                  {formatTime(msg.createdAt)} 
+                                  {msg.fromAdmin && <CheckCheck className="h-2.5 w-2.5 text-blue-500 ml-1" />}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -319,18 +333,34 @@ export default function AdminSupportPage() {
 
 function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading, startRecording, stopRecording }: any) {
   return (
-    <div className="p-4 md:p-6 bg-white border-t">
-      <form onSubmit={onSend} className="flex gap-2 items-center bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
+    <div className="p-3 md:p-4 bg-[#F0F2F5] shrink-0 border-t">
+      <form onSubmit={onSend} className="flex gap-2 items-center">
         <Button 
           type="button" 
           size="icon" 
-          className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl transition-all shrink-0", isRecording ? "bg-red-500 animate-pulse text-white" : "bg-white text-slate-400 hover:bg-slate-50")}
+          className={cn("h-12 w-12 rounded-full transition-all shrink-0 shadow-sm", isRecording ? "bg-red-500 text-white animate-pulse" : "bg-white text-slate-500 hover:bg-slate-50")}
           onMouseDown={startRecording} onMouseUp={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording}
         >
-          {isRecording ? <StopCircle className="h-5 w-5" /> : (isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />)}
+          {isRecording ? <StopCircle className="h-6 w-6" /> : (isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Mic className="h-6 w-6" />)}
         </Button>
-        <Input placeholder={isRecording ? "Grabando..." : (isUploading ? "Enviando audio..." : "Escribe un mensaje...")} value={msgInput} onChange={(e) => setMsgInput(e.target.value)} disabled={isRecording || isUploading} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
-        <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-slate-900 shadow-xl shrink-0 transition-all active:scale-90" disabled={isRecording || isUploading}><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
+        
+        <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
+          <Input 
+            placeholder={isRecording ? "Grabando audio..." : (isUploading ? "Enviando..." : "Escribe un mensaje...")} 
+            value={msgInput} 
+            onChange={(e) => setMsgInput(e.target.value)} 
+            disabled={isRecording || isUploading} 
+            className="h-12 bg-transparent border-none shadow-none focus-visible:ring-0 font-medium text-slate-800 px-6 pr-14" 
+          />
+          <Button 
+            type="submit" 
+            size="icon" 
+            className="absolute right-1 top-1 h-10 w-10 rounded-full bg-transparent hover:bg-slate-50 text-[#075E54] shadow-none shrink-0" 
+            disabled={!msgInput.trim() || isRecording || isUploading}
+          >
+            <Send className="h-5 w-5" />
+          </Button>
+        </div>
       </form>
     </div>
   );
