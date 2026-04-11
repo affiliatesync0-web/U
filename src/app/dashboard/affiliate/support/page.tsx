@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Send, 
   Users, 
@@ -14,10 +14,11 @@ import {
   Crown,
   Flame,
   CheckCheck,
-  MessageCircle
+  MessageCircle,
+  Loader2
 } from 'lucide-react'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc } from '@/firebase'
-import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
+import { collection, query, limit, doc, where } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -42,7 +43,7 @@ export default function AffiliateSupportPage() {
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
 
-  // 1. Chat de Comunidad (Ordenado por fecha)
+  // 1. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), limit(100)), 
   [db])
@@ -55,7 +56,7 @@ export default function AffiliateSupportPage() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 3. Chat Privado con Admin (Historial unificado mediante affiliateId)
+  // 3. Chat Privado con Admin
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(
@@ -83,7 +84,7 @@ export default function AffiliateSupportPage() {
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
-    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+    const date = new Date(createdAt);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
