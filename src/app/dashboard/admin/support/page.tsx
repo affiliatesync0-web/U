@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -16,10 +17,11 @@ import {
   CheckCheck,
   Flame,
   MessageCircle,
-  Loader2
+  Loader2,
+  Bell
 } from 'lucide-react'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase'
-import { collection, query, limit, where } from 'firebase/firestore'
+import { collection, query, limit, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -30,7 +32,7 @@ interface Message {
   userName: string
   content: string
   type: 'text'
-  createdAt: any
+  createdAt: string
   fromAdmin?: boolean
 }
 
@@ -46,6 +48,7 @@ export default function AdminSupportPage() {
   
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
+  const lastTimeRef = useRef(new Date().toISOString())
 
   // 1. Cargar Afiliados para Chat Privado
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
@@ -53,14 +56,9 @@ export default function AdminSupportPage() {
 
   // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), limit(150)), 
+    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(150)), 
   [db])
-  const { data: rawCommunityMessages } = useCollection<Message>(communityQuery)
-  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeA - timeB;
-  });
+  const { data: communityMessages = [] } = useCollection<Message>(communityQuery)
 
   // 3. Chat Privado (Filtrado por canal de socio)
   const privateQuery = useMemoFirebase(() => {
@@ -68,16 +66,56 @@ export default function AdminSupportPage() {
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', selectedAffiliate.id),
+      orderBy('createdAt', 'asc'),
       limit(150)
     );
   }, [db, selectedAffiliate]);
   
-  const { data: rawPrivateMessages } = useCollection<Message>(privateQuery)
-  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeA - timeB;
-  });
+  const { data: privateMessages = [] } = useCollection<Message>(privateQuery)
+
+  // Solicitar permisos de notificación y escuchar mensajes nuevos para alertas
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+
+    const now = new Date().toISOString();
+    
+    // Escuchar comunidad para notificaciones (solo si no somos el autor)
+    const unsubComm = onSnapshot(collection(db, 'community_messages'), (snap) => {
+      snap.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const msg = change.doc.data() as Message;
+          if (msg.createdAt > now && msg.userName !== "ADMINISTRADOR") {
+            if (Notification.permission === "granted") {
+              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+            }
+          }
+        }
+      });
+    });
+
+    // Escuchar privados para notificaciones
+    const unsubPriv = onSnapshot(collection(db, 'private_messages'), (snap) => {
+      snap.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const msg = change.doc.data() as Message;
+          if (msg.createdAt > now && !msg.fromAdmin) {
+            if (Notification.permission === "granted") {
+              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+            }
+          }
+        }
+      });
+    });
+
+    return () => {
+      unsubComm();
+      unsubPriv();
+    };
+  }, [db]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -93,7 +131,7 @@ export default function AdminSupportPage() {
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
     try {
-      const date = typeof createdAt.toDate === 'function' ? createdAt.toDate() : new Date(createdAt);
+      const date = new Date(createdAt);
       if (isNaN(date.getTime())) return "";
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     } catch (e) {
@@ -156,7 +194,7 @@ export default function AdminSupportPage() {
                   <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white shadow-xl"><Flame className="h-6 w-6" /></div>
                   <div>
                     <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">Soporte Maestro Sync</CardTitle>
-                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Chat Global Activo</p>
+                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Canal de Comunicados</p>
                   </div>
                 </div>
               </CardHeader>
