@@ -52,7 +52,8 @@ export default function AffiliateSupportPage() {
   const communityQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(150)), 
   [db])
-  const { data: communityMessages = [] } = useCollection<Message>(communityQuery)
+  const { data: commData = [] } = useCollection<Message>(communityQuery)
+  const communityMessages = commData || [];
 
   // 3. Chat Privado con Admin
   const privateQuery = useMemoFirebase(() => {
@@ -65,7 +66,8 @@ export default function AffiliateSupportPage() {
     );
   }, [db, user]);
   
-  const { data: privateMessages = [] } = useCollection<Message>(privateQuery)
+  const { data: privData = [] } = useCollection<Message>(privateQuery)
+  const privateMessages = privData || [];
 
   // Notificaciones y Permisos
   useEffect(() => {
@@ -86,7 +88,10 @@ export default function AffiliateSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.userId !== user?.uid) {
             if (Notification.permission === "granted") {
-              new Notification(`Comunidad Sync: ${msg.userName}`, { body: msg.content });
+              new Notification(`Comunidad Sync: ${msg.userName}`, { 
+                body: msg.content,
+                icon: '/favicon.ico'
+              });
             }
           }
         }
@@ -100,7 +105,10 @@ export default function AffiliateSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.affiliateId === user?.uid && msg.fromAdmin) {
             if (Notification.permission === "granted") {
-              new Notification(`Mensaje del Administrador`, { body: msg.content });
+              new Notification(`Mensaje del Administrador`, { 
+                body: msg.content,
+                icon: '/favicon.ico'
+              });
             }
           }
         }
@@ -122,7 +130,7 @@ export default function AffiliateSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages?.length, privateMessages?.length, activeTab]);
+  }, [communityMessages.length, privateMessages.length, activeTab]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
@@ -196,7 +204,7 @@ export default function AffiliateSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {(communityMessages || []).map((msg) => (
+                    {communityMessages.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.userId === user?.uid ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
@@ -251,7 +259,7 @@ export default function AffiliateSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {(privateMessages || []).map((msg) => (
+                    {privateMessages.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", !msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.fromAdmin ? "text-[#075E54]" : "text-slate-500")}>
