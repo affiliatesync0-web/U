@@ -34,7 +34,7 @@ import {
   deleteDocumentNonBlocking, 
   updateDocumentNonBlocking 
 } from '@/firebase'
-import { collection, query, limit, where, onSnapshot, orderBy, doc, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, getDocs } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -79,19 +79,23 @@ export default function AdminSupportPage() {
   const { data: affiliatesData, isLoading: loadingAffs } = useCollection(affiliatesQuery)
   const affiliates = affiliatesData || []
 
-  // 2. Chat de Comunidad (Sin OrderBy para evitar error de índice)
+  // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
-  const communityMessages = (commData || []).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-200)
+  const communityMessages = (commData || [])
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
+    .slice(-200)
 
-  // 3. Chat Privado (Sin OrderBy para evitar error de índice)
+  // 3. Chat Privado
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', selectedAffiliate.id));
   }, [db, selectedAffiliate]);
   
   const { data: privData } = useCollection<Message>(privateQuery)
-  const privateMessages = (privData || []).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-200)
+  const privateMessages = (privData || [])
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
+    .slice(-200)
 
   // Notificaciones Estilo WhatsApp
   useEffect(() => {
@@ -110,7 +114,7 @@ export default function AdminSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.userName !== "ADMINISTRADOR") {
             if (Notification.permission === "granted") {
-              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
             }
           }
         }
@@ -123,7 +127,7 @@ export default function AdminSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && !msg.fromAdmin) {
             if (Notification.permission === "granted") {
-              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content });
             }
           }
         }
@@ -142,7 +146,7 @@ export default function AdminSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages.length, privateMessages.length, activeTab, selectedAffiliate, mobileShowChat]);
+  }, [communityMessages?.length, privateMessages?.length, activeTab, selectedAffiliate, mobileShowChat]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
@@ -205,7 +209,7 @@ export default function AdminSupportPage() {
   };
 
   const handleClearChat = async (isPrivate: boolean) => {
-    if (!confirm("¿Seguro que quieres borrar TODOS los mensajes de este chat? Esta acción no se puede deshacer.")) return;
+    if (!confirm("¿Seguro que quieres borrar TODOS los mensajes de este chat?")) return;
     
     const collName = isPrivate ? 'private_messages' : 'community_messages';
     const q = isPrivate 
@@ -214,7 +218,7 @@ export default function AdminSupportPage() {
     
     const snap = await getDocs(q);
     snap.docs.forEach(d => deleteDocumentNonBlocking(doc(db, collName, d.id)));
-    toast({ title: "Chat vaciado correctamente" });
+    toast({ title: "Chat vaciado" });
   };
 
   const filteredAffiliates = affiliates.filter(a => 
@@ -300,7 +304,7 @@ export default function AdminSupportPage() {
                 
                 <div className="p-4 bg-[#F0F2F5] shrink-0 border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
-                    <Input placeholder="Escribe un mensaje al grupo..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54]" />
+                    <Input placeholder="Escribe un mensaje..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54]" />
                     <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-[#075E54] hover:bg-[#054c44] text-white shadow-xl shrink-0" disabled={!msgInput.trim()}><Send className="h-6 w-6" /></Button>
                   </form>
                 </div>
@@ -356,7 +360,7 @@ export default function AdminSupportPage() {
                           <p className="text-[9px] text-white/60 font-black uppercase">Socio Activo</p>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={() => handleClearChat(true)} title="Vaciar Conversación">
+                      <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={() => handleClearChat(true)} title="Vaciar Chat">
                         <Eraser className="h-5 w-5" />
                       </Button>
                     </CardHeader>

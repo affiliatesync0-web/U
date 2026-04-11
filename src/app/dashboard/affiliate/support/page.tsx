@@ -74,19 +74,23 @@ export default function AffiliateSupportPage() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 2. Chat de Comunidad (Ordenamiento local para evitar error de índices)
+  // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
-  const communityMessages = (commData || []).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-200)
+  const communityMessages = (commData || [])
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
+    .slice(-200)
 
-  // 3. Chat Privado (Ordenamiento local para evitar error de índices)
+  // 3. Chat Privado
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', user.uid));
   }, [db, user]);
   
   const { data: privData } = useCollection<Message>(privateQuery)
-  const privateMessages = (privData || []).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-200)
+  const privateMessages = (privData || [])
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
+    .slice(-200)
 
   // Notificaciones Estilo WhatsApp
   useEffect(() => {
@@ -105,7 +109,7 @@ export default function AffiliateSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.userId !== user?.uid) {
             if (Notification.permission === "granted") {
-              new Notification(`Comunidad Sync: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+              new Notification(`Comunidad Sync: ${msg.userName}`, { body: msg.content });
             }
           }
         }
@@ -118,7 +122,7 @@ export default function AffiliateSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.affiliateId === user?.uid && msg.fromAdmin) {
             if (Notification.permission === "granted") {
-              new Notification(`Mensaje del Administrador`, { body: msg.content, icon: '/favicon.ico' });
+              new Notification(`Mensaje del Administrador`, { body: msg.content });
             }
           }
         }
@@ -137,7 +141,7 @@ export default function AffiliateSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages.length, privateMessages.length, activeTab]);
+  }, [communityMessages?.length, privateMessages?.length, activeTab]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
