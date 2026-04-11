@@ -78,7 +78,6 @@ export default function AdminSupportPage() {
 
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
-    // IMPORTANTE: Filtrar por affiliateId para que coincida con lo que el afiliado ve
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', selectedAffiliate.id),
@@ -126,7 +125,7 @@ export default function AdminSupportPage() {
     } else if (selectedAffiliate) {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        affiliateId: selectedAffiliate.id, // Referencia clave para sincronizar
+        affiliateId: selectedAffiliate.id,
         userName: nameToUse,
         content,
         type: 'text',
@@ -139,7 +138,9 @@ export default function AdminSupportPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Usar codecs=opus para menor peso y mayor velocidad de subida
+      const options = { mimeType: 'audio/webm;codecs=opus' };
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -149,7 +150,7 @@ export default function AdminSupportPage() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        if (audioBlob.size > 0) {
+        if (audioBlob.size > 500) { // Evitar ruidos de milisegundos
           await uploadAudio(audioBlob);
         }
         stream.getTracks().forEach(track => track.stop());
@@ -158,12 +159,12 @@ export default function AdminSupportPage() {
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
-      toast({ variant: "destructive", title: "Error de Micrófono", description: "Asegúrate de dar permisos a la web." });
+      toast({ variant: "destructive", title: "Acceso denegado", description: "Habilita el micrófono." });
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -174,9 +175,10 @@ export default function AdminSupportPage() {
     setIsUploadingAudio(true);
     try {
       const { storage } = initializeFirebase();
-      const audioRef = ref(storage, `support_audios/${Date.now()}.webm`);
-      await uploadBytes(audioRef, blob);
-      const downloadURL = await getDownloadURL(audioRef);
+      const audioRef = ref(storage, `support_audios/admin_${Date.now()}.webm`);
+      
+      const uploadResult = await uploadBytes(audioRef, blob);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
 
       const nameToUse = "ADMINISTRADOR";
 
@@ -200,8 +202,8 @@ export default function AdminSupportPage() {
         });
       }
     } catch (err) {
-      console.error("Audio upload error:", err);
-      toast({ variant: "destructive", title: "Fallo al enviar audio" });
+      console.error("Error subiendo audio:", err);
+      toast({ variant: "destructive", title: "Fallo en la subida" });
     } finally {
       setIsUploadingAudio(false);
     }
@@ -217,10 +219,10 @@ export default function AdminSupportPage() {
         <Tabs defaultValue="community" className="flex-1 flex flex-col" onValueChange={(v: any) => setActiveTab(v)}>
           <div className="mb-4">
             <TabsList className="h-12 md:h-14 bg-white border border-slate-100 rounded-xl md:rounded-2xl p-1 shadow-sm w-full md:w-auto">
-              <TabsTrigger value="community" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2">
+              <TabsTrigger value="community" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
                 <Users className="h-3.5 w-3.5 md:h-4 md:w-4" /> COMUNIDAD
               </TabsTrigger>
-              <TabsTrigger value="private" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2">
+              <TabsTrigger value="private" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2 data-[state=active]:bg-[#075E54] data-[state=active]:text-white">
                 <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" /> CHAT PRIVADO
               </TabsTrigger>
             </TabsList>
@@ -231,7 +233,7 @@ export default function AdminSupportPage() {
               <CardHeader className="bg-[#075E54] text-white p-4 md:p-6 shrink-0 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/10 flex items-center justify-center text-white shadow-xl"><Flame className="h-5 w-5 md:h-6 md:w-6" /></div>
-                  <div><CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest text-white">Grupo Oficial Sync Academy</CardTitle><p className="text-[8px] md:text-[9px] text-white/60 font-bold uppercase tracking-widest mt-0.5">Centro de Control</p></div>
+                  <div><CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest text-white">Grupo Oficial Sync Academy</CardTitle><p className="text-[8px] md:text-[9px] text-white/60 font-bold uppercase tracking-widest mt-0.5">Soporte Maestro</p></div>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col">
@@ -244,9 +246,12 @@ export default function AdminSupportPage() {
                           <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
                           {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-amber-500" />}
                         </div>
-                        <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[12px] md:text-[13px] font-medium shadow-md leading-relaxed relative", msg.userName === "ADMINISTRADOR" ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
+                        <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", msg.userName === "ADMINISTRADOR" ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
                           {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
-                          <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end", msg.userName === "ADMINISTRADOR" ? "text-slate-600" : "text-slate-500")}><Clock className="h-2 w-2" /> {formatTime(msg.createdAt)} {msg.userName === "ADMINISTRADOR" && <CheckCheck className="h-2 w-2 text-blue-500 ml-1" />}</div>
+                          <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end", msg.userName === "ADMINISTRADOR" ? "text-slate-600" : "text-slate-500")}>
+                            {formatTime(msg.createdAt)} 
+                            {msg.userName === "ADMINISTRADOR" && <CheckCheck className="h-2.5 w-2.5 text-blue-500 ml-1" />}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -288,8 +293,8 @@ export default function AdminSupportPage() {
                 {!selectedAffiliate ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-[#F0F2F5]">
                     <div className="h-32 w-32 bg-slate-200 rounded-full flex items-center justify-center mb-6"><MessageCircle className="h-16 w-16 text-slate-400" /></div>
-                    <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest leading-none">WhatsApp Web para Admin</h3>
-                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio para ver su historial completo y enviar mensajes privados o audios.</p>
+                    <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest leading-none">WhatsApp Admin</h3>
+                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio para iniciar un chat privado.</p>
                   </div>
                 ) : (
                   <>
@@ -306,7 +311,7 @@ export default function AdminSupportPage() {
                         <div className="space-y-4">
                           {privateMessages?.map((msg) => (
                             <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[75%]", msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
-                              <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[12px] md:text-[13px] font-medium shadow-md leading-relaxed relative", msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
+                              <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
                                 {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
                                 <div className="mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end">
                                   {formatTime(msg.createdAt)} 
@@ -346,7 +351,7 @@ function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading
         
         <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
           <Input 
-            placeholder={isRecording ? "Grabando audio..." : (isUploading ? "Enviando..." : "Escribe un mensaje...")} 
+            placeholder={isRecording ? "Grabando audio..." : (isUploading ? "Subiendo..." : "Escribe un mensaje...")} 
             value={msgInput} 
             onChange={(e) => setMsgInput(e.target.value)} 
             disabled={isRecording || isUploading} 
