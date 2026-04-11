@@ -74,12 +74,19 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground font-body;
+    touch-action: manipulation;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline font-black;
+  }
+  input, textarea, select {
+    font-size: 16px !important; /* Previene auto-zoom en iOS */
   }
 }
 
@@ -95,13 +102,18 @@ nextjs-portal,
   pointer-events: none !important;
 }
 
-/* Scrollbar personalizado para modo oscuro */
+/* Scrollbar personalizado */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
+}
+
+/* Estilo App */
+.app-container {
+  @apply max-w-md mx-auto min-h-screen relative overflow-x-hidden;
 }
