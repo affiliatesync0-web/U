@@ -94,6 +94,40 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
 }
 
 /**
+ * Envía una notificación de pago realizado a un afiliado.
+ */
+export async function sendPaymentNotification({ to, name, amount, bank }: { to: string, name: string, amount: number, bank: string }) {
+  return await sendEmail({
+    to,
+    subject: `💰 Comisiones Pagadas - Sync Connect`,
+    text: `¡Hola ${name}! Te informamos que hemos procesado un pago de comisiones por valor de $${amount.toFixed(2)}.\n\nEl depósito se ha realizado a tu cuenta en ${bank}.\n\n¡Felicidades por tus resultados!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
+        <div style="margin-bottom: 30px;">
+          <span style="font-size: 40px;">💰</span>
+        </div>
+        <h2 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; letter-spacing: -0.5px;">¡Pago Enviado!</h2>
+        <p style="color: #64748b; font-size: 15px; margin-bottom: 30px;">Hola <strong>${name}</strong>, tus ganancias han sido transferidas con éxito.</p>
+        
+        <div style="background: #f0fdf4; padding: 30px; border-radius: 24px; border: 1px solid #bbf7d0; margin-bottom: 30px;">
+          <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 900; color: #16a34a; text-transform: uppercase; letter-spacing: 1px;">Monto Total Depositado</p>
+          <span style="font-size: 36px; font-weight: 900; color: #166534;">$${amount.toFixed(2)}</span>
+          <p style="margin: 15px 0 0 0; font-size: 11px; font-weight: 700; color: #16a34a;">BANCO: ${bank.toUpperCase()}</p>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 13px; font-weight: 500; line-height: 1.6;">
+          Tu saldo en plataforma se ha reseteado. Sigue escalando tu negocio digital con Sync Connect.
+        </p>
+        
+        <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #f1f5f9;">
+          <p style="font-size: 10px; color: #cbd5e1; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">© ${new Date().getFullYear()} SYNC CONNECT ACADEMY</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+/**
  * Envía un correo de prueba para verificar la configuración SMTP.
  */
 export async function testEmailConfig(to: string) {
