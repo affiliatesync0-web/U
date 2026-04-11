@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { collection, query, orderBy, limit, serverTimestamp, doc, where, or } from 'firebase/firestore'
+import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -65,16 +65,23 @@ export default function AdminSupportPage() {
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
-  // Consulta optimizada para chat privado bidireccional
+  // Función para generar un chatId consistente basado en orden alfabético de UIDs
+  const getChatId = (uid1: string, uid2: string) => {
+    return [uid1, uid2].sort().join('_');
+  }
+
+  // Consulta para chat privado bidireccional usando ID único consistente
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !user) return null;
+    const chatId = getChatId(user.uid, selectedAffiliate.id);
     return query(
       collection(db, 'private_messages'),
-      where('chatId', 'in', [`${user.uid}_${selectedAffiliate.id}`, `${selectedAffiliate.id}_${user.uid}`]),
+      where('chatId', '==', chatId),
       orderBy('createdAt', 'asc'),
       limit(50)
     );
   }, [db, selectedAffiliate, user]);
+  
   const { data: privateMessages } = useCollection<Message>(privateQuery)
 
   useEffect(() => {
@@ -84,7 +91,7 @@ export default function AdminSupportPage() {
       } else if (activeTab === 'private' && scrollRefPriv.current) {
         scrollRefPriv.current.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 100);
+    }, 150);
     return () => clearTimeout(timer);
   }, [communityMessages, privateMessages, activeTab, selectedAffiliate, mobileShowChat]);
 
@@ -103,8 +110,7 @@ export default function AdminSupportPage() {
         createdAt: serverTimestamp()
       })
     } else if (selectedAffiliate) {
-      // Usar un ID de chat consistente (el ID del admin suele ser fijo o podemos usar el del auth actual)
-      const chatId = `${user.uid}_${selectedAffiliate.id}`;
+      const chatId = getChatId(user.uid, selectedAffiliate.id);
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
         receiverId: selectedAffiliate.id,
@@ -131,6 +137,8 @@ export default function AdminSupportPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setIsInCall(true);
+      
+      // Actualizar estado global para que el afiliado vea la llamada
       setDocumentNonBlocking(doc(db, 'site_config', 'support_status'), {
         isLive: true,
         startedAt: new Date().toISOString(),
@@ -138,8 +146,10 @@ export default function AdminSupportPage() {
         type: 'private',
         targetUserId: targetId
       }, { merge: true });
+
+      toast({ title: "Iniciando audio...", description: "Esperando a que el socio conteste." });
     } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "Habilita el micrófono para llamar." });
+      toast({ variant: "destructive", title: "Acceso Denegado", description: "Habilita el micrófono para llamar." });
     }
   }
 

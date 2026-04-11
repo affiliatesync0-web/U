@@ -51,33 +51,36 @@ export default function AffiliateSupportPage() {
   const scrollRefPriv = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
+  // El administrador principal tiene este ID de correo para notificaciones, pero usaremos su UID real para el chat
+  // En este sistema, asumimos que el admin siempre es el mismo
+  const ADMIN_UID = 'affiliatesync0_admin_id'; // Placeholder o ID real del admin
+
+  const getChatId = (uid1: string, uid2: string) => {
+    return [uid1, uid2].sort().join('_');
+  }
+
   const communityQuery = useMemoFirebase(() => 
     query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(50)), 
   [db])
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
-  // Sincronización bidireccional usando chatId consistente
-  // Nota: El admin principal siempre tiene un ID fijo o podemos buscarlo. 
-  // Para simplificar, usamos una consulta que busque mensajes donde el usuario es remitente o destinatario
+  const supportStatusRef = useMemoFirebase(() => doc(db, 'site_config', 'support_status'), [db]);
+  const { data: supportStatus } = useDoc(supportStatusRef);
+
+  // Consulta bidireccional usando ChatId ordenado
   const privateQuery = useMemoFirebase(() => {
     if (!user) return null;
+    const adminId = supportStatus?.adminId || 'admin_default';
+    const chatId = getChatId(user.uid, adminId);
     return query(
       collection(db, 'private_messages'),
-      // Buscamos cualquier chatId que involucre al usuario actual
-      where('chatId', '>=', ''), // Placeholder para asegurar orden
+      where('chatId', '==', chatId),
       orderBy('createdAt', 'asc'),
       limit(50)
     );
-  }, [db, user]);
+  }, [db, user, supportStatus]);
   
-  // Filtrado local para mayor precisión (hasta que usemos or queries complejas)
-  const { data: allPrivateMessages } = useCollection<Message>(privateQuery)
-  const privateMessages = allPrivateMessages?.filter(m => 
-    m.senderId === user?.uid || m.receiverId === user?.uid
-  );
-
-  const supportStatusRef = useMemoFirebase(() => doc(db, 'site_config', 'support_status'), [db]);
-  const { data: supportStatus } = useDoc(supportStatusRef);
+  const { data: privateMessages } = useCollection<Message>(privateQuery)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -86,7 +89,7 @@ export default function AffiliateSupportPage() {
       } else if (activeTab === 'private' && scrollRefPriv.current) {
         scrollRefPriv.current.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 100);
+    }, 150);
     return () => clearTimeout(timer);
   }, [communityMessages, privateMessages, activeTab]);
 
@@ -106,19 +109,15 @@ export default function AffiliateSupportPage() {
         createdAt: serverTimestamp()
       })
     } else {
-      // Usar el adminId del estado de soporte si existe, o el ID por defecto del admin
-      const adminId = supportStatus?.adminId || 'admin_master_id'; 
-      // Si no conocemos el adminId del servidor, usamos una lógica de chatId basado en el remitente/receptor
-      // En este sistema el Admin siempre inicia el chat o responde.
-      // Buscamos el adminId en el historial si no está en supportStatus
-      const existingAdminId = privateMessages?.find(m => m.senderId !== user.uid)?.senderId || 'admin_master';
+      const adminId = supportStatus?.adminId || privateMessages?.[0]?.senderId || 'admin_default';
+      const chatId = getChatId(user.uid, adminId);
 
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        receiverId: existingAdminId,
+        receiverId: adminId,
         userName,
         content,
-        chatId: `${existingAdminId}_${user.uid}`, // Consistent order: admin_user
+        chatId,
         createdAt: serverTimestamp()
       });
     }
@@ -129,6 +128,7 @@ export default function AffiliateSupportPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setIsInCall(true);
+      toast({ title: "Audio Conectado", description: "Ya estás en la llamada con el administrador." });
     } catch (error) { 
       toast({ variant: "destructive", title: "Acceso Denegado", description: "Habilita el micrófono para hablar." });
     }
