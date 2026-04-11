@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -74,14 +73,14 @@ export default function AffiliateSupportPage() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 2. Chat de Comunidad
+  // 2. Chat de Comunidad (Ordenamiento local seguro)
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
   const communityMessages = (commData || [])
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // 3. Chat Privado
+  // 3. Chat Privado (Ordenamiento local seguro)
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', user.uid));
@@ -143,13 +142,18 @@ export default function AffiliateSupportPage() {
     return () => clearTimeout(timer);
   }, [communityMessages?.length, privateMessages?.length, activeTab]);
 
+  // FUNCIÓN DE HORA BLINDADA (12 Horas AM/PM)
   const formatTime = (createdAt: any) => {
-    if (!createdAt) return "";
+    if (!createdAt) return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     try {
       const date = new Date(createdAt);
-      if (isNaN(date.getTime())) return "";
+      if (isNaN(date.getTime())) {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      }
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    } catch (e) { return ""; }
+    } catch (e) { 
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -234,7 +238,7 @@ export default function AffiliateSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {communityMessages.map((msg) => (
+                    {communityMessages?.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.userId === user?.uid ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
@@ -305,7 +309,7 @@ export default function AffiliateSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {privateMessages.map((msg) => (
+                    {privateMessages?.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", !msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.fromAdmin ? "text-[#075E54]" : "text-slate-500")}>
