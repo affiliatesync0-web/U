@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -135,7 +134,7 @@ export default function AdminSupportPage() {
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
     const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const startCall = async (targetId: string) => {
@@ -323,9 +322,15 @@ export default function AdminSupportPage() {
                         <div className="space-y-4 md:space-y-6">
                           {privateMessages?.map((msg) => (
                             <div key={msg.id} className={cn(
-                              "flex flex-col max-w-[85%] md:max-w-[70%] animate-in fade-in slide-in-from-bottom-2",
+                              "flex flex-col max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-2",
                               msg.senderId === user?.uid ? "ml-auto items-end" : "items-start"
                             )}>
+                              <div className="flex items-center gap-2 mb-1 px-2">
+                                <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>
+                                  {msg.userName}
+                                </span>
+                                {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}
+                              </div>
                               <div className={cn(
                                 "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
                                 msg.senderId === user?.uid 
