@@ -31,7 +31,9 @@ import {
   ShieldAlert,
   SendHorizontal,
   Zap,
-  MoreHorizontal
+  MoreHorizontal,
+  Scan,
+  UserCheck
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -377,13 +379,28 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
             <TabsContent value="kyc" className="m-0 space-y-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2"><Camera className="h-4 w-4" /> Validación Facial</h4>
-                  <div className="relative aspect-video rounded-[3rem] overflow-hidden border-[10px] border-slate-100 shadow-2xl">
-                    {affiliate.photoUrl ? (
-                      <img src={affiliate.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full bg-slate-100 flex items-center justify-center"><User className="h-20 w-20 text-slate-300" /></div>
-                    )}
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2"><UserCheck className="h-4 w-4" /> Verificación Biométrica</h4>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-4">Escaneo Facial (Foto Perfil)</p>
+                      <div className="relative aspect-square max-w-[280px] mx-auto rounded-full overflow-hidden border-[8px] border-slate-100 shadow-2xl">
+                        {affiliate.photoUrl ? (
+                          <img src={affiliate.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-slate-100 flex items-center justify-center"><User className="h-20 w-20 text-slate-300" /></div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-4">Documento: {affiliate.kyc?.idType || 'ID'}</p>
+                      <div className="relative aspect-video rounded-3xl overflow-hidden border-[8px] border-slate-100 shadow-2xl bg-slate-900">
+                        {affiliate.idPhotoUrl ? (
+                          <img src={affiliate.idPhotoUrl} alt="ID Document" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-white/20"><Scan className="h-16 w-16" /></div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-6">
