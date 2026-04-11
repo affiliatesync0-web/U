@@ -86,10 +86,10 @@ export default function AdminAffiliatesPage() {
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Gestión de Red de Mercadeo</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Validación de Red de Mercadeo</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Panel de <span className="text-primary">Socios</span></h1>
-            <p className="text-slate-500 font-medium text-sm md:text-base">Control total sobre los perfiles, pagos y seguridad de tus afiliados.</p>
+            <p className="text-slate-500 font-medium text-sm md:text-base">Revisa identidades biométricas, gestiona pagos y seguridad.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
@@ -226,9 +226,9 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
       await sendEmail({
         to: affiliate.email,
         subject: `✅ Cuenta Activada - Sync Connect`,
-        text: `¡Hola ${affiliate.firstName}! Tu solicitud ha sido aprobada con éxito. Ya puedes acceder a tu panel de afiliados.`
+        text: `¡Hola ${affiliate.firstName}! Tu solicitud ha sido aprobada con éxito tras la validación biométrica. Ya puedes acceder a tu panel de afiliados.`
       });
-      toast({ title: "Socio Activado", description: "Notificación enviada por email." });
+      toast({ title: "Socio Activado", description: "Identidad confirmada y notificación enviada." });
     } catch (e) {
       toast({ variant: "destructive", title: "Error en activación" });
     } finally {
@@ -325,16 +325,73 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
           </div>
         </div>
 
-        <Tabs defaultValue="payments" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="kyc" className="flex-1 flex flex-col overflow-hidden">
           <div className="px-8 md:px-12 bg-slate-50 border-b shrink-0 overflow-x-auto no-scrollbar">
             <TabsList className="h-16 bg-transparent p-0 gap-8 min-w-max">
+              <TabsTrigger value="kyc" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">VERIFICACIÓN BIOMÉTRICA (KYC)</TabsTrigger>
               <TabsTrigger value="payments" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">PAGOS Y COMISIONES</TabsTrigger>
-              <TabsTrigger value="kyc" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">EXPEDIENTE / KYC</TabsTrigger>
               <TabsTrigger value="security" className="h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black text-[10px] uppercase tracking-widest text-slate-400 data-[state=active]:text-slate-900 transition-all">SEGURIDAD ACCESO</TabsTrigger>
             </TabsList>
           </div>
 
           <div className="flex-1 overflow-y-auto p-8 md:p-12 pb-32">
+            <TabsContent value="kyc" className="m-0 space-y-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2"><UserCheck className="h-4 w-4" /> Comparación de Rostro vs ID</h4>
+                    <Badge variant="outline" className="text-[8px] font-black uppercase">Confirmar Identidad</Badge>
+                  </div>
+                  <div className="grid grid-cols-1 gap-8">
+                    <Card className="border-2 border-dashed p-6 bg-slate-50/50 rounded-[2.5rem] space-y-4">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Escaneo Facial en Tiempo Real</p>
+                      <div className="relative aspect-square max-w-[280px] mx-auto rounded-full overflow-hidden border-[8px] border-white shadow-2xl ring-1 ring-slate-200">
+                        {affiliate.photoUrl ? (
+                          <img src={affiliate.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-slate-100 flex items-center justify-center"><User className="h-20 w-20 text-slate-300" /></div>
+                        )}
+                      </div>
+                    </Card>
+                    <Card className="border-2 border-dashed p-6 bg-slate-50/50 rounded-[2.5rem] space-y-4">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Documento de Identidad: {affiliate.kyc?.idType || 'ID'}</p>
+                      <div className="relative aspect-video rounded-3xl overflow-hidden border-[8px] border-white shadow-2xl bg-slate-900 ring-1 ring-slate-200">
+                        {affiliate.idPhotoUrl ? (
+                          <img src={affiliate.idPhotoUrl} alt="ID Document" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-white/20"><Scan className="h-16 w-16" /></div>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-black text-slate-900 uppercase">Nº: {affiliate.kyc?.idNumber || 'Sin Cargar'}</p>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2"><FileText className="h-4 w-4" /> Respuestas Examen Comercial</h4>
+                  <div className="p-8 bg-slate-900 rounded-[3rem] text-white space-y-8">
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-primary uppercase">Estrategia de Promoción</p>
+                      <p className="text-sm font-medium text-slate-300 italic leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/10">"{exam.q1 || 'Sin respuesta'}"</p>
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-primary uppercase">Experiencia en Ventas</p>
+                      <p className="text-sm font-medium text-slate-300 italic leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/10">"{exam.q2 || 'Sin respuesta'}"</p>
+                    </div>
+                    <div className="pt-4">
+                      <Alert className="bg-primary/10 border-primary/20 rounded-2xl">
+                        <ShieldAlert className="h-4 w-4 text-primary" />
+                        <AlertDescription className="text-[10px] font-bold text-primary uppercase leading-tight">
+                          Verifica que el discurso sea coherente antes de dar acceso al marketplace.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
             <TabsContent value="payments" className="m-0 space-y-10">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <Card className="lg:col-span-5 border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white p-10 relative overflow-hidden">
@@ -344,7 +401,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                       <h3 className="text-sm font-black uppercase tracking-widest text-primary">Saldo por Liquidar</h3>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">Comisiones Pendientes</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">Comisiones Ganadas</p>
                       <h4 className="text-6xl font-black tracking-tighter italic text-white">${affiliate.currentBalance?.toFixed(2) || '0.00'}</h4>
                     </div>
                     <Button onClick={handlePayBalance} disabled={isProcessing || affiliate.currentBalance <= 0} className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-xl shadow-2xl shadow-primary/20 gap-3">
@@ -354,67 +411,24 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                 </Card>
 
                 <div className="lg:col-span-7 space-y-8">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2"><Landmark className="h-4 w-4" /> Datos Bancarios</h4>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2"><Landmark className="h-4 w-4" /> Datos de Pago Registrados</h4>
                   <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 space-y-6">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Banco Receptor</p>
-                      <p className="text-xl font-black text-slate-900 uppercase">{affiliate.bankId || 'Sin Definir'}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Banco Destino</p>
+                      <p className="text-xl font-black text-slate-900 uppercase">{affiliate.bankId || 'No proporcionado'}</p>
                     </div>
                     <div className="pt-6 border-t border-slate-200">
                       <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Número de Cuenta</p>
                       <p className="text-3xl md:text-4xl font-black text-slate-900 font-mono tracking-tighter break-all">{affiliate.bankAccountNumber || '----------------'}</p>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase mt-2 italic">Titular: {affiliate.bankAccountHolderName || affiliate.firstName + ' ' + affiliate.lastName}</p>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase mt-2 italic">Titular: {affiliate.bankAccountHolderName || `${affiliate.firstName} ${affiliate.lastName}`}</p>
                     </div>
                   </div>
                   <Alert className="bg-blue-50 border-blue-100 rounded-[2rem] p-6">
                     <ShieldCheck className="h-5 w-5 text-blue-600" />
                     <AlertDescription className="text-[11px] font-bold text-blue-700 leading-relaxed uppercase">
-                      Verifica siempre los datos antes de realizar la transferencia.
+                      Al procesar el pago, el sistema enviará un Gmail automático al socio.
                     </AlertDescription>
                   </Alert>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="kyc" className="m-0 space-y-10">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2"><UserCheck className="h-4 w-4" /> Verificación Biométrica</h4>
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-4">Escaneo Facial (Foto Perfil)</p>
-                      <div className="relative aspect-square max-w-[280px] mx-auto rounded-full overflow-hidden border-[8px] border-slate-100 shadow-2xl">
-                        {affiliate.photoUrl ? (
-                          <img src={affiliate.photoUrl} alt="Selfie" className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="h-full w-full bg-slate-100 flex items-center justify-center"><User className="h-20 w-20 text-slate-300" /></div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-4">Documento: {affiliate.kyc?.idType || 'ID'}</p>
-                      <div className="relative aspect-video rounded-3xl overflow-hidden border-[8px] border-slate-100 shadow-2xl bg-slate-900">
-                        {affiliate.idPhotoUrl ? (
-                          <img src={affiliate.idPhotoUrl} alt="ID Document" className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-white/20"><Scan className="h-16 w-16" /></div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2"><FileText className="h-4 w-4" /> Examen Comercial</h4>
-                  <div className="p-8 bg-slate-900 rounded-[3rem] text-white space-y-6">
-                    <div>
-                      <p className="text-[9px] font-black text-primary uppercase mb-2">Estrategia</p>
-                      <p className="text-sm font-medium text-slate-300 italic bg-white/5 p-4 rounded-xl">"{exam.q1 || 'N/A'}"</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-primary uppercase mb-2">Experiencia</p>
-                      <p className="text-sm font-medium text-slate-300 italic bg-white/5 p-4 rounded-xl">"{exam.q2 || 'N/A'}"</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -424,17 +438,17 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                   <Card className="border-none shadow-xl rounded-[2.5rem] bg-white p-8 space-y-6">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600"><KeyRound className="h-6 w-6" /></div>
-                      <h3 className="text-sm font-black uppercase">Reseteo de Credenciales</h3>
+                      <h3 className="text-sm font-black uppercase">Control de Credenciales</h3>
                     </div>
                     <AdminPasswordResetDialog user={affiliate} />
                   </Card>
                   <Card className="border-none shadow-xl rounded-[2.5rem] bg-white p-8 space-y-6">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600"><ShieldAlert className="h-6 w-6" /></div>
-                      <h3 className="text-sm font-black uppercase">Zona de Peligro</h3>
+                      <h3 className="text-sm font-black uppercase">Zona de Seguridad</h3>
                     </div>
                     <Button onClick={handleToggleBlock} variant="destructive" className="w-full h-14 rounded-xl font-black text-[10px] uppercase tracking-widest">
-                      {affiliate.status === 'Blocked' ? 'QUITAR BLOQUEO' : 'BLOQUEAR SOCIO'}
+                      {affiliate.status === 'Blocked' ? 'HABILITAR CUENTA' : 'BLOQUEAR ACCESO'}
                     </Button>
                   </Card>
                </div>
@@ -443,13 +457,18 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
         </Tabs>
 
         <div className="p-6 md:p-10 border-t bg-slate-50 flex items-center justify-between sticky bottom-0 z-30">
-          {affiliate.status === 'Pending' && (
-            <Button onClick={handleApprove} disabled={isProcessing} className="h-16 px-10 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase shadow-2xl transition-all hover:scale-[1.02]">
+          {affiliate.status === 'Pending' ? (
+            <Button onClick={handleApprove} disabled={isProcessing} className="h-16 px-10 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase shadow-2xl transition-all hover:scale-[1.02] ring-4 ring-green-100">
               {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-              APROBAR SOLICITUD
+              CONFIRMAR IDENTIDAD Y APROBAR
             </Button>
+          ) : (
+            <div className="flex items-center gap-3 text-green-600 bg-green-50 px-6 py-3 rounded-2xl border border-green-100">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Socio Verificado</span>
+            </div>
           )}
-          <Button variant="ghost" onClick={() => setOpen(false)} className="h-16 px-10 rounded-2xl font-black text-xs uppercase text-slate-400">CERRAR CENTRO DE CONTROL</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)} className="h-16 px-10 rounded-2xl font-black text-xs uppercase text-slate-400">SALIR DEL EXPEDIENTE</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -479,7 +498,7 @@ function AdminPasswordResetDialog({ user }: any) {
 
   return (
     <Button variant="outline" className="w-full h-14 rounded-xl font-black text-[10px] uppercase border-amber-200 text-amber-700" onClick={handleAutoReset} disabled={loading}>
-      {loading ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <><KeyRound className="mr-2 h-5 w-5" /> GENERAR NUEVA CLAVE</>}
+      {loading ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <><KeyRound className="mr-2 h-5 w-5" /> REGENERAR CONTRASEÑA</>}
     </Button>
   );
 }
