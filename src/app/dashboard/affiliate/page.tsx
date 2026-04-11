@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -38,18 +37,22 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied' | 'watching'>('pending');
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
   const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
+    if (isMounted && typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermission(Notification.permission);
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then(setNotifPermission);
+      }
+    }
+
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
-      if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -65,7 +68,7 @@ export default function AffiliateDashboard() {
 
       return () => unsubscribeNotifs();
     }
-  }, [isMounted, user]);
+  }, [isMounted, user, db, toast]);
 
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
@@ -101,16 +104,10 @@ export default function AffiliateDashboard() {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [isMounted, user, profile]);
+  }, [isMounted, user, profile, affiliateRef]);
 
   const salesQuery = useMemoFirebase(() => (db && user ? query(collection(db, 'sales'), where('affiliateId', '==', user.uid)) : null), [db, user]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
-
-  const stats = [
-    { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
-    { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
-    { title: "Ganancias Brutas", value: `$${(sales?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0).toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
-  ]
 
   if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="animate-spin text-primary" /></div>
 
@@ -127,21 +124,25 @@ export default function AffiliateDashboard() {
               <button onClick={() => setIsEditingPhoto(true)} className="absolute -bottom-1 -right-1 bg-white p-2 rounded-xl shadow-lg border text-primary"><Camera className="h-4 w-4" /></button>
             </div>
             <div className="space-y-1">
-              <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">{t.welcomeBack}, {profile?.firstName}</h1>
+              <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">{t.welcomeBack}, {profile?.firstName}</h1>
               <div className="flex items-center gap-3">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]"> Workspace Afiliado Sync</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]"> Workspace Socio Platinum</p>
                 {locationStatus === 'watching' && (
                   <Badge className="bg-green-100 text-green-600 border-none text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                    SEGUIMIENTO LIVE ACTIVO
+                    LIVE MAP ACTIVO
                   </Badge>
                 )}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
+             {notifPermission !== 'granted' && (
+               <Button onClick={() => Notification.requestPermission().then(setNotifPermission)} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
+                 <Bell className="mr-2 h-3 w-3" /> Habilitar Alertas
+               </Button>
+             )}
              <div className="h-10 px-5 bg-white rounded-xl flex items-center gap-3 shadow-sm border border-slate-100"><Wallet className="h-4 w-4 text-primary" /><span className="text-xs font-black">${profile?.currentBalance?.toFixed(2)}</span></div>
-             <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl"><Smartphone className="h-4 w-4 text-primary" /><span className="text-[9px] font-black uppercase tracking-widest">ID: {profile?.id?.substring(0, 8)}</span></div>
           </div>
         </div>
 
@@ -149,17 +150,21 @@ export default function AffiliateDashboard() {
           <div className="bg-amber-50 border border-amber-100 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-6">
             <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner"><MapPin className="h-6 w-6" /></div>
             <div className="flex-1 text-center md:text-left">
-              <p className="text-xs font-black text-amber-900 uppercase tracking-widest mb-1">Geolocalización Desactivada</p>
-              <p className="text-[11px] font-medium text-amber-700 leading-relaxed">Activa los permisos de ubicación para aparecer en el Mapa de Red y recibir apoyo estratégico regional.</p>
+              <p className="text-xs font-black text-amber-900 uppercase tracking-widest mb-1">Geolocalización Requerida</p>
+              <p className="text-[11px] font-medium text-amber-700 leading-relaxed">Activa tu ubicación para que el administrador pueda ver tu alcance en el Mapa de Red.</p>
             </div>
-            <Button onClick={() => window.location.reload()} variant="outline" className="h-12 px-6 rounded-xl border-amber-200 text-amber-700 font-black text-[10px] uppercase">ACTIVAR AHORA</Button>
+            <Button onClick={() => window.location.reload()} variant="outline" className="h-12 px-6 rounded-xl border-amber-200 text-amber-700 font-black text-[10px] uppercase">ACTIVAR</Button>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
            <div className="lg:col-span-8 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat) => (
+                {[
+                  { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
+                  { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
+                  { title: "Ganancias Brutas", value: `$${(sales?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0).toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
+                ].map((stat) => (
                   <Card key={stat.title} className="border-none shadow-xl rounded-[2.5rem] bg-white group hover:scale-[1.02] transition-all overflow-hidden ring-1 ring-slate-100">
                     <CardContent className="p-8">
                       <div className={`h-12 w-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6 shadow-inner`}><stat.icon className="h-6 w-6" /></div>
@@ -173,7 +178,7 @@ export default function AffiliateDashboard() {
                 <CardHeader className="px-10 py-8 border-b border-slate-50"><CardTitle className="text-xl font-headline font-black text-slate-900 uppercase">Mis Ventas</CardTitle></CardHeader>
                 <CardContent className="p-0">
                   {salesLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : 
-                  !sales || sales.length === 0 ? <div className="text-center py-20 opacity-30"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Esperando tu primera venta</p></div> : (
+                  !sales || sales.length === 0 ? <div className="text-center py-20 opacity-30"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin ventas todavía</p></div> : (
                     <Table><TableHeader><TableRow className="bg-slate-50/50"><TableHead className="px-10 uppercase text-[9px] font-black text-slate-400">Producto</TableHead><TableHead className="uppercase text-[9px] font-black text-slate-400">Estado</TableHead><TableHead className="px-10 text-right uppercase text-[9px] font-black text-slate-400">Comisión</TableHead></TableRow></TableHeader>
                     <TableBody>{sales.slice(0, 5).map((sale) => (
                       <TableRow key={sale.id} className="h-16 hover:bg-slate-50/30 border-b last:border-0"><TableCell className="px-10 font-black text-xs uppercase">{sale.productName}</TableCell><TableCell><Badge className="bg-green-50 text-green-600 text-[8px] font-black uppercase">Completada</Badge></TableCell><TableCell className="px-10 text-right font-black text-green-600">+${sale.commissionEarned?.toFixed(2)}</TableCell></TableRow>
@@ -191,7 +196,7 @@ export default function AffiliateDashboard() {
                  </div>
               </Card>
               <Card className="border-none bg-slate-900 shadow-2xl rounded-[3rem] p-10 text-white relative overflow-hidden">
-                 <div className="relative z-10 space-y-6"><div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl"><Bell className="h-6 w-6" /></div><div className="space-y-2"><h4 className="text-xl font-headline font-black uppercase">Alertas Activas</h4><p className="text-slate-400 text-xs font-medium">No te pierdas ningún comunicado urgente del administrador.</p></div><Button onClick={() => Notification.requestPermission()} variant="outline" className="w-full h-12 rounded-xl border-white/10 text-white font-black text-[10px] uppercase">HABILITAR NOTIFICACIONES</Button></div>
+                 <div className="relative z-10 space-y-6"><div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl"><Bell className="h-6 w-6" /></div><div className="space-y-2"><h4 className="text-xl font-headline font-black uppercase">Alertas Activas</h4><p className="text-slate-400 text-xs font-medium">Recibe notificaciones de pagos y mensajes del administrador.</p></div><Button onClick={() => Notification.requestPermission()} variant="outline" className="w-full h-12 rounded-xl border-white/10 text-white font-black text-[10px] uppercase">HABILITAR AHORA</Button></div>
               </Card>
            </div>
         </div>
@@ -200,8 +205,8 @@ export default function AffiliateDashboard() {
         <DialogContent className="rounded-[3rem] p-10 border-none shadow-2xl bg-white">
           <div className="space-y-8">
             <DialogHeader><DialogTitle className="text-2xl font-black text-center uppercase italic">Cambiar <span className="text-primary">Foto de Perfil</span></DialogTitle></DialogHeader>
-            <Input placeholder="Pega la URL de tu imagen..." value={newPhotoUrl} onChange={(e) => setNewPhotoUrl(e.target.value)} className="h-16 rounded-2xl" />
-            <Button onClick={() => { updateDocumentNonBlocking(affiliateRef!, { photoUrl: newPhotoUrl }); setIsEditingPhoto(false); toast({ title: "Foto Actualizada" }); }} className="w-full h-14 rounded-2xl bg-primary text-white font-black">GUARDAR CAMBIOS</Button>
+            <Input placeholder="URL de tu imagen..." value={newPhotoUrl} onChange={(e) => setNewPhotoUrl(e.target.value)} className="h-16 rounded-2xl" />
+            <Button onClick={() => { if(affiliateRef) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); setIsEditingPhoto(false); toast({ title: "Foto Actualizada" }); }} className="w-full h-14 rounded-2xl bg-primary text-white font-black">GUARDAR</Button>
           </div>
         </DialogContent>
       </Dialog>
