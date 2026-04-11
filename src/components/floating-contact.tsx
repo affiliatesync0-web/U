@@ -1,17 +1,18 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { MessageCircle } from "lucide-react"
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 
 /**
  * Componente de botón flotante para contacto rápido por WhatsApp.
- * Ahora es movible (arrastrable) y persiste su posición en el navegador.
+ * Ahora se oculta automáticamente si el usuario ha iniciado sesión.
+ * Es movible (arrastrable) y persiste su posición en el navegador.
  */
 export function FloatingContact() {
   const db = useFirestore();
+  const { user } = useUser();
   const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
   const { data: configs } = useCollection(configQuery);
 
@@ -111,6 +112,9 @@ export function FloatingContact() {
       window.removeEventListener('touchend', onEnd);
     };
   }, [isDragging]);
+
+  // SI EL USUARIO ESTÁ LOGUEADO, NO MOSTRAR EL BOTÓN
+  if (user) return null;
 
   if (!phoneNumber || !position) return null;
 
