@@ -73,14 +73,14 @@ export default function AffiliateSupportPage() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 2. Chat de Comunidad (Ordenamiento local seguro)
+  // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
   const communityMessages = (commData || [])
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // 3. Chat Privado (Ordenamiento local seguro)
+  // 3. Chat Privado
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', user.uid));
@@ -91,7 +91,7 @@ export default function AffiliateSupportPage() {
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // Notificaciones Estilo WhatsApp
+  // Notificaciones Estilo WhatsApp (AM/PM format and Permission Request)
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -301,7 +301,7 @@ export default function AffiliateSupportPage() {
                   <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white shadow-xl"><ShieldCheck className="h-6 w-6" /></div>
                   <div>
                     <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">Soporte Privado Admin</CardTitle>
-                    <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Conversación Directa</p>
+                    <p className="text-white/60 text-[9px] font-black uppercase tracking-widest">Conversación Directa</p>
                   </div>
                 </div>
               </CardHeader>

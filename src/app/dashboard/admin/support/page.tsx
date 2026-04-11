@@ -78,14 +78,14 @@ export default function AdminSupportPage() {
   const { data: affiliatesData, isLoading: loadingAffs } = useCollection(affiliatesQuery)
   const affiliates = affiliatesData || []
 
-  // 2. Chat de Comunidad (Ordenamiento local seguro)
+  // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
   const communityMessages = (commData || [])
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // 3. Chat Privado (Ordenamiento local seguro)
+  // 3. Chat Privado
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', selectedAffiliate.id));
@@ -96,7 +96,7 @@ export default function AdminSupportPage() {
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // Notificaciones Estilo WhatsApp
+  // Notificaciones Estilo WhatsApp (AM/PM format and Permission Request)
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
