@@ -68,7 +68,7 @@ export default function AffiliateSupportPage() {
   const { data: supportStatus } = useDoc(supportStatusRef);
 
   const privateQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !db) return null;
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', user.uid),
@@ -92,16 +92,16 @@ export default function AffiliateSupportPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!msgInput.trim() || !user) return
+    if (!msgInput.trim() || !user || !db) return
 
     const content = msgInput.trim();
     
     // DETERMINAR NOMBRE DE USUARIO
-    let userName = "SOCIO";
+    let nameToUse = "SOCIO";
     if (user.email?.toLowerCase().trim() === ADMIN_EMAIL) {
-      userName = "ADMINISTRADOR";
+      nameToUse = "ADMINISTRADOR";
     } else if (profile?.firstName) {
-      userName = `${profile.firstName} ${profile.lastName}`.trim().toUpperCase();
+      nameToUse = `${profile.firstName} ${profile.lastName}`.trim().toUpperCase();
     }
 
     setMsgInput('')
@@ -109,7 +109,7 @@ export default function AffiliateSupportPage() {
     if (activeTab === 'community') {
       addDocumentNonBlocking(collection(db, 'community_messages'), {
         userId: user.uid,
-        userName,
+        userName: nameToUse,
         content,
         createdAt: serverTimestamp()
       })
@@ -117,7 +117,7 @@ export default function AffiliateSupportPage() {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
         affiliateId: user.uid,
-        userName,
+        userName: nameToUse,
         content,
         fromAdmin: false,
         createdAt: serverTimestamp()
@@ -136,9 +136,9 @@ export default function AffiliateSupportPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setIsInCall(true);
-      toast({ title: "Llamada Conectada", description: "El audio está activo." });
+      toast({ title: "Llamada Conectada", description: "Audio activo." });
     } catch (error) { 
-      toast({ variant: "destructive", title: "Permiso Denegado", description: "Habilita el micrófono para hablar." });
+      toast({ variant: "destructive", title: "Acceso Denegado", description: "Habilita el micrófono." });
     }
   }
 
@@ -169,7 +169,7 @@ export default function AffiliateSupportPage() {
 
             {isIncomingCall && !isInCall && (
               <Button onClick={joinCall} className="h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl bg-red-500 hover:bg-red-600 text-white gap-2 font-black text-[9px] md:text-[10px] uppercase animate-bounce shadow-xl shadow-red-200">
-                <Phone className="h-3.5 w-3.5 md:h-4 md:w-4 animate-pulse" /> LLAMADA: UNIRME
+                <Phone className="h-3.5 w-3.5 md:h-4 md:w-4 animate-pulse" /> UNIRME A LLAMADA
               </Button>
             )}
           </div>
@@ -182,8 +182,8 @@ export default function AffiliateSupportPage() {
                     <Flame className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial Sync</CardTitle>
-                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Soporte Colectivo</p>
+                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial Sync Academy</CardTitle>
+                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Comunidad de Socios</p>
                   </div>
                 </div>
               </CardHeader>
@@ -238,8 +238,8 @@ export default function AffiliateSupportPage() {
                     <ShieldCheck className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Chat Directo con Administración</CardTitle>
-                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Soporte Personalizado</p>
+                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Soporte Privado Administrativo</CardTitle>
+                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Chat Directo</p>
                   </div>
                 </div>
               </CardHeader>
@@ -249,24 +249,24 @@ export default function AffiliateSupportPage() {
                     {privateMessages?.map((msg) => (
                       <div key={msg.id} className={cn(
                         "flex flex-col max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-2",
-                        msg.senderId === user?.uid ? "ml-auto items-end" : "items-start"
+                        msg.fromAdmin ? "items-start" : "ml-auto items-end"
                       )}>
                         <div className="flex items-center gap-2 mb-1 px-2">
-                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>
+                          <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.fromAdmin ? "text-primary" : "text-slate-500")}>
                             {msg.userName}
                           </span>
-                          {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}
+                          {msg.fromAdmin && <Crown className="h-3 w-3 text-primary" />}
                         </div>
                         <div className={cn(
                           "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
-                          msg.senderId === user?.uid 
-                            ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/10"
-                            : "bg-slate-900 text-white rounded-tl-none border border-primary/20"
+                          msg.fromAdmin 
+                            ? "bg-slate-900 text-white rounded-tl-none border border-primary/20"
+                            : "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/10"
                         )}>
                           {msg.content}
                           <div className={cn(
                             "mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40",
-                            msg.senderId === user?.uid ? "justify-end text-white" : "justify-start text-white/60"
+                            msg.fromAdmin ? "justify-start text-white/60" : "justify-end text-white"
                           )}>
                             <Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}
                           </div>
@@ -278,7 +278,7 @@ export default function AffiliateSupportPage() {
                 </ScrollArea>
                 <div className="p-4 md:p-6 bg-white border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl md:rounded-[2rem] ring-1 ring-slate-200">
-                    <Input placeholder="Escribe un mensaje privado al administrador..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
+                    <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-10 md:h-14 bg-transparent border-none shadow-none focus-visible:ring-0 flex-1 font-bold text-slate-800 px-4" />
                     <Button type="submit" size="icon" className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-full bg-primary shadow-xl shrink-0 transition-all active:scale-90"><Send className="h-4 w-4 md:h-6 md:w-6 text-white" /></Button>
                   </form>
                 </div>

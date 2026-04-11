@@ -69,14 +69,14 @@ export default function AdminSupportPage() {
   const { data: communityMessages } = useCollection<Message>(communityQuery)
 
   const privateQuery = useMemoFirebase(() => {
-    if (!selectedAffiliate || !user) return null;
+    if (!selectedAffiliate || !db) return null;
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', selectedAffiliate.id),
       orderBy('createdAt', 'asc'),
       limit(100)
     );
-  }, [db, selectedAffiliate, user]);
+  }, [db, selectedAffiliate]);
   
   const { data: privateMessages } = useCollection<Message>(privateQuery)
 
@@ -93,7 +93,7 @@ export default function AdminSupportPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!msgInput.trim() || !user) return
+    if (!msgInput.trim() || !user || !db) return
 
     const content = msgInput.trim();
     setMsgInput('')
@@ -106,6 +106,7 @@ export default function AdminSupportPage() {
         createdAt: serverTimestamp()
       })
     } else if (selectedAffiliate) {
+      // Guardar mensaje privado
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
         affiliateId: selectedAffiliate.id,
@@ -115,10 +116,11 @@ export default function AdminSupportPage() {
         createdAt: serverTimestamp()
       });
 
+      // Notificar al afiliado
       addDocumentNonBlocking(collection(db, 'notifications'), {
         userId: selectedAffiliate.id,
-        title: '💬 Nuevo Mensaje de Administrador',
-        message: content.substring(0, 60) + (content.length > 60 ? '...' : ''),
+        title: '💬 Mensaje Directo Admin',
+        message: content.substring(0, 60),
         type: 'system',
         createdAt: new Date().toISOString(),
         isRead: false,
@@ -147,9 +149,9 @@ export default function AdminSupportPage() {
         targetUserId: targetId
       }, { merge: true });
 
-      toast({ title: "Iniciando Llamada", description: "El socio recibirá la alerta en su panel." });
+      toast({ title: "Iniciando Llamada de Voz", description: "El socio ha sido notificado." });
     } catch (e) {
-      toast({ variant: "destructive", title: "Error de Audio", description: "Habilita el micrófono para llamar." });
+      toast({ variant: "destructive", title: "Error de Hardware", description: "Habilita el micrófono." });
     }
   }
 
@@ -177,7 +179,7 @@ export default function AdminSupportPage() {
                 <Users className="h-3.5 w-3.5 md:h-4 md:w-4" /> COMUNIDAD
               </TabsTrigger>
               <TabsTrigger value="private" className="flex-1 md:flex-none px-4 md:px-8 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest gap-2">
-                <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" /> MENSAJERÍA PRIVADA
+                <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" /> CHAT PRIVADO
               </TabsTrigger>
             </TabsList>
           </div>
@@ -190,8 +192,8 @@ export default function AdminSupportPage() {
                     <Flame className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial de Apoyo</CardTitle>
-                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Difusión para toda la red</p>
+                    <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest">Grupo Oficial Sync Academy</CardTitle>
+                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Soporte Multicanal</p>
                   </div>
                 </div>
               </CardHeader>
@@ -202,7 +204,7 @@ export default function AdminSupportPage() {
                     {communityMessages?.map((msg) => (
                       <div key={msg.id} className={cn(
                         "flex flex-col max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-2",
-                        msg.userId === user?.uid ? "ml-auto items-end" : "items-start"
+                        msg.userName === "ADMINISTRADOR" ? "ml-auto items-end" : "items-start"
                       )}>
                         <div className="flex items-center gap-2 mb-1 px-2">
                           <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>
@@ -212,14 +214,14 @@ export default function AdminSupportPage() {
                         </div>
                         <div className={cn(
                           "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
-                          msg.userId === user?.uid 
+                          msg.userName === "ADMINISTRADOR" 
                             ? "bg-slate-900 text-white rounded-tr-none" 
                             : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
                         )}>
                           {msg.content}
                           <div className={cn(
                             "mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40",
-                            msg.userId === user?.uid ? "justify-end text-white" : "justify-start text-slate-500"
+                            msg.userName === "ADMINISTRADOR" ? "justify-end text-white" : "justify-start text-slate-500"
                           )}>
                             <Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}
                           </div>
@@ -306,7 +308,7 @@ export default function AdminSupportPage() {
                           <CardTitle className="text-xs md:text-sm font-headline font-black uppercase tracking-widest truncate max-w-[120px] md:max-w-none">
                             {selectedAffiliate.firstName} {selectedAffiliate.lastName}
                           </CardTitle>
-                          <p className="text-[8px] md:text-[9px] text-primary font-black uppercase tracking-widest">Chat Privado Seguro</p>
+                          <p className="text-[8px] md:text-[9px] text-primary font-black uppercase tracking-widest">Conversación Privada</p>
                         </div>
                       </div>
                       <Button onClick={() => startCall(selectedAffiliate.id)} size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 transition-all">
@@ -319,24 +321,24 @@ export default function AdminSupportPage() {
                           {privateMessages?.map((msg) => (
                             <div key={msg.id} className={cn(
                               "flex flex-col max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-2",
-                              msg.senderId === user?.uid ? "ml-auto items-end" : "items-start"
+                              msg.fromAdmin ? "ml-auto items-end" : "items-start"
                             )}>
                               <div className="flex items-center gap-2 mb-1 px-2">
-                                <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-primary" : "text-slate-500")}>
+                                <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.fromAdmin ? "text-primary" : "text-slate-500")}>
                                   {msg.userName}
                                 </span>
-                                {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-primary" />}
+                                {msg.fromAdmin && <Crown className="h-3 w-3 text-primary" />}
                               </div>
                               <div className={cn(
                                 "p-3 md:p-4 rounded-xl md:rounded-[1.5rem] text-[12px] md:text-[13px] font-bold shadow-sm leading-relaxed relative",
-                                msg.senderId === user?.uid 
+                                msg.fromAdmin 
                                   ? "bg-slate-900 text-white rounded-tr-none" 
                                   : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
                               )}>
                                 {msg.content}
                                 <div className={cn(
                                   "mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40",
-                                  msg.senderId === user?.uid ? "justify-end text-white" : "justify-start text-slate-500"
+                                  msg.fromAdmin ? "justify-end text-white" : "justify-start text-slate-500"
                                 )}>
                                   <Clock className="h-2 w-2" /> {formatTime(msg.createdAt)}
                                 </div>
