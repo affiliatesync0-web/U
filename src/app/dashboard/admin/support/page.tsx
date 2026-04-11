@@ -48,11 +48,10 @@ export default function AdminSupportPage() {
   
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
-  const lastTimeRef = useRef(new Date().toISOString())
 
   // 1. Cargar Afiliados para Chat Privado
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
-  const { data: affiliates, isLoading: loadingAffs } = useCollection(affiliatesQuery)
+  const { data: affiliates = [], isLoading: loadingAffs } = useCollection(affiliatesQuery)
 
   // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => 
@@ -60,7 +59,7 @@ export default function AdminSupportPage() {
   [db])
   const { data: communityMessages = [] } = useCollection<Message>(communityQuery)
 
-  // 3. Chat Privado (Filtrado por canal de socio)
+  // 3. Chat Privado
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
     return query(
@@ -73,7 +72,7 @@ export default function AdminSupportPage() {
   
   const { data: privateMessages = [] } = useCollection<Message>(privateQuery)
 
-  // Solicitar permisos de notificación y escuchar mensajes nuevos para alertas
+  // Notificaciones y Permisos
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -83,28 +82,26 @@ export default function AdminSupportPage() {
 
     const now = new Date().toISOString();
     
-    // Escuchar comunidad para notificaciones (solo si no somos el autor)
     const unsubComm = onSnapshot(collection(db, 'community_messages'), (snap) => {
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.userName !== "ADMINISTRADOR") {
             if (Notification.permission === "granted") {
-              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
             }
           }
         }
       });
     });
 
-    // Escuchar privados para notificaciones
     const unsubPriv = onSnapshot(collection(db, 'private_messages'), (snap) => {
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && !msg.fromAdmin) {
             if (Notification.permission === "granted") {
-              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
+              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content });
             }
           }
         }
@@ -126,7 +123,7 @@ export default function AdminSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages.length, privateMessages.length, activeTab, selectedAffiliate, mobileShowChat]);
+  }, [communityMessages?.length, privateMessages?.length, activeTab, selectedAffiliate, mobileShowChat]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
@@ -168,9 +165,9 @@ export default function AdminSupportPage() {
     }
   }
 
-  const filteredAffiliates = affiliates?.filter(a => 
+  const filteredAffiliates = (affiliates || []).filter(a => 
     `${a.firstName} ${a.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   return (
     <DashboardShell role="admin">

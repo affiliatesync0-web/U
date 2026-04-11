@@ -67,7 +67,7 @@ export default function AffiliateSupportPage() {
   
   const { data: privateMessages = [] } = useCollection<Message>(privateQuery)
 
-  // Notificaciones
+  // Notificaciones y Permisos
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -120,7 +120,7 @@ export default function AffiliateSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages.length, privateMessages.length, activeTab]);
+  }, [communityMessages?.length, privateMessages?.length, activeTab]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
