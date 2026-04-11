@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, Camera, ChevronRight, MapPin, Bell, Phone, BadgeCheck, Navigation } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, Camera, MapPin, Bell, BadgeCheck, Navigation } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -37,7 +37,6 @@ export default function AffiliateDashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-  const [incomingCall, setIncomingCall] = useState<any>(null);
   const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied' | 'watching'>('pending');
   const watchIdRef = useRef<number | null>(null);
 
@@ -47,12 +46,10 @@ export default function AffiliateDashboard() {
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
-      // Solicitar permiso de notificaciones al inicio
       if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
 
-      // Escuchar notificaciones en tiempo real
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -66,31 +63,13 @@ export default function AffiliateDashboard() {
         });
       });
 
-      // Escuchar estado de llamadas de voz
-      const statusRef = doc(db, 'site_config', 'support_status');
-      const unsubscribeCall = onSnapshot(statusRef, (snap) => {
-        const data = snap.data();
-        if (data?.isLive && (data?.type === 'group' || data?.targetUserId === user.uid)) {
-          setIncomingCall(data);
-          if (Notification.permission === "granted") {
-            new Notification("🚀 Llamada Entrante de Administrador", { body: "Únete ahora a la sesión de apoyo." });
-          }
-        } else {
-          setIncomingCall(null);
-        }
-      });
-
-      return () => {
-        unsubscribeNotifs();
-        unsubscribeCall();
-      };
+      return () => unsubscribeNotifs();
     }
   }, [isMounted, user]);
 
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
-  // Geolocalización en tiempo real (segundo plano)
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {
@@ -138,26 +117,6 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-10">
-        
-        {incomingCall && (
-          <div className="bg-slate-900 border-2 border-primary/50 rounded-[3rem] p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 animate-in zoom-in-95 duration-500 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-5"><Phone className="h-40 w-40 text-primary" /></div>
-            <div className="flex items-center gap-6 relative z-10">
-              <div className="h-20 w-20 bg-primary rounded-3xl flex items-center justify-center animate-pulse"><Phone className="h-10 w-10 text-white" /></div>
-              <div className="text-center md:text-left">
-                <h2 className="text-2xl font-black uppercase tracking-tight italic">
-                  {incomingCall.type === 'private' ? '📞 ¡Llamada Directa de Admin!' : '🚀 Sesión de Apoyo Activa'}
-                </h2>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Conexión Segura Sync Academy</p>
-              </div>
-            </div>
-            <div className="flex gap-4 w-full md:w-auto relative z-10">
-              <Button onClick={() => router.push('/dashboard/affiliate/support')} className="flex-1 h-16 px-10 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl">ACEPTAR LLAMADA</Button>
-              <Button variant="ghost" onClick={() => setIncomingCall(null)} className="h-16 px-8 rounded-2xl font-black text-slate-500 hover:text-white">IGNORAR</Button>
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex items-center gap-6">
             <div className="relative">
@@ -232,7 +191,7 @@ export default function AffiliateDashboard() {
                  </div>
               </Card>
               <Card className="border-none bg-slate-900 shadow-2xl rounded-[3rem] p-10 text-white relative overflow-hidden">
-                 <div className="relative z-10 space-y-6"><div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl"><Bell className="h-6 w-6" /></div><div className="space-y-2"><h4 className="text-xl font-headline font-black uppercase">Alertas Activas</h4><p className="text-slate-400 text-xs font-medium">No te pierdas ninguna llamada ni comunicado urgente del administrador.</p></div><Button onClick={() => Notification.requestPermission()} variant="outline" className="w-full h-12 rounded-xl border-white/10 text-white font-black text-[10px] uppercase">HABILITAR NOTIFICACIONES</Button></div>
+                 <div className="relative z-10 space-y-6"><div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl"><Bell className="h-6 w-6" /></div><div className="space-y-2"><h4 className="text-xl font-headline font-black uppercase">Alertas Activas</h4><p className="text-slate-400 text-xs font-medium">No te pierdas ningún comunicado urgente del administrador.</p></div><Button onClick={() => Notification.requestPermission()} variant="outline" className="w-full h-12 rounded-xl border-white/10 text-white font-black text-[10px] uppercase">HABILITAR NOTIFICACIONES</Button></div>
               </Card>
            </div>
         </div>

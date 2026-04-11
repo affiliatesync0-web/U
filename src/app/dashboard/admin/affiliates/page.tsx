@@ -46,32 +46,20 @@ export default function AdminAffiliatesPage() {
     aff.email.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleInternalContact = (affId: string, type: 'message' | 'call') => {
+  const handleInternalContact = (affId: string) => {
     addDocumentNonBlocking(collection(db, 'notifications'), {
       userId: affId,
-      title: type === 'call' ? '🚀 Llamada de Voz Entrante' : '💬 Mensaje Privado Admin',
-      message: type === 'call' 
-        ? 'El administrador solicita una llamada de voz privada contigo.' 
-        : 'Revisa tu panel de soporte para ver un nuevo mensaje privado.',
+      title: '💬 Mensaje Privado Admin',
+      message: 'Revisa tu panel de soporte para ver un nuevo mensaje privado del administrador.',
       type: 'system',
       createdAt: new Date().toISOString(),
       isRead: false,
       actionUrl: '/dashboard/affiliate/support'
     });
 
-    if (type === 'call') {
-      const supportStatusRef = doc(db, 'site_config', 'support_status');
-      setDocumentNonBlocking(supportStatusRef, {
-        isLive: true,
-        targetUserId: affId,
-        startedAt: new Date().toISOString(),
-        type: 'private'
-      }, { merge: true });
-    }
-
     toast({ 
-      title: type === 'call' ? "Llamada Iniciada" : "Contacto Notificado", 
-      description: "El socio ha recibido una alerta interna." 
+      title: "Contacto Notificado", 
+      description: "El socio ha recibido una alerta interna para revisar el chat." 
     });
 
     router.push('/dashboard/admin/support');
@@ -126,7 +114,7 @@ export default function AdminAffiliatesPage() {
                   <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Perfil del Afiliado</TableHead>
                   <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Estatus</TableHead>
                   <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Saldo Disponible</TableHead>
-                  <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Comunicación Nativa</TableHead>
+                  <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>{filteredAffiliates.map((aff) => (
                   <TableRow key={aff.id} className="h-24 border-b last:border-0 group">
@@ -145,11 +133,8 @@ export default function AdminAffiliatesPage() {
                     <TableCell className="font-black text-lg text-primary">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                     <TableCell className="px-10 text-right">
                       <div className="flex justify-end items-center gap-2">
-                        <Button size="icon" variant="ghost" className="h-10 w-10 text-primary hover:bg-primary/5" title="Enviar Mensaje Interno" onClick={() => handleInternalContact(aff.id, 'message')}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-primary hover:bg-primary/5" title="Enviar Mensaje Interno" onClick={() => handleInternalContact(aff.id)}>
                           <MessageCircle className="h-5 w-5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-10 w-10 text-blue-600 hover:bg-blue-50" title="Iniciar Llamada de Voz" onClick={() => handleInternalContact(aff.id, 'call')}>
-                          <Phone className="h-5 w-5" />
                         </Button>
                         <AffiliateDetailsDialog affiliate={aff} onApprove={() => handleApprove(aff.id, aff.email, aff.firstName)} />
                         <AdminPasswordResetDialog user={aff} />

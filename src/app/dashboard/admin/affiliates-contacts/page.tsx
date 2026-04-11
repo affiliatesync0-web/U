@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle, Phone, Smartphone } from 'lucide-react'
+import { Search, Mail, Loader2, User, Copy, Check, Users, MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -15,8 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from '@/components/ui/button'
-import { useFirestore, useCollection, useMemoFirebase, useUser, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase'
-import { collection, doc } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase'
+import { collection } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -52,25 +52,16 @@ export default function AdminAffiliateContactsPage() {
     });
   };
 
-  const handleInternalContact = (affId: string, type: 'message' | 'call') => {
+  const handleInternalContact = (affId: string) => {
     addDocumentNonBlocking(collection(db, 'notifications'), {
       userId: affId,
-      title: type === 'call' ? '🚀 Llamada Sync' : '💬 Mensaje Directo Admin',
-      message: type === 'call' ? 'Únete a la llamada de voz iniciada por el administrador.' : 'Revisa el canal de soporte para un nuevo comunicado.',
+      title: '💬 Mensaje Directo Admin',
+      message: 'Revisa el canal de soporte para un nuevo comunicado del administrador.',
       type: 'system',
       createdAt: new Date().toISOString(),
       isRead: false,
       actionUrl: '/dashboard/affiliate/support'
     });
-
-    if (type === 'call') {
-      setDocumentNonBlocking(doc(db, 'site_config', 'support_status'), {
-        isLive: true,
-        targetUserId: affId,
-        startedAt: new Date().toISOString(),
-        type: 'private'
-      }, { merge: true });
-    }
 
     toast({ title: "Contacto Notificado" });
     router.push('/dashboard/admin/support');
@@ -142,11 +133,8 @@ export default function AdminAffiliateContactsPage() {
                         </TableCell>
                         <TableCell className="px-10 text-right">
                           <div className="flex justify-end gap-3">
-                            <Button variant="outline" className="h-12 px-5 rounded-2xl border-primary/20 text-primary hover:bg-primary/5 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id, 'message')}>
-                              <MessageCircle className="h-4 w-4" /> Mensaje
-                            </Button>
-                            <Button variant="outline" className="h-12 px-5 rounded-2xl border-blue-200 text-blue-600 hover:bg-blue-50 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id, 'call')}>
-                              <Phone className="h-4 w-4" /> Llamada Voz
+                            <Button variant="outline" className="h-12 px-5 rounded-2xl border-primary/20 text-primary hover:bg-primary/5 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id)}>
+                              <MessageCircle className="h-4 w-4" /> Mensaje Directo
                             </Button>
                             <Button variant="ghost" className="h-12 px-5 rounded-2xl font-black text-[10px] uppercase tracking-widest" onClick={() => handleCopyEmail(aff.email)}>
                               {copiedEmail === aff.email ? "Copiado" : "Copiar Email"}

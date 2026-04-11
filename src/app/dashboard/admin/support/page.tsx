@@ -7,12 +7,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   MessageSquare, 
   Send, 
-  Phone, 
   Loader2, 
   Mic, 
   Users,
@@ -22,12 +20,11 @@ import {
   StopCircle,
   CheckCheck,
   Flame,
-  ShieldCheck,
   MessageCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, initializeFirebase } from '@/firebase'
-import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
+import { collection, query, orderBy, limit, serverTimestamp, where } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 
@@ -140,7 +137,7 @@ export default function AdminSupportPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -150,7 +147,7 @@ export default function AdminSupportPage() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        if (audioBlob.size > 500) {
+        if (audioBlob.size > 1000) {
           await uploadAudio(audioBlob);
         }
         stream.getTracks().forEach(track => track.stop());
@@ -202,7 +199,6 @@ export default function AdminSupportPage() {
         });
       }
     } catch (err) {
-      console.error("Audio upload error:", err);
       toast({ variant: "destructive", title: "Fallo en envío de audio" });
     } finally {
       setIsUploadingAudio(false);
