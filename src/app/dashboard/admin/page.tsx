@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -29,18 +28,16 @@ export default function AdminDashboard() {
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    // Solicitar permiso de notificaciones al Administrador
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
     if (db && user) {
-      const now = new Date();
+      const now = new Date().toISOString();
       
       // 1. Escuchar mensajes nuevos en la Comunidad
       const qComm = query(
         collection(db, 'community_messages'), 
-        orderBy('createdAt', 'desc'), 
         limit(1)
       );
       
@@ -48,9 +45,7 @@ export default function AdminDashboard() {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const msg = change.doc.data();
-            // Evitar notificar si el mensaje es del admin o es antiguo (de antes de cargar la pág)
-            const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : new Date();
-            if (msg.userName !== "ADMINISTRADOR" && msgDate > now) {
+            if (msg.userName !== "ADMINISTRADOR" && msg.createdAt > now) {
               toast({ 
                 title: `💬 Comunidad: ${msg.userName}`, 
                 description: msg.content,
@@ -64,11 +59,10 @@ export default function AdminDashboard() {
         });
       });
 
-      // 2. Escuchar mensajes privados para el admin
+      // 2. Escuchar mensajes privados (Cualquiera que no sea del Admin)
       const qPriv = query(
         collection(db, 'private_messages'), 
-        where('receiverId', '==', 'affiliatesync0@gmail.com'),
-        orderBy('createdAt', 'desc'), 
+        where('fromAdmin', '==', false),
         limit(1)
       );
       
@@ -76,8 +70,7 @@ export default function AdminDashboard() {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const msg = change.doc.data();
-            const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : new Date();
-            if (msgDate > now) {
+            if (msg.createdAt > now) {
               toast({ 
                 variant: "default",
                 title: `📩 Privado de ${msg.userName}`, 

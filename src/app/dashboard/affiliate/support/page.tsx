@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs"
 import { 
   Send, 
   Users, 
@@ -42,28 +42,33 @@ export default function AffiliateSupportPage() {
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
 
-  // 1. Chat de Comunidad
+  // 1. Chat de Comunidad (Ordenado por fecha)
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(100)), 
+    query(collection(db, 'community_messages'), limit(100)), 
   [db])
-  const { data: communityMessages } = useCollection<Message>(communityQuery)
+  const { data: rawCommunityMessages } = useCollection<Message>(communityQuery)
+  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => 
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   // 2. Perfil del Afiliado
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 3. Chat Privado con Admin (Historial compartido basado en el ID del afiliado)
+  // 3. Chat Privado con Admin (Historial unificado mediante affiliateId)
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', user.uid),
-      orderBy('createdAt', 'asc'),
       limit(100)
     );
   }, [db, user]);
   
-  const { data: privateMessages } = useCollection<Message>(privateQuery)
+  const { data: rawPrivateMessages } = useCollection<Message>(privateQuery)
+  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => 
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -88,6 +93,7 @@ export default function AffiliateSupportPage() {
 
     const content = msgInput.trim();
     const userName = profile?.firstName ? `${profile.firstName} ${profile.lastName}`.trim().toUpperCase() : "SOCIO";
+    const timestamp = new Date().toISOString();
 
     setMsgInput('')
 
@@ -97,17 +103,17 @@ export default function AffiliateSupportPage() {
         userName: userName,
         content,
         type: 'text',
-        createdAt: serverTimestamp()
+        createdAt: timestamp
       })
     } else {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        affiliateId: user.uid, // Canal único para este afiliado
+        affiliateId: user.uid,
         userName: userName,
         content,
         type: 'text',
         fromAdmin: false,
-        createdAt: serverTimestamp()
+        createdAt: timestamp
       });
     }
   }
@@ -142,7 +148,7 @@ export default function AffiliateSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {communityMessages?.map((msg) => (
+                    {communityMessages.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.userId === user?.uid ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
@@ -197,7 +203,7 @@ export default function AffiliateSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {privateMessages?.map((msg) => (
+                    {privateMessages.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", !msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.fromAdmin ? "text-[#075E54]" : "text-slate-500")}>

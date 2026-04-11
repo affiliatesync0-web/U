@@ -51,24 +51,29 @@ export default function AdminSupportPage() {
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
   const { data: affiliates, isLoading: loadingAffs } = useCollection(affiliatesQuery)
 
-  // 2. Chat de Comunidad
+  // 2. Chat de Comunidad (Ordenado por fecha)
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(100)), 
+    query(collection(db, 'community_messages'), limit(100)), 
   [db])
-  const { data: communityMessages } = useCollection<Message>(communityQuery)
+  const { data: rawCommunityMessages } = useCollection<Message>(communityQuery)
+  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => 
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
-  // 3. Chat Privado Filtrado por Socio Seleccionado (Ambas partes ven esto)
+  // 3. Chat Privado (Filtrado por canal de socio)
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', selectedAffiliate.id),
-      orderBy('createdAt', 'asc'),
       limit(100)
     );
   }, [db, selectedAffiliate]);
   
-  const { data: privateMessages } = useCollection<Message>(privateQuery)
+  const { data: rawPrivateMessages } = useCollection<Message>(privateQuery)
+  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => 
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -92,6 +97,7 @@ export default function AdminSupportPage() {
     if (!msgInput.trim() || !user || !db) return
 
     const content = msgInput.trim();
+    const timestamp = new Date().toISOString();
     setMsgInput('')
 
     if (activeTab === 'community') {
@@ -100,17 +106,17 @@ export default function AdminSupportPage() {
         userName: "ADMINISTRADOR",
         content,
         type: 'text',
-        createdAt: serverTimestamp()
+        createdAt: timestamp
       })
     } else if (selectedAffiliate) {
       addDocumentNonBlocking(collection(db, 'private_messages'), {
         senderId: user.uid,
-        affiliateId: selectedAffiliate.id, // ID del canal único
+        affiliateId: selectedAffiliate.id,
         userName: "ADMINISTRADOR",
         content,
         type: 'text',
         fromAdmin: true,
-        createdAt: serverTimestamp()
+        createdAt: timestamp
       });
     }
   }
@@ -149,7 +155,7 @@ export default function AdminSupportPage() {
               <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                 <ScrollArea className="flex-1 p-6 md:p-10">
                   <div className="space-y-4">
-                    {communityMessages?.map((msg) => (
+                    {communityMessages.map((msg) => (
                       <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.userName === "ADMINISTRADOR" ? "ml-auto items-end" : "items-start")}>
                         <div className="flex items-center gap-2 mb-1 px-3">
                           <span className={cn("text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
@@ -189,7 +195,6 @@ export default function AdminSupportPage() {
 
           <TabsContent value="private" className="flex-1 mt-4 overflow-hidden h-full">
             <div className="flex gap-4 h-full">
-              {/* Lista de Contactos (WhatsApp Style) */}
               <Card className={cn("w-full md:w-80 shrink-0 border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100", mobileShowChat ? "hidden md:flex" : "flex")}>
                 <CardHeader className="p-6 bg-slate-50 border-b">
                   <div className="relative">
@@ -212,7 +217,7 @@ export default function AdminSupportPage() {
                             </div>
                             <div className="flex-1 text-left min-w-0">
                               <p className="text-[11px] font-black text-slate-800 uppercase truncate">{aff.firstName} {aff.lastName}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">Chat Directo</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">Conversación Privada</p>
                             </div>
                           </button>
                         ))}
@@ -222,7 +227,6 @@ export default function AdminSupportPage() {
                 </CardContent>
               </Card>
 
-              {/* Chat Privado Seleccionado (WhatsApp Style) */}
               <Card className={cn("flex-1 border-none shadow-2xl rounded-[3rem] bg-[#E5DDD5] overflow-hidden flex flex-col h-full relative ring-1 ring-slate-100", !mobileShowChat ? "hidden md:flex" : "flex")}>
                 <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.06] pointer-events-none" />
                 
@@ -230,7 +234,7 @@ export default function AdminSupportPage() {
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-white/50 backdrop-blur-sm z-10">
                     <div className="h-32 w-32 bg-slate-200 rounded-full flex items-center justify-center mb-8 shadow-inner"><MessageCircle className="h-16 w-16 text-slate-400" /></div>
                     <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest leading-none">Canal Privado</h3>
-                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio de la lista para ver la conversación completa.</p>
+                    <p className="text-sm font-medium text-slate-400 mt-4 max-w-xs">Selecciona un socio para ver la conversación completa.</p>
                   </div>
                 ) : (
                   <>
@@ -240,7 +244,7 @@ export default function AdminSupportPage() {
                         <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center text-white shadow-xl font-black text-sm">{selectedAffiliate.firstName?.charAt(0)}</div>
                         <div>
                           <CardTitle className="text-sm font-headline font-black uppercase tracking-widest text-white">{selectedAffiliate.firstName} {selectedAffiliate.lastName}</CardTitle>
-                          <p className="text-[9px] text-white/60 font-black uppercase">Chat 1 a 1</p>
+                          <p className="text-[9px] text-white/60 font-black uppercase">Chat de Soporte</p>
                         </div>
                       </div>
                     </CardHeader>
@@ -248,7 +252,7 @@ export default function AdminSupportPage() {
                     <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">
                       <ScrollArea className="flex-1 p-6 md:p-10">
                         <div className="space-y-4">
-                          {privateMessages?.map((msg) => (
+                          {privateMessages.map((msg) => (
                             <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[70%]", msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
                               <div className={cn("p-4 rounded-[1.5rem] text-[13px] font-medium shadow-sm leading-relaxed relative", 
                                 msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
