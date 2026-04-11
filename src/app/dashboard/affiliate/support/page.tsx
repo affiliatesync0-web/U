@@ -122,13 +122,22 @@ export default function AffiliateSupportPage() {
     return () => clearTimeout(timer);
   }, [communityMessages?.length, privateMessages?.length, activeTab]);
 
-  const formatTime = (createdAt: any) => {
-    if (!createdAt) return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  const formatDateTime = (createdAt: any) => {
+    if (!createdAt) return '--:--';
     try {
       const date = new Date(createdAt);
-      return isNaN(date.getTime()) 
-        ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-        : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      if (isNaN(date.getTime())) return '--:--';
+      
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      
+      if (isToday) {
+        return `Hoy, ${timeStr}`;
+      } else {
+        return `${date.toLocaleDateString([], { day: '2-digit', month: 'short' })}, ${timeStr}`;
+      }
     } catch (e) { 
       return '--:--';
     }
@@ -223,7 +232,7 @@ export default function AffiliateSupportPage() {
                             <>
                               {msg.content}
                               <div className="mt-1.5 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end">
-                                {msg.edited && "(editado) "}{formatTime(msg.createdAt)}
+                                {msg.edited && "(editado) "}{formatDateTime(msg.createdAt)}
                                 {msg.userId === user?.uid && <CheckCheck className="h-3 w-3 text-blue-500 ml-1" />}
                               </div>
                               {msg.userId === user?.uid && (
@@ -276,7 +285,7 @@ export default function AffiliateSupportPage() {
                             <>
                               {msg.content}
                               <div className="mt-1.5 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end">
-                                {msg.edited && "(editado) "}{formatTime(msg.createdAt)}
+                                {msg.edited && "(editado) "}{formatDateTime(msg.createdAt)}
                                 {!msg.fromAdmin && <CheckCheck className="h-3 w-3 text-blue-500 ml-1" />}
                               </div>
                               {!msg.fromAdmin && (
