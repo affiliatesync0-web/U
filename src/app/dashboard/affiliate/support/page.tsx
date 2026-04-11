@@ -45,12 +45,14 @@ export default function AffiliateSupportPage() {
 
   // 1. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), limit(100)), 
+    query(collection(db, 'community_messages'), limit(150)), 
   [db])
   const { data: rawCommunityMessages } = useCollection<Message>(communityQuery)
-  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    return timeA - timeB;
+  });
 
   // 2. Perfil del Afiliado
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
@@ -62,14 +64,16 @@ export default function AffiliateSupportPage() {
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', user.uid),
-      limit(100)
+      limit(150)
     );
   }, [db, user]);
   
   const { data: rawPrivateMessages } = useCollection<Message>(privateQuery)
-  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    return timeA - timeB;
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -80,12 +84,17 @@ export default function AffiliateSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages, privateMessages, activeTab]);
+  }, [communityMessages.length, privateMessages.length, activeTab]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
-    const date = new Date(createdAt);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    try {
+      const date = typeof createdAt.toDate === 'function' ? createdAt.toDate() : new Date(createdAt);
+      if (isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch (e) {
+      return "";
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {

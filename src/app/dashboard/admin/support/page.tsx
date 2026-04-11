@@ -19,7 +19,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase'
-import { collection, query, orderBy, limit, serverTimestamp, where } from 'firebase/firestore'
+import { collection, query, limit, where } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -51,14 +51,16 @@ export default function AdminSupportPage() {
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
   const { data: affiliates, isLoading: loadingAffs } = useCollection(affiliatesQuery)
 
-  // 2. Chat de Comunidad (Ordenado por fecha)
+  // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), limit(100)), 
+    query(collection(db, 'community_messages'), limit(150)), 
   [db])
   const { data: rawCommunityMessages } = useCollection<Message>(communityQuery)
-  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const communityMessages = [...(rawCommunityMessages || [])].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    return timeA - timeB;
+  });
 
   // 3. Chat Privado (Filtrado por canal de socio)
   const privateQuery = useMemoFirebase(() => {
@@ -66,14 +68,16 @@ export default function AdminSupportPage() {
     return query(
       collection(db, 'private_messages'),
       where('affiliateId', '==', selectedAffiliate.id),
-      limit(100)
+      limit(150)
     );
   }, [db, selectedAffiliate]);
   
   const { data: rawPrivateMessages } = useCollection<Message>(privateQuery)
-  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const privateMessages = [...(rawPrivateMessages || [])].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    return timeA - timeB;
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -84,12 +88,17 @@ export default function AdminSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages, privateMessages, activeTab, selectedAffiliate, mobileShowChat]);
+  }, [communityMessages.length, privateMessages.length, activeTab, selectedAffiliate, mobileShowChat]);
 
   const formatTime = (createdAt: any) => {
     if (!createdAt) return "";
-    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    try {
+      const date = typeof createdAt.toDate === 'function' ? createdAt.toDate() : new Date(createdAt);
+      if (isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch (e) {
+      return "";
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
