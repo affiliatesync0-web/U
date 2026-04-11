@@ -18,16 +18,12 @@ import {
   Mic, 
   ShieldCheck, 
   Crown,
-  PhoneOff,
-  MicOff,
-  Clock,
   Flame,
   StopCircle,
-  ArrowLeft,
   CheckCheck
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, initializeFirebase } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
@@ -103,7 +99,8 @@ export default function AffiliateSupportPage() {
     if (!msgInput.trim() || !user || !db) return
 
     const content = msgInput.trim();
-    let nameToUse = user.email?.toLowerCase().trim() === ADMIN_EMAIL ? "ADMINISTRADOR" : (profile?.firstName ? `${profile.firstName} ${profile.lastName}`.trim().toUpperCase() : "SOCIO");
+    const isAdmin = user.email?.toLowerCase().trim() === ADMIN_EMAIL;
+    let nameToUse = isAdmin ? "ADMINISTRADOR" : (profile?.firstName ? `${profile.firstName} ${profile.lastName}`.trim().toUpperCase() : "SOCIO");
 
     setMsgInput('')
 
@@ -122,17 +119,24 @@ export default function AffiliateSupportPage() {
         userName: nameToUse,
         content,
         type: 'text',
-        fromAdmin: false,
+        fromAdmin: isAdmin,
         createdAt: serverTimestamp()
       });
     }
   }
 
+  const toggleRecording = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const options = { mimeType: 'audio/webm;codecs=opus' };
-      const mediaRecorder = new MediaRecorder(stream, options);
+      const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -151,7 +155,7 @@ export default function AffiliateSupportPage() {
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
-      toast({ variant: "destructive", title: "Error", description: "Habilita el micrófono." });
+      toast({ variant: "destructive", title: "Error Micrófono", description: "Por favor, concede permisos de audio." });
     }
   };
 
@@ -172,7 +176,8 @@ export default function AffiliateSupportPage() {
       const uploadResult = await uploadBytes(audioRef, blob);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      let nameToUse = user.email?.toLowerCase().trim() === ADMIN_EMAIL ? "ADMINISTRADOR" : (profile?.firstName ? `${profile.firstName} ${profile.lastName}`.trim().toUpperCase() : "SOCIO");
+      const isAdmin = user.email?.toLowerCase().trim() === ADMIN_EMAIL;
+      let nameToUse = isAdmin ? "ADMINISTRADOR" : (profile?.firstName ? `${profile.firstName} ${profile.lastName}`.trim().toUpperCase() : "SOCIO");
 
       if (activeTab === 'community') {
         await addDocumentNonBlocking(collection(db, 'community_messages'), {
@@ -189,13 +194,13 @@ export default function AffiliateSupportPage() {
           userName: nameToUse,
           content: downloadURL,
           type: 'audio',
-          fromAdmin: false,
+          fromAdmin: isAdmin,
           createdAt: serverTimestamp()
         });
       }
     } catch (err) {
       console.error("Audio error:", err);
-      toast({ variant: "destructive", title: "Error al enviar audio" });
+      toast({ variant: "destructive", title: "Fallo al enviar audio" });
     } finally {
       setIsUploadingAudio(false);
     }
@@ -246,7 +251,14 @@ export default function AffiliateSupportPage() {
                     <div ref={scrollRefComm} />
                   </div>
                 </ScrollArea>
-                <ChatInputArea msgInput={msgInput} setMsgInput={setMsgInput} onSend={handleSendMessage} isRecording={isRecording} isUploading={isUploadingAudio} startRecording={startRecording} stopRecording={stopRecording} isAffiliate />
+                <ChatInputArea 
+                  msgInput={msgInput} 
+                  setMsgInput={setMsgInput} 
+                  onSend={handleSendMessage} 
+                  isRecording={isRecording} 
+                  isUploading={isUploadingAudio} 
+                  onMicClick={toggleRecording} 
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -280,7 +292,14 @@ export default function AffiliateSupportPage() {
                     <div ref={scrollRefPriv} />
                   </div>
                 </ScrollArea>
-                <ChatInputArea msgInput={msgInput} setMsgInput={setMsgInput} onSend={handleSendMessage} isRecording={isRecording} isUploading={isUploadingAudio} startRecording={startRecording} stopRecording={stopRecording} isAffiliate />
+                <ChatInputArea 
+                  msgInput={msgInput} 
+                  setMsgInput={setMsgInput} 
+                  onSend={handleSendMessage} 
+                  isRecording={isRecording} 
+                  isUploading={isUploadingAudio} 
+                  onMicClick={toggleRecording} 
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -290,7 +309,7 @@ export default function AffiliateSupportPage() {
   )
 }
 
-function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading, startRecording, stopRecording, isAffiliate }: any) {
+function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading, onMicClick }: any) {
   return (
     <div className="p-3 md:p-4 bg-[#F0F2F5] shrink-0 border-t">
       <form onSubmit={onSend} className="flex gap-2 items-center">
@@ -298,14 +317,14 @@ function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading
           type="button" 
           size="icon" 
           className={cn("h-12 w-12 rounded-full transition-all shrink-0 shadow-sm", isRecording ? "bg-red-500 text-white animate-pulse" : "bg-white text-slate-500 hover:bg-slate-50")}
-          onMouseDown={startRecording} onMouseUp={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording}
+          onClick={onMicClick}
         >
           {isRecording ? <StopCircle className="h-6 w-6" /> : (isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Mic className="h-6 w-6" />)}
         </Button>
         
         <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
           <Input 
-            placeholder={isRecording ? "Grabando audio..." : (isUploading ? "Subiendo..." : "Escribe un mensaje...")} 
+            placeholder={isRecording ? "Grabando..." : (isUploading ? "Enviando..." : "Escribe un mensaje...")} 
             value={msgInput} 
             onChange={(e) => setMsgInput(e.target.value)} 
             disabled={isRecording || isUploading} 

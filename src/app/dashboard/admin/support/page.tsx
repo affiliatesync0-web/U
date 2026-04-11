@@ -15,22 +15,18 @@ import {
   Phone, 
   Loader2, 
   Mic, 
-  MicOff,
-  Flame,
   Users,
   Search,
-  ChevronRight,
-  PhoneOff,
-  MessageCircle,
   ArrowLeft,
   Crown,
-  Clock,
   StopCircle,
-  Check,
-  CheckCheck
+  CheckCheck,
+  Flame,
+  ShieldCheck,
+  MessageCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, initializeFirebase } from '@/firebase'
 import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
@@ -65,8 +61,6 @@ export default function AdminSupportPage() {
   
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
-
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
   const { data: affiliates } = useCollection(affiliatesQuery)
@@ -135,12 +129,18 @@ export default function AdminSupportPage() {
     }
   }
 
+  const toggleRecording = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Usar codecs=opus para menor peso y mayor velocidad de subida
-      const options = { mimeType: 'audio/webm;codecs=opus' };
-      const mediaRecorder = new MediaRecorder(stream, options);
+      const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -150,7 +150,7 @@ export default function AdminSupportPage() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        if (audioBlob.size > 500) { // Evitar ruidos de milisegundos
+        if (audioBlob.size > 500) {
           await uploadAudio(audioBlob);
         }
         stream.getTracks().forEach(track => track.stop());
@@ -159,7 +159,7 @@ export default function AdminSupportPage() {
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
-      toast({ variant: "destructive", title: "Acceso denegado", description: "Habilita el micrófono." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo acceder al micrófono." });
     }
   };
 
@@ -202,8 +202,8 @@ export default function AdminSupportPage() {
         });
       }
     } catch (err) {
-      console.error("Error subiendo audio:", err);
-      toast({ variant: "destructive", title: "Fallo en la subida" });
+      console.error("Audio upload error:", err);
+      toast({ variant: "destructive", title: "Fallo en envío de audio" });
     } finally {
       setIsUploadingAudio(false);
     }
@@ -246,7 +246,7 @@ export default function AdminSupportPage() {
                           <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest", msg.userName === "ADMINISTRADOR" ? "text-[#075E54]" : "text-slate-500")}>{msg.userName}</span>
                           {msg.userName === "ADMINISTRADOR" && <Crown className="h-3 w-3 text-amber-500" />}
                         </div>
-                        <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", msg.userName === "ADMINISTRADOR" ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
+                        <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", msg.userName === "ADMINISTRADOR" ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")}>
                           {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
                           <div className={cn("mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end", msg.userName === "ADMINISTRADOR" ? "text-slate-600" : "text-slate-500")}>
                             {formatTime(msg.createdAt)} 
@@ -264,8 +264,7 @@ export default function AdminSupportPage() {
                   onSend={handleSendMessage} 
                   isRecording={isRecording} 
                   isUploading={isUploadingAudio}
-                  startRecording={startRecording}
-                  stopRecording={stopRecording}
+                  onMicClick={toggleRecording}
                 />
               </CardContent>
             </Card>
@@ -311,7 +310,7 @@ export default function AdminSupportPage() {
                         <div className="space-y-4">
                           {privateMessages?.map((msg) => (
                             <div key={msg.id} className={cn("flex flex-col max-w-[85%] md:max-w-[75%]", msg.fromAdmin ? "ml-auto items-end" : "items-start")}>
-                              <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none")}>
+                              <div className={cn("p-3 md:p-4 rounded-[1.2rem] text-[13px] font-medium shadow-sm leading-relaxed relative", msg.fromAdmin ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")}>
                                 {msg.type === 'audio' ? <audio src={msg.content} controls className="max-w-full h-8" /> : msg.content}
                                 <div className="mt-1 flex items-center gap-1 text-[8px] font-black uppercase opacity-40 justify-end">
                                   {formatTime(msg.createdAt)} 
@@ -323,7 +322,14 @@ export default function AdminSupportPage() {
                           <div ref={scrollRefPriv} />
                         </div>
                       </ScrollArea>
-                      <ChatInputArea msgInput={msgInput} setMsgInput={setMsgInput} onSend={handleSendMessage} isRecording={isRecording} isUploading={isUploadingAudio} startRecording={startRecording} stopRecording={stopRecording} />
+                      <ChatInputArea 
+                        msgInput={msgInput} 
+                        setMsgInput={setMsgInput} 
+                        onSend={handleSendMessage} 
+                        isRecording={isRecording} 
+                        isUploading={isUploadingAudio} 
+                        onMicClick={toggleRecording} 
+                      />
                     </CardContent>
                   </>
                 )}
@@ -336,7 +342,7 @@ export default function AdminSupportPage() {
   )
 }
 
-function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading, startRecording, stopRecording }: any) {
+function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading, onMicClick }: any) {
   return (
     <div className="p-3 md:p-4 bg-[#F0F2F5] shrink-0 border-t">
       <form onSubmit={onSend} className="flex gap-2 items-center">
@@ -344,14 +350,14 @@ function ChatInputArea({ msgInput, setMsgInput, onSend, isRecording, isUploading
           type="button" 
           size="icon" 
           className={cn("h-12 w-12 rounded-full transition-all shrink-0 shadow-sm", isRecording ? "bg-red-500 text-white animate-pulse" : "bg-white text-slate-500 hover:bg-slate-50")}
-          onMouseDown={startRecording} onMouseUp={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording}
+          onClick={onMicClick}
         >
           {isRecording ? <StopCircle className="h-6 w-6" /> : (isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Mic className="h-6 w-6" />)}
         </Button>
         
         <div className="flex-1 relative bg-white rounded-[1.5rem] shadow-sm ring-1 ring-slate-200">
           <Input 
-            placeholder={isRecording ? "Grabando audio..." : (isUploading ? "Subiendo..." : "Escribe un mensaje...")} 
+            placeholder={isRecording ? "Grabando..." : (isUploading ? "Enviando..." : "Escribe un mensaje...")} 
             value={msgInput} 
             onChange={(e) => setMsgInput(e.target.value)} 
             disabled={isRecording || isUploading} 
