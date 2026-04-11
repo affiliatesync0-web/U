@@ -68,7 +68,6 @@ export default function AdminSupportPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [mobileShowChat, setMobileShowChat] = useState(false)
   
-  // Estados para edición
   const [editingMsgId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
 
@@ -80,28 +79,21 @@ export default function AdminSupportPage() {
   const { data: affiliatesData, isLoading: loadingAffs } = useCollection(affiliatesQuery)
   const affiliates = affiliatesData || []
 
-  // 2. Chat de Comunidad
-  const communityQuery = useMemoFirebase(() => 
-    query(collection(db, 'community_messages'), orderBy('createdAt', 'asc'), limit(200)), 
-  [db])
+  // 2. Chat de Comunidad (Sin OrderBy para evitar error de índice)
+  const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
-  const communityMessages = commData || []
+  const communityMessages = (commData || []).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-200)
 
-  // 3. Chat Privado
+  // 3. Chat Privado (Sin OrderBy para evitar error de índice)
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
-    return query(
-      collection(db, 'private_messages'),
-      where('affiliateId', '==', selectedAffiliate.id),
-      orderBy('createdAt', 'asc'),
-      limit(200)
-    );
+    return query(collection(db, 'private_messages'), where('affiliateId', '==', selectedAffiliate.id));
   }, [db, selectedAffiliate]);
   
   const { data: privData } = useCollection<Message>(privateQuery)
-  const privateMessages = privData || []
+  const privateMessages = (privData || []).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-200)
 
-  // Notificaciones
+  // Notificaciones Estilo WhatsApp
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -118,7 +110,7 @@ export default function AdminSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && msg.userName !== "ADMINISTRADOR") {
             if (Notification.permission === "granted") {
-              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
+              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
             }
           }
         }
@@ -131,7 +123,7 @@ export default function AdminSupportPage() {
           const msg = change.doc.data() as Message;
           if (msg.createdAt > now && !msg.fromAdmin) {
             if (Notification.permission === "granted") {
-              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content });
+              new Notification(`Sync Privado: ${msg.userName}`, { body: msg.content, icon: '/favicon.ico' });
             }
           }
         }
@@ -242,7 +234,6 @@ export default function AdminSupportPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* CHAT DE COMUNIDAD */}
           <TabsContent value="community" className="flex-1 mt-4 overflow-hidden">
             <Card className="h-full border-none shadow-2xl rounded-[3rem] bg-[#E5DDD5] overflow-hidden flex flex-col relative ring-1 ring-slate-100">
               <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.06] pointer-events-none" />
@@ -317,7 +308,6 @@ export default function AdminSupportPage() {
             </Card>
           </TabsContent>
 
-          {/* CHAT PRIVADO */}
           <TabsContent value="private" className="flex-1 mt-4 overflow-hidden h-full">
             <div className="flex gap-4 h-full">
               <Card className={cn("w-full md:w-80 shrink-0 border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100", mobileShowChat ? "hidden md:flex" : "flex")}>
