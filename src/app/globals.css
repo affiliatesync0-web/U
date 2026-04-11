@@ -85,7 +85,7 @@
     @apply font-headline font-black;
   }
   
-  /* PREVENCION DE ZOOM NATIVO: IMPORTANTE */
+  /* PREVENCION DE ZOOM NATIVO: IMPORTANTE PARA EXPERIENCIA APP */
   input, textarea, select {
     font-size: 16px !important; 
   }
@@ -130,4 +130,12 @@ nextjs-portal,
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-slate-200 rounded-full;
+}
+
+/* Estilos para que el Chat se vea profesional */
+.chat-bg {
+  background-color: #E5DDD5;
+  background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+  background-repeat: repeat;
+  background-attachment: fixed;
 }

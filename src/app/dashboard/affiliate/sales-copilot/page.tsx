@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -135,17 +134,17 @@ export default function SalesCopilotPage() {
   };
 
   const quickActions = [
-    { label: "Manejar: 'Está caro'", icon: Target, prompt: "Dame un script persuasivo para un cliente que dice que el producto está muy caro." },
-    { label: "Script de Bienvenida", icon: Flame, prompt: "Genera un mensaje de bienvenida de alto impacto para WhatsApp." },
-    { label: "Cierre de Urgencia", icon: Zap, prompt: "Crea un script usando gatillos mentales de escasez y urgencia." },
-    { label: "Explicar Producto", icon: FileText, prompt: "Explica los beneficios de los productos de mi catálogo de forma resumida." }
+    { label: "Objeción Precio", icon: Target, prompt: "Dame un script persuasivo para un cliente que dice que el producto está muy caro." },
+    { label: "Bienvenida", icon: Flame, prompt: "Genera un mensaje de bienvenida de alto impacto para WhatsApp." },
+    { label: "Urgencia", icon: Zap, prompt: "Crea un script usando gatillos mentales de escasez y urgencia." },
+    { label: "Catálogo", icon: FileText, prompt: "Explica los beneficios de los productos de mi catálogo de forma resumida." }
   ]
 
   return (
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-120px)] flex flex-col gap-4">
         
-        {/* Sync Header Bar */}
+        {/* Barra de Cabecera Responsiva */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -165,7 +164,7 @@ export default function SalesCopilotPage() {
               className="h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-lg shadow-primary/10"
             >
               {showRightPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-              {showRightPanel ? "Cerrar Navegador" : "Abrir Navegador"}
+              <span className="hidden sm:inline">{showRightPanel ? "Cerrar Navegador" : "Abrir Navegador"}</span>
             </Button>
             <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl">
               <Smartphone className="h-4 w-4 text-primary" />
@@ -174,17 +173,15 @@ export default function SalesCopilotPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
           
-          {/* PANEL 1: Prospectos (Izquierda) */}
-          <div className="w-[280px] flex flex-col shrink-0 overflow-hidden">
+          {/* PANEL 1: Prospectos (Visible en Laptop, Togleable en Mobile) */}
+          <div className={cn("lg:w-[280px] flex-col shrink-0 overflow-hidden lg:flex", mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-headline font-black tracking-tight text-white flex items-center gap-2">
-                    <Users2 className="h-4 w-4 text-primary" /> Mis Prospectos
-                  </h3>
-                </div>
+                <h3 className="text-xs font-headline font-black tracking-tight text-white flex items-center gap-2 uppercase">
+                  <Users2 className="h-4 w-4 text-primary" /> Mis Prospectos
+                </h3>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <Input 
@@ -204,7 +201,7 @@ export default function SalesCopilotPage() {
                     ) : !buyers || buyers.length === 0 ? (
                       <div className="text-center py-10 opacity-20 space-y-3">
                         <Users2 className="h-10 w-10 mx-auto" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Vaciío</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Sin registros</p>
                       </div>
                     ) : (
                       buyers
@@ -214,7 +211,7 @@ export default function SalesCopilotPage() {
                           key={buyer.id} 
                           onClick={() => {
                             setSelectedBuyer(buyer);
-                            setInput(`Analiza a ${buyer.firstName}. ¿Qué script puedo usar para cerrarlo hoy mismo?`);
+                            handleSendMessage(undefined, `Analiza a ${buyer.firstName}. ¿Qué script puedo usar para cerrarlo hoy mismo?`);
                           }}
                           className={cn(
                             "w-full text-left p-4 rounded-2xl bg-white border transition-all group relative overflow-hidden",
@@ -244,7 +241,7 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL 2: IA Sales Copilot Chat (Centro) */}
+          {/* PANEL 2: IA Chat (Centro) */}
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
@@ -352,9 +349,9 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL 3: Navegador Triple (Derecha) */}
+          {/* PANEL 3: Navegador (Derecha) */}
           {showRightPanel && (
-            <div className="flex-[1.6] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-8 duration-700">
+            <div className="lg:flex-[1.6] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-8 duration-700">
               <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
                 <CardHeader className={cn(
                   "p-5 shrink-0 flex flex-col gap-4 transition-colors duration-500",
@@ -421,12 +418,11 @@ export default function SalesCopilotPage() {
                     title={activeTool}
                   />
                   
-                  {/* Overlay de Instrucción */}
                   <div className="absolute top-0 left-0 right-0 p-3 bg-amber-50/95 backdrop-blur-md border-b border-amber-100 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                       <p className="text-[8px] text-amber-800 font-bold leading-tight uppercase tracking-widest">
-                        Navegador Inmersivo Sync: Si el contenido no carga, usa "Abrir Externo" arriba.
+                        Navegador Inmersivo: Usa "Abrir Externo" si el contenido no carga.
                       </p>
                     </div>
                   </div>

@@ -32,7 +32,7 @@ import {
   deleteDocumentNonBlocking,
   updateDocumentNonBlocking
 } from '@/firebase'
-import { collection, query, limit, doc, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, limit, doc, where, onSnapshot } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -73,14 +73,14 @@ export default function AffiliateSupportPage() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 2. Chat de Comunidad
+  // 2. Chat de Comunidad (Ordenamiento local para evitar error de índices)
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
   const communityMessages = (commData || [])
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // 3. Chat Privado
+  // 3. Chat Privado (Ordenamiento local para evitar error de índices)
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', user.uid));
@@ -91,7 +91,7 @@ export default function AffiliateSupportPage() {
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // Notificaciones Estilo WhatsApp (AM/PM format and Permission Request)
+  // Notificaciones Estilo WhatsApp
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -325,7 +325,7 @@ export default function AffiliateSupportPage() {
                               <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-xs bg-white/50" autoFocus />
                               <div className="flex justify-end gap-2">
                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(true)}><Check className="h-3 w-3" /></Button>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(false)}><Check className="h-3 w-3" /></Button>
                               </div>
                             </div>
                           ) : (

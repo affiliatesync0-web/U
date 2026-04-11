@@ -78,14 +78,14 @@ export default function AdminSupportPage() {
   const { data: affiliatesData, isLoading: loadingAffs } = useCollection(affiliatesQuery)
   const affiliates = affiliatesData || []
 
-  // 2. Chat de Comunidad
+  // 2. Chat de Comunidad (Ordenamiento local para evitar error de índices)
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
   const communityMessages = (commData || [])
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // 3. Chat Privado
+  // 3. Chat Privado (Ordenamiento local para evitar error de índices)
   const privateQuery = useMemoFirebase(() => {
     if (!selectedAffiliate || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', selectedAffiliate.id));
@@ -96,7 +96,7 @@ export default function AdminSupportPage() {
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // Notificaciones Estilo WhatsApp (AM/PM format and Permission Request)
+  // Notificaciones Estilo WhatsApp
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -320,7 +320,7 @@ export default function AdminSupportPage() {
           </TabsContent>
 
           <TabsContent value="private" className="flex-1 mt-4 overflow-hidden h-full">
-            <div className="flex gap-4 h-full">
+            <div className="flex flex-col md:flex-row gap-4 h-full">
               <Card className={cn("w-full md:w-80 shrink-0 border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100", mobileShowChat ? "hidden md:flex" : "flex")}>
                 <CardHeader className="p-6 bg-slate-50 border-b">
                   <div className="relative">
