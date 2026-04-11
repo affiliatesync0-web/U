@@ -32,7 +32,7 @@ import {
   deleteDocumentNonBlocking,
   updateDocumentNonBlocking
 } from '@/firebase'
-import { collection, query, limit, doc, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, doc, where, onSnapshot } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -73,14 +73,14 @@ export default function AffiliateSupportPage() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
 
-  // 2. Chat de Comunidad (Ordenamiento local para evitar error de índices)
+  // 2. Chat de Comunidad
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
   const communityMessages = (commData || [])
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
-  // 3. Chat Privado (Ordenamiento local para evitar error de índices)
+  // 3. Chat Privado
   const privateQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(collection(db, 'private_messages'), where('affiliateId', '==', user.uid));
@@ -142,7 +142,6 @@ export default function AffiliateSupportPage() {
     return () => clearTimeout(timer);
   }, [communityMessages?.length, privateMessages?.length, activeTab]);
 
-  // FUNCIÓN DE HORA BLINDADA (12 Horas AM/PM)
   const formatTime = (createdAt: any) => {
     if (!createdAt) return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     try {
@@ -249,7 +248,7 @@ export default function AffiliateSupportPage() {
                         )}>
                           {editingMsgId === msg.id ? (
                             <div className="flex flex-col gap-2">
-                              <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-xs bg-white/50" autoFocus />
+                              <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-[16px] bg-white/50" autoFocus />
                               <div className="flex justify-end gap-2">
                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(false)}><Check className="h-3 w-3" /></Button>
@@ -284,7 +283,7 @@ export default function AffiliateSupportPage() {
                 
                 <div className="p-4 bg-[#F0F2F5] shrink-0 border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
-                    <Input placeholder="Escribe un mensaje..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54]" />
+                    <Input placeholder="Escribe un mensaje..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54] text-[16px]" />
                     <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-[#075E54] hover:bg-[#054c44] text-white shadow-xl shrink-0" disabled={!msgInput.trim()}><Send className="h-6 w-6" /></Button>
                   </form>
                 </div>
@@ -322,10 +321,10 @@ export default function AffiliateSupportPage() {
                         )}>
                           {editingMsgId === msg.id ? (
                             <div className="flex flex-col gap-2">
-                              <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-xs bg-white/50" autoFocus />
+                              <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-[16px] bg-white/50" autoFocus />
                               <div className="flex justify-end gap-2">
                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(false)}><Check className="h-3 w-3" /></Button>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(true)}><Check className="h-3 w-3" /></Button>
                               </div>
                             </div>
                           ) : (
@@ -357,7 +356,7 @@ export default function AffiliateSupportPage() {
                 
                 <div className="p-4 bg-[#F0F2F5] shrink-0 border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
-                    <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54]" />
+                    <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54] text-[16px]" />
                     <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-[#075E54] hover:bg-[#054c44] text-white shadow-xl shrink-0" disabled={!msgInput.trim()}><Send className="h-6 w-6" /></Button>
                   </form>
                 </div>

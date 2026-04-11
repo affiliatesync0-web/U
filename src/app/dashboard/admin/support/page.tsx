@@ -276,7 +276,7 @@ export default function AdminSupportPage() {
                         )}>
                           {editingMsgId === msg.id ? (
                             <div className="flex flex-col gap-2">
-                              <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-xs bg-white/50" autoFocus />
+                              <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-[16px] bg-white/50" autoFocus />
                               <div className="flex justify-end gap-2">
                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(false)}><Check className="h-3 w-3" /></Button>
@@ -311,7 +311,7 @@ export default function AdminSupportPage() {
                 
                 <div className="p-4 bg-[#F0F2F5] shrink-0 border-t">
                   <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
-                    <Input placeholder="Escribe un mensaje..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54]" />
+                    <Input placeholder="Escribe un mensaje..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54] text-[16px]" />
                     <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-[#075E54] hover:bg-[#054c44] text-white shadow-xl shrink-0" disabled={!msgInput.trim()}><Send className="h-6 w-6" /></Button>
                   </form>
                 </div>
@@ -325,7 +325,7 @@ export default function AdminSupportPage() {
                 <CardHeader className="p-6 bg-slate-50 border-b">
                   <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input placeholder="Buscar socio..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white border-none ring-1 ring-slate-200 pl-11 rounded-xl text-[11px] font-black uppercase" />
+                    <Input placeholder="Buscar socio..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white border-none ring-1 ring-slate-200 pl-11 rounded-xl text-[16px] font-black uppercase" />
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 overflow-hidden">
@@ -382,7 +382,7 @@ export default function AdminSupportPage() {
                               )}>
                                 {editingMsgId === msg.id ? (
                                   <div className="flex flex-col gap-2">
-                                    <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-xs bg-white/50" autoFocus />
+                                    <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="h-10 text-[16px] bg-white/50" autoFocus />
                                     <div className="flex justify-end gap-2">
                                       <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
                                       <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => handleSaveEdit(true)}><Check className="h-3 w-3" /></Button>
@@ -417,7 +417,7 @@ export default function AdminSupportPage() {
                       
                       <div className="p-4 bg-[#F0F2F5] shrink-0 border-t">
                         <form onSubmit={handleSendMessage} className="flex gap-3">
-                          <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54]" />
+                          <Input placeholder="Escribe un mensaje privado..." value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="h-14 bg-white border-none shadow-sm rounded-2xl px-6 font-medium focus-visible:ring-[#075E54] text-[16px]" />
                           <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-[#075E54] hover:bg-[#054c44] text-white shadow-xl shrink-0" disabled={!msgInput.trim()}><Send className="h-6 w-6" /></Button>
                         </form>
                       </div>
