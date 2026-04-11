@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -111,7 +112,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
             <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary/20" />
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando Identidad...</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse text-center">Sincronizando Identidad...</p>
         </div>
       </div>
     )
@@ -145,7 +146,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: "Grupo de Apoyo", url: "/dashboard/admin/support", icon: MessageSquareShare },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
-    { title: "Gestionar Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
+    { title: "Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
     { title: t.affiliateGmailList, url: "/dashboard/admin/affiliates-contacts", icon: Mail },
@@ -156,12 +157,12 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: "Grupo de Apoyo", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
+    { title: "Soporte Sync", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: "Estrategias Pro", url: "/dashboard/affiliate/sales-lab", icon: Zap },
+    { title: "Estrategias", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: "Mi Perfil / Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
+    { title: "Perfil / Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
   const buyerItems = [
@@ -179,8 +180,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r border-slate-100 dark:border-slate-800">
         <SidebarHeader className="bg-white dark:bg-slate-900 transition-colors">
-          <div className="flex items-center gap-4 px-3 py-10">
-            <div className="relative h-14 w-14 overflow-hidden rounded-[1.25rem] bg-white dark:bg-slate-800 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-700 flex items-center justify-center">
+          <div className="flex items-center gap-4 px-3 py-6 md:py-10">
+            <div className="relative h-12 w-12 md:h-14 md:w-14 overflow-hidden rounded-xl md:rounded-[1.25rem] bg-white dark:bg-slate-800 shadow-xl ring-1 ring-slate-100 dark:ring-slate-700 flex items-center justify-center">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
@@ -188,10 +189,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               )}
             </div>
             <div className="flex flex-col gap-0 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-black text-xl tracking-tight text-slate-900 dark:text-white">Sync <span className="text-primary">Connect</span></span>
+              <span className="font-headline font-black text-lg md:text-xl tracking-tight text-slate-900 dark:text-white leading-tight">Sync <span className="text-primary">Connect</span></span>
               <div className="flex items-center gap-1 mt-1">
                 <Flame className="h-2.5 w-2.5 text-primary" />
-                <span className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">
+                <span className="text-[8px] md:text-[9px] text-slate-400 uppercase tracking-[0.2em] font-black">
                   {isUserAdmin ? 'SYSTEM' : (role === 'buyer' ? 'CLIENT' : 'PLATINUM')}
                 </span>
               </div>
@@ -209,7 +210,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <SidebarMenuItem>
               <SidebarMenuButton onClick={handleLogout} className="h-12 rounded-xl text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
                 <LogOut className="h-5 w-5" />
-                <span className="font-black uppercase text-[11px] tracking-widest">{t.logout}</span>
+                <span className="font-black uppercase text-[10px] md:text-[11px] tracking-widest">{t.logout}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -217,20 +218,20 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
-        <header className="flex h-20 shrink-0 items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-6 transition-colors">
+        <header className="flex h-16 md:h-20 shrink-0 items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-4 md:px-6 transition-colors">
           <SidebarTrigger className="-ml-1 text-primary" />
           <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100 dark:border-slate-800" />
-          <div className="flex-1">
-             <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
+          <div className="flex-1 overflow-hidden">
+             <h2 className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-slate-400 truncate">
                 {isUserAdmin ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
              </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <ThemeToggle />
             <LanguageToggle />
           </div>
         </header>
-        <main className="flex-1 p-6 md:p-12 text-foreground">
+        <main className="flex-1 p-4 md:p-12 text-foreground overflow-x-hidden">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>
