@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, Wallet, Loader2, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare, Users, Trash2 } from 'lucide-react'
+import { ShoppingBag, Wallet, Loader2, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare, Users, Trash2, UserMinus } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartContainer,
@@ -122,6 +122,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCleanupInactiveAffiliates = async () => {
+    if (!db) return;
+    setResetting(true);
+    try {
+      // 1. Obtener todos los compradores (para ver quién tiene referidos)
+      const buyersSnap = await getDocs(collection(db, 'buyers'));
+      const activeReferrerIds = new Set(buyersSnap.docs.map(d => d.data().referredBy).filter(id => !!id));
+
+      // 2. Obtener todos los afiliados
+      const affiliatesSnap = await getDocs(collection(db, 'affiliates'));
+      let deletedCount = 0;
+
+      // 3. Borrar solo los que no están en el set de referidos activos
+      for (const affDoc of affiliatesSnap.docs) {
+        const affId = affDoc.id;
+        const affData = affDoc.data();
+        
+        // No borrar la cuenta administrativa si está en la lista por error
+        if (affData.email === 'affiliatesync0@gmail.com') continue;
+
+        if (!activeReferrerIds.has(affId)) {
+          deleteDocumentNonBlocking(doc(db, 'affiliates', affId));
+          deletedCount++;
+        }
+      }
+
+      toast({ 
+        title: "Limpieza Completada", 
+        description: `Se han eliminado ${deletedCount} socios que no tenían compradores registrados.` 
+      });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error en la limpieza selectiva" });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <DashboardShell role="admin">
       <div className="space-y-10">
@@ -186,45 +223,74 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-none shadow-2xl rounded-[3rem] bg-amber-50 border border-amber-100 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex items-center gap-6">
-              <div className="h-16 w-16 bg-amber-500 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl"><RefreshCcw className="h-8 w-8" /></div>
-              <div>
-                <h3 className="text-2xl font-headline font-black text-amber-900">{t.resetSystem}</h3>
-                <p className="text-amber-700 font-medium max-w-lg">Limpia el historial de transacciones y resetea saldos.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-none shadow-2xl rounded-[3rem] bg-amber-50 border border-amber-100 p-10 flex flex-col items-center justify-between gap-8">
+              <div className="flex items-center gap-6 w-full">
+                <div className="h-16 w-16 bg-amber-500 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shrink-0"><RefreshCcw className="h-8 w-8" /></div>
+                <div>
+                  <h3 className="text-2xl font-headline font-black text-amber-900">{t.resetSystem}</h3>
+                  <p className="text-amber-700 font-medium text-sm">Limpia el historial de transacciones y resetea saldos.</p>
+                </div>
               </div>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="h-16 px-10 rounded-2xl font-black text-xs uppercase shadow-xl" disabled={resetting}>
-                  {resetting ? <Loader2 className="animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />} REINICIAR VENTAS
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-3xl font-headline font-black">¿Confirmar Reinicio?</AlertDialogTitle>
-                  <AlertDialogDescription className="text-slate-500 font-bold mt-4">Esta acción borrará todas las ventas y saldos permanentemente.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="mt-10 gap-4">
-                  <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetSystem} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, REINICIAR VENTAS</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </Card>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full h-16 rounded-2xl font-black text-xs uppercase shadow-xl" disabled={resetting}>
+                    {resetting ? <Loader2 className="animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />} REINICIAR VENTAS
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-3xl font-headline font-black">¿Confirmar Reinicio?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-slate-500 font-bold mt-4">Esta acción borrará todas las ventas y saldos permanentemente.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-10 gap-4">
+                    <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetSystem} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, REINICIAR VENTAS</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
+
+            <Card className="border-none shadow-2xl rounded-[3rem] bg-slate-900 border border-slate-800 p-10 flex flex-col items-center justify-between gap-8">
+              <div className="flex items-center gap-6 w-full">
+                <div className="h-16 w-16 bg-primary text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shrink-0"><UserMinus className="h-8 w-8" /></div>
+                <div>
+                  <h3 className="text-2xl font-headline font-black text-white">Depuración Selectiva</h3>
+                  <p className="text-slate-400 font-medium text-sm">Elimina socios que no tienen compradores registrados.</p>
+                </div>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full h-16 rounded-2xl font-black text-xs uppercase shadow-xl border-white/10 text-white hover:bg-white/5" disabled={resetting}>
+                    {resetting ? <Loader2 className="animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} LIMPIAR SOCIOS SIN ACTIVIDAD
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-3xl font-headline font-black">¿Eliminar socios inactivos?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-slate-500 font-bold mt-4">Solo se borrarán los afiliados que **no tengan referidos** en la base de datos de compradores. Los socios con actividad se mantendrán intactos.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-10 gap-4">
+                    <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCleanupInactiveAffiliates} className="h-14 rounded-2xl bg-slate-900 text-white font-black">SÍ, DEPURAR RED</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
+          </div>
 
           <Card className="border-none shadow-2xl rounded-[3rem] bg-red-100 border border-red-200 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-6">
               <div className="h-16 w-16 bg-red-600 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl"><Users className="h-8 w-8" /></div>
               <div>
-                <h3 className="text-2xl font-headline font-black text-red-900">Limpieza de Socios</h3>
-                <p className="text-red-700 font-medium max-w-lg">Borra todos los perfiles de afiliados registrados de la base de datos.</p>
+                <h3 className="text-2xl font-headline font-black text-red-900">Limpieza Total de Socios</h3>
+                <p className="text-red-700 font-medium max-w-lg">Borra **todos** los perfiles de afiliados de la base de datos (incluso los activos).</p>
               </div>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="h-16 px-10 rounded-2xl font-black text-xs uppercase shadow-xl bg-red-600 hover:bg-red-700" disabled={resetting}>
-                  {resetting ? <Loader2 className="animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} BORRAR TODOS LOS SOCIOS
+                  {resetting ? <Loader2 className="animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} BORRAR DIRECTORIO COMPLETO
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
@@ -234,7 +300,7 @@ export default function AdminDashboard() {
                 </AlertDialogHeader>
                 <AlertDialogFooter className="mt-10 gap-4">
                   <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetAffiliates} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, BORRAR DIRECTORIO</AlertDialogAction>
+                  <AlertDialogAction onClick={handleResetAffiliates} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, BORRAR TODO</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
