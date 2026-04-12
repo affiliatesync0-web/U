@@ -92,71 +92,124 @@ export default function AdminSalesPage() {
             <p className="text-slate-400 max-w-xs text-sm font-bold">No se han registrado transacciones bancarias todavía.</p>
           </Card>
         ) : (
-          <Card className="border-none shadow-2xl overflow-hidden rounded-[3rem] bg-white ring-1 ring-slate-100">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b">
-                      <TableHead className="px-8 h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Voucher / Pago</TableHead>
-                      <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Fecha</TableHead>
-                      <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Producto Comprado</TableHead>
-                      <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Comprador</TableHead>
-                      <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Estado</TableHead>
-                      <TableHead className="px-8 text-right h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Acción</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allSales.map((sale) => (
-                      <TableRow key={sale.id} className="hover:bg-slate-50/30 transition-colors h-24 border-b last:border-0 group">
-                        <TableCell className="px-8">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-mono font-black text-sm text-primary tracking-tighter">{sale.voucherReference || 'SIN REF'}</span>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.bankTransfer}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-slate-500 text-[11px] font-bold">
-                          {sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-black text-slate-800 text-xs uppercase truncate max-w-[150px]">{sale.productName || 'Curso'}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-[11px] font-black text-slate-700 uppercase">{sale.buyerName}</div>
-                          <div className="text-[9px] text-slate-400 font-bold truncate max-w-[150px]">{sale.buyerId}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={sale.status === 'Completed' ? 'default' : 'secondary'} 
-                            className={cn(
-                              "rounded-full font-black text-[9px] px-4 py-1.5 uppercase tracking-widest border-none shadow-sm",
-                              sale.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
-                            )}
-                          >
-                            {sale.status === 'Completed' ? 'VÁLIDO ✓' : 'PENDIENTE'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="px-8 text-right">
-                          <div className="flex justify-end gap-3">
-                            {sale.status !== 'Completed' && (
-                              <Button 
-                                size="sm" 
-                                className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-green-100 rounded-xl"
-                                onClick={() => handleApproveSale(sale.id)}
-                              >
-                                <CheckCircle2 className="h-4 w-4 mr-2" /> APROBAR Y PAGAR
-                              </Button>
-                            )}
-                            <SaleDetailsDialog sale={sale} t={t} />
-                          </div>
-                        </TableCell>
+          <div className="space-y-6">
+            {/* VISTA DESKTOP (TABLA) */}
+            <Card className="hidden lg:block border-none shadow-2xl overflow-hidden rounded-[3rem] bg-white ring-1 ring-slate-100">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b">
+                        <TableHead className="px-8 h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Voucher / Pago</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Fecha</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Producto Comprado</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Comprador</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Estado</TableHead>
+                        <TableHead className="px-8 text-right h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Acción</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {allSales.map((sale) => (
+                        <TableRow key={sale.id} className="hover:bg-slate-50/30 transition-colors h-24 border-b last:border-0 group">
+                          <TableCell className="px-8">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-mono font-black text-sm text-primary tracking-tighter">{sale.voucherReference || 'SIN REF'}</span>
+                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.bankTransfer}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-500 text-[11px] font-bold">
+                            {sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-black text-slate-800 text-xs uppercase truncate max-w-[150px]">{sale.productName || 'Curso'}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-[11px] font-black text-slate-700 uppercase">{sale.buyerName}</div>
+                            <div className="text-[9px] text-slate-400 font-bold truncate max-w-[150px]">{sale.buyerId}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={sale.status === 'Completed' ? 'default' : 'secondary'} 
+                              className={cn(
+                                "rounded-full font-black text-[9px] px-4 py-1.5 uppercase tracking-widest border-none shadow-sm",
+                                sale.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
+                              )}
+                            >
+                              {sale.status === 'Completed' ? 'VÁLIDO ✓' : 'PENDIENTE'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-8 text-right">
+                            <div className="flex justify-end gap-3">
+                              {sale.status !== 'Completed' && (
+                                <Button 
+                                  size="sm" 
+                                  className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-green-100 rounded-xl"
+                                  onClick={() => handleApproveSale(sale.id)}
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-2" /> APROBAR
+                                </Button>
+                              )}
+                              <SaleDetailsDialog sale={sale} t={t} />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* VISTA MÓVIL (TARJETAS) */}
+            <div className="grid grid-cols-1 gap-4 lg:hidden">
+              {allSales.map((sale) => (
+                <Card key={sale.id} className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-slate-100 p-6 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Voucher</span>
+                      <span className="font-mono font-black text-primary tracking-tighter text-lg">{sale.voucherReference || 'SIN REF'}</span>
+                    </div>
+                    <Badge 
+                      variant={sale.status === 'Completed' ? 'default' : 'secondary'} 
+                      className={cn(
+                        "rounded-full font-black text-[9px] px-4 py-1.5 uppercase tracking-widest border-none",
+                        sale.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
+                      )}
+                    >
+                      {sale.status === 'Completed' ? 'COMPLETADO' : 'PENDIENTE'}
+                    </Badge>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Producto:</span>
+                      <span className="text-[11px] font-black text-slate-800 uppercase">{sale.productName || 'Curso'}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Comprador:</span>
+                      <span className="text-[11px] font-black text-slate-800 uppercase">{sale.buyerName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Fecha:</span>
+                      <span className="text-[11px] font-bold text-slate-500">{sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {sale.status !== 'Completed' && (
+                      <Button 
+                        className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase rounded-xl shadow-lg"
+                        onClick={() => handleApproveSale(sale.id)}
+                      >
+                        APROBAR PAGO
+                      </Button>
+                    )}
+                    <SaleDetailsDialog sale={sale} t={t} />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </DashboardShell>
@@ -167,45 +220,45 @@ function SaleDetailsDialog({ sale, t }: { sale: any, t: any }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-11 px-5 font-black text-[10px] uppercase tracking-widest gap-2 rounded-xl border-slate-200">
+        <Button variant="outline" className="h-12 px-5 font-black text-[10px] uppercase tracking-widest gap-2 rounded-xl border-slate-200 flex-1 lg:flex-none">
           <Eye className="h-4 w-4" /> VER VOUCHER
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-        <div className="bg-slate-900 p-10 text-white">
+      <DialogContent className="max-w-md w-[95vw] rounded-[2.5rem] md:rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+        <div className="bg-slate-900 p-8 md:p-10 text-white">
            <div className="flex items-center justify-between mb-6">
-             <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-               <Landmark className="h-6 w-6" />
+             <div className="h-10 w-10 md:h-12 md:w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
+               <Landmark className="h-5 w-5 md:h-6 md:w-6" />
              </div>
-             <Badge className="bg-primary/20 text-primary border-none font-black text-[9px] tracking-widest uppercase">Auditoría de Pago</Badge>
+             <Badge className="bg-primary/20 text-primary border-none font-black text-[8px] md:text-[9px] tracking-widest uppercase">Auditoría</Badge>
            </div>
            <DialogHeader>
-             <DialogTitle className="text-2xl font-headline font-black tracking-tight uppercase italic">Comprobante <span className="text-primary">Recibido</span></DialogTitle>
-             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">ID Transacción: {sale.id.substring(0, 8)}</p>
+             <DialogTitle className="text-xl md:text-2xl font-headline font-black tracking-tight uppercase italic">Comprobante <span className="text-primary">Recibido</span></DialogTitle>
+             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">ID: {sale.id.substring(0, 8)}</p>
            </DialogHeader>
         </div>
-        <div className="p-10 space-y-8 bg-white">
+        <div className="p-8 md:p-10 space-y-8 bg-white">
           <div className="space-y-6">
-            <div className="flex items-center gap-4 p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 shadow-inner">
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner">
                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
                  <User className="h-5 w-5 text-slate-400" />
                </div>
-               <div>
+               <div className="min-w-0">
                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Comprador</p>
-                 <p className="text-xs font-black text-slate-800 uppercase">{sale.buyerName}</p>
+                 <p className="text-xs font-black text-slate-800 uppercase truncate">{sale.buyerName}</p>
                </div>
             </div>
 
-            <div className="p-8 rounded-[2.5rem] bg-purple-50 border-2 border-dashed border-purple-200 text-center space-y-3">
+            <div className="p-6 md:p-8 rounded-[2rem] bg-purple-50 border-2 border-dashed border-purple-200 text-center space-y-3">
               <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Referencia del Banco</p>
-              <p className="text-4xl font-black font-mono tracking-widest text-purple-600">{sale.voucherReference || 'N/A'}</p>
+              <p className="text-3xl md:text-4xl font-black font-mono tracking-widest text-purple-600 break-all">{sale.voucherReference || 'N/A'}</p>
             </div>
           </div>
 
-          <div className="pt-6 border-t flex justify-between items-center">
+          <div className="pt-6 border-t flex justify-between items-center gap-4">
             <div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Monto Pagado</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tighter">${sale.saleAmount?.toFixed(2)}</p>
+              <p className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">${sale.saleAmount?.toFixed(2)}</p>
             </div>
             {sale.buyerPhone && (
               <Button asChild variant="outline" className="h-12 px-6 rounded-xl border-green-100 text-green-600 font-black text-[10px] uppercase">

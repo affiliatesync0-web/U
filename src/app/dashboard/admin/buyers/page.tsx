@@ -24,6 +24,8 @@ import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendNewPasswordAdmin } from '@/lib/email'
 import { adminResetUserPassword } from '@/lib/auth-actions'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export default function AdminBuyersPage() {
   const { t } = useLanguage();
@@ -74,7 +76,7 @@ export default function AdminBuyersPage() {
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
             <Input 
-              className="pl-14 h-16 rounded-[1.5rem] border-none bg-white shadow-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+              className="pl-14 h-16 rounded-[1.5rem] border-none bg-white shadow-xl text-[16px] font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
               placeholder="Buscar por nombre o email..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -91,8 +93,9 @@ export default function AdminBuyersPage() {
             <p className="text-slate-400 max-w-sm font-bold text-sm leading-relaxed">Tu base de datos aparecerá aquí conforme se registren las ventas.</p>
           </Card>
         ) : (
-          <div className="space-y-4">
-            <Card className="hidden md:block border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
+          <div className="space-y-6">
+            {/* VISTA DESKTOP */}
+            <Card className="hidden lg:block border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
@@ -134,16 +137,16 @@ export default function AdminBuyersPage() {
                                     <Trash2 className="h-6 w-6" />
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
+                                <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl w-[95vw] md:max-w-lg">
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">¿Eliminar Comprador?</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-2xl md:text-3xl font-headline font-black text-slate-900 tracking-tight">¿Eliminar Comprador?</AlertDialogTitle>
                                     <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
-                                      Esta acción eliminará permanentemente al cliente. Podría perder el acceso a sus cursos adquiridos.
+                                      Esta acción eliminará permanentemente al cliente. Perderá el acceso a sus cursos adquiridos.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
-                                  <AlertDialogFooter className="mt-10 gap-4">
-                                    <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
+                                  <AlertDialogFooter className="mt-8 gap-3 flex-col sm:flex-row">
+                                    <AlertDialogCancel className="h-14 rounded-2xl font-black border-slate-100">CANCELAR</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl">
                                       BORRAR DEFINITIVAMENTE
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
@@ -159,25 +162,55 @@ export default function AdminBuyersPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 gap-4 md:hidden">
+            {/* VISTA MÓVIL */}
+            <div className="grid grid-cols-1 gap-4 lg:hidden">
               {filteredBuyers.map((buyer) => (
-                <Card key={buyer.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6">
+                <Card key={buyer.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6 ring-1 ring-slate-100">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black shadow-inner">
                         {buyer.firstName?.charAt(0) || 'U'}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-black text-slate-800 uppercase text-sm">{buyer.firstName} {buyer.lastName}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">{buyer.email}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-black text-slate-800 uppercase text-sm truncate">{buyer.firstName} {buyer.lastName}</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{buyer.email}</span>
                       </div>
                     </div>
+                    <Badge variant="outline" className="text-[8px] font-black uppercase rounded-full">Activo</Badge>
                   </div>
-                  <div className="flex items-center justify-end gap-2 pt-4 border-t">
-                    <AdminPasswordResetDialog user={buyer} />
-                    <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-2xl" onClick={() => handleDeleteBuyer(buyer.id)}>
-                      <Trash2 className="h-6 w-6" />
-                    </Button>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">WhatsApp:</span>
+                      <span className="text-[11px] font-bold text-slate-700">{buyer.whatsappNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Registrado:</span>
+                      <span className="text-[11px] font-bold text-slate-700">{buyer.registeredAt ? new Date(buyer.registeredAt).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 border-t pt-4">
+                    <div className="flex-1">
+                      <AdminPasswordResetDialog user={buyer} isFullWidth />
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl shrink-0">
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-[2rem] w-[90vw] p-8">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-xl font-black uppercase">¿Confirmar borrado?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs font-medium">Se perderán todos los accesos del cliente.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-6 flex-col gap-2">
+                          <AlertDialogCancel className="h-12 rounded-xl">Cerrar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-12 rounded-xl bg-destructive">Eliminar</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </Card>
               ))}
@@ -189,7 +222,7 @@ export default function AdminBuyersPage() {
   )
 }
 
-function AdminPasswordResetDialog({ user }: { user: any }) {
+function AdminPasswordResetDialog({ user, isFullWidth }: { user: any, isFullWidth?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [generatedPass, setGeneratedPass] = useState<string | null>(null);
@@ -225,11 +258,17 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) setGeneratedPass(null); }}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="ghost" className="h-12 w-12 text-slate-400 hover:text-primary rounded-2xl">
-          <KeyRound className="h-6 w-6" />
-        </Button>
+        {isFullWidth ? (
+          <Button variant="outline" className="w-full h-12 rounded-xl border-amber-200 text-amber-700 font-black text-[10px] uppercase gap-2">
+            <KeyRound className="h-4 w-4" /> Resetear Acceso
+          </Button>
+        ) : (
+          <Button size="icon" variant="ghost" className="h-12 w-12 text-slate-400 hover:text-primary rounded-2xl">
+            <KeyRound className="h-6 w-6" />
+          </Button>
+        )}
       </DialogTrigger>
-      <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl w-[95vw] md:max-w-md">
         <div className="bg-slate-900 p-8 text-white text-center">
           <KeyRound className="h-12 w-12 mx-auto mb-4 text-primary" />
           <DialogHeader>
@@ -237,14 +276,14 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
             <p className="text-slate-400 font-bold text-[10px] uppercase mt-1">Resetear acceso para {user.firstName}</p>
           </DialogHeader>
         </div>
-        <div className="p-10 space-y-6">
+        <div className="p-8 md:p-10 space-y-6">
           {!generatedPass ? (
             <div className="space-y-4 text-center">
               <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-inner mb-4">
                 <Zap className="h-8 w-8 fill-primary" />
               </div>
               <p className="text-sm font-medium text-slate-500 leading-relaxed px-4">
-                ¿Deseas generar una nueva clave? El cambio será **automático e inmediato** en el sistema.
+                ¿Deseas generar una nueva clave? El cambio será **automático e inmediato**.
               </p>
               <Button onClick={handleAutoReset} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase text-xs shadow-xl" disabled={loading}>
                 {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : "GENERAR NUEVA CLAVE"}
@@ -252,16 +291,16 @@ function AdminPasswordResetDialog({ user }: { user: any }) {
             </div>
           ) : (
             <div className="space-y-6 animate-in zoom-in-95 duration-300">
-              <Alert className="bg-green-50 border-green-200">
+              <Alert className="bg-green-50 border-green-200 rounded-2xl">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-900 font-black text-[10px] uppercase">¡Sincronizado!</AlertTitle>
-                <AlertDescription className="text-green-700 text-xs font-medium">Contraseña actualizada y enviada.</AlertDescription>
+                <AlertDescription className="text-green-700 text-xs font-medium">Contraseña enviada correctamente.</AlertDescription>
               </Alert>
-              <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border-2 border-dashed">
+              <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-dashed">
                 <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Clave actual:</span>
-                <code className="text-2xl font-black text-slate-900">{generatedPass}</code>
+                <code className="text-2xl md:text-3xl font-black text-slate-900">{generatedPass}</code>
               </div>
-              <Button onClick={() => setOpen(false)} className="w-full h-14 rounded-xl bg-green-600 text-white font-black uppercase text-xs shadow-xl">CERRAR</Button>
+              <Button onClick={() => setOpen(false)} className="w-full h-14 rounded-xl bg-green-600 text-white font-black uppercase text-xs shadow-xl">CERRAR VENTANA</Button>
             </div>
           )}
         </div>
