@@ -24,7 +24,8 @@ import {
   SendHorizontal,
   Zap,
   Scan,
-  UserCheck
+  UserCheck,
+  Trash2
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -40,7 +41,18 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog"
+import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin, sendPaymentNotification } from '@/lib/email'
@@ -277,6 +289,19 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
     }
   };
 
+  const handleDeleteAffiliate = async () => {
+    setIsProcessing(true);
+    try {
+      await deleteDocumentNonBlocking(doc(db, 'affiliates', affiliate.id));
+      toast({ title: "Socio Eliminado", description: "El registro ha sido borrado permanentemente." });
+      setOpen(false);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error al eliminar" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -435,14 +460,39 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                     </div>
                     <AdminPasswordResetDialog user={affiliate} />
                   </Card>
+                  
                   <Card className="border-none shadow-xl rounded-[2.5rem] bg-white p-8 space-y-6">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600"><ShieldAlert className="h-6 w-6" /></div>
                       <h3 className="text-sm font-black uppercase">Zona de Seguridad</h3>
                     </div>
-                    <Button onClick={handleToggleBlock} variant="destructive" className="w-full h-14 rounded-xl font-black text-[10px] uppercase tracking-widest">
-                      {affiliate.status === 'Blocked' ? 'HABILITAR CUENTA' : 'BLOQUEAR ACCESO'}
-                    </Button>
+                    <div className="space-y-3">
+                      <Button onClick={handleToggleBlock} variant="outline" className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest border-red-200 text-red-600">
+                        {affiliate.status === 'Blocked' ? 'HABILITAR CUENTA' : 'BLOQUEAR ACCESO'}
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="w-full h-14 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-red-100">
+                            <Trash2 className="h-4 w-4" /> ELIMINAR SOCIO DEFINITIVAMENTE
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">¿Confirmar Eliminación?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
+                              Esta acción es irreversible. Se borrarán todos los datos del afiliado, incluyendo su saldo y registro de ventas. El socio perderá el acceso a la plataforma de inmediato.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="mt-10 gap-4">
+                            <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteAffiliate} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
+                              SÍ, ELIMINAR PERMANENTEMENTE
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </Card>
                </div>
             </TabsContent>
