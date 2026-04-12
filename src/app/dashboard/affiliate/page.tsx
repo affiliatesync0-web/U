@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -111,6 +112,11 @@ export default function AffiliateDashboard() {
 
   if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="animate-spin text-primary" /></div>
 
+  // Solo contar ganancias de ventas COMPLETADAS (Aprobadas por admin)
+  const totalEarnedApproved = (sales || [])
+    .filter(s => s.status === 'Completed')
+    .reduce((acc, s) => acc + (s.commissionEarned || 0), 0);
+
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-10">
@@ -163,7 +169,7 @@ export default function AffiliateDashboard() {
                 {[
                   { title: t.balance, value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
                   { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
-                  { title: "Ganancias Brutas", value: `$${(sales?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0).toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
+                  { title: "Ganancias Aprobadas", value: `$${totalEarnedApproved.toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
                 ].map((stat) => (
                   <Card key={stat.title} className="border-none shadow-xl rounded-[2.5rem] bg-white group hover:scale-[1.02] transition-all overflow-hidden ring-1 ring-slate-100">
                     <CardContent className="p-8">
@@ -180,8 +186,19 @@ export default function AffiliateDashboard() {
                   {salesLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : 
                   !sales || sales.length === 0 ? <div className="text-center py-20 opacity-30"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin ventas todavía</p></div> : (
                     <Table><TableHeader><TableRow className="bg-slate-50/50"><TableHead className="px-10 uppercase text-[9px] font-black text-slate-400">Producto</TableHead><TableHead className="uppercase text-[9px] font-black text-slate-400">Estado</TableHead><TableHead className="px-10 text-right uppercase text-[9px] font-black text-slate-400">Comisión</TableHead></TableRow></TableHeader>
-                    <TableBody>{sales.slice(0, 5).map((sale) => (
-                      <TableRow key={sale.id} className="h-16 hover:bg-slate-50/30 border-b last:border-0"><TableCell className="px-10 font-black text-xs uppercase">{sale.productName}</TableCell><TableCell><Badge className="bg-green-50 text-green-600 text-[8px] font-black uppercase">Completada</Badge></TableCell><TableCell className="px-10 text-right font-black text-green-600">+${sale.commissionEarned?.toFixed(2)}</TableCell></TableRow>
+                    <TableBody>{sales.slice(0, 10).map((sale) => (
+                      <TableRow key={sale.id} className="h-16 hover:bg-slate-50/30 border-b last:border-0">
+                        <TableCell className="px-10 font-black text-xs uppercase">{sale.productName}</TableCell>
+                        <TableCell>
+                          <Badge className={cn(
+                            "text-[8px] font-black uppercase border-none",
+                            sale.status === 'Completed' ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"
+                          )}>
+                            {sale.status === 'Completed' ? 'Válida ✓' : 'Pendiente Validation'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-10 text-right font-black text-green-600">+${sale.commissionEarned?.toFixed(2)}</TableCell>
+                      </TableRow>
                     ))}</TableBody></Table>
                   )}
                 </CardContent>

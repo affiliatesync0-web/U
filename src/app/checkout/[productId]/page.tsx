@@ -81,7 +81,7 @@ function CheckoutContent() {
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
-        status: 'Pending',
+        status: 'Pending', // Siempre inicia como pendiente
         paymentMethod: product?.paymentLink ? 'digital_link' : 'transfer',
         voucherReference: formData.voucherRef.trim() || 'LINK_DIRECTO'
       }
@@ -95,13 +95,9 @@ function CheckoutContent() {
         text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nSi pagaste mediante el link digital, tu acceso será validado en breve.`
       });
 
-      if (affiliateId && affiliateId !== 'admin') {
-        updateDocumentNonBlocking(doc(db, 'affiliates', affiliateId), {
-          currentBalance: increment(commissionEarned)
-        })
-      }
+      // NO INCREMENTAR SALDO AQUÍ. Se hará cuando el admin apruebe.
 
-      toast({ title: "Registro Exitoso", description: "Redirigiendo a la pasarela de pago..." })
+      toast({ title: "Registro Exitoso", description: "Tu solicitud ha sido enviada para validación." })
 
       if (product?.paymentLink) {
         setTimeout(() => {
@@ -148,7 +144,7 @@ function CheckoutContent() {
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
         
         <div className="lg:col-span-5 space-y-8">
-          <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
+          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
             <ChevronLeft className="h-4 w-4" /> Volver
           </Link>
           

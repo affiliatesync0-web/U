@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase'
-import { collection, doc } from 'firebase/firestore'
+import { collection, doc, increment } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -36,12 +36,29 @@ export default function AdminSalesPage() {
   const { data: allSales, isLoading } = useCollection(salesQuery);
 
   const handleApproveSale = (saleId: string) => {
-    if (!db) return;
+    if (!db || !allSales) return;
+    
+    const sale = allSales.find(s => s.id === saleId);
+    if (!sale) return;
+
+    // 1. Validar venta
     updateDocumentNonBlocking(doc(db, 'sales', saleId), {
       status: 'Completed',
       approvedAt: new Date().toISOString()
     });
-    toast({ title: "Pago Validado", description: "El acceso al curso ha sido habilitado para el comprador." });
+
+    // 2. SUMAR COMISIÓN AL AFILIADO SOLO TRAS APROBACIÓN
+    if (sale.affiliateId && sale.affiliateId !== 'admin') {
+      const affiliateRef = doc(db, 'affiliates', sale.affiliateId);
+      updateDocumentNonBlocking(affiliateRef, {
+        currentBalance: increment(sale.commissionEarned || 0)
+      });
+    }
+
+    toast({ 
+      title: "Pago Validado", 
+      description: "Acceso habilitado y comisión sumada al saldo del socio." 
+    });
   };
 
   return (
@@ -54,7 +71,7 @@ export default function AdminSalesPage() {
               <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Auditoría de Transacciones</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-headline font-bold text-slate-900 mb-2 tracking-tight leading-none uppercase italic">Registro de <span className="text-primary">Ventas</span></h1>
-            <p className="text-sm md:text-base text-slate-500 font-medium">Valida los depósitos bancarios para activar el acceso a los cursos.</p>
+            <p className="text-sm md:text-base text-slate-500 font-medium">Valida los depósitos bancarios para activar el acceso y pagar comisiones.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-72">
@@ -127,7 +144,7 @@ export default function AdminSalesPage() {
                                 className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-green-100 rounded-xl"
                                 onClick={() => handleApproveSale(sale.id)}
                               >
-                                <CheckCircle2 className="h-4 w-4 mr-2" /> HABILITAR
+                                <CheckCircle2 className="h-4 w-4 mr-2" /> APROBAR Y PAGAR
                               </Button>
                             )}
                             <SaleDetailsDialog sale={sale} t={t} />
