@@ -13,17 +13,13 @@ import {
   Users, 
   Search,
   ArrowLeft,
-  Crown,
   CheckCheck,
   Flame,
   MessageCircle,
   Loader2,
-  Trash2,
-  Pencil,
   X,
   Check,
   MoreVertical,
-  Eraser,
   Bell
 } from 'lucide-react'
 import { 
@@ -35,7 +31,7 @@ import {
   deleteDocumentNonBlocking, 
   updateDocumentNonBlocking 
 } from '@/firebase'
-import { collection, query, where, onSnapshot, doc, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -72,17 +68,25 @@ export default function AdminSupportPage() {
   const [editingMsgId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
+  const [mounted, setMounted] = useState(false);
 
   const scrollRefComm = useRef<HTMLDivElement>(null)
   const scrollRefPriv = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    setMounted(true);
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
-  const { data: affiliatesData, isLoading: loadingAffs } = useCollection(affiliatesQuery)
+  const { data: affiliatesData } = useCollection(affiliatesQuery)
   const affiliates = affiliatesData || []
 
   const communityQuery = useMemoFirebase(() => collection(db, 'community_messages'), [db])
   const { data: commData } = useCollection<Message>(communityQuery)
-  const communityMessages = (commData || [])
+  const communityMessages = [...(commData || [])]
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
@@ -92,36 +96,30 @@ export default function AdminSupportPage() {
   }, [db, selectedAffiliate]);
   
   const { data: privData } = useCollection<Message>(privateQuery)
-  const privateMessages = (privData || [])
+  const privateMessages = [...(privData || [])]
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(-200)
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then(setNotifPermission);
-      }
-    }
-
-    if (!db) return;
-    const now = new Date().toISOString();
-    
-    const unsubComm = onSnapshot(collection(db, 'community_messages'), (snap) => {
-      snap.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const msg = change.doc.data() as Message;
-          if (msg.createdAt > now && msg.userName !== "ADMINISTRADOR") {
-            if (Notification.permission === "granted") {
-              new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
+    if (mounted && db) {
+      const now = new Date().toISOString();
+      const unsubComm = onSnapshot(collection(db, 'community_messages'), (snap) => {
+        snap.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data() as Message;
+            if (msg.createdAt > now && msg.userName !== "ADMINISTRADOR") {
+              if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                try {
+                  new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
+                } catch (e) {}
+              }
             }
           }
-        }
+        });
       });
-    });
-
-    return () => unsubComm();
-  }, [db]);
+      return () => unsubComm();
+    }
+  }, [mounted, db]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -132,30 +130,21 @@ export default function AdminSupportPage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [communityMessages?.length, privateMessages?.length, activeTab, selectedAffiliate]);
+  }, [communityMessages.length, privateMessages.length, activeTab, selectedAffiliate]);
 
   const formatDateTime = (createdAt: any) => {
     if (!createdAt) return '--:--';
     try {
       const date = new Date(createdAt);
       if (isNaN(date.getTime())) return '--:--';
-      
       const now = new Date();
       const isToday = date.toDateString() === now.toDateString();
-      
       const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-      
-      if (isToday) {
-        return `Hoy, ${timeStr}`;
-      } else {
-        const day = date.getDate().toString().padStart(2, '0');
-        const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-        const month = months[date.getMonth()];
-        return `${day} ${month}, ${timeStr}`;
-      }
-    } catch (e) { 
-      return '--:--';
-    }
+      if (isToday) return `Hoy, ${timeStr}`;
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][date.getMonth()];
+      return `${day} ${month}, ${timeStr}`;
+    } catch (e) { return '--:--'; }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -200,9 +189,18 @@ export default function AdminSupportPage() {
     setEditContent('');
   };
 
+  const handleRequestPermission = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const permission = await Notification.requestPermission();
+      setNotifPermission(permission);
+    }
+  };
+
   const filteredAffiliates = affiliates.filter(a => 
     `${a.firstName} ${a.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (!mounted) return null;
 
   return (
     <DashboardShell role="admin">
@@ -219,7 +217,7 @@ export default function AdminSupportPage() {
             </TabsList>
           </Tabs>
           {notifPermission !== 'granted' && (
-            <Button onClick={() => Notification.requestPermission().then(setNotifPermission)} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
+            <Button onClick={handleRequestPermission} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
               <Bell className="mr-2 h-3 w-3" /> Activar Alertas
             </Button>
           )}

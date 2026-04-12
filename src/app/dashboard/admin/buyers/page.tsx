@@ -1,8 +1,9 @@
+
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Search, Mail, Loader2, Calendar, Trash2, ShoppingBag, UserCheck, KeyRound, Zap, CheckCircle2 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
@@ -17,13 +18,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendNewPasswordAdmin } from '@/lib/email'
 import { adminResetUserPassword } from '@/lib/auth-actions'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { cn } from '@/lib/utils'
 
 export default function AdminBuyersPage() {
   const { t } = useLanguage();
@@ -31,6 +31,11 @@ export default function AdminBuyersPage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const buyersQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -39,17 +44,18 @@ export default function AdminBuyersPage() {
 
   const { data: buyers, isLoading } = useCollection(buyersQuery);
 
-  // Filtrado local para evitar errores de índices en Firestore
-  const filteredBuyers = buyers?.filter(b => 
+  const filteredBuyers = (buyers || []).filter(b => 
     `${b.firstName} ${b.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     b.email.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const handleDeleteBuyer = (buyerId: string) => {
     const buyerRef = doc(db, 'buyers', buyerId);
     deleteDocumentNonBlocking(buyerRef);
     toast({ title: "Comprador eliminado", description: "El registro ha sido borrado permanentemente." });
   };
+
+  if (!mounted) return null;
 
   return (
     <DashboardShell role="admin">
@@ -85,72 +91,98 @@ export default function AdminBuyersPage() {
             <p className="text-slate-400 max-w-sm font-bold text-sm leading-relaxed">Tu base de datos aparecerá aquí conforme se registren las ventas.</p>
           </Card>
         ) : (
-          <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50 h-20 hover:bg-slate-50/50">
-                      <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Cliente / Alumno</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Correo Electrónico</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Fecha Registro</TableHead>
-                      <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBuyers.map((buyer) => (
-                      <TableRow key={buyer.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30 transition-colors">
-                        <TableCell className="px-10">
-                          <div className="flex items-center gap-5">
-                            <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-sm shadow-inner group-hover:rotate-3 transition-transform">
-                              {buyer.firstName?.charAt(0) || 'U'}
-                            </div>
-                            <span className="font-black text-slate-800 text-lg tracking-tight uppercase">{buyer.firstName} {buyer.lastName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3 text-sm font-bold text-slate-500">
-                            <Mail className="h-4 w-4 text-primary/40" /> {buyer.email}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3 text-xs font-black text-slate-400 uppercase tracking-widest">
-                            <Calendar className="h-4 w-4" /> {buyer.registeredAt ? new Date(buyer.registeredAt).toLocaleDateString() : 'N/A'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-10 text-right">
-                          <div className="flex justify-end gap-2">
-                            <AdminPasswordResetDialog user={buyer} />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-2xl transition-colors">
-                                  <Trash2 className="h-6 w-6" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">¿Eliminar Comprador?</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
-                                    Esta acción eliminará permanentemente al cliente. Podría perder el acceso a sus cursos adquiridos.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter className="mt-10 gap-4">
-                                  <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
-                                    BORRAR DEFINITIVAMENTE
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
+          <div className="space-y-4">
+            <Card className="hidden md:block border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 h-20 hover:bg-slate-50/50">
+                        <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Cliente / Alumno</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Correo Electrónico</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Fecha Registro</TableHead>
+                        <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBuyers.map((buyer) => (
+                        <TableRow key={buyer.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30 transition-colors">
+                          <TableCell className="px-10">
+                            <div className="flex items-center gap-5">
+                              <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-sm shadow-inner group-hover:rotate-3 transition-transform">
+                                {buyer.firstName?.charAt(0) || 'U'}
+                              </div>
+                              <span className="font-black text-slate-800 text-lg tracking-tight uppercase">{buyer.firstName} {buyer.lastName}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3 text-sm font-bold text-slate-500">
+                              <Mail className="h-4 w-4 text-primary/40" /> {buyer.email}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3 text-xs font-black text-slate-400 uppercase tracking-widest">
+                              <Calendar className="h-4 w-4" /> {buyer.registeredAt ? new Date(buyer.registeredAt).toLocaleDateString() : 'N/A'}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-10 text-right">
+                            <div className="flex justify-end gap-2">
+                              <AdminPasswordResetDialog user={buyer} />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-2xl transition-colors">
+                                    <Trash2 className="h-6 w-6" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">¿Eliminar Comprador?</AlertDialogTitle>
+                                    <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
+                                      Esta acción eliminará permanentemente al cliente. Podría perder el acceso a sus cursos adquiridos.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter className="mt-10 gap-4">
+                                    <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
+                                      BORRAR DEFINITIVAMENTE
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {filteredBuyers.map((buyer) => (
+                <Card key={buyer.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black">
+                        {buyer.firstName?.charAt(0) || 'U'}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-800 uppercase text-sm">{buyer.firstName} {buyer.lastName}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">{buyer.email}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                    <AdminPasswordResetDialog user={buyer} />
+                    <Button variant="ghost" size="icon" className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-2xl" onClick={() => handleDeleteBuyer(buyer.id)}>
+                      <Trash2 className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </DashboardShell>

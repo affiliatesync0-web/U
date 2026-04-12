@@ -1,9 +1,9 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { 
   Search, 
@@ -12,26 +12,17 @@ import {
   Landmark, 
   Lock, 
   Unlock, 
-  Phone, 
   KeyRound, 
   MessageCircle, 
   ShieldCheck, 
   User, 
   FileText, 
-  Camera, 
   CheckCircle2, 
-  XCircle,
-  Clock,
-  ArrowUpRight,
-  Wallet,
   BadgeDollarSign,
   Settings2,
-  ChevronRight,
-  ExternalLink,
   ShieldAlert,
   SendHorizontal,
   Zap,
-  MoreVertical,
   Scan,
   UserCheck
 } from 'lucide-react'
@@ -46,26 +37,28 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin, sendPaymentNotification } from '@/lib/email'
 import { adminResetUserPassword } from '@/lib/auth-actions'
-import { cn, getGoogleDriveDirectLink } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
-  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const affiliatesQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -74,10 +67,12 @@ export default function AdminAffiliatesPage() {
 
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
 
-  const filteredAffiliates = affiliates?.filter(aff => 
+  const filteredAffiliates = (affiliates || []).filter(aff => 
     `${aff.firstName} ${aff.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     aff.email.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
+
+  if (!mounted) return null;
 
   return (
     <DashboardShell role="admin">
@@ -102,7 +97,7 @@ export default function AdminAffiliatesPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading || isUserLoading ? (
           <div className="flex justify-center py-32"><Loader2 className="animate-spin text-primary h-12 w-12 opacity-50" /></div>
         ) : filteredAffiliates.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-20 md:p-32 text-center bg-white/50 rounded-[3rem] md:rounded-[4rem] border-slate-100">
@@ -244,7 +239,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
   };
 
   const handlePayBalance = async () => {
-    if (affiliate.currentBalance <= 0) {
+    if ((affiliate.currentBalance || 0) <= 0) {
       toast({ variant: "destructive", title: "Saldo Insuficiente", description: "El socio no tiene comisiones por cobrar." });
       return;
     }
@@ -308,7 +303,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                 <h2 className="text-3xl md:text-4xl font-headline font-black text-white leading-tight uppercase italic">{affiliate.firstName} <span className="text-primary">{affiliate.lastName}</span></h2>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={affiliate.status} />
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline">UID: {affiliate.id.substring(0, 10)}</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline">UID: {affiliate.id?.substring(0, 10)}</span>
                 </div>
               </div>
             </div>
@@ -400,9 +395,9 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">Comisiones Ganadas</p>
-                      <h4 className="text-6xl font-black tracking-tighter italic text-white">${affiliate.currentBalance?.toFixed(2) || '0.00'}</h4>
+                      <h4 className="text-6xl font-black tracking-tighter italic text-white">${(affiliate.currentBalance || 0).toFixed(2)}</h4>
                     </div>
-                    <Button onClick={handlePayBalance} disabled={isProcessing || affiliate.currentBalance <= 0} className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-xl shadow-2xl shadow-primary/20 gap-3">
+                    <Button onClick={handlePayBalance} disabled={isProcessing || (affiliate.currentBalance || 0) <= 0} className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-xl shadow-2xl shadow-primary/20 gap-3">
                       {isProcessing ? <Loader2 className="animate-spin h-8 w-8" /> : <><SendHorizontal className="h-7 w-7" /> PAGAR AHORA</>}
                     </Button>
                   </div>

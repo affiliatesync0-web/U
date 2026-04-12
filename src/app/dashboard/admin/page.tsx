@@ -1,19 +1,19 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
-import { Users, ShoppingBag, Wallet, Activity, Loader2, UserCheck, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare, ShieldCheck } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { ShoppingBag, Wallet, Loader2, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { collection, doc, getDocs, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase'
+import { collection, doc, getDocs, query, onSnapshot, limit } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
@@ -27,19 +27,20 @@ export default function AdminDashboard() {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [resetting, setResetting] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined" && "Notification" in window) {
       setNotifPermission(Notification.permission);
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then(setNotifPermission);
-      }
     }
+  }, []);
 
-    if (db && user) {
+  useEffect(() => {
+    if (mounted && db && user) {
       const now = new Date().toISOString();
-      
       const qComm = query(collection(db, 'community_messages'), limit(1));
+      
       const unsubscribeComm = onSnapshot(qComm, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
@@ -50,8 +51,13 @@ export default function AdminDashboard() {
                 description: msg.content,
                 action: <Button variant="outline" size="sm" className="h-8 rounded-lg font-black text-[10px] uppercase" onClick={() => router.push('/dashboard/admin/support')}>VER</Button>
               });
-              if (Notification.permission === "granted") {
-                new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
+              
+              if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                try {
+                  new Notification(`Sync Grupo: ${msg.userName}`, { body: msg.content });
+                } catch (e) {
+                  console.error("Error al mostrar notificación:", e);
+                }
               }
             }
           }
@@ -60,21 +66,33 @@ export default function AdminDashboard() {
 
       return () => unsubscribeComm();
     }
-  }, [db, user, toast, router]);
+  }, [mounted, db, user, toast, router]);
 
   const salesQuery = useMemoFirebase(() => (!db || isAuthLoading || !user) ? null : collection(db, 'sales'), [db, user, isAuthLoading]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
+  if (!mounted) return null;
+
   const stats = [
-    { title: t.totalRevenue, value: `$${sales?.reduce((acc, s) => acc + (s.saleAmount || 0), 0).toLocaleString() || '0'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
-    { title: "Ventas Totales", value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-purple-500", bg: "bg-purple-50" },
+    { title: t.totalRevenue, value: `$${(sales || []).reduce((acc, s) => acc + (s.saleAmount || 0), 0).toLocaleString()}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5" },
+    { title: "Ventas Totales", value: (sales || []).length.toString(), icon: ShoppingBag, color: "text-purple-500", bg: "bg-purple-50" },
   ]
 
   const chartData = [
-    { name: "Ene", sales: (sales?.length || 0) * 0.4 },
-    { name: "Feb", sales: (sales?.length || 0) * 0.6 },
-    { name: "Mar", sales: (sales?.length || 0) },
+    { name: "Ene", sales: ((sales || []).length) * 0.4 },
+    { name: "Feb", sales: ((sales || []).length) * 0.6 },
+    { name: "Mar", sales: ((sales || []).length) },
   ]
+
+  const handleRequestPermission = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const permission = await Notification.requestPermission();
+      setNotifPermission(permission);
+      if (permission === 'granted') {
+        toast({ title: "Notificaciones Activas", description: "Recibirás alertas en tiempo real." });
+      }
+    }
+  };
 
   const handleResetSystem = async () => {
     if (!db) return;
@@ -100,7 +118,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             {notifPermission !== 'granted' && (
-              <Button onClick={() => Notification.requestPermission().then(setNotifPermission)} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
+              <Button onClick={handleRequestPermission} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
                 <Bell className="mr-2 h-3 w-3" /> Habilitar Notificaciones
               </Button>
             )}
@@ -148,7 +166,7 @@ export default function AdminDashboard() {
               <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl"><Bell className="h-6 w-6" /></div>
               <h3 className="text-2xl font-headline font-black uppercase">Alertas Activas</h3>
               <p className="text-slate-400 text-sm font-medium leading-relaxed">Recibe avisos cada vez que un socio solicite aprobación o envíe un mensaje.</p>
-              <Button onClick={() => Notification.requestPermission()} variant="outline" className="w-full h-14 rounded-2xl border-white/10 text-white font-black text-[10px] uppercase">PROBAR NOTIFICACIONES</Button>
+              <Button onClick={handleRequestPermission} variant="outline" className="w-full h-14 rounded-2xl border-white/10 text-white font-black text-[10px] uppercase">HABILITAR AHORA</Button>
             </div>
           </Card>
         </div>
