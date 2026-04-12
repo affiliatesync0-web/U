@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, Wallet, Loader2, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare } from 'lucide-react'
+import { ShoppingBag, Wallet, Loader2, TrendingUp, RefreshCcw, AlertTriangle, Bell, MessageSquare, Users, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   ChartContainer,
@@ -108,6 +108,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResetAffiliates = async () => {
+    if (!db) return;
+    setResetting(true);
+    try {
+      const snap = await getDocs(collection(db, 'affiliates'));
+      snap.docs.forEach(d => deleteDocumentNonBlocking(doc(db, 'affiliates', d.id)));
+      toast({ title: "Base de Datos de Socios Limpia", description: "Todos los afiliados han sido eliminados de Firestore." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error al borrar socios" });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <DashboardShell role="admin">
       <div className="space-y-10">
@@ -171,32 +185,61 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        <Card className="border-none shadow-2xl rounded-[3rem] bg-amber-50 border border-amber-100 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-6">
-            <div className="h-16 w-16 bg-amber-500 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl"><RefreshCcw className="h-8 w-8" /></div>
-            <div>
-              <h3 className="text-2xl font-headline font-black text-amber-900">{t.resetSystem}</h3>
-              <p className="text-amber-700 font-medium max-w-lg">Limpia el historial de transacciones y resetea saldos.</p>
+        <div className="space-y-6">
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-amber-50 border border-amber-100 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="h-16 w-16 bg-amber-500 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl"><RefreshCcw className="h-8 w-8" /></div>
+              <div>
+                <h3 className="text-2xl font-headline font-black text-amber-900">{t.resetSystem}</h3>
+                <p className="text-amber-700 font-medium max-w-lg">Limpia el historial de transacciones y resetea saldos.</p>
+              </div>
             </div>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="h-16 px-10 rounded-2xl font-black text-xs uppercase shadow-xl" disabled={resetting}>
-                {resetting ? <Loader2 className="animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />} REINICIAR TODO
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-3xl font-headline font-black">¿Confirmar Reinicio?</AlertDialogTitle>
-                <AlertDialogDescription className="text-slate-500 font-bold mt-4">Esta acción borrará todas las ventas y saldos permanentemente.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="mt-10 gap-4">
-                <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetSystem} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, REINICIAR</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </Card>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="h-16 px-10 rounded-2xl font-black text-xs uppercase shadow-xl" disabled={resetting}>
+                  {resetting ? <Loader2 className="animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />} REINICIAR VENTAS
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-3xl font-headline font-black">¿Confirmar Reinicio?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-500 font-bold mt-4">Esta acción borrará todas las ventas y saldos permanentemente.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-10 gap-4">
+                  <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetSystem} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, REINICIAR VENTAS</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
+
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-red-100 border border-red-200 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="h-16 w-16 bg-red-600 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl"><Users className="h-8 w-8" /></div>
+              <div>
+                <h3 className="text-2xl font-headline font-black text-red-900">Limpieza de Socios</h3>
+                <p className="text-red-700 font-medium max-w-lg">Borra todos los perfiles de afiliados registrados de la base de datos.</p>
+              </div>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="h-16 px-10 rounded-2xl font-black text-xs uppercase shadow-xl bg-red-600 hover:bg-red-700" disabled={resetting}>
+                  {resetting ? <Loader2 className="animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} BORRAR TODOS LOS SOCIOS
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-3xl font-headline font-black">¿Eliminar toda la red?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-500 font-bold mt-4">Se borrarán todos los perfiles, KYC y saldos de los socios. Esta acción no se puede deshacer.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-10 gap-4">
+                  <AlertDialogCancel className="h-14 rounded-2xl font-black">CANCELAR</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetAffiliates} className="h-14 rounded-2xl bg-destructive text-white font-black">SÍ, BORRAR DIRECTORIO</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
+        </div>
       </div>
     </DashboardShell>
   )
