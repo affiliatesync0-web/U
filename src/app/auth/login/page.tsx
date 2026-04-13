@@ -109,15 +109,16 @@ export default function LoginPage() {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. Acceso Maestro Directo
+    // 1. Acceso Maestro Directo (Prioridad Absoluta)
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de mando..." });
-      router.replace('/dashboard/admin');
+      // Usamos window.location para forzar una salida limpia del estado de login
+      window.location.href = '/dashboard/admin';
       return;
     }
 
     try {
-      // 2. Verificar Rol (Optimizado)
+      // 2. Verificar Rol Afiliado
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.replace('/dashboard/affiliate');
@@ -140,23 +141,16 @@ export default function LoginPage() {
 
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
       
-      // Forzamos navegación inmediata con replace para evitar loops de back-button
       router.replace('/dashboard/buyer');
 
     } catch (err) {
       console.error("Redirection Error:", err);
-      // Ante cualquier error técnico, priorizamos que el usuario entre al panel básico
       router.replace('/dashboard/buyer');
-    } finally {
-      // No reseteamos loading aquí si ya estamos navegando para evitar parpadeos/excepciones
     }
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth || !db) {
-      toast({ variant: "destructive", title: "Error", description: "Los servicios de seguridad no están listos." });
-      return;
-    }
+    if (!auth || !db) return;
     setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
@@ -182,10 +176,8 @@ export default function LoginPage() {
         setErrorMsg("DOMINIO NO AUTORIZADO en Firebase Console.");
       } else if (error.code === 'auth/popup-blocked') {
         setErrorMsg("Popup bloqueado por el navegador.");
-      } else if (error.code === 'auth/operation-not-allowed') {
-        setErrorMsg("El método de Google no está habilitado en Firebase.");
       } else if (error.code !== 'auth/popup-closed-by-user') {
-        setErrorMsg("Fallo al conectar con Google. Revisa tu conexión.");
+        setErrorMsg("Fallo al conectar con Google.");
       }
     }
   };
@@ -233,7 +225,7 @@ export default function LoginPage() {
         setAuthErrorType('domain');
         setErrorMsg("DOMINIO NO AUTORIZADO para SMS.");
       } else {
-        setErrorMsg("Error al enviar código. Intenta de nuevo.");
+        setErrorMsg("Error al enviar código.");
       }
     } finally {
       setLoading(false);
@@ -261,16 +253,6 @@ export default function LoginPage() {
         <ThemeToggle />
         <LanguageToggle />
       </div>
-
-      {loading && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
-          <div className="relative">
-            <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
-            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary animate-pulse" />
-          </div>
-          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando identidad...</p>
-        </div>
-      )}
 
       <div className="mb-8 text-center space-y-6">
         <Link href={EXTERNAL_HOME} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
@@ -348,9 +330,6 @@ export default function LoginPage() {
                   </>
                 ) : <Loader2 className="animate-spin h-6 w-6 text-primary" />}
               </Button>
-              <p className="text-center text-[9px] font-black text-muted-foreground uppercase tracking-widest px-4 leading-relaxed">
-                Acceso automático tras elegir tu cuenta. Sin formularios largos.
-              </p>
             </TabsContent>
 
             <TabsContent value="others" className="space-y-10 m-0 animate-in fade-in zoom-in-95">
@@ -412,11 +391,6 @@ export default function LoginPage() {
           </CardFooter>
         </div>
       </Card>
-      
-      <p className="mt-10 text-[9px] font-black text-slate-400 uppercase tracking-widest leading-relaxed text-center max-w-xs">
-        Acceso encriptado por Sync Connect.<br/>
-        Seguridad de grado militar.
-      </p>
     </div>
   )
 }

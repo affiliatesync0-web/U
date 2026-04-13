@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -66,6 +67,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   
   const [mounted, setMounted] = useState(false);
 
+  // DETECCIÓN MAESTRA DE ADMINISTRADOR
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
   const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
 
@@ -76,18 +78,21 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     if (!mounted || isUserLoading) return;
 
+    // 1. Si no hay sesión, al login
     if (!user) {
       router.replace('/auth/login');
       return;
     }
 
+    // 2. Si es ADMIN, siempre debe estar en rutas /dashboard/admin
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/admin');
       return;
     }
 
+    // 3. Si NO es ADMIN, tiene prohibido entrar a /dashboard/admin
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
-      router.replace('/dashboard/affiliate');
+      router.replace('/dashboard/affiliate'); // O al panel que le corresponda
       return;
     }
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
@@ -121,6 +126,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
+  // Verificación de aprobación para afiliados
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex items-center justify-center p-6 text-center text-foreground">
