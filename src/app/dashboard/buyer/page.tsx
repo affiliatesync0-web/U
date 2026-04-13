@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -14,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase'
