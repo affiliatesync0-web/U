@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
@@ -50,7 +50,7 @@ function CheckoutContent() {
       return
     }
 
-    // Si es pago por transferencia, el voucher es obligatorio
+    // Si es pago por transferencia (no hay link de pago), el voucher es obligatorio
     if (!product?.paymentLink && !formData.voucherRef.trim()) {
       toast({ variant: "destructive", title: "Voucher Requerido", description: "Debes ingresar el número de referencia de tu transferencia." })
       return
@@ -82,6 +82,7 @@ function CheckoutContent() {
         productName: product?.name || 'Producto',
         buyerId: buyerId,
         buyerName: `${formData.firstName} ${formData.lastName}`,
+        buyerPhone: formData.phone.trim(),
         saleDate: new Date().toISOString(),
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
@@ -97,7 +98,7 @@ function CheckoutContent() {
       await sendEmail({
         to: formData.email,
         subject: `Registro de Compra - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nTu acceso será validado por la administración en breve.`
+        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nTu acceso será validado por la administración en breve tras verificar el pago.`
       }).catch(() => {});
 
       toast({ title: "Registro Enviado", description: "Tu solicitud está en proceso de validación." })
@@ -146,7 +147,7 @@ function CheckoutContent() {
         
         <div className="lg:col-span-5 space-y-8">
           <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
-            <ChevronLeft className="h-4 w-4" /> Volver
+            <ChevronLeft className="h-4 w-4" /> Volver al Inicio
           </Link>
           
           <div className="space-y-6">
@@ -169,13 +170,13 @@ function CheckoutContent() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-6 left-8 text-white">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen del Pedido</p>
                 <h3 className="text-xl font-headline font-black tracking-tight">{product.name}</h3>
               </div>
             </div>
             <CardContent className="p-10 space-y-6">
               <div className="flex justify-between items-end">
-                <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Inversión</span>
+                <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Inversión Única</span>
                 <span className="text-4xl font-black text-primary tracking-tighter">${product.price?.toFixed(2)}</span>
               </div>
             </CardContent>
@@ -184,7 +185,7 @@ function CheckoutContent() {
                  <ShieldCheck className="h-6 w-6" />
                </div>
                <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
-                 Compra 100% segura procesada por Sync Connect.
+                 Compra 100% segura procesada por tecnología Sync Connect.
                </p>
             </CardFooter>
           </Card>
@@ -286,7 +287,7 @@ function CheckoutContent() {
                             <p className="text-sm font-black text-slate-800 uppercase">{product.payoutBankId || product.bankType}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Titular</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Titular de Cuenta</p>
                             <p className="text-sm font-black text-slate-800 uppercase">{product.payoutBankAccountHolderName || product.bankHolder}</p>
                           </div>
                           <div className="md:col-span-2">
@@ -301,18 +302,18 @@ function CheckoutContent() {
                           </Label>
                           <Input 
                             required
-                            placeholder="Escribe la referencia aquí" 
+                            placeholder="Ingresa los dígitos de tu comprobante" 
                             value={formData.voucherRef}
                             onChange={e => setFormData({...formData, voucherRef: e.target.value})}
                             className="h-14 rounded-2xl text-center font-black text-xl border-primary/20 ring-4 ring-primary/5"
                           />
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Indispensable para validar tu acceso.</p>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Este dato es indispensable para validar tu acceso.</p>
                         </div>
 
                         <Button 
                           onClick={handlePurchase} 
                           disabled={loading}
-                          className="w-full h-18 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl hover:bg-slate-800"
+                          className="w-full h-18 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all active:scale-95"
                         >
                           {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "REGISTRAR PAGO Y FINALIZAR"}
                         </Button>

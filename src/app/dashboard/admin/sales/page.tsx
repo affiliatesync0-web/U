@@ -49,13 +49,13 @@ export default function AdminSalesPage() {
     const sale = allSales.find(s => s.id === saleId);
     if (!sale) return;
 
-    // 1. Validar venta
+    // 1. Validar la venta en el registro
     updateDocumentNonBlocking(doc(db, 'sales', saleId), {
       status: 'Completed',
       approvedAt: new Date().toISOString()
     });
 
-    // 2. SUMAR COMISIÓN AL AFILIADO SOLO TRAS APROBACIÓN
+    // 2. ACREDITAR COMISIÓN: Solo si la venta es de un afiliado (no de admin directo)
     if (sale.affiliateId && sale.affiliateId !== 'admin') {
       const affiliateRef = doc(db, 'affiliates', sale.affiliateId);
       updateDocumentNonBlocking(affiliateRef, {
@@ -64,8 +64,8 @@ export default function AdminSalesPage() {
     }
 
     toast({ 
-      title: "Pago Validado", 
-      description: "Acceso habilitado y comisión sumada al saldo del socio." 
+      title: "Pago Validado Correctamente", 
+      description: "Acceso habilitado para el alumno y comisión sumada al socio." 
     });
   };
 
@@ -73,19 +73,19 @@ export default function AdminSalesPage() {
     <DashboardShell role="admin">
       <div className="space-y-6 md:space-y-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
+          <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
               <ShoppingBag className="h-4 w-4 text-primary" />
               <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Auditoría de Transacciones</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-headline font-bold text-slate-900 mb-2 tracking-tight leading-none uppercase italic">Registro de <span className="text-primary">Ventas</span></h1>
-            <p className="text-sm md:text-base text-slate-500 font-medium">Valida los depósitos bancarios para activar el acceso y pagar comisiones.</p>
+            <h1 className="text-3xl md:text-4xl font-headline font-bold text-slate-900 tracking-tight leading-none uppercase italic">Registro de <span className="text-primary">Ventas</span></h1>
+            <p className="text-sm md:text-base text-slate-500 font-medium mt-2">Valida los depósitos bancarios para habilitar accesos y pagar comisiones.</p>
           </div>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
-              className="pl-11 h-14 rounded-2xl bg-white border-none shadow-xl ring-1 ring-slate-100" 
-              placeholder="Buscar por voucher, producto o cliente..." 
+              className="pl-11 h-14 rounded-2xl bg-white border-none shadow-xl ring-1 ring-slate-100 font-bold" 
+              placeholder="Buscar por voucher o cliente..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -99,57 +99,57 @@ export default function AdminSalesPage() {
         ) : filteredSales.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-24 text-center bg-white/50 rounded-[3rem] border-slate-100">
             <ShoppingBag className="h-16 w-16 text-slate-200 mb-6" />
-            <h3 className="text-xl font-black text-slate-400 mb-2 uppercase">Sin ventas registradas</h3>
-            <p className="text-slate-400 max-w-xs text-sm font-bold">No se han encontrado transacciones bancarias con esos criterios.</p>
+            <h3 className="text-xl font-black text-slate-400 mb-2 uppercase">Sin ventas pendientes</h3>
+            <p className="text-slate-400 max-w-xs text-sm font-bold">No se han encontrado registros de transacciones.</p>
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* VISTA DESKTOP */}
+            {/* VISTA DESKTOP (TABLA) */}
             <Card className="hidden lg:block border-none shadow-2xl overflow-hidden rounded-[3rem] bg-white ring-1 ring-slate-100">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 h-20">
-                        <TableHead className="px-8 h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Voucher / Pago</TableHead>
+                        <TableHead className="px-8 h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Comprobante (Voucher)</TableHead>
                         <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Fecha</TableHead>
-                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Producto</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Producto Digital</TableHead>
                         <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Comprador</TableHead>
-                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Estado</TableHead>
-                        <TableHead className="px-8 text-right h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Acción</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Estatus</TableHead>
+                        <TableHead className="px-8 text-right h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Acción Maestra</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredSales.map((sale) => (
-                        <TableRow key={sale.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30">
+                        <TableRow key={sale.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30 transition-colors">
                           <TableCell className="px-8">
-                            <span className="font-mono font-black text-sm text-primary tracking-tighter">{sale.voucherReference || 'SIN REF'}</span>
+                            <span className="font-mono font-black text-sm text-primary tracking-tighter">{sale.voucherReference || 'LINK_DIRECTO'}</span>
                           </TableCell>
                           <TableCell className="text-slate-500 text-[11px] font-bold">
                             {sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}
                           </TableCell>
                           <TableCell>
-                            <div className="font-black text-slate-800 text-xs uppercase truncate max-w-[150px]">{sale.productName || 'Curso'}</div>
+                            <div className="font-black text-slate-800 text-xs uppercase truncate max-w-[150px]">{sale.productName || 'Curso Academy'}</div>
                           </TableCell>
                           <TableCell>
                             <div className="text-[11px] font-black text-slate-700 uppercase">{sale.buyerName}</div>
                           </TableCell>
                           <TableCell>
                             <Badge className={cn(
-                              "rounded-full font-black text-[9px] px-4 py-1.5 uppercase tracking-widest border-none",
-                              sale.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
+                              "rounded-full font-black text-[9px] px-4 py-1.5 uppercase tracking-widest border-none shadow-sm",
+                              sale.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600 animate-pulse"
                             )}>
-                              {sale.status === 'Completed' ? 'VÁLIDO' : 'PENDIENTE'}
+                              {sale.status === 'Completed' ? 'VALIDADO ✓' : 'PENDIENTE'}
                             </Badge>
                           </TableCell>
                           <TableCell className="px-8 text-right">
                             <div className="flex justify-end gap-3">
                               {sale.status !== 'Completed' && (
                                 <Button 
-                                  className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase rounded-xl shadow-lg"
+                                  className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase rounded-xl shadow-lg transition-all hover:scale-105"
                                   onClick={() => handleApproveSale(sale.id)}
                                 >
-                                  <CheckCircle2 className="h-4 w-4 mr-2" /> APROBAR
+                                  <CheckCircle2 className="h-4 w-4 mr-2" /> APROBAR Y PAGAR
                                 </Button>
                               )}
                               <SaleDetailsDialog sale={sale} />
@@ -163,36 +163,39 @@ export default function AdminSalesPage() {
               </CardContent>
             </Card>
 
-            {/* VISTA MÓVIL */}
+            {/* VISTA MÓVIL (TARJETAS) */}
             <div className="grid grid-cols-1 gap-4 lg:hidden">
               {filteredSales.map((sale) => (
-                <Card key={sale.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6">
+                <Card key={sale.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6 ring-1 ring-slate-100">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Voucher</p>
-                      <span className="font-mono font-black text-primary text-lg">{sale.voucherReference || 'SIN REF'}</span>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Voucher Bancario</p>
+                      <span className="font-mono font-black text-primary text-lg">{sale.voucherReference || 'LINK_DIRECTO'}</span>
                     </div>
                     <Badge className={cn(
                       "rounded-full font-black text-[9px] px-4 py-1.5 uppercase border-none",
                       sale.status === 'Completed' ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
                     )}>
-                      {sale.status === 'Completed' ? 'VÁLIDO' : 'PENDIENTE'}
+                      {sale.status === 'Completed' ? 'VÁLIDO ✓' : 'PENDIENTE'}
                     </Badge>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl space-y-2">
+                  <div className="p-4 bg-slate-50 rounded-2xl space-y-2 border border-slate-100">
                     <p className="text-[11px] font-black text-slate-800 uppercase">{sale.productName}</p>
-                    <p className="text-[10px] font-bold text-slate-500">{sale.buyerName}</p>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase">Cliente:</span>
+                      <span className="text-[10px] font-black text-slate-700 uppercase">{sale.buyerName}</span>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     {sale.status !== 'Completed' && (
                       <Button 
-                        className="flex-1 h-12 bg-green-600 text-white font-black text-[10px] uppercase rounded-xl"
+                        className="flex-1 h-12 bg-green-600 text-white font-black text-[10px] uppercase rounded-xl shadow-lg active:scale-95"
                         onClick={() => handleApproveSale(sale.id)}
                       >
-                        APROBAR
+                        VALIDAR PAGO
                       </Button>
                     )}
-                    <SaleDetailsDialog sale={sale} />
+                    <SaleDetailsDialog sale={sale} isMobile />
                   </div>
                 </Card>
               ))}
@@ -204,39 +207,48 @@ export default function AdminSalesPage() {
   )
 }
 
-function SaleDetailsDialog({ sale }: { sale: any }) {
+function SaleDetailsDialog({ sale, isMobile }: { sale: any, isMobile?: boolean }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="h-12 px-5 font-black text-[10px] uppercase rounded-xl flex-1 lg:flex-none">
-          <Eye className="h-4 w-4" /> VOUCHER
+        <Button variant="outline" className={cn(
+          "h-12 px-5 font-black text-[10px] uppercase rounded-xl",
+          isMobile ? "flex-1" : ""
+        )}>
+          <Eye className="h-4 w-4 mr-2" /> {isMobile ? 'DETALLES' : 'VER VOUCHER'}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md w-[95vw] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
         <div className="bg-slate-900 p-8 text-white">
            <DialogHeader>
-             <DialogTitle className="text-xl font-headline font-black uppercase italic">Comprobante <span className="text-primary">Recibido</span></DialogTitle>
+             <DialogTitle className="text-xl font-headline font-black uppercase italic">Expediente de <span className="text-primary">Transacción</span></DialogTitle>
+             <p className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em] mt-1">Auditoría Sync Connect</p>
            </DialogHeader>
         </div>
         <div className="p-8 space-y-6">
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border">
-             <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+             <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm border">
                <User className="h-5 w-5 text-slate-400" />
              </div>
-             <div>
-               <p className="text-[9px] font-black text-slate-400 uppercase">Comprador</p>
-               <p className="text-xs font-black text-slate-800 uppercase">{sale.buyerName}</p>
+             <div className="min-w-0 flex-1">
+               <p className="text-[9px] font-black text-slate-400 uppercase">Alumno / Comprador</p>
+               <p className="text-xs font-black text-slate-800 uppercase truncate">{sale.buyerName}</p>
              </div>
           </div>
           <div className="p-6 rounded-[2rem] bg-purple-50 border-2 border-dashed border-purple-200 text-center space-y-2">
-            <p className="text-[9px] font-black text-purple-400 uppercase">Referencia del Banco</p>
-            <p className="text-2xl font-black font-mono tracking-widest text-purple-600 break-all">{sale.voucherReference || 'N/A'}</p>
+            <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Número de Referencia Bancaria</p>
+            <p className="text-2xl font-black font-mono tracking-widest text-purple-600 break-all">{sale.voucherReference || 'SIN REFERENCIA'}</p>
           </div>
           <div className="pt-4 border-t flex justify-between items-center">
-            <p className="text-lg font-black text-slate-900">${sale.saleAmount?.toFixed(2)}</p>
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-slate-400 uppercase">Monto Transacción</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tighter">${sale.saleAmount?.toFixed(2)}</p>
+            </div>
             {sale.buyerPhone && (
-              <Button asChild variant="outline" className="h-10 px-4 rounded-xl text-green-600 text-[10px] font-black">
-                <a href={`https://wa.me/${sale.buyerPhone.replace(/\D/g, '')}`} target="_blank">WHATSAPP</a>
+              <Button asChild variant="outline" className="h-12 px-6 rounded-xl border-green-100 text-green-600 text-[10px] font-black gap-2 shadow-sm">
+                <a href={`https://wa.me/${sale.buyerPhone.replace(/\D/g, '')}`} target="_blank">
+                  <MessageCircle className="h-4 w-4" /> CONTACTAR
+                </a>
               </Button>
             )}
           </div>
@@ -245,3 +257,5 @@ function SaleDetailsDialog({ sale }: { sale: any }) {
     </Dialog>
   )
 }
+
+import { MessageCircle } from 'lucide-react'
