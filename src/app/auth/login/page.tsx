@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -84,6 +83,7 @@ export default function LoginPage() {
 
   const setupRecaptcha = (containerId: string) => {
     try {
+      if (!auth) return;
       if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier.clear();
       }
@@ -114,8 +114,14 @@ export default function LoginPage() {
       return;
     }
 
+    if (!db) {
+      // Si la DB no está lista, intentamos entrar al panel de comprador como fallback seguro
+      router.push('/dashboard/buyer');
+      return;
+    }
+
     try {
-      // 2. Verificar Rol (Sin bloquear la UI)
+      // 2. Verificar Rol (Optimizado)
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.push('/dashboard/affiliate');
@@ -138,11 +144,12 @@ export default function LoginPage() {
 
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
       
-      // Forzamos un pequeño delay para asegurar que el router procese la navegación
-      setTimeout(() => router.push('/dashboard/buyer'), 100);
+      // Forzamos navegación inmediata
+      router.push('/dashboard/buyer');
 
     } catch (err) {
       console.error("Redirection Error:", err);
+      // Ante cualquier error de DB, forzamos la entrada al panel básico
       router.push('/dashboard/buyer');
     } finally {
       setLoading(false);
@@ -150,6 +157,10 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!auth) {
+      toast({ variant: "destructive", title: "Error", description: "Los servicios de seguridad no están listos." });
+      return;
+    }
     setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
@@ -175,15 +186,17 @@ export default function LoginPage() {
         setErrorMsg("DOMINIO NO AUTORIZADO en Firebase Console.");
       } else if (error.code === 'auth/popup-blocked') {
         setErrorMsg("Popup bloqueado por el navegador.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setErrorMsg("El método de Google no está habilitado en Firebase.");
       } else if (error.code !== 'auth/popup-closed-by-user') {
-        setErrorMsg("Fallo al conectar con Google.");
+        setErrorMsg("Fallo al conectar con Google. Revisa tu conexión.");
       }
     }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if (loading || !auth) return;
     setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
@@ -198,6 +211,7 @@ export default function LoginPage() {
   };
 
   const handleSendCode = async () => {
+    if (!auth) return;
     const cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length < 7) {
       toast({ variant: "destructive", title: "Inválido", description: "Ingresa un número real." });
@@ -212,13 +226,19 @@ export default function LoginPage() {
     try {
       setupRecaptcha('recaptcha-container');
       const verifier = (window as any).recaptchaVerifier;
+      if (!verifier) throw new Error("reCAPTCHA not initialized");
+      
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(result);
       toast({ title: "Código Enviado" });
     } catch (error: any) {
       console.error("SMS Code Error:", error.code);
-      if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
-      setErrorMsg("Error al enviar código.");
+      if (error.code === 'auth/unauthorized-domain') {
+        setAuthErrorType('domain');
+        setErrorMsg("DOMINIO NO AUTORIZADO para SMS.");
+      } else {
+        setErrorMsg("Error al enviar código. Intenta de nuevo.");
+      }
     } finally {
       setLoading(false);
     }
@@ -299,9 +319,10 @@ export default function LoginPage() {
             {authErrorType === 'domain' && (
               <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-6 animate-in zoom-in-95">
                 <ShieldAlert className="h-6 w-6 text-red-600" />
-                <AlertTitle className="text-xs font-black uppercase mb-2 text-red-900">Error de Configuración</AlertTitle>
+                <AlertTitle className="text-xs font-black uppercase mb-2 text-red-900">Error de Dominio</AlertTitle>
                 <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
-                  Debes añadir este dominio a tu consola de Firebase Auth Settings para permitir el acceso.
+                  Este dominio no está autorizado en tu Firebase Console. <br/><br/>
+                  Ve a <b>Authentication > Settings > Authorized domains</b> y añade este dominio para que Google y SMS funcionen.
                 </AlertDescription>
               </Alert>
             )}
@@ -332,7 +353,7 @@ export default function LoginPage() {
                 ) : <Loader2 className="animate-spin h-6 w-6 text-primary" />}
               </Button>
               <p className="text-center text-[9px] font-black text-muted-foreground uppercase tracking-widest px-4 leading-relaxed">
-                Sin registros largos. Tu acceso es automático tras elegir tu cuenta.
+                Acceso automático tras elegir tu cuenta. Sin formularios largos.
               </p>
             </TabsContent>
 
