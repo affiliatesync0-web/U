@@ -12,14 +12,13 @@ import {
   Loader2, 
   Image as ImageIcon, 
   ArrowLeft, 
-  ShieldCheck,
-  AlertCircle,
   LogIn,
   Mail,
   Smartphone,
   CheckCircle2,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -34,8 +33,7 @@ import {
   signInWithEmailAndPassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult,
-  onAuthStateChanged
+  ConfirmationResult
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
@@ -43,6 +41,7 @@ import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { COUNTRY_CODES } from '@/lib/constants'
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -53,6 +52,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState('email')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Estados para Login por Email
   const [email, setEmail] = useState('')
@@ -72,7 +72,6 @@ export default function LoginPage() {
 
   const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
 
-  // Limpiar recaptcha al desmontar
   useEffect(() => {
     return () => {
       if ((window as any).recaptchaVerifier) {
@@ -91,17 +90,14 @@ export default function LoginPage() {
       }
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
         size: 'invisible',
-        callback: () => {
-          console.log('reCAPTCHA verificado correctamente');
-        },
+        callback: () => { console.log('reCAPTCHA OK'); },
         'expired-callback': () => {
           toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor, intenta de nuevo." });
           setLoading(false);
         }
       });
     } catch (error) {
-      console.error("Error al configurar reCAPTCHA:", error);
-      setLoading(false);
+      console.error("reCAPTCHA Setup Error:", error);
     }
   };
 
@@ -132,7 +128,7 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. FLUJO TIKTOK: Si no existe, crear perfil de comprador automáticamente
+      // 4. FLUJO TIKTOK: Crear perfil automáticamente si no existe (solo para Google/SMS)
       const names = displayName?.split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || 'Connect';
@@ -151,12 +147,13 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error("Success handling error:", err);
-      toast({ variant: "destructive", title: "Error de Acceso", description: "No pudimos configurar tu sesión." });
+      toast({ variant: "destructive", title: "Error de Datos", description: "No pudimos configurar tu perfil automáticamente." });
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setErrorMsg(null);
     setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -164,23 +161,25 @@ export default function LoginPage() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
-      
       if (result.user) {
         await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
-      } else {
-        setLoading(false);
       }
     } catch (error: any) {
       console.error("Google Login Error:", error.code);
-      setLoading(false);
       if (error.code !== 'auth/popup-closed-by-user') {
-        toast({ variant: "destructive", title: "Error Google", description: "No se pudo completar el acceso." });
+        let msg = "No se pudo conectar con Google.";
+        if (error.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado en Firebase.";
+        setErrorMsg(msg);
+        toast({ variant: "destructive", title: "Error Google", description: msg });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     setLoading(true);
     try {
       await setPersistence(auth, browserLocalPersistence);
@@ -188,7 +187,11 @@ export default function LoginPage() {
       await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       console.error("Email Login Error:", error.code);
-      toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales inválidas." });
+      let msg = "Credenciales inválidas.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') msg = "Correo o contraseña incorrectos.";
+      setErrorMsg(msg);
+      toast({ variant: "destructive", title: "Error de Acceso", description: msg });
+    } finally {
       setLoading(false);
     }
   };
@@ -200,6 +203,7 @@ export default function LoginPage() {
       return;
     }
 
+    setErrorMsg(null);
     setLoading(true);
     const fullNumber = `${countryCode}${cleanPhone}`;
     
@@ -211,7 +215,11 @@ export default function LoginPage() {
       toast({ title: "Código Enviado", description: "Revisa tu teléfono." });
     } catch (error: any) {
       console.error("SMS Error:", error.code);
-      toast({ variant: "destructive", title: "Error SMS", description: "No se pudo enviar el código." });
+      let msg = "No se pudo enviar el código.";
+      if (error.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado para SMS.";
+      if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
+      setErrorMsg(msg);
+      toast({ variant: "destructive", title: "Error SMS", description: msg });
     } finally {
       setLoading(false);
     }
@@ -220,12 +228,14 @@ export default function LoginPage() {
   const handleVerifyCode = async () => {
     if (!verificationCode || !confirmationResult) return;
     setIsVerifying(true);
+    setErrorMsg(null);
     try {
       const result = await confirmationResult.confirm(verificationCode);
       await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       console.error("Verification Error:", error.code);
-      toast({ variant: "destructive", title: "Código Inválido", description: "El código no es correcto." });
+      toast({ variant: "destructive", title: "Código Inválido", description: "El código ingresado no es correcto." });
+    } finally {
       setIsVerifying(false);
     }
   };
@@ -260,7 +270,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-10">
           
-          <Tabs defaultValue="email" onValueChange={setActiveTab} className="space-y-8">
+          <Tabs defaultValue="email" onValueChange={(v) => { setActiveTab(v); setErrorMsg(null); }} className="space-y-8">
             <TabsList className="grid grid-cols-2 h-12 bg-card border border-border p-1 rounded-2xl">
               <TabsTrigger value="email" className="rounded-xl font-black text-[10px] uppercase gap-2">
                 <Mail className="h-3 w-3" /> EMAIL
@@ -278,6 +288,13 @@ export default function LoginPage() {
                 Acceso instantáneo estilo TikTok
               </CardDescription>
             </CardHeader>
+
+            {errorMsg && (
+              <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-3 animate-in fade-in zoom-in-95">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-[11px] font-bold uppercase leading-tight">{errorMsg}</AlertDescription>
+              </Alert>
+            )}
 
             <TabsContent value="email" className="space-y-6 m-0">
               <form onSubmit={handleEmailLogin} className="space-y-5">
