@@ -4,7 +4,7 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Loader2, ShoppingBag, Landmark, Eye, CheckCircle2, Phone, User } from 'lucide-react'
+import { Search, Loader2, ShoppingBag, Landmark, Eye, CheckCircle2, Phone, User, Calendar } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -21,12 +21,14 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNo
 import { collection, doc, increment } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
 export default function AdminSalesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const salesQuery = useMemoFirebase(() => {
     if (!db || isUserLoading || !user) return null;
@@ -34,6 +36,12 @@ export default function AdminSalesPage() {
   }, [db, user, isUserLoading]);
 
   const { data: allSales, isLoading } = useCollection(salesQuery);
+
+  const filteredSales = (allSales || []).filter(s => 
+    s.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.buyerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.voucherReference?.toLowerCase().includes(searchTerm.toLowerCase())
+  ).sort((a, b) => String(b.saleDate || '').localeCompare(String(a.saleDate || '')));
 
   const handleApproveSale = (saleId: string) => {
     if (!db || !allSales) return;
@@ -73,9 +81,14 @@ export default function AdminSalesPage() {
             <h1 className="text-3xl md:text-4xl font-headline font-bold text-slate-900 mb-2 tracking-tight leading-none uppercase italic">Registro de <span className="text-primary">Ventas</span></h1>
             <p className="text-sm md:text-base text-slate-500 font-medium">Valida los depósitos bancarios para activar el acceso y pagar comisiones.</p>
           </div>
-          <div className="relative w-full md:w-72">
+          <div className="relative w-full md:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input className="pl-11 h-14 rounded-2xl bg-white border-none shadow-sm ring-1 ring-slate-200" placeholder={t.search} />
+            <Input 
+              className="pl-11 h-14 rounded-2xl bg-white border-none shadow-xl ring-1 ring-slate-100" 
+              placeholder="Buscar por voucher, producto o cliente..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -83,11 +96,11 @@ export default function AdminSalesPage() {
           <div className="flex justify-center py-32">
             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
           </div>
-        ) : !allSales || allSales.length === 0 ? (
+        ) : filteredSales.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-24 text-center bg-white/50 rounded-[3rem] border-slate-100">
             <ShoppingBag className="h-16 w-16 text-slate-200 mb-6" />
             <h3 className="text-xl font-black text-slate-400 mb-2 uppercase">Sin ventas registradas</h3>
-            <p className="text-slate-400 max-w-xs text-sm font-bold">No se han registrado transacciones bancarias todavía.</p>
+            <p className="text-slate-400 max-w-xs text-sm font-bold">No se han encontrado transacciones bancarias con esos criterios.</p>
           </Card>
         ) : (
           <div className="space-y-6">
@@ -107,7 +120,7 @@ export default function AdminSalesPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {allSales.map((sale) => (
+                      {filteredSales.map((sale) => (
                         <TableRow key={sale.id} className="h-24 border-b last:border-0 group hover:bg-slate-50/30">
                           <TableCell className="px-8">
                             <span className="font-mono font-black text-sm text-primary tracking-tighter">{sale.voucherReference || 'SIN REF'}</span>
@@ -139,7 +152,7 @@ export default function AdminSalesPage() {
                                   <CheckCircle2 className="h-4 w-4 mr-2" /> APROBAR
                                 </Button>
                               )}
-                              <SaleDetailsDialog sale={sale} t={t} />
+                              <SaleDetailsDialog sale={sale} />
                             </div>
                           </TableCell>
                         </TableRow>
@@ -152,7 +165,7 @@ export default function AdminSalesPage() {
 
             {/* VISTA MÓVIL */}
             <div className="grid grid-cols-1 gap-4 lg:hidden">
-              {allSales.map((sale) => (
+              {filteredSales.map((sale) => (
                 <Card key={sale.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -179,7 +192,7 @@ export default function AdminSalesPage() {
                         APROBAR
                       </Button>
                     )}
-                    <SaleDetailsDialog sale={sale} t={t} />
+                    <SaleDetailsDialog sale={sale} />
                   </div>
                 </Card>
               ))}
@@ -191,7 +204,7 @@ export default function AdminSalesPage() {
   )
 }
 
-function SaleDetailsDialog({ sale, t }: { sale: any, t: any }) {
+function SaleDetailsDialog({ sale }: { sale: any }) {
   return (
     <Dialog>
       <DialogTrigger asChild>

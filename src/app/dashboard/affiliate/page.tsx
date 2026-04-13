@@ -43,7 +43,9 @@ export default function AffiliateDashboard() {
 
   useEffect(() => {
     if (isMounted && user?.uid) {
-      setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
+      // Usar window.location.origin de forma segura en el cliente
+      const origin = window.location.origin;
+      setInviteLink(`${origin}/auth/register/buyer?ref=${user.uid}`);
       
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
@@ -80,12 +82,13 @@ export default function AffiliateDashboard() {
     return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); };
   }, [isMounted, user, profile, affiliateRef]);
 
-  // PRIVACIDAD: Solo mis ventas
+  // PRIVACIDAD: Solo mis ventas (Filtro por affiliateId)
   const salesQuery = useMemoFirebase(() => (db && user ? query(collection(db, 'sales'), where('affiliateId', '==', user.uid)) : null), [db, user]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
   if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="animate-spin text-primary" /></div>
 
+  // Solo sumar comisiones que ya han sido aprobadas (status === 'Completed')
   const totalEarnedApproved = (sales || [])
     .filter(s => s.status === 'Completed')
     .reduce((acc, s) => acc + (s.commissionEarned || 0), 0);
@@ -100,7 +103,7 @@ export default function AffiliateDashboard() {
                 <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} />
                 <AvatarFallback className="bg-primary text-white text-2xl font-black">{profile?.firstName?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <button onClick={() => setIsEditingPhoto(true)} className="absolute -bottom-1 -right-1 bg-white p-2 rounded-xl shadow-lg border text-primary"><Camera className="h-4 w-4" /></button>
+              <button onClick={() => setIsEditingPhoto(true)} className="absolute -bottom-1 -right-1 bg-white p-2 rounded-xl shadow-lg border text-primary transition-transform hover:scale-110"><Camera className="h-4 w-4" /></button>
             </div>
             <div className="space-y-1">
               <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">{t.welcomeBack}, {profile?.firstName}</h1>
@@ -131,17 +134,17 @@ export default function AffiliateDashboard() {
                 ))}
               </div>
               <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
-                <CardHeader className="px-10 py-8 border-b border-slate-50"><CardTitle className="text-xl font-headline font-black text-slate-900 uppercase">Mis Ventas</CardTitle></CardHeader>
+                <CardHeader className="px-10 py-8 border-b border-slate-50"><CardTitle className="text-xl font-headline font-black text-slate-900 uppercase">Mis Ventas Recientes</CardTitle></CardHeader>
                 <CardContent className="p-0">
                   {salesLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : 
-                  !sales || sales.length === 0 ? <div className="text-center py-20 opacity-30"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin ventas todavía</p></div> : (
+                  !sales || sales.length === 0 ? <div className="text-center py-20 opacity-30"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs font-black uppercase">Sin ventas registradas</p></div> : (
                     <Table><TableHeader><TableRow className="bg-slate-50/50"><TableHead className="px-10 uppercase text-[9px] font-black text-slate-400">Producto</TableHead><TableHead className="uppercase text-[9px] font-black text-slate-400">Estado</TableHead><TableHead className="px-10 text-right uppercase text-[9px] font-black text-slate-400">Comisión</TableHead></TableRow></TableHeader>
                     <TableBody>{sales.slice(0, 10).map((sale) => (
                       <TableRow key={sale.id} className="h-16 hover:bg-slate-50/30 border-b last:border-0">
                         <TableCell className="px-10 font-black text-xs uppercase">{sale.productName}</TableCell>
                         <TableCell>
                           <Badge className={cn("text-[8px] font-black uppercase border-none", sale.status === 'Completed' ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600")}>
-                            {sale.status === 'Completed' ? 'Válida ✓' : 'Pendiente Validation'}
+                            {sale.status === 'Completed' ? 'Aprobada ✓' : 'Pendiente Validación'}
                           </Badge>
                         </TableCell>
                         <TableCell className="px-10 text-right font-black text-green-600">+${sale.commissionEarned?.toFixed(2)}</TableCell>
@@ -156,7 +159,18 @@ export default function AffiliateDashboard() {
                  <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12"><LinkIcon className="h-20 w-20" /></div>
                  <div className="flex flex-col gap-6 relative z-10">
                     <div className="flex items-center gap-4"><div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner"><LinkIcon className="h-6 w-6" /></div><div><h3 className="text-sm font-black uppercase">{t.inviteLink}</h3><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Sincroniza tus prospectos</p></div></div>
-                    <div className="space-y-3"><Input readOnly value={inviteLink} className="h-14 text-[10px] font-mono bg-slate-50 border-none rounded-2xl px-5" /><Button onClick={() => { navigator.clipboard.writeText(inviteLink); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: "Enlace Copiado" }); }} className="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2">{copied ? <BadgeCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "VINCULADO" : "COPIAR LINK"}</Button></div>
+                    <div className="space-y-3">
+                      <Input readOnly value={inviteLink} className="h-14 text-[10px] font-mono bg-slate-50 border-none rounded-2xl px-5" />
+                      <Button onClick={() => { 
+                        navigator.clipboard.writeText(inviteLink); 
+                        setCopied(true); 
+                        setTimeout(() => setCopied(false), 2000); 
+                        toast({ title: "Enlace Copiado", description: "Envíalo a tus clientes potenciales." }); 
+                      }} className="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2">
+                        {copied ? <BadgeCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        {copied ? "VINCULADO" : "COPIAR LINK"}
+                      </Button>
+                    </div>
                  </div>
               </Card>
            </div>
@@ -166,8 +180,13 @@ export default function AffiliateDashboard() {
         <DialogContent className="rounded-[3rem] p-10 border-none shadow-2xl bg-white">
           <div className="space-y-8">
             <DialogHeader><DialogTitle className="text-2xl font-black text-center uppercase italic">Cambiar <span className="text-primary">Foto de Perfil</span></DialogTitle></DialogHeader>
-            <Input placeholder="URL de tu imagen..." value={newPhotoUrl} onChange={(e) => setNewPhotoUrl(e.target.value)} className="h-16 rounded-2xl" />
-            <Button onClick={() => { if(affiliateRef) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); setIsEditingPhoto(false); toast({ title: "Foto Actualizada" }); }} className="w-full h-14 rounded-2xl bg-primary text-white font-black">GUARDAR</Button>
+            <Input placeholder="Pega la URL de tu imagen aquí..." value={newPhotoUrl} onChange={(e) => setNewPhotoUrl(e.target.value)} className="h-16 rounded-2xl" />
+            <Button onClick={() => { 
+              if(affiliateRef) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); 
+              setIsEditingPhoto(false); 
+              setNewPhotoUrl('');
+              toast({ title: "Foto Actualizada" }); 
+            }} className="w-full h-14 rounded-2xl bg-primary text-white font-black">GUARDAR CAMBIOS</Button>
           </div>
         </DialogContent>
       </Dialog>

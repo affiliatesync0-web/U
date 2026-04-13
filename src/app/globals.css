@@ -86,23 +86,25 @@
     @apply font-headline font-black;
   }
   
-  /* CRÍTICO: FUENTE DE 16PX PARA EVITAR ZOOM EN MÓVILES (iOS/ANDROID) */
+  /* CRÍTICO: FUENTE DE 16PX GLOBAL PARA EVITAR ZOOM EN MÓVILES (iOS/ANDROID) */
   input, 
   textarea, 
   select, 
   [role="combobox"], 
-  button {
+  button,
+  .form-control {
     font-size: 16px !important;
   }
   
-  @media screen and (max-width: 768px) {
-    input, textarea, select {
-      font-size: 16px !important;
+  /* Mantener estética compacta en desktop pero respetar los 16px mínimos */
+  @media screen and (min-width: 1024px) {
+    .text-sm-desktop {
+      font-size: 0.875rem !important;
     }
   }
 }
 
-/* Ocultar elementos de desarrollo del framework */
+/* Ocultar elementos de desarrollo */
 nextjs-portal, 
 #-nextjs-build-indicator, 
 .nextjs-static-indicator, 
