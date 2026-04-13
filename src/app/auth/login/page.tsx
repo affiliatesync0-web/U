@@ -107,12 +107,14 @@ export default function LoginPage() {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     
     try {
+      // 1. Verificar si es ADMIN
       if (userEmail?.toLowerCase().trim() === ADMIN_EMAIL) {
         toast({ title: "Acceso Maestro", description: "Iniciando centro de control." });
         router.push('/dashboard/admin');
         return;
       }
 
+      // 2. Verificar si es AFILIADO
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         toast({ title: "Sesión Iniciada", description: "Bienvenido de nuevo, socio." });
@@ -120,6 +122,7 @@ export default function LoginPage() {
         return;
       }
 
+      // 3. Verificar si es COMPRADOR
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
         toast({ title: "Sesión Iniciada", description: "Accediendo a tus cursos." });
@@ -127,6 +130,7 @@ export default function LoginPage() {
         return;
       }
 
+      // 4. SI ES NUEVO (TikTok Style): Crear perfil de comprador y entrar
       const names = displayName?.split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || 'Connect';
@@ -145,7 +149,10 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error("Success handling error:", err);
-      toast({ variant: "destructive", title: "Error de Datos", description: "No pudimos configurar tu perfil automáticamente." });
+      // Fallback: Si Firestore falla pero el usuario está autenticado, intentamos llevarlo al panel de compras
+      toast({ title: "Bienvenido", description: "Sincronizando panel..." });
+      router.push('/dashboard/buyer');
+    } finally {
       setLoading(false);
     }
   };
@@ -154,17 +161,22 @@ export default function LoginPage() {
     setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
+    
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
+      
       if (result.user) {
+        // Ejecutamos la lógica de redirección inmediatamente
         await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       }
     } catch (error: any) {
       console.error("Google Login Error:", error.code);
+      setLoading(false); // Importante: liberar el botón si hay error
+      
       if (error.code !== 'auth/popup-closed-by-user') {
         let msg = "No se pudo conectar con Google.";
         if (error.code === 'auth/unauthorized-domain') {
@@ -174,8 +186,6 @@ export default function LoginPage() {
         setErrorMsg(msg);
         toast({ variant: "destructive", title: "Error Google", description: msg });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -190,12 +200,11 @@ export default function LoginPage() {
       await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       console.error("Email Login Error:", error.code);
+      setLoading(false);
       let msg = "Credenciales inválidas.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') msg = "Correo o contraseña incorrectos.";
       setErrorMsg(msg);
       toast({ variant: "destructive", title: "Error de Acceso", description: msg });
-    } finally {
-      setLoading(false);
     }
   };
 
