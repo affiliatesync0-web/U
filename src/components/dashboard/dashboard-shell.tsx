@@ -23,6 +23,8 @@ import {
   Zap,
   MapPin,
   MessageSquareShare,
+  Globe,
+  Sparkles
 } from "lucide-react"
 import {
   Sidebar,
@@ -158,6 +160,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Soporte Sync", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
     { title: "Estrategias", url: "/dashboard/affiliate/sales-lab", icon: Zap },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
