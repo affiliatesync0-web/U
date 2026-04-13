@@ -86,8 +86,12 @@
     @apply font-headline font-black;
   }
   
-  /* PREVENCION GLOBAL DE ZOOM: CRÍTICO PARA APP EXPERIENCE */
-  input, textarea, select, button {
+  /* CRÍTICO: FUENTE DE 16PX PARA EVITAR ZOOM EN MÓVILES (iOS/ANDROID) */
+  input, 
+  textarea, 
+  select, 
+  [role="combobox"], 
+  button {
     font-size: 16px !important;
   }
   
@@ -121,11 +125,6 @@ nextjs-portal,
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
 }
 
-/* Estilo App */
-.app-container {
-  @apply max-w-md mx-auto min-h-screen relative overflow-x-hidden;
-}
-
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -133,7 +132,6 @@ nextjs-portal,
   @apply bg-slate-200 rounded-full;
 }
 
-/* Estilos para que el Chat se vea profesional */
 .chat-bg {
   background-color: #E5DDD5;
   background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');

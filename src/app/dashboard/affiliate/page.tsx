@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, Camera, MapPin, Bell, BadgeCheck, Navigation } from 'lucide-react'
+import { ShoppingBag, TrendingUp, Loader2, Wallet, Link as LinkIcon, Copy, Check, Smartphone, Camera, MapPin, Bell, BadgeCheck } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -23,12 +23,11 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDo
 import { collection, query, where, doc, onSnapshot } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const router = useRouter();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const db = useFirestore();
 
@@ -38,19 +37,11 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied' | 'watching'>('pending');
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
   const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
-    if (isMounted && typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then(setNotifPermission);
-      }
-    }
-
     if (isMounted && user?.uid) {
       setInviteLink(`${window.location.origin}/auth/register/buyer?ref=${user.uid}`);
       
@@ -60,9 +51,6 @@ export default function AffiliateDashboard() {
           if (change.type === "added") {
             const notif = change.doc.data();
             toast({ title: notif.title, description: notif.message });
-            if (Notification.permission === "granted") {
-              new Notification(notif.title, { body: notif.message });
-            }
           }
         });
       });
@@ -77,42 +65,27 @@ export default function AffiliateDashboard() {
   useEffect(() => {
     if (isMounted && user?.uid && profile && affiliateRef) {
       if ("geolocation" in navigator) {
-        if (watchIdRef.current !== null) {
-          navigator.geolocation.clearWatch(watchIdRef.current);
-        }
-
         watchIdRef.current = navigator.geolocation.watchPosition(
           (position) => {
             setLocationStatus('watching');
             updateDocumentNonBlocking(affiliateRef, {
-              lastLocation: { 
-                lat: position.coords.latitude, 
-                lng: position.coords.longitude, 
-                updatedAt: new Date().toISOString() 
-              }
+              lastLocation: { lat: position.coords.latitude, lng: position.coords.longitude, updatedAt: new Date().toISOString() }
             });
           },
-          () => {
-            setLocationStatus('denied');
-          },
+          () => setLocationStatus('denied'),
           { enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
         );
       }
     }
-
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
+    return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); };
   }, [isMounted, user, profile, affiliateRef]);
 
+  // PRIVACIDAD: Solo mis ventas
   const salesQuery = useMemoFirebase(() => (db && user ? query(collection(db, 'sales'), where('affiliateId', '==', user.uid)) : null), [db, user]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
   if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="animate-spin text-primary" /></div>
 
-  // Solo contar ganancias de ventas COMPLETADAS (Aprobadas por admin)
   const totalEarnedApproved = (sales || [])
     .filter(s => s.status === 'Completed')
     .reduce((acc, s) => acc + (s.commissionEarned || 0), 0);
@@ -133,35 +106,12 @@ export default function AffiliateDashboard() {
               <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">{t.welcomeBack}, {profile?.firstName}</h1>
               <div className="flex items-center gap-3">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]"> Workspace Socio Platinum</p>
-                {locationStatus === 'watching' && (
-                  <Badge className="bg-green-100 text-green-600 border-none text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                    LIVE MAP ACTIVO
-                  </Badge>
-                )}
+                {locationStatus === 'watching' && <Badge className="bg-green-100 text-green-600 border-none text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />MAPA ACTIVO</Badge>}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-             {notifPermission !== 'granted' && (
-               <Button onClick={() => Notification.requestPermission().then(setNotifPermission)} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase">
-                 <Bell className="mr-2 h-3 w-3" /> Habilitar Alertas
-               </Button>
-             )}
-             <div className="h-10 px-5 bg-white rounded-xl flex items-center gap-3 shadow-sm border border-slate-100"><Wallet className="h-4 w-4 text-primary" /><span className="text-xs font-black">${profile?.currentBalance?.toFixed(2)}</span></div>
-          </div>
+          <div className="h-10 px-5 bg-white rounded-xl flex items-center gap-3 shadow-sm border border-slate-100"><Wallet className="h-4 w-4 text-primary" /><span className="text-xs font-black">${profile?.currentBalance?.toFixed(2)}</span></div>
         </div>
-
-        {locationStatus === 'denied' && (
-          <div className="bg-amber-50 border border-amber-100 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-6">
-            <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner"><MapPin className="h-6 w-6" /></div>
-            <div className="flex-1 text-center md:text-left">
-              <p className="text-xs font-black text-amber-900 uppercase tracking-widest mb-1">Geolocalización Requerida</p>
-              <p className="text-[11px] font-medium text-amber-700 leading-relaxed">Activa tu ubicación para que el administrador pueda ver tu alcance en el Mapa de Red.</p>
-            </div>
-            <Button onClick={() => window.location.reload()} variant="outline" className="h-12 px-6 rounded-xl border-amber-200 text-amber-700 font-black text-[10px] uppercase">ACTIVAR</Button>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
            <div className="lg:col-span-8 space-y-8">
@@ -171,7 +121,7 @@ export default function AffiliateDashboard() {
                   { title: t.totalSales, value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
                   { title: "Ganancias Aprobadas", value: `$${totalEarnedApproved.toFixed(2)}`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
                 ].map((stat) => (
-                  <Card key={stat.title} className="border-none shadow-xl rounded-[2.5rem] bg-white group hover:scale-[1.02] transition-all overflow-hidden ring-1 ring-slate-100">
+                  <Card key={stat.title} className="border-none shadow-xl rounded-[2.5rem] bg-white hover:scale-[1.02] transition-all ring-1 ring-slate-100">
                     <CardContent className="p-8">
                       <div className={`h-12 w-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6 shadow-inner`}><stat.icon className="h-6 w-6" /></div>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.title}</p>
@@ -190,10 +140,7 @@ export default function AffiliateDashboard() {
                       <TableRow key={sale.id} className="h-16 hover:bg-slate-50/30 border-b last:border-0">
                         <TableCell className="px-10 font-black text-xs uppercase">{sale.productName}</TableCell>
                         <TableCell>
-                          <Badge className={cn(
-                            "text-[8px] font-black uppercase border-none",
-                            sale.status === 'Completed' ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"
-                          )}>
+                          <Badge className={cn("text-[8px] font-black uppercase border-none", sale.status === 'Completed' ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600")}>
                             {sale.status === 'Completed' ? 'Válida ✓' : 'Pendiente Validation'}
                           </Badge>
                         </TableCell>
@@ -211,9 +158,6 @@ export default function AffiliateDashboard() {
                     <div className="flex items-center gap-4"><div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner"><LinkIcon className="h-6 w-6" /></div><div><h3 className="text-sm font-black uppercase">{t.inviteLink}</h3><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Sincroniza tus prospectos</p></div></div>
                     <div className="space-y-3"><Input readOnly value={inviteLink} className="h-14 text-[10px] font-mono bg-slate-50 border-none rounded-2xl px-5" /><Button onClick={() => { navigator.clipboard.writeText(inviteLink); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: "Enlace Copiado" }); }} className="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2">{copied ? <BadgeCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "VINCULADO" : "COPIAR LINK"}</Button></div>
                  </div>
-              </Card>
-              <Card className="border-none bg-slate-900 shadow-2xl rounded-[3rem] p-10 text-white relative overflow-hidden">
-                 <div className="relative z-10 space-y-6"><div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl"><Bell className="h-6 w-6" /></div><div className="space-y-2"><h4 className="text-xl font-headline font-black uppercase">Alertas Activas</h4><p className="text-slate-400 text-xs font-medium">Recibe notificaciones de pagos y mensajes del administrador.</p></div><Button onClick={() => Notification.requestPermission()} variant="outline" className="w-full h-12 rounded-xl border-white/10 text-white font-black text-[10px] uppercase">HABILITAR AHORA</Button></div>
               </Card>
            </div>
         </div>
