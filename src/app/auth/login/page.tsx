@@ -214,7 +214,11 @@ export default function LoginPage() {
           
           <CardHeader className="text-center p-0 mb-8">
             <CardTitle className="text-3xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">
-              {showPhoneLogin ? 'Acceso <span class="text-primary">Teléfono</span>' : 'Iniciar <span class="text-primary">Sesión</span>'}
+              {showPhoneLogin ? (
+                <>Acceso <span className="text-primary">Teléfono</span></>
+              ) : (
+                <>Iniciar <span className="text-primary">Sesión</span></>
+              )}
             </CardTitle>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-2">
               {showPhoneLogin ? 'Verificación vía SMS' : 'Acceso exclusivo para socios y clientes'}
@@ -227,7 +231,7 @@ export default function LoginPage() {
                 {/* LOGIN CON EMAIL */}
                 <form onSubmit={handleEmailLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email</Label>
+                    <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email de Usuario</Label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
