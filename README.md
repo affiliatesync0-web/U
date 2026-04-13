@@ -13,27 +13,21 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 ## 🚀 Guía de Configuración Crítica (IMPORTANTE)
 
 ### 1. Habilitar Métodos de Autenticación
-Si ves errores como `auth/admin-restricted-operation` o `Error Google`:
-1. Ve a **Consola de Firebase** > **Authentication** -> **Sign-in method**.
-2. **Correo electrónico/contraseña**: Habilita y asegúrate de que el registro de nuevos usuarios esté permitido.
-3. **Google**: Habilita el proveedor de Google. Asegúrate de configurar el email de soporte.
-4. **Teléfono (CRÍTICO)**: 
-   - Habilita el proveedor **Teléfono**.
-   - Si estás en modo de prueba, añade tu número personal en la sección "Números de teléfono para pruebas" con el código `123456`.
-5. **Dominios Autorizados (MUY IMPORTANTE)**:
-   - Ve a **Authentication** -> **Settings** -> **Authorized domains**.
-   - Haz clic en **"Añadir dominio"**.
-   - Añade `affiliatesync.vercel.app` (o el dominio donde tengas desplegada la app).
-   - Añade también `localhost` si vas a probar localmente.
-   - **Sin esto, tanto el login de Google como el SMS de verificación fallarán siempre.**
+Si ves errores como `auth/unauthorized-domain` o fallos al iniciar con Google/SMS:
+1. Ve a **Consola de Firebase** > **Authentication**.
+2. **Sign-in method**: Habilita **Google**, **Email/Password** y **Teléfono**.
+3. **DOMINIOS AUTORIZADOS (CRÍTICO)**:
+   - Ve a **Settings** -> **Authorized domains**.
+   - Haz clic en **"Add domain"**.
+   - Añade `localhost` (si pruebas en tu PC).
+   - Añade el dominio de Vercel (ej: `affiliatesync.vercel.app`).
+   - **Sin esto, tanto el login de Google como el SMS fallarán siempre por seguridad.**
 
 ### 2. Activar Subida de Videos (Storage) - Error de Región y Reglas
-Si la subida de videos falla o el sistema dice "Error Desconocido":
+Si la subida de videos falla:
 1. Ve a **Consola de Firebase** > **Storage**.
-2. Haz clic en **"Comenzar"** o **"Crea un bucket"**.
-3. **UBICACIÓN CRÍTICA**: Elige **`us-central1`** (Estados Unidos). Otras regiones pueden ser lentas desde Nicaragua o no tener capa gratuita.
-4. Selecciona **"Comenzar en modo de prueba"**.
-5. Una vez activo, ve a la pestaña **"Rules"** (Reglas) y pega exactamente esto:
+2. **UBICACIÓN CRÍTICA**: Elige **`us-central1`** (Estados Unidos). Otras regiones pueden ser lentas desde Nicaragua.
+3. **Reglas de Seguridad**: Pega esto en la pestaña "Rules":
    ```rules
    rules_version = '2';
    service firebase.storage {
@@ -44,7 +38,7 @@ Si la subida de videos falla o el sistema dice "Error Desconocido":
      }
    }
    ```
-6. Haz clic en **Publicar**.
+4. Haz clic en **Publicar**.
 
 ### 3. Variables de Entorno
 Configura estas variables para habilitar todas las funciones administrativas:

@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  AlertCircle
+  AlertCircle,
+  ShieldAlert
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -41,7 +42,7 @@ import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { COUNTRY_CODES } from '@/lib/constants'
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -53,6 +54,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState('email')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | null>(null)
 
   // Estados para Login por Email
   const [email, setEmail] = useState('')
@@ -105,14 +107,12 @@ export default function LoginPage() {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     
     try {
-      // 1. Acceso Maestro
       if (userEmail?.toLowerCase().trim() === ADMIN_EMAIL) {
         toast({ title: "Acceso Maestro", description: "Iniciando centro de control." });
         router.push('/dashboard/admin');
         return;
       }
 
-      // 2. Buscar en Afiliados
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         toast({ title: "Sesión Iniciada", description: "Bienvenido de nuevo, socio." });
@@ -120,7 +120,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Buscar en Compradores
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
         toast({ title: "Sesión Iniciada", description: "Accediendo a tus cursos." });
@@ -128,7 +127,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. FLUJO TIKTOK: Crear perfil automáticamente si no existe (solo para Google/SMS)
       const names = displayName?.split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || 'Connect';
@@ -153,6 +151,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
     const provider = new GoogleAuthProvider();
@@ -168,7 +167,10 @@ export default function LoginPage() {
       console.error("Google Login Error:", error.code);
       if (error.code !== 'auth/popup-closed-by-user') {
         let msg = "No se pudo conectar con Google.";
-        if (error.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado en Firebase.";
+        if (error.code === 'auth/unauthorized-domain') {
+          setAuthErrorType('domain');
+          msg = "DOMINIO NO AUTORIZADO: Debes añadir este dominio a tu Consola de Firebase.";
+        }
         setErrorMsg(msg);
         toast({ variant: "destructive", title: "Error Google", description: msg });
       }
@@ -179,6 +181,7 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
     try {
@@ -203,6 +206,7 @@ export default function LoginPage() {
       return;
     }
 
+    setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
     const fullNumber = `${countryCode}${cleanPhone}`;
@@ -216,7 +220,10 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("SMS Error:", error.code);
       let msg = "No se pudo enviar el código.";
-      if (error.code === 'auth/unauthorized-domain') msg = "Dominio no autorizado para SMS.";
+      if (error.code === 'auth/unauthorized-domain') {
+        setAuthErrorType('domain');
+        msg = "DOMINIO NO AUTORIZADO: Añade esta URL a Firebase para habilitar SMS.";
+      }
       if (error.code === 'auth/too-many-requests') msg = "Demasiados intentos. Espera unos minutos.";
       setErrorMsg(msg);
       toast({ variant: "destructive", title: "Error SMS", description: msg });
@@ -270,7 +277,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-10">
           
-          <Tabs defaultValue="email" onValueChange={(v) => { setActiveTab(v); setErrorMsg(null); }} className="space-y-8">
+          <Tabs defaultValue="email" onValueChange={(v) => { setActiveTab(v); setErrorMsg(null); setAuthErrorType(null); }} className="space-y-8">
             <TabsList className="grid grid-cols-2 h-12 bg-card border border-border p-1 rounded-2xl">
               <TabsTrigger value="email" className="rounded-xl font-black text-[10px] uppercase gap-2">
                 <Mail className="h-3 w-3" /> EMAIL
@@ -289,7 +296,20 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
 
-            {errorMsg && (
+            {authErrorType === 'domain' && (
+              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-6 animate-in zoom-in-95">
+                <ShieldAlert className="h-6 w-6 text-red-600" />
+                <AlertTitle className="text-xs font-black uppercase mb-2">Error de Configuración Firebase</AlertTitle>
+                <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
+                  Google bloqueó el acceso porque este dominio no es de confianza.<br/><br/>
+                  <span className="bg-white/50 p-2 rounded-lg block border border-red-100 italic">
+                    SOLUCIÓN: Consola Firebase &rarr; Auth &rarr; Settings &rarr; Authorized Domains &rarr; Añadir dominio actual.
+                  </span>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {errorMsg && authErrorType !== 'domain' && (
               <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-3 animate-in fade-in zoom-in-95">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-[11px] font-bold uppercase leading-tight">{errorMsg}</AlertDescription>
