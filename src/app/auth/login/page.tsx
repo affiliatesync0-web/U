@@ -78,28 +78,30 @@ export default function LoginPage() {
   const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
 
   const handleLoginSuccess = async (userEmail: string | null, uid: string) => {
+    const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+    
+    // Alerta silenciosa de acceso
     sendEmail({
-      to: 'affiliatesync0@gmail.com',
-      subject: '🔔 Nuevo Inicio de Sesión Detectado',
-      text: `Acceso en Sync Connect.\n\nUsuario: ${userEmail || 'UID: ' + uid}\nUID: ${uid}\nMétodo: Social/Google/Phone`
+      to: ADMIN_EMAIL,
+      subject: '🔔 Acceso Detectado',
+      text: `Usuario: ${userEmail || 'UID: ' + uid}\nMétodo: Activo\nFecha: ${new Date().toLocaleString()}`
     }).catch(() => {});
 
-    const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     if (userEmail?.toLowerCase().trim() === ADMIN_EMAIL) {
-      toast({ title: "Acceso Maestro", description: "Bienvenido, Administrador." });
+      toast({ title: "Acceso Maestro", description: "Bienvenido al centro de mando." });
       router.push('/dashboard/admin');
     } else {
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        toast({ title: "Bienvenido de nuevo", description: "Accediendo a tu panel de socio..." });
+        toast({ title: "Bienvenido de nuevo", description: "Sincronizando tus comisiones..." });
         router.push('/dashboard/affiliate');
       } else {
         const buyerSnap = await getDoc(doc(db, 'buyers', uid));
         if (buyerSnap.exists()) {
-          toast({ title: "Bienvenido de nuevo", description: "Accediendo a tu aula virtual..." });
+          toast({ title: "Hola de nuevo", description: "Accediendo a tus cursos adquiridos." });
           router.push('/dashboard/buyer');
         } else {
-          toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado. Por favor, regístrate primero." });
+          toast({ title: "Sesión Iniciada", description: "Por favor, completa tu registro de perfil." });
           router.push('/auth/register');
         }
       }
@@ -121,9 +123,9 @@ export default function LoginPage() {
       console.error("Login Error:", error.code);
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        msg = "Email o contraseña no coinciden con nuestros registros.";
+        msg = "Email o contraseña no coinciden.";
       }
-      toast({ variant: "destructive", title: "Error de Acceso", description: msg });
+      toast({ variant: "destructive", title: "Fallo de Acceso", description: msg });
       setLoading(false)
     }
   }
@@ -132,25 +134,35 @@ export default function LoginPage() {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
       await handleLoginSuccess(result.user.email, result.user.uid);
     } catch (error: any) {
       console.error("Google Login Error:", error);
-      toast({ variant: "destructive", title: "Error Google", description: "No se pudo completar el acceso con Google." });
+      toast({ variant: "destructive", title: "Error Google", description: "No se pudo completar el acceso social." });
       setLoading(false);
     }
   };
 
   const initRecaptcha = () => {
     try {
+      // Limpiar instancia previa si existe
       if ((window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier.clear();
       }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
-        'callback': () => {}
+        'callback': () => {
+          console.log("reCAPTCHA verificado");
+        },
+        'expired-callback': () => {
+          toast({ variant: "destructive", title: "Seguridad Expirada", description: "Por favor, intenta enviar el código de nuevo." });
+        }
       });
-      return (window as any).recaptchaVerifier;
+      
+      (window as any).recaptchaVerifier = verifier;
+      return verifier;
     } catch (e) {
       console.error("Recaptcha Init Error:", e);
       return null;
@@ -162,7 +174,7 @@ export default function LoginPage() {
     setConfigError(null);
     const cleanPhone = phoneNumber.replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length < 8) {
-      toast({ variant: "destructive", title: "Número Inválido", description: "Ingresa un número móvil válido." });
+      toast({ variant: "destructive", title: "Número Inválido", description: "Ingresa un número móvil real." });
       return;
     }
     
@@ -171,32 +183,26 @@ export default function LoginPage() {
 
     try {
       const verifier = initRecaptcha();
-      if (!verifier) throw new Error("No se pudo inicializar el verificador de seguridad.");
+      if (!verifier) throw new Error("Error de inicialización de seguridad.");
 
       const confirmation = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(confirmation);
       setPhoneStep('code');
-      toast({ title: "Código Enviado", description: `Revisa tus mensajes en el móvil ${fullNumber}.` });
+      toast({ title: "SMS Enviado", description: `Código de seguridad enviado a ${fullNumber}.` });
     } catch (error: any) {
-      console.error("Phone Auth Send Error:", error.code, error.message);
-      let errorMsg = "No se pudo enviar el SMS. Verifica el número.";
+      console.error("Phone Auth Error:", error.code);
+      let errorMsg = "No se pudo enviar el SMS.";
       
       if (error.code === 'auth/invalid-phone-number') {
-        errorMsg = "El formato del número no es aceptado por el operador.";
+        errorMsg = "El formato del número no es válido.";
       } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = "Demasiados intentos. Por favor espera unos minutos.";
-      } else if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/unauthorized-domain') {
-        errorMsg = "Configuración requerida en Firebase.";
-        setConfigError("Este dominio no está autorizado para enviar SMS o el proveedor de teléfono está desactivado en la Consola de Firebase.");
-      } else if (error.code === 'auth/captcha-check-failed') {
-        errorMsg = "La verificación de seguridad falló. Intenta de nuevo.";
+        errorMsg = "Demasiados intentos. Espera unos minutos.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMsg = "Dominio no autorizado.";
+        setConfigError("El dominio affiliatesync.vercel.app no está autorizado en tu consola de Firebase. Añádelo en Auth > Settings > Authorized Domains.");
       }
 
-      toast({ 
-        variant: "destructive", 
-        title: "Error de SMS", 
-        description: errorMsg 
-      });
+      toast({ variant: "destructive", title: "Error de SMS", description: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -211,14 +217,14 @@ export default function LoginPage() {
       const result = await confirmationResult.confirm(verificationCode.trim());
       await handleLoginSuccess(result.user.email, result.user.uid);
     } catch (error: any) {
-      console.error("OTP Verification Error:", error);
-      toast({ variant: "destructive", title: "Código Inválido", description: "El código ingresado es incorrecto o ha expirado." });
+      toast({ variant: "destructive", title: "Código Inválido", description: "El código es incorrecto o ha expirado." });
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-colors duration-300">
+      {/* Contenedor ReCaptcha CRÍTICO */}
       <div id="recaptcha-container"></div>
       
       <div className="fixed top-6 right-6 flex items-center gap-2">
@@ -264,7 +270,7 @@ export default function LoginPage() {
             {configError && (
               <Alert variant="destructive" className="mb-6 rounded-2xl bg-red-50 border-red-100">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-[10px] font-black uppercase">Nota del Administrador</AlertTitle>
+                <AlertTitle className="text-[10px] font-black uppercase">Nota Técnica</AlertTitle>
                 <AlertDescription className="text-[11px] font-medium leading-relaxed">
                   {configError}
                 </AlertDescription>
@@ -352,7 +358,7 @@ export default function LoginPage() {
                   <Button 
                     variant="outline" 
                     className="h-14 rounded-2xl border-border bg-card font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all gap-3"
-                    onClick={() => setShowPhoneLogin(true)}
+                    onClick={() => { setShowPhoneLogin(true); setPhoneStep('number'); }}
                     disabled={loading}
                   >
                     <Phone className="h-4 w-4 text-green-500" />
@@ -395,7 +401,7 @@ export default function LoginPage() {
                           />
                         </div>
                       </div>
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase px-1 leading-relaxed">Selecciona tu país e ingresa el número sin el código de área.</p>
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase px-1 leading-relaxed">Selecciona tu país e ingresa el número móvil.</p>
                     </div>
                     <Button type="submit" className="w-full h-16 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading}>
                       {loading ? <Loader2 className="animate-spin" /> : "ENVIAR CÓDIGO SMS"}

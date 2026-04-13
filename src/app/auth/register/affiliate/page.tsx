@@ -12,7 +12,7 @@ import { Loader2, Target, ArrowLeft, ShieldCheck, AlertCircle, FileCheck, Camera
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth, useFirestore } from '@/firebase'
+import { useAuth, useFirestore, useUser } from '@/firebase'
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { sendEmail } from '@/lib/email'
@@ -28,6 +28,7 @@ function AffiliateRegisterContent() {
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
+  const { user: existingUser, isUserLoading } = useUser();
   
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<Step>('info')
@@ -46,12 +47,18 @@ function AffiliateRegisterContent() {
     password: ''
   })
 
-  const [kycData, setKycData] = useState({
-    idType: 'Cédula de Identidad',
-    idNumber: ''
-  })
-
-  const [examData, setExamData] = useState({ q1: '', q2: '', q3: 'N/A' })
+  // Sincronizar datos si el usuario ya inició sesión con Google/SMS
+  useEffect(() => {
+    if (existingUser && !formData.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: existingUser.email || '',
+        phone: existingUser.phoneNumber || '',
+        firstName: existingUser.displayName?.split(' ')[0] || '',
+        lastName: existingUser.displayName?.split(' ').slice(1).join(' ') || ''
+      }));
+    }
+  }, [existingUser]);
 
   useEffect(() => {
     if (step === 'id_capture' || step === 'selfie') {
@@ -68,8 +75,8 @@ function AffiliateRegisterContent() {
           setHasCameraPermission(false);
           toast({
             variant: 'destructive',
-            title: 'Acceso Denegado',
-            description: 'Se requiere permiso de cámara para validar tu identidad.',
+            title: 'Cámara Bloqueada',
+            description: 'Necesitamos acceso a la cámara para validar tu identidad.',
           });
         }
       };
@@ -83,6 +90,13 @@ function AffiliateRegisterContent() {
       }
     };
   }, [step, toast]);
+
+  const [kycData, setKycData] = useState({
+    idType: 'Cédula de Identidad',
+    idNumber: ''
+  })
+
+  const [examData, setExamData] = useState({ q1: '', q2: '', q3: 'N/A' })
 
   const capturePhoto = (isID: boolean) => {
     if (videoRef.current) {
@@ -108,11 +122,16 @@ function AffiliateRegisterContent() {
     const cleanPass = formData.password.trim();
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
-      const user = userCredential.user;
+      let uid = existingUser?.uid;
 
-      await setDoc(doc(db, 'affiliates', user.uid), {
-        id: user.uid,
+      // Si no hay usuario autenticado (Google/SMS), creamos uno con Email/Password
+      if (!uid) {
+        const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
+        uid = userCredential.user.uid;
+      }
+
+      await setDoc(doc(db, 'affiliates', uid), {
+        id: uid,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: cleanEmail,
@@ -128,17 +147,18 @@ function AffiliateRegisterContent() {
 
       await sendEmail({
         to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Nueva Solicitud: ${formData.firstName} ${formData.lastName}`,
-        text: `Se ha registrado un nuevo socio con validación biométrica completa.\n\nEmail: ${formData.email}\nDocumento: ${kycData.idType} (${kycData.idNumber})`
+        subject: `🆕 Solicitud Afiliado: ${formData.firstName}`,
+        text: `Nuevo socio registrado.\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
       }).catch(() => {});
 
+      // Forzar cierre de sesión para que el admin lo apruebe antes de que entre
       await signOut(auth);
-      toast({ title: "Solicitud Enviada", description: "Tu identidad biométrica está siendo verificada por el administrador." });
+      toast({ title: "Registro Completado", description: "Tu perfil está en revisión. Te avisaremos pronto." });
       router.push('/auth/login');
 
     } catch (err: any) {
       console.error("Register Error:", err);
-      let msg = "No pudimos crear tu cuenta.";
+      let msg = "Error al crear perfil.";
       if (err.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
       setErrorDetail(err.code || "Fallo técnico");
       toast({ variant: "destructive", title: "Error", description: msg });
@@ -168,8 +188,10 @@ function AffiliateRegisterContent() {
                   <Target className="h-8 w-8" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">Carrera de <span className="text-primary">Afiliado</span></h2>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Empieza a ganar comisiones reales hoy</p>
+                  <h2 className="text-3xl font-headline font-black uppercase italic">Perfil de <span className="text-primary">Socio</span></h2>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">
+                    {existingUser ? 'Vinculando tu cuenta social' : 'Crea tu cuenta de acceso'}
+                  </p>
                 </div>
               </div>
 
@@ -185,17 +207,21 @@ function AffiliateRegisterContent() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">WhatsApp (Solo números)</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">WhatsApp</Label>
                   <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="h-14 rounded-2xl font-bold" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Email</Label>
-                  <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="h-14 rounded-2xl font-bold" />
+                  <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-14 rounded-2xl font-bold opacity-80" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
-                  <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required className="h-14 rounded-2xl font-bold" />
-                </div>
+                
+                {!existingUser && (
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
+                    <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required className="h-14 rounded-2xl font-bold" />
+                  </div>
+                )}
+
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20">
                   SIGUIENTE: KYC LEGAL
                 </Button>
