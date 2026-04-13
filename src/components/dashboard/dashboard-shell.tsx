@@ -67,7 +67,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   
   const [mounted, setMounted] = useState(false);
 
-  // DETECCIÓN MAESTRA DE ADMINISTRADOR
+  // DETECCIÓN MAESTRA DE ADMINISTRADOR (Inmutable)
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
   const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
 
@@ -84,15 +84,16 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
-    // 2. Si es ADMIN, siempre debe estar en rutas /dashboard/admin
+    // 2. REDIRECCIÓN MAESTRA: Si es ADMIN, siempre debe estar en rutas /dashboard/admin
+    // Bloqueamos que el administrador entre accidentalmente a paneles de comprador/afiliado
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-      router.replace('/dashboard/admin');
+      window.location.href = '/dashboard/admin'; // Forzamos redirección limpia
       return;
     }
 
     // 3. Si NO es ADMIN, tiene prohibido entrar a /dashboard/admin
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
-      router.replace('/dashboard/affiliate'); // O al panel que le corresponda
+      router.replace('/dashboard/affiliate'); 
       return;
     }
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);

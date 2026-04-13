@@ -109,10 +109,10 @@ export default function LoginPage() {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. Acceso Maestro Directo (Prioridad Absoluta)
+    // 1. Acceso Maestro Directo (Prioridad Crítica #1)
     if (cleanEmail === ADMIN_EMAIL) {
-      toast({ title: "Acceso Maestro", description: "Iniciando centro de mando..." });
-      // Usamos window.location para forzar una salida limpia del estado de login
+      toast({ title: "Acceso Maestro", description: "Bienvenido al Centro de Control, Administrador." });
+      // Usamos window.location para forzar una salida limpia del estado de login y evitar estados residuales de "buyer"
       window.location.href = '/dashboard/admin';
       return;
     }
@@ -125,7 +125,7 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Crear Perfil Comprador Automático (Non-blocking)
+      // 3. Crear Perfil Comprador Automático (Estilo TikTok - Silencioso)
       const names = (displayName || '').split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0] || 'Usuario';
       const lastName = names.slice(1).join(' ') || 'Connect';
@@ -140,7 +140,6 @@ export default function LoginPage() {
       }, { merge: true });
 
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
-      
       router.replace('/dashboard/buyer');
 
     } catch (err) {
@@ -163,7 +162,8 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       
       if (result?.user) {
-        await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
+        // Ejecutar éxito de login (No usamos await aquí para que handleLoginSuccess maneje su propia navegación)
+        handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       } else {
         setLoading(false);
       }
@@ -191,7 +191,7 @@ export default function LoginPage() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
-      await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
+      handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       setLoading(false);
       setErrorMsg("Credenciales incorrectas.");
@@ -237,7 +237,7 @@ export default function LoginPage() {
     setIsVerifying(true);
     try {
       const result = await confirmationResult.confirm(verificationCode);
-      await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
+      handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Código incorrecto." });
     } finally {
