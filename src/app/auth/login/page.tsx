@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -17,14 +16,13 @@ import {
   EyeOff,
   AlertCircle,
   ShieldAlert,
-  Sparkles,
-  Smartphone
+  Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase'
+import { useAuth, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking, useUser } from '@/firebase'
 import { 
   setPersistence, 
   browserLocalPersistence, 
@@ -49,6 +47,7 @@ export default function LoginPage() {
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
+  const { user, isUserLoading: isGlobalLoading } = useUser()
   
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -69,7 +68,17 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
+  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
+  // EFECTO DE SEGURIDAD MAESTRA: Si ya está logueado como admin, saltar el login
+  useEffect(() => {
+    if (user && !isGlobalLoading) {
+      const cleanEmail = user.email?.toLowerCase().trim();
+      if (cleanEmail === ADMIN_EMAIL) {
+        window.location.href = '/dashboard/admin';
+      }
+    }
+  }, [user, isGlobalLoading]);
 
   useEffect(() => {
     return () => {
@@ -101,31 +110,25 @@ export default function LoginPage() {
     }
   };
 
-  /**
-   * Flujo TikTok: Redirección inmediata y creación de cuenta en segundo plano.
-   * Optimizamos para evitar excepciones de cliente durante la navegación.
-   */
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
-    const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. Acceso Maestro Directo (Prioridad Crítica #1)
+    // 1. PRIORIDAD ABSOLUTA: Detección de Administrador
     if (cleanEmail === ADMIN_EMAIL) {
-      toast({ title: "Acceso Maestro", description: "Bienvenido al Centro de Control, Administrador." });
-      // Usamos window.location para forzar una salida limpia del estado de login y evitar estados residuales de "buyer"
+      toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       window.location.href = '/dashboard/admin';
       return;
     }
 
     try {
-      // 2. Verificar Rol Afiliado
+      // 2. Verificar si es Afiliado
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.replace('/dashboard/affiliate');
         return;
       }
 
-      // 3. Crear Perfil Comprador Automático (Estilo TikTok - Silencioso)
+      // 3. Flujo TikTok: Creación automática de Comprador si no es Admin ni Afiliado
       const names = (displayName || '').split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0] || 'Usuario';
       const lastName = names.slice(1).join(' ') || 'Connect';
@@ -143,7 +146,7 @@ export default function LoginPage() {
       router.replace('/dashboard/buyer');
 
     } catch (err) {
-      console.error("Redirection Error:", err);
+      console.error("Login Success Error:", err);
       router.replace('/dashboard/buyer');
     }
   };
@@ -162,7 +165,6 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       
       if (result?.user) {
-        // Ejecutar éxito de login (No usamos await aquí para que handleLoginSuccess maneje su propia navegación)
         handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       } else {
         setLoading(false);
@@ -255,7 +257,7 @@ export default function LoginPage() {
       </div>
 
       <div className="mb-8 text-center space-y-6">
-        <Link href={EXTERNAL_HOME} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
+        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span>Volver al sitio oficial</span>
         </Link>
@@ -263,7 +265,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-16 w-16 shadow-2xl rounded-[2rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
             {displayLogoUrl ? (
-              <Image src={displayLogoUrl} alt="Sync Connect" width={60} height={60} className="object-contain p-2" unoptimized />
+              <Image src={displayLogoUrl} alt="Sync Connect" fill className="object-contain p-2" unoptimized />
             ) : (
               <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
             )}

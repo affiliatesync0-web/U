@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -14,7 +13,6 @@ import {
   ShoppingBag,
   Palette,
   Users2,
-  Image as ImageIcon,
   Flame,
   ShoppingBasket,
   Mail,
@@ -24,8 +22,7 @@ import {
   Zap,
   MapPin,
   MessageSquareShare,
-  Globe,
-  Sparkles
+  Globe
 } from "lucide-react"
 import {
   Sidebar,
@@ -67,9 +64,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   
   const [mounted, setMounted] = useState(false);
 
-  // DETECCIÓN MAESTRA DE ADMINISTRADOR (Inmutable)
+  // IDENTIFICACIÓN MAESTRA: Este correo SIEMPRE es admin
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
+  const cleanEmail = user?.email?.toLowerCase().trim() || '';
+  const isUserAdmin = cleanEmail === ADMIN_EMAIL;
 
   useEffect(() => {
     setMounted(true);
@@ -84,14 +82,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
-    // 2. REDIRECCIÓN MAESTRA: Si es ADMIN, siempre debe estar en rutas /dashboard/admin
-    // Bloqueamos que el administrador entre accidentalmente a paneles de comprador/afiliado
+    // 2. REDIRECCIÓN MAESTRA: Si el correo es el de ADMIN, forzar entrada al panel admin
+    // Bloqueamos que el administrador vea el dashboard de "buyer" o "affiliate"
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-      window.location.href = '/dashboard/admin'; // Forzamos redirección limpia
+      window.location.href = '/dashboard/admin'; 
       return;
     }
 
-    // 3. Si NO es ADMIN, tiene prohibido entrar a /dashboard/admin
+    // 3. Si NO es ADMIN, tiene prohibido entrar a rutas administrativas
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/affiliate'); 
       return;
@@ -109,6 +107,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const handleLogout = async () => {
     await signOut(auth);
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
+  }
+
+  // Si es ADMIN, no renderizamos nada que no sea del panel admin (Prevención de flash de contenido)
+  if (mounted && !isUserLoading && isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black uppercase tracking-widest animate-pulse">Saltando al Centro de Control...</div>;
   }
 
   if (!mounted || isUserLoading) {
