@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -32,7 +33,7 @@ import {
   signInWithEmailAndPassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult
+  type ConfirmationResult
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
@@ -102,6 +103,7 @@ export default function LoginPage() {
 
   /**
    * Flujo TikTok: Redirección inmediata y creación de cuenta en segundo plano.
+   * Optimizamos para evitar excepciones de cliente durante la navegación.
    */
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
@@ -110,13 +112,7 @@ export default function LoginPage() {
     // 1. Acceso Maestro Directo
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de mando..." });
-      router.push('/dashboard/admin');
-      return;
-    }
-
-    if (!db) {
-      // Si la DB no está lista, intentamos entrar al panel de comprador como fallback seguro
-      router.push('/dashboard/buyer');
+      router.replace('/dashboard/admin');
       return;
     }
 
@@ -124,13 +120,13 @@ export default function LoginPage() {
       // 2. Verificar Rol (Optimizado)
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        router.push('/dashboard/affiliate');
+        router.replace('/dashboard/affiliate');
         return;
       }
 
       // 3. Crear Perfil Comprador Automático (Non-blocking)
-      const names = displayName?.split(' ') || ['Usuario', 'Sync'];
-      const firstName = names[0];
+      const names = (displayName || '').split(' ') || ['Usuario', 'Sync'];
+      const firstName = names[0] || 'Usuario';
       const lastName = names.slice(1).join(' ') || 'Connect';
 
       setDocumentNonBlocking(doc(db, 'buyers', uid), {
@@ -144,20 +140,20 @@ export default function LoginPage() {
 
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
       
-      // Forzamos navegación inmediata
-      router.push('/dashboard/buyer');
+      // Forzamos navegación inmediata con replace para evitar loops de back-button
+      router.replace('/dashboard/buyer');
 
     } catch (err) {
       console.error("Redirection Error:", err);
-      // Ante cualquier error de DB, forzamos la entrada al panel básico
-      router.push('/dashboard/buyer');
+      // Ante cualquier error técnico, priorizamos que el usuario entre al panel básico
+      router.replace('/dashboard/buyer');
     } finally {
-      setLoading(false);
+      // No reseteamos loading aquí si ya estamos navegando para evitar parpadeos/excepciones
     }
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth) {
+    if (!auth || !db) {
       toast({ variant: "destructive", title: "Error", description: "Los servicios de seguridad no están listos." });
       return;
     }
