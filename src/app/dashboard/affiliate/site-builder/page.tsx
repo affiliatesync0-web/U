@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, Sparkles, Globe, ExternalLink, Copy, Check, Trash2, Rocket, Layout, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -76,7 +77,7 @@ export default function SiteBuilderPage() {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-    toast({ title: "Link Copiado", description: "Pégalo en tus redes sociales." });
+    toast({ title: "Enlace Copiado", description: "Pégalo en tus redes sociales." });
   };
 
   return (
