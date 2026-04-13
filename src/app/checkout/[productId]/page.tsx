@@ -3,19 +3,18 @@
 
 import { useState, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
-import { doc, collection, increment } from 'firebase/firestore'
+import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
+import { doc, collection } from 'firebase/firestore'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, AlertTriangle } from 'lucide-react'
+import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, Landmark, FileText } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { sendEmail } from '@/lib/email'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 function CheckoutContent() {
   const params = useParams()
@@ -51,6 +50,12 @@ function CheckoutContent() {
       return
     }
 
+    // Si es pago por transferencia, el voucher es obligatorio
+    if (!product?.paymentLink && !formData.voucherRef.trim()) {
+      toast({ variant: "destructive", title: "Voucher Requerido", description: "Debes ingresar el número de referencia de tu transferencia." })
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -81,7 +86,7 @@ function CheckoutContent() {
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
-        status: 'Pending', // Siempre inicia como pendiente
+        status: 'Pending',
         paymentMethod: product?.paymentLink ? 'digital_link' : 'transfer',
         voucherReference: formData.voucherRef.trim() || 'LINK_DIRECTO'
       }
@@ -92,17 +97,13 @@ function CheckoutContent() {
       await sendEmail({
         to: formData.email,
         subject: `Registro de Compra - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nSi pagaste mediante el link digital, tu acceso será validado en breve.`
-      });
+        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nTu acceso será validado por la administración en breve.`
+      }).catch(() => {});
 
-      // NO INCREMENTAR SALDO AQUÍ. Se hará cuando el admin apruebe.
-
-      toast({ title: "Registro Exitoso", description: "Tu solicitud ha sido enviada para validación." })
+      toast({ title: "Registro Enviado", description: "Tu solicitud está en proceso de validación." })
 
       if (product?.paymentLink) {
-        setTimeout(() => {
-          window.location.href = product.paymentLink;
-        }, 1500);
+        window.location.href = product.paymentLink;
       } else {
         router.push('/auth/login');
       }
@@ -150,10 +151,10 @@ function CheckoutContent() {
           
           <div className="space-y-6">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none italic">
-              Acceso <span className="text-primary">Instantáneo</span>
+              Acceso <span className="text-primary">Especial</span>
             </h1>
             <p className="text-slate-500 font-medium leading-relaxed">
-              Completa tus datos para habilitar el pago de <span className="font-bold text-slate-900">{product.name}</span>.
+              Estás a un paso de obtener <span className="font-bold text-slate-900">{product.name}</span>.
             </p>
           </div>
 
@@ -168,13 +169,13 @@ function CheckoutContent() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-6 left-8 text-white">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen de Compra</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen</p>
                 <h3 className="text-xl font-headline font-black tracking-tight">{product.name}</h3>
               </div>
             </div>
             <CardContent className="p-10 space-y-6">
               <div className="flex justify-between items-end">
-                <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Total a Pagar</span>
+                <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Inversión</span>
                 <span className="text-4xl font-black text-primary tracking-tighter">${product.price?.toFixed(2)}</span>
               </div>
             </CardContent>
@@ -199,12 +200,12 @@ function CheckoutContent() {
                     <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
                       <ShoppingBag className="h-5 w-5" />
                     </div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Tus Datos de Acceso</h3>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Información del Alumno</h3>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre Completo</Label>
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre</Label>
                       <Input 
                         required 
                         placeholder="Juan"
@@ -224,7 +225,7 @@ function CheckoutContent() {
                       />
                     </div>
                     <div className="md:col-span-2 space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Gmail de Alumno</Label>
+                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Correo Electrónico</Label>
                       <Input 
                         required 
                         type="email"
@@ -250,57 +251,74 @@ function CheckoutContent() {
                   </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 pt-6 border-t border-slate-200">
                   {product.paymentLink ? (
-                    <Button 
-                      type="submit" 
-                      disabled={loading}
-                      className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[2rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02]"
-                    >
-                      {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
-                        <span className="flex items-center gap-3">
-                          <CreditCard className="h-6 w-6" /> CONTINUAR AL PAGO SEGURO
-                        </span>
-                      )}
-                    </Button>
-                  ) : (
-                    <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 text-center">
-                      <AlertTriangle className="h-8 w-8 text-amber-600 mx-auto mb-3" />
-                      <p className="text-[10px] text-amber-700 font-bold mt-1">Este producto requiere pago manual.</p>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                        <CreditCard className="h-5 w-5 text-blue-600" />
+                        <p className="text-[10px] font-bold text-blue-700 uppercase">Habilitación inmediata mediante pago digital</p>
+                      </div>
+                      <Button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[2rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02]"
+                      >
+                        {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
+                          <span className="flex items-center gap-3">
+                            <CreditCard className="h-6 w-6" /> PAGAR CON LINK SEGURO
+                          </span>
+                        )}
+                      </Button>
                     </div>
-                  )}
+                  ) : (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 shadow-inner">
+                          <Landmark className="h-5 w-5" />
+                        </div>
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Pago por Transferencia</h3>
+                      </div>
 
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="manual" className="border-none">
-                      <AccordionTrigger className="h-14 rounded-2xl bg-slate-100 px-6 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:no-underline">
-                        PAGO MANUAL (SOLO EMERGENCIAS)
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-6 space-y-6">
-                        <div className="p-6 rounded-[2rem] bg-white border-2 border-dashed border-slate-200 space-y-4 text-center">
+                      <div className="p-8 rounded-[2.5rem] bg-white border-2 border-dashed border-slate-200 space-y-6 text-center shadow-inner">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                           <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.bankName}</p>
-                            <p className="text-sm font-black text-slate-800">{product.payoutBankId}</p>
+                            <p className="text-sm font-black text-slate-800 uppercase">{product.payoutBankId || product.bankType}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.accountNumber}</p>
-                            <p className="text-2xl font-black text-primary font-mono">{product.payoutBankAccountNumber}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Titular</p>
+                            <p className="text-sm font-black text-slate-800 uppercase">{product.payoutBankAccountHolderName || product.bankHolder}</p>
                           </div>
-                          <div className="space-y-2 pt-4">
-                            <Label className="text-[9px] font-black uppercase text-slate-500">Nº de Referencia del Voucher</Label>
-                            <Input 
-                              placeholder="Escribe la referencia aquí" 
-                              value={formData.voucherRef}
-                              onChange={e => setFormData({...formData, voucherRef: e.target.value})}
-                              className="h-12 rounded-xl text-center font-bold"
-                            />
+                          <div className="md:col-span-2">
+                            <p className="text-[9px] font-black text-primary uppercase tracking-widest">Número de Cuenta</p>
+                            <p className="text-3xl font-black text-slate-900 font-mono tracking-tighter">{product.payoutBankAccountNumber || product.bankAccount}</p>
                           </div>
-                          <Button onClick={handlePurchase} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black text-xs">
-                            COMPLETAR CON VOUCHER
-                          </Button>
                         </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+
+                        <div className="space-y-3 pt-6 border-t">
+                          <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2 justify-center">
+                            <FileText className="h-3 w-3" /> Nº de Referencia del Voucher
+                          </Label>
+                          <Input 
+                            required
+                            placeholder="Escribe la referencia aquí" 
+                            value={formData.voucherRef}
+                            onChange={e => setFormData({...formData, voucherRef: e.target.value})}
+                            className="h-14 rounded-2xl text-center font-black text-xl border-primary/20 ring-4 ring-primary/5"
+                          />
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Indispensable para validar tu acceso.</p>
+                        </div>
+
+                        <Button 
+                          onClick={handlePurchase} 
+                          disabled={loading}
+                          className="w-full h-18 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl hover:bg-slate-800"
+                        >
+                          {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "REGISTRAR PAGO Y FINALIZAR"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>

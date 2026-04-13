@@ -1,25 +1,31 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, DollarSign, Loader2, Landmark, User, Info, Flame, Star, Sparkles, ShoppingCart, CreditCard, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { Search, Loader2, Landmark, CreditCard, ShieldCheck, AlertTriangle, FileText } from 'lucide-react'
 import Image from 'next/image'
-import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection } from 'firebase/firestore'
 import { useLanguage } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useState } from 'react'
+import Link from 'next/link'
 
 export default function BuyerProductsPage() {
   const { t } = useLanguage();
   const db = useFirestore();
+  const [searchTerm, setSearchTerm] = useState('');
   
   const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
+
+  const filteredProducts = (products || []).filter(p => 
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardShell role="buyer">
@@ -28,7 +34,7 @@ export default function BuyerProductsPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                <ShoppingCart className="h-6 w-6" />
+                <ShieldCheck className="h-6 w-6" />
               </div>
               <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Tienda Sync Connect</span>
             </div>
@@ -37,7 +43,12 @@ export default function BuyerProductsPage() {
           </div>
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
-            <Input className="pl-16 h-20 rounded-[2.5rem] border-none bg-white shadow-xl text-lg font-bold" placeholder="Buscar..." />
+            <Input 
+              className="pl-16 h-20 rounded-[2.5rem] border-none bg-white shadow-xl text-lg font-bold" 
+              placeholder="Buscar..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -45,14 +56,14 @@ export default function BuyerProductsPage() {
           <div className="flex justify-center py-40">
             <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
           </div>
-        ) : !products || products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-32 opacity-20">
-            <ShoppingCart className="h-20 w-20 mx-auto mb-4" />
+            <ShieldCheck className="h-20 w-20 mx-auto mb-4" />
             <p className="font-black uppercase tracking-widest">Próximamente más productos</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Card key={product.id} className="border-none shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden flex flex-col rounded-[3.5rem] bg-white group ring-1 ring-slate-100">
                 <div className="relative h-64 w-full overflow-hidden">
                   <Image 
@@ -87,7 +98,7 @@ export default function BuyerProductsPage() {
                         COMPRAR AHORA
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-lg rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+                    <DialogContent className="max-w-xl rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
                       <div className="bg-slate-900 p-12 text-white text-center">
                          <CreditCard className="h-16 w-16 mx-auto mb-6 text-primary shadow-2xl" />
                          <DialogHeader>
@@ -96,47 +107,53 @@ export default function BuyerProductsPage() {
                            </DialogTitle>
                          </DialogHeader>
                       </div>
+                      
                       <div className="p-10 space-y-8">
                         {product.paymentLink ? (
-                          <div className="space-y-4">
+                          <div className="space-y-6">
+                            <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                              <CreditCard className="h-5 w-5 text-blue-600" />
+                              <p className="text-[10px] font-bold text-blue-700 uppercase">Acceso instantáneo mediante pago digital</p>
+                            </div>
                             <Button asChild className="w-full h-20 rounded-[2rem] bg-primary text-white font-black text-lg shadow-2xl shadow-primary/20 gap-3 hover:scale-105 transition-all">
-                              <a href={product.paymentLink} target="_blank" rel="noopener noreferrer">
+                              <Link href={`/checkout/${product.id}`} target="_blank">
                                 <CreditCard className="h-6 w-6" /> PAGAR CON LINK SEGURO
-                              </a>
+                              </Link>
                             </Button>
-                            <p className="text-[9px] font-black text-slate-400 uppercase text-center tracking-widest">Habilitación instantánea al pagar con link</p>
                           </div>
                         ) : (
-                          <div className="p-8 bg-amber-50 rounded-3xl text-center border border-amber-100">
-                            <AlertTriangle className="h-8 w-8 text-amber-600 mx-auto mb-3" />
-                            <p className="text-xs font-black text-amber-900 uppercase">Aviso de Pago</p>
-                            <p className="text-[10px] font-bold text-amber-700 mt-1">Este curso solo acepta pago manual por el momento.</p>
-                          </div>
-                        )}
+                          <div className="space-y-8 animate-in fade-in">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                                <Landmark className="h-5 w-5" />
+                              </div>
+                              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Depósito Bancario</h3>
+                            </div>
 
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="emergency" className="border-none">
-                            <AccordionTrigger className="h-14 rounded-2xl bg-slate-50 px-6 text-[10px] font-black uppercase text-slate-400 hover:no-underline">
-                              ¿PROBLEMAS? VER DATOS BANCARIOS (EMERGENCIA)
-                            </AccordionTrigger>
-                            <AccordionContent className="pt-6">
-                              <div className="p-8 rounded-[2.5rem] bg-slate-50 border-2 border-dashed border-slate-200 space-y-6 text-center">
-                                <div className="space-y-1">
-                                   <p className="text-[10px] text-slate-400 uppercase font-black">{t.bankName}</p>
-                                   <p className="font-black text-lg text-slate-900">{product.payoutBankId}</p>
+                            <div className="p-8 rounded-[2.5rem] bg-slate-50 border-2 border-dashed border-slate-200 space-y-6 text-center">
+                              <div className="grid grid-cols-2 gap-4 text-left">
+                                <div>
+                                  <p className="text-[9px] font-black text-slate-400 uppercase">{t.bankName}</p>
+                                  <p className="font-black text-xs text-slate-800 uppercase">{product.payoutBankId || product.bankType}</p>
                                 </div>
-                                <div className="space-y-1">
-                                   <p className="text-[10px] text-slate-400 uppercase font-black">NÚMERO DE CUENTA</p>
-                                   <p className="font-mono font-black text-2xl text-primary">{product.payoutBankAccountNumber}</p>
+                                <div>
+                                  <p className="text-[9px] font-black text-slate-400 uppercase">Titular</p>
+                                  <p className="font-black text-xs text-slate-800 uppercase">{product.payoutBankAccountHolderName || product.bankHolder}</p>
                                 </div>
-                                <div className="space-y-1">
-                                   <p className="text-[10px] text-slate-400 uppercase font-black">TITULAR</p>
-                                   <p className="font-black text-sm text-slate-800">{product.payoutBankAccountHolderName}</p>
+                                <div className="col-span-2 pt-4 border-t">
+                                  <p className="text-[9px] font-black text-primary uppercase">Número de Cuenta</p>
+                                  <p className="font-mono font-black text-2xl text-slate-900">{product.payoutBankAccountNumber || product.bankAccount}</p>
                                 </div>
                               </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
+                              
+                              <Button asChild className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-xl">
+                                <Link href={`/checkout/${product.id}`}>
+                                  CONTINUAR PARA SUBIR VOUCHER
+                                </Link>
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex items-center gap-4 p-4 bg-green-50 rounded-2xl border border-green-100">
                           <ShieldCheck className="h-6 w-6 text-green-600" />

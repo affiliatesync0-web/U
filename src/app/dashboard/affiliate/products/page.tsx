@@ -1,21 +1,19 @@
+
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Tag, Loader2, Landmark, User, Info, Flame, Link as LinkIcon, Check, GraduationCap, ArrowRight, ShieldCheck, Sparkles, Video, PlayCircle, Target, ShoppingBag, CreditCard } from 'lucide-react'
+import { Search, Loader2, Info, Flame, Link as LinkIcon, Check, CreditCard, Landmark, GraduationCap } from 'lucide-react'
 import Image from 'next/image'
-import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 import { useLanguage } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function AffiliateProductsPage() {
@@ -24,6 +22,7 @@ export default function AffiliateProductsPage() {
   const { user } = useUser();
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -32,6 +31,10 @@ export default function AffiliateProductsPage() {
   
   const { data: products, isLoading } = useCollection(productsQuery);
 
+  const filteredProducts = (products || []).filter(p => 
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleCopyLink = (productId: string) => {
     const link = `${window.location.origin}/checkout/${productId}?ref=${user?.uid}`;
     navigator.clipboard.writeText(link);
@@ -39,7 +42,7 @@ export default function AffiliateProductsPage() {
     setTimeout(() => setCopiedId(null), 2000);
     toast({
       title: "¡Link de Venta Copiado!",
-      description: "Tu cliente verá directamente el botón de pago digital.",
+      description: "Tu cliente verá directamente el método de pago configurado.",
     });
   };
 
@@ -55,24 +58,29 @@ export default function AffiliateProductsPage() {
               <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Mercado de Divulgación</span>
             </div>
             <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Vende <span className="text-primary">Digital</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Productos optimizados para cierre con link de pago instantáneo.</p>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Productos optimizados para cierre con link de pago o transferencia local.</p>
           </div>
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
-            <Input className="pl-16 h-20 rounded-[2.5rem] border-none bg-white shadow-xl text-lg font-bold" placeholder="Buscar curso..." />
+            <Input 
+              className="pl-16 h-20 rounded-[2.5rem] border-none bg-white shadow-xl text-lg font-bold" 
+              placeholder="Buscar curso..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center py-40"><Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" /></div>
-        ) : !products || products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-32 bg-white rounded-[4rem] border-2 border-dashed border-slate-100">
             <GraduationCap className="h-16 w-16 text-slate-200 mx-auto mb-4" />
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Catálogo en preparación</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Card key={product.id} className="border-none shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden flex flex-col rounded-[3.5rem] bg-white group ring-1 ring-slate-100">
                 <div className="relative h-64 w-full overflow-hidden">
                   <Image 
@@ -83,8 +91,10 @@ export default function AffiliateProductsPage() {
                     unoptimized={product.imageUrl?.startsWith('data:')}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
-                  <div className="absolute top-6 left-6">
-                    <Badge className="bg-primary border-none text-white font-black px-4 py-1 rounded-xl text-[9px] uppercase tracking-widest">DIGITAL READY</Badge>
+                  <div className="absolute top-6 left-6 flex gap-2">
+                    <Badge className="bg-primary border-none text-white font-black px-4 py-1 rounded-xl text-[9px] uppercase tracking-widest shadow-xl">
+                      {product.paymentLink ? 'PAGO DIGITAL' : 'TRANSFERENCIA'}
+                    </Badge>
                   </div>
                   <div className="absolute bottom-8 left-8 right-8 text-white">
                     <h3 className="text-xl font-headline font-black tracking-tight leading-tight uppercase line-clamp-2">
@@ -96,11 +106,11 @@ export default function AffiliateProductsPage() {
                 <CardContent className="p-10 flex-1 flex flex-col gap-6">
                   <div className="flex items-center justify-between p-6 rounded-[2rem] bg-slate-50 border shadow-inner">
                     <div>
-                      <p className="text-[9px] text-slate-400 font-black uppercase">Precio Sugerido</p>
+                      <p className="text-[9px] text-slate-400 font-black uppercase">Precio</p>
                       <p className="font-black text-2xl text-slate-900">${product.price?.toFixed(2)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[9px] text-green-600 font-black uppercase">Tu Ganancia</p>
+                      <p className="text-[9px] text-green-600 font-black uppercase">Ganancia</p>
                       <p className="font-black text-2xl text-green-600">{product.commissionRate}%</p>
                     </div>
                   </div>
@@ -115,7 +125,7 @@ export default function AffiliateProductsPage() {
                     </Button>
                     <Button asChild variant="outline" className="w-full h-14 rounded-2xl font-black text-[10px] uppercase border-slate-200">
                       <Link href={`/checkout/${product.id}?ref=${user?.uid}`} target="_blank">
-                        VER VISTA DEL COMPRADOR
+                        VISTA PREVIA COMPRADOR
                       </Link>
                     </Button>
                     <ProductDetailsDialog product={product} />
@@ -139,21 +149,47 @@ function ProductDetailsDialog({ product }: any) {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-xl rounded-[3.5rem] p-10 overflow-hidden border-none shadow-2xl bg-white">
-        <DialogHeader>
-          <DialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Detalles de <span className="text-primary">Cierre</span></DialogTitle>
-        </DialogHeader>
-        <div className="mt-8 space-y-8">
-          <div className="p-6 rounded-[2rem] bg-slate-50 border space-y-3">
-            <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Link de Pago Activo</h4>
-            <div className="bg-white p-4 rounded-xl border border-primary/10 flex items-center justify-between gap-4">
-              <code className="text-[10px] text-slate-500 truncate flex-1">{product.paymentLink || 'No configurado - Usará transferencia manual'}</code>
-              <CreditCard className="h-4 w-4 text-primary shrink-0" />
+        <div className="space-y-8">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Configuración de <span className="text-primary">Cierre</span></DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="p-6 rounded-[2rem] bg-slate-50 border space-y-4">
+              <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                {product.paymentLink ? <CreditCard className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
+                Método de Pago Activo
+              </h4>
+              
+              {product.paymentLink ? (
+                <div className="bg-white p-4 rounded-xl border border-primary/10 flex items-center justify-between gap-4">
+                  <code className="text-[10px] text-slate-500 truncate flex-1">{product.paymentLink}</code>
+                  <Badge className="bg-blue-100 text-blue-600 text-[8px] font-black">LINK DIGITAL</Badge>
+                </div>
+              ) : (
+                <div className="bg-white p-6 rounded-xl border border-amber-100 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase">Banco:</span>
+                    <span className="text-xs font-black uppercase">{product.payoutBankId || product.bankType}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase">Cuenta:</span>
+                    <span className="text-xs font-black font-mono">{product.payoutBankAccountNumber || product.bankAccount}</span>
+                  </div>
+                  <Badge className="w-full justify-center bg-amber-50 text-amber-600 text-[8px] font-black mt-2">TRANSFERENCIA LOCAL</Badge>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción del Curso</h4>
+              <p className="text-sm font-medium text-slate-600 leading-relaxed italic border-l-4 border-primary/20 pl-4">
+                "{product.description || 'Sin descripción disponible.'}"
+              </p>
             </div>
           </div>
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción para el Cliente</h4>
-            <p className="text-sm font-medium text-slate-600 leading-relaxed italic">"{product.description || 'Sin descripción disponible.'}"</p>
-          </div>
+          
+          <Button variant="ghost" className="w-full text-[10px] font-black uppercase text-slate-400" onClick={() => window.location.reload()}>SALIR</Button>
         </div>
       </DialogContent>
     </Dialog>
