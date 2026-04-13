@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Eye, 
   EyeOff, 
@@ -18,7 +18,8 @@ import {
   Phone, 
   Smartphone,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Globe
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -43,6 +44,7 @@ import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { sendEmail } from '@/lib/email'
+import { COUNTRY_CODES } from '@/lib/constants'
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -59,6 +61,7 @@ export default function LoginPage() {
 
   // Estados para login telefónico
   const [showPhoneLogin, setShowPhoneLogin] = useState(false)
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+505')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
@@ -148,20 +151,23 @@ export default function LoginPage() {
 
   const handleSendPhoneCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber.trim()) return;
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (!cleanPhone) return;
+    
+    const fullNumber = selectedCountryCode + cleanPhone;
     
     setLoading(true);
     setupRecaptcha();
     const appVerifier = (window as any).recaptchaVerifier;
 
     try {
-      const confirmation = await signInWithPhoneNumber(auth, phoneNumber.trim(), appVerifier);
+      const confirmation = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
       setConfirmationResult(confirmation);
       setPhoneStep('code');
       toast({ title: "Código Enviado", description: "Revisa tus mensajes de texto." });
     } catch (error: any) {
       console.error("Phone Code Error:", error);
-      toast({ variant: "destructive", title: "Error SMS", description: "No se pudo enviar el código. Verifica el formato del número (+505...)." });
+      toast({ variant: "destructive", title: "Error SMS", description: "No se pudo enviar el código. Verifica el formato del número." });
     } finally {
       setLoading(false);
     }
@@ -324,17 +330,36 @@ export default function LoginPage() {
                   <form onSubmit={handleSendPhoneCode} className="space-y-5">
                     <div className="space-y-2">
                       <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Número Móvil</Label>
-                      <div className="relative">
-                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          placeholder="+50588888888" 
-                          value={phoneNumber} 
-                          onChange={e => setPhoneNumber(e.target.value)} 
-                          className="h-14 rounded-2xl bg-card border-none ring-1 ring-border pl-12 font-bold text-lg" 
-                          required 
-                        />
+                      <div className="flex gap-2">
+                        <div className="w-[120px] shrink-0">
+                          <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
+                            <SelectTrigger className="h-14 rounded-2xl bg-card border-none ring-1 ring-border font-bold">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {COUNTRY_CODES.map((country) => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{country.flag}</span>
+                                    <span>{country.code}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="relative flex-1">
+                          <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="88888888" 
+                            value={phoneNumber} 
+                            onChange={e => setPhoneNumber(e.target.value)} 
+                            className="h-14 rounded-2xl bg-card border-none ring-1 ring-border pl-12 font-bold text-lg" 
+                            required 
+                          />
+                        </div>
                       </div>
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase px-1 leading-relaxed">Incluye el código de país (Ej: +505 para Nicaragua)</p>
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase px-1 leading-relaxed">Selecciona tu país e ingresa el número sin el código de área.</p>
                     </div>
                     <Button type="submit" className="w-full h-16 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading}>
                       {loading ? <Loader2 className="animate-spin" /> : "ENVIAR CÓDIGO SMS"}
