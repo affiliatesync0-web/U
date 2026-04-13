@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -40,7 +41,6 @@ import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
-import { sendEmail } from '@/lib/email'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { COUNTRY_CODES } from '@/lib/constants'
 
@@ -51,7 +51,6 @@ export default function LoginPage() {
   const router = useRouter()
   
   const [loading, setLoading] = useState(false)
-  const [configError, setConfigError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState('email')
 
@@ -73,15 +72,34 @@ export default function LoginPage() {
 
   const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
 
-  // Inicializar Recaptcha
+  // Limpiar recaptcha al desmontar
+  useEffect(() => {
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
+      }
+    };
+  }, []);
+
   const setupRecaptcha = (containerId: string) => {
-    if ((window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier.clear();
+    try {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: () => {
+          console.log('reCAPTCHA verificado correctamente');
+        },
+        'expired-callback': () => {
+          toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor, intenta de nuevo." });
+        }
+      });
+    } catch (error) {
+      console.error("Error al configurar reCAPTCHA:", error);
     }
-    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      size: 'invisible',
-      callback: () => {}
-    });
   };
 
   const handleLoginSuccess = async (userEmail: string | null, uid: string) => {
@@ -110,7 +128,6 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setConfigError(null);
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
@@ -118,7 +135,11 @@ export default function LoginPage() {
       await handleLoginSuccess(result.user.email, result.user.uid);
     } catch (error: any) {
       console.error("Google Login Error:", error.code);
-      toast({ variant: "destructive", title: "Error Google", description: "No se pudo completar el acceso." });
+      let msg = "No se pudo completar el acceso con Google.";
+      if (error.code === 'auth/unauthorized-domain') {
+        msg = "Este dominio no está autorizado en la consola de Firebase.";
+      }
+      toast({ variant: "destructive", title: "Error Google", description: msg });
       setLoading(false);
     }
   };
@@ -137,19 +158,38 @@ export default function LoginPage() {
   };
 
   const handleSendCode = async () => {
-    if (!phone) return;
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 7) {
+      toast({ variant: "destructive", title: "Número Inválido", description: "Ingresa un número telefónico válido." });
+      return;
+    }
+
     setLoading(true);
-    const fullNumber = `${countryCode}${phone.replace(/\D/g, '')}`;
+    const fullNumber = `${countryCode}${cleanPhone}`;
     
     try {
       setupRecaptcha('recaptcha-container');
       const verifier = (window as any).recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(result);
-      toast({ title: "Código Enviado", description: "Revisa tu WhatsApp o SMS." });
+      toast({ title: "Código Enviado", description: "Revisa tu WhatsApp o mensajes SMS." });
     } catch (error: any) {
-      console.error("SMS Error:", error.code);
-      toast({ variant: "destructive", title: "Error SMS", description: "Verifica el número o intenta más tarde." });
+      console.error("SMS Error Code:", error.code);
+      let description = "Verifica el número o intenta más tarde.";
+      
+      if (error.code === 'auth/invalid-phone-number') {
+        description = "El formato del número no es válido. Revisa el código de país.";
+      } else if (error.code === 'auth/quota-exceeded') {
+        description = "Hemos agotado la cuota de SMS para hoy. Intenta por Email o Google.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        description = "Configuración: Este dominio no tiene permiso para enviar SMS.";
+      } else if (error.code === 'auth/captcha-check-failed') {
+        description = "Fallo en la verificación de seguridad. Recarga la página.";
+      } else if (error.code === 'auth/too-many-requests') {
+        description = "Demasiados intentos. Tu número ha sido bloqueado temporalmente.";
+      }
+
+      toast({ variant: "destructive", title: "Error SMS", description });
     } finally {
       setLoading(false);
     }
@@ -161,8 +201,9 @@ export default function LoginPage() {
     try {
       const result = await confirmationResult.confirm(verificationCode);
       await handleLoginSuccess(result.user.email, result.user.uid);
-    } catch (error) {
-      toast({ variant: "destructive", title: "Código Inválido", description: "El código ingresado no es correcto." });
+    } catch (error: any) {
+      console.error("Verification Error:", error.code);
+      toast({ variant: "destructive", title: "Código Inválido", description: "El código ingresado no es correcto o ha expirado." });
       setIsVerifying(false);
     }
   };
