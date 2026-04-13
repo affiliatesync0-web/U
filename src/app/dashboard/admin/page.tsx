@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [resetting, setResetting] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
+  const [notifPermission, setNotifPermission] = useState<string>('default');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -128,22 +128,15 @@ export default function AdminDashboard() {
     if (!db) return;
     setResetting(true);
     try {
-      // 1. Obtener IDs de afiliados que tienen al menos un referido
       const buyersSnap = await getDocs(collection(db, 'buyers'));
       const activeReferrerIds = new Set(buyersSnap.docs.map(d => d.data().referredBy).filter(id => !!id));
-
-      // 2. Obtener todos los afiliados
       const affiliatesSnap = await getDocs(collection(db, 'affiliates'));
       let deletedCount = 0;
 
       for (const affDoc of affiliatesSnap.docs) {
         const affId = affDoc.id;
         const affData = affDoc.data();
-        
-        // No borrar la cuenta administrativa
         if (affData.email === 'affiliatesync0@gmail.com') continue;
-
-        // Borrar si no tiene referidos activos
         if (!activeReferrerIds.has(affId)) {
           deleteDocumentNonBlocking(doc(db, 'affiliates', affId));
           deletedCount++;

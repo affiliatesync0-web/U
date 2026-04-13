@@ -98,8 +98,9 @@ export function useCollection<T = any>(
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
 
+  // Reducimos el throw a un console.warn para evitar crashes críticos si la memoización falla temporalmente
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+    console.warn('Warning: Firestore target was not properly memoized using useMemoFirebase. Performance may be affected.');
   }
   return { data, isLoading, error };
 }

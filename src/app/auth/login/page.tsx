@@ -13,20 +13,18 @@ import {
   Image as ImageIcon, 
   ArrowLeft, 
   LogIn,
-  Mail,
-  Smartphone,
-  CheckCircle2,
   Eye,
   EyeOff,
   AlertCircle,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Smartphone
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase'
+import { useAuth, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase'
 import { 
   setPersistence, 
   browserLocalPersistence, 
@@ -37,7 +35,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult
 } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -66,7 +64,7 @@ export default function LoginPage() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
 
-  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
@@ -75,7 +73,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     return () => {
-      if ((window as any).recaptchaVerifier) {
+      if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
         try {
           (window as any).recaptchaVerifier.clear();
           (window as any).recaptchaVerifier = null;
@@ -86,7 +84,7 @@ export default function LoginPage() {
 
   const setupRecaptcha = (containerId: string) => {
     try {
-      if ((window as any).recaptchaVerifier) {
+      if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier.clear();
       }
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
@@ -103,14 +101,13 @@ export default function LoginPage() {
   };
 
   /**
-   * TikTok Style: Frictionless login and automatic account creation.
-   * Optimizado para velocidad extrema y redirección forzada.
+   * Flujo TikTok: Redirección inmediata y creación de cuenta en segundo plano.
    */
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. Acceso Maestro Instantáneo
+    // 1. Acceso Maestro Directo
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de mando..." });
       router.push('/dashboard/admin');
@@ -118,21 +115,19 @@ export default function LoginPage() {
     }
 
     try {
-      // 2. Verificar si es Afiliado (Si no, es comprador por defecto)
+      // 2. Verificar Rol (Sin bloquear la UI)
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.push('/dashboard/affiliate');
         return;
       }
 
-      // 3. Lógica TikTok: Si no es admin ni afiliado, es Comprador.
-      // Sincronizamos los datos pero NO bloqueamos la navegación.
+      // 3. Crear Perfil Comprador Automático (Non-blocking)
       const names = displayName?.split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || 'Connect';
 
-      // Usamos setDoc con merge para crear o actualizar silenciosamente
-      await setDoc(doc(db, 'buyers', uid), {
+      setDocumentNonBlocking(doc(db, 'buyers', uid), {
         id: uid,
         firstName,
         lastName,
@@ -142,11 +137,12 @@ export default function LoginPage() {
       }, { merge: true });
 
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
-      router.push('/dashboard/buyer');
+      
+      // Forzamos un pequeño delay para asegurar que el router procese la navegación
+      setTimeout(() => router.push('/dashboard/buyer'), 100);
 
     } catch (err) {
-      console.error("Login Success Logic Error:", err);
-      // Si falla la DB por alguna razón de red, lo dejamos entrar igual
+      console.error("Redirection Error:", err);
       router.push('/dashboard/buyer');
     } finally {
       setLoading(false);
@@ -177,6 +173,8 @@ export default function LoginPage() {
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
         setErrorMsg("DOMINIO NO AUTORIZADO en Firebase Console.");
+      } else if (error.code === 'auth/popup-blocked') {
+        setErrorMsg("Popup bloqueado por el navegador.");
       } else if (error.code !== 'auth/popup-closed-by-user') {
         setErrorMsg("Fallo al conectar con Google.");
       }
@@ -185,6 +183,7 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
@@ -226,7 +225,7 @@ export default function LoginPage() {
   };
 
   const handleVerifyCode = async () => {
-    if (!verificationCode || !confirmationResult) return;
+    if (!verificationCode || !confirmationResult || isVerifying) return;
     setIsVerifying(true);
     try {
       const result = await confirmationResult.confirm(verificationCode);
@@ -253,7 +252,7 @@ export default function LoginPage() {
             <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
             <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary animate-pulse" />
           </div>
-          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando Identidad...</p>
+          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando identidad...</p>
         </div>
       )}
 
@@ -328,12 +327,12 @@ export default function LoginPage() {
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.16H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.84l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.16l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                     </svg>
-                    ENTRAR CON MI CUENTA GOOGLE
+                    ENTRAR CON GOOGLE
                   </>
                 ) : <Loader2 className="animate-spin h-6 w-6 text-primary" />}
               </Button>
               <p className="text-center text-[9px] font-black text-muted-foreground uppercase tracking-widest px-4 leading-relaxed">
-                Sin registros largos. Tu acceso es automático tras elegir tu cuenta de Google.
+                Sin registros largos. Tu acceso es automático tras elegir tu cuenta.
               </p>
             </TabsContent>
 
