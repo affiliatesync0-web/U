@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -56,7 +55,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNo
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendEmail, sendNewPasswordAdmin, sendPaymentNotification } from '@/lib/email'
-import { adminResetUserPassword } from '@/lib/auth-actions'
+import { adminResetUserPassword, adminDeleteUser } from '@/lib/auth-actions'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
@@ -178,7 +177,7 @@ export default function AdminAffiliatesPage() {
                           aff.firstName?.charAt(0)
                         )}
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col min-w-0">
                         <span className="font-black text-slate-800 uppercase text-sm leading-tight">{aff.firstName} {aff.lastName}</span>
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{aff.email}</span>
                       </div>
@@ -292,11 +291,23 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
   const handleDeleteAffiliate = async () => {
     setIsProcessing(true);
     try {
+      // 1. Eliminar de Firebase Authentication primero
+      const authRes = await adminDeleteUser(affiliate.id);
+      
+      if (!authRes.success) {
+        toast({ variant: "destructive", title: "Fallo en Servidor", description: authRes.error });
+        setIsProcessing(false);
+        return;
+      }
+
+      // 2. Si se eliminó de Auth (o no existía), eliminar de Firestore
       await deleteDocumentNonBlocking(doc(db, 'affiliates', affiliate.id));
-      toast({ title: "Socio Eliminado", description: "El registro ha sido borrado permanentemente." });
+      
+      toast({ title: "Socio Eliminado", description: "El registro y el acceso han sido borrados definitivamente." });
       setOpen(false);
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error al eliminar" });
+    } catch (error: any) {
+      console.error("Delete Error:", error);
+      toast({ variant: "destructive", title: "Error al eliminar", description: error.message });
     } finally {
       setIsProcessing(false);
     }
@@ -479,15 +490,20 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                         </AlertDialogTrigger>
                         <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
                           <AlertDialogHeader>
-                            <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">¿Confirmar Eliminación?</AlertDialogTitle>
+                            <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight">¿Confirmar Eliminación Total?</AlertDialogTitle>
                             <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
-                              Esta acción es irreversible. Se borrarán todos los datos del afiliado, incluyendo su saldo y registro de ventas. El socio perderá el acceso a la plataforma de inmediato.
+                              Esta acción es irreversible y realizará lo siguiente:
+                              <ul className="list-disc pl-5 mt-3 space-y-2 text-xs">
+                                <li>Borrará el perfil y datos bancarios de Firestore.</li>
+                                <li><strong>Eliminará la cuenta de usuario de Google/Firebase Auth</strong> (el socio ya no podrá iniciar sesión).</li>
+                                <li>Se perderán todos los registros de saldo y KYC.</li>
+                              </ul>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter className="mt-10 gap-4">
                             <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteAffiliate} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
-                              SÍ, ELIMINAR PERMANENTEMENTE
+                            <AlertDialogAction onClick={handleDeleteAffiliate} disabled={isProcessing} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl shadow-destructive/20">
+                              {isProcessing ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : "SÍ, ELIMINAR CUENTA Y ACCESO"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
