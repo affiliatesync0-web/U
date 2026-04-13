@@ -59,7 +59,12 @@ export default function SiteBuilderPage() {
 
       toast({ title: "¡Sitio Web Creado!", description: "La IA ha terminado el diseño y ya está publicado." });
     } catch (error) {
-      toast({ variant: "destructive", title: "Error en la creación", description: "No pudimos conectar con Gemini. Intenta de nuevo." });
+      console.error("AI Generation Error:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Error en la IA", 
+        description: "No pudimos conectar con el motor de Gemini. Revisa tu GEMINI_API_KEY e intenta de nuevo." 
+      });
     } finally {
       setGenerating(false);
     }
@@ -119,7 +124,7 @@ export default function SiteBuilderPage() {
               <div className="p-6 bg-primary/10 rounded-[2rem] border border-primary/20 space-y-3">
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase">Poder de Gemini 2.5</span>
+                  <span className="text-[10px] font-black uppercase">Poder de Gemini 1.5</span>
                 </div>
                 <p className="text-xs text-slate-300 font-medium leading-relaxed italic">
                   "Generaré el copy perfecto, secciones de beneficios y llamados a la acción optimizados para cerrar ventas."
