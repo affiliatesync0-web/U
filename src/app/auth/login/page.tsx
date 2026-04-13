@@ -44,6 +44,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { COUNTRY_CODES } from '@/lib/constants'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -53,7 +54,7 @@ export default function LoginPage() {
   
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [activeTab, setActiveTab] = useState('email')
+  const [activeTab, setActiveTab] = useState('google')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | null>(null)
 
@@ -103,52 +104,49 @@ export default function LoginPage() {
 
   /**
    * TikTok Style: Frictionless login and automatic account creation.
+   * Optimizado para velocidad extrema y redirección forzada.
    */
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    try {
-      // 1. Check if ADMIN (Instant)
-      if (cleanEmail === ADMIN_EMAIL) {
-        toast({ title: "Acceso Maestro", description: "Entrando al centro de mando." });
-        router.push('/dashboard/admin');
-        return;
-      }
+    // 1. Acceso Maestro Instantáneo
+    if (cleanEmail === ADMIN_EMAIL) {
+      toast({ title: "Acceso Maestro", description: "Iniciando centro de mando..." });
+      router.push('/dashboard/admin');
+      return;
+    }
 
-      // 2. Check if AFFILIATE (Database required)
+    try {
+      // 2. Verificar si es Afiliado (Si no, es comprador por defecto)
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        toast({ title: "Bienvenido Socio", description: "Accediendo a tu panel platinum." });
         router.push('/dashboard/affiliate');
         return;
       }
 
-      // 3. TikTok Logic: If not admin/affiliate, they are a Buyer.
-      // Check if buyer exists, if not, create silently and log in.
-      const buyerSnap = await getDoc(doc(db, 'buyers', uid));
-      if (!buyerSnap.exists()) {
-        const names = displayName?.split(' ') || ['Usuario', 'Sync'];
-        const firstName = names[0];
-        const lastName = names.slice(1).join(' ') || 'Connect';
+      // 3. Lógica TikTok: Si no es admin ni afiliado, es Comprador.
+      // Sincronizamos los datos pero NO bloqueamos la navegación.
+      const names = displayName?.split(' ') || ['Usuario', 'Sync'];
+      const firstName = names[0];
+      const lastName = names.slice(1).join(' ') || 'Connect';
 
-        // Non-blocking write to allow faster redirection
-        await setDoc(doc(db, 'buyers', uid), {
-          id: uid,
-          firstName,
-          lastName,
-          email: cleanEmail,
-          registeredAt: new Date().toISOString(),
-          status: 'Active'
-        });
-      }
+      // Usamos setDoc con merge para crear o actualizar silenciosamente
+      await setDoc(doc(db, 'buyers', uid), {
+        id: uid,
+        firstName,
+        lastName,
+        email: cleanEmail,
+        registeredAt: new Date().toISOString(),
+        status: 'Active'
+      }, { merge: true });
 
-      toast({ title: "Acceso Instantáneo", description: "Bienvenido a Sync Connect." });
+      toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
       router.push('/dashboard/buyer');
 
     } catch (err) {
       console.error("Login Success Logic Error:", err);
-      // Fail-safe: Redirect to buyer dashboard even if DB check fails
+      // Si falla la DB por alguna razón de red, lo dejamos entrar igual
       router.push('/dashboard/buyer');
     } finally {
       setLoading(false);
@@ -167,8 +165,7 @@ export default function LoginPage() {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
       
-      if (result.user) {
-        // Redirection happens inside handleLoginSuccess
+      if (result?.user) {
         await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       } else {
         setLoading(false);
@@ -179,9 +176,9 @@ export default function LoginPage() {
       
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
-        setErrorMsg("DOMINIO NO AUTORIZADO: Debes añadir esta URL a tu consola de Firebase.");
+        setErrorMsg("DOMINIO NO AUTORIZADO en Firebase Console.");
       } else if (error.code !== 'auth/popup-closed-by-user') {
-        setErrorMsg("Fallo al conectar con Google. Intenta de nuevo.");
+        setErrorMsg("Fallo al conectar con Google.");
       }
     }
   };
@@ -197,9 +194,7 @@ export default function LoginPage() {
       await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       setLoading(false);
-      let msg = "Credenciales incorrectas.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = "Usuario no encontrado o clave inválida.";
-      setErrorMsg(msg);
+      setErrorMsg("Credenciales incorrectas.");
     }
   };
 
@@ -220,11 +215,11 @@ export default function LoginPage() {
       const verifier = (window as any).recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(result);
-      toast({ title: "Código Enviado", description: "Revisa tu bandeja de entrada SMS." });
+      toast({ title: "Código Enviado" });
     } catch (error: any) {
       console.error("SMS Code Error:", error.code);
       if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
-      setErrorMsg(error.code === 'auth/too-many-requests' ? "Muchos intentos. Espera 10 min." : "Error al enviar código.");
+      setErrorMsg("Error al enviar código.");
     } finally {
       setLoading(false);
     }
@@ -237,7 +232,7 @@ export default function LoginPage() {
       const result = await confirmationResult.confirm(verificationCode);
       await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Código de verificación incorrecto." });
+      toast({ variant: "destructive", title: "Error", description: "Código incorrecto." });
     } finally {
       setIsVerifying(false);
     }
@@ -252,13 +247,23 @@ export default function LoginPage() {
         <LanguageToggle />
       </div>
 
+      {loading && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
+          <div className="relative">
+            <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
+            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary animate-pulse" />
+          </div>
+          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Sincronizando Identidad...</p>
+        </div>
+      )}
+
       <div className="mb-8 text-center space-y-6">
         <Link href={EXTERNAL_HOME} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span>Volver al sitio oficial</span>
         </Link>
 
-        <Link href={EXTERNAL_HOME} className="flex flex-col items-center gap-4 group transition-all">
+        <div className="flex flex-col items-center gap-4">
           <div className="relative h-16 w-16 shadow-2xl rounded-[2rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
             {displayLogoUrl ? (
               <Image src={displayLogoUrl} alt="Sync Connect" width={60} height={60} className="object-contain p-2" unoptimized />
@@ -267,13 +272,13 @@ export default function LoginPage() {
             )}
           </div>
           <span className="font-headline font-black text-2xl text-foreground tracking-tight uppercase italic">Sync <span className="text-primary">Connect</span></span>
-        </Link>
+        </div>
       </div>
 
       <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-10">
           
-          <Tabs defaultValue="google" className="space-y-8">
+          <Tabs defaultValue="google" className="space-y-8" onValueChange={(v) => setActiveTab(v)}>
             <TabsList className="grid grid-cols-2 h-12 bg-card border border-border p-1 rounded-2xl">
               <TabsTrigger value="google" className="rounded-xl font-black text-[10px] uppercase gap-2">
                 <Sparkles className="h-3 w-3 text-primary" /> ACCESO RÁPIDO
@@ -285,22 +290,19 @@ export default function LoginPage() {
 
             <CardHeader className="text-center p-0 space-y-2">
               <CardTitle className="text-2xl font-headline font-black text-foreground tracking-tight uppercase italic">
-                Inicia <span className="text-primary">Sesión</span>
+                {activeTab === 'google' ? 'Entrada' : 'Inicia'} <span className="text-primary">Sesión</span>
               </CardTitle>
               <CardDescription className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                Entrada inmediata estilo TikTok
+                Experiencia instantánea estilo TikTok
               </CardDescription>
             </CardHeader>
 
             {authErrorType === 'domain' && (
               <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-6 animate-in zoom-in-95">
                 <ShieldAlert className="h-6 w-6 text-red-600" />
-                <AlertTitle className="text-xs font-black uppercase mb-2">Error de Configuración</AlertTitle>
+                <AlertTitle className="text-xs font-black uppercase mb-2 text-red-900">Error de Configuración</AlertTitle>
                 <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
-                  Google bloqueó el acceso. Solución:<br/><br/>
-                  <span className="bg-white/50 p-2 rounded-lg block border border-red-100 italic">
-                    Firebase Console &rarr; Auth &rarr; Settings &rarr; Authorized Domains &rarr; Añadir dominio actual.
-                  </span>
+                  Debes añadir este dominio a tu consola de Firebase Auth Settings para permitir el acceso.
                 </AlertDescription>
               </Alert>
             )}
@@ -318,7 +320,7 @@ export default function LoginPage() {
                 onClick={handleGoogleLogin}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="animate-spin h-6 w-6 text-primary" /> : (
+                {!loading ? (
                   <>
                     <svg className="h-6 w-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -326,12 +328,12 @@ export default function LoginPage() {
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.16H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.84l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.16l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                     </svg>
-                    CONTINUAR CON GOOGLE
+                    ENTRAR CON MI CUENTA GOOGLE
                   </>
-                )}
+                ) : <Loader2 className="animate-spin h-6 w-6 text-primary" />}
               </Button>
               <p className="text-center text-[9px] font-black text-muted-foreground uppercase tracking-widest px-4 leading-relaxed">
-                Sin registros largos. Tu cuenta se crea automáticamente tras seleccionar tu Gmail.
+                Sin registros largos. Tu acceso es automático tras elegir tu cuenta de Google.
               </p>
             </TabsContent>
 
@@ -389,7 +391,7 @@ export default function LoginPage() {
 
           <CardFooter className="justify-center mt-10 p-0">
             <p className="text-[10px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
-              ¿Eres socio nuevo? <Link href="/auth/register/affiliate" className="text-primary font-black hover:underline block mt-1">Aplica para Afiliación Platinum</Link>
+              ¿Deseas vender? <Link href="/auth/register/affiliate" className="text-primary font-black hover:underline block mt-1">Aplica para Afiliación Platinum</Link>
             </p>
           </CardFooter>
         </div>
@@ -397,10 +399,8 @@ export default function LoginPage() {
       
       <p className="mt-10 text-[9px] font-black text-slate-400 uppercase tracking-widest leading-relaxed text-center max-w-xs">
         Acceso encriptado por Sync Connect.<br/>
-        Cumplimos con normativas internacionales de seguridad de datos.
+        Seguridad de grado militar.
       </p>
     </div>
   )
 }
-
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
