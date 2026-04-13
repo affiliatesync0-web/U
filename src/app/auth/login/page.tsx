@@ -78,6 +78,7 @@ export default function LoginPage() {
       if ((window as any).recaptchaVerifier) {
         try {
           (window as any).recaptchaVerifier.clear();
+          (window as any).recaptchaVerifier = null;
         } catch (e) {}
       }
     };
@@ -95,10 +96,12 @@ export default function LoginPage() {
         },
         'expired-callback': () => {
           toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor, intenta de nuevo." });
+          setLoading(false);
         }
       });
     } catch (error) {
       console.error("Error al configurar reCAPTCHA:", error);
+      setLoading(false);
     }
   };
 
@@ -190,6 +193,10 @@ export default function LoginPage() {
       }
 
       toast({ variant: "destructive", title: "Error SMS", description });
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+        (window as any).recaptchaVerifier = null;
+      }
     } finally {
       setLoading(false);
     }
