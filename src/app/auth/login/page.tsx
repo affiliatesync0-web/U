@@ -138,36 +138,48 @@ export default function LoginPage() {
     }
   };
 
-  const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response: any) => {
-          console.log("reCAPTCHA verificado");
-        }
-      });
-    }
-  };
-
   const handleSendPhoneCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanPhone = phoneNumber.replace(/\D/g, '');
-    if (!cleanPhone) return;
+    if (!cleanPhone) {
+      toast({ variant: "destructive", title: "Campo requerido", description: "Ingresa tu número móvil." });
+      return;
+    }
     
     const fullNumber = selectedCountryCode + cleanPhone;
-    
     setLoading(true);
-    setupRecaptcha();
-    const appVerifier = (window as any).recaptchaVerifier;
 
     try {
-      const confirmation = await signInWithPhoneNumber(auth, fullNumber, appVerifier);
+      // Limpiar verificador previo si existe para evitar conflictos
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+        (window as any).recaptchaVerifier = null;
+      }
+
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {}
+      });
+      (window as any).recaptchaVerifier = recaptchaVerifier;
+
+      const confirmation = await signInWithPhoneNumber(auth, fullNumber, recaptchaVerifier);
       setConfirmationResult(confirmation);
       setPhoneStep('code');
-      toast({ title: "Código Enviado", description: "Revisa tus mensajes de texto." });
+      toast({ title: "Código Enviado", description: `Revisa tus mensajes en el móvil ${fullNumber}.` });
     } catch (error: any) {
-      console.error("Phone Code Error:", error);
-      toast({ variant: "destructive", title: "Error SMS", description: "No se pudo enviar el código. Verifica el formato del número." });
+      console.error("Phone Auth Send Error:", error.code, error.message);
+      let errorMsg = "No se pudo enviar el SMS. Verifica el número.";
+      
+      if (error.code === 'auth/invalid-phone-number') errorMsg = "El número telefónico no es válido.";
+      else if (error.code === 'auth/too-many-requests') errorMsg = "Muchos intentos. Espera unos minutos.";
+      else if (error.code === 'auth/quota-exceeded') errorMsg = "Cuota de SMS superada en Firebase.";
+      else if (error.code === 'auth/admin-restricted-operation') errorMsg = "Debes activar 'Phone Auth' en tu consola de Firebase.";
+
+      toast({ 
+        variant: "destructive", 
+        title: "Error de SMS", 
+        description: errorMsg 
+      });
     } finally {
       setLoading(false);
     }
@@ -234,7 +246,6 @@ export default function LoginPage() {
           <CardContent className="p-0 space-y-6">
             {!showPhoneLogin ? (
               <>
-                {/* LOGIN CON EMAIL */}
                 <form onSubmit={handleEmailLogin} className="space-y-5">
                   <div className="space-y-2">
                     <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Tu Email de Usuario</Label>
@@ -296,7 +307,6 @@ export default function LoginPage() {
                   <div className="relative flex justify-center text-[9px] uppercase font-black"><span className="bg-muted/30 px-4 text-muted-foreground tracking-widest">O continúa con</span></div>
                 </div>
 
-                {/* LOGIN CON REDES SOCIALES */}
                 <div className="grid grid-cols-2 gap-4">
                   <Button 
                     variant="outline" 
@@ -324,7 +334,6 @@ export default function LoginPage() {
                 </div>
               </>
             ) : (
-              /* LOGIN CON TELÉFONO */
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                 {phoneStep === 'number' ? (
                   <form onSubmit={handleSendPhoneCode} className="space-y-5">
