@@ -20,7 +20,11 @@ Si ves errores como `auth/admin-restricted-operation` o `Error SMS`:
 4. **Teléfono (CRÍTICO)**: 
    - Habilita el proveedor **Teléfono**.
    - Si estás en modo de prueba, añade tu número personal en la sección "Números de teléfono para pruebas" con el código `123456`.
-   - Asegúrate de habilitar el **reCAPTCHA invisible** si se te solicita.
+5. **Dominios Autorizados (MUY IMPORTANTE)**:
+   - Ve a **Authentication** -> **Settings** -> **Authorized domains**.
+   - Haz clic en **"Añadir dominio"**.
+   - Añade `affiliatesync.vercel.app` (o el dominio donde tengas desplegada la app).
+   - **Sin esto, el SMS de verificación NUNCA se enviará desde producción.**
 
 ### 2. Activar Subida de Videos (Storage) - Error de Región y Reglas
 Si la subida de videos falla o el sistema dice "Error Desconocido":
@@ -41,7 +45,7 @@ Si la subida de videos falla o el sistema dice "Error Desconocido":
    ```
 6. Haz clic en **Publicar**.
 
-### 3. Variables de Envorno
+### 3. Variables de Entorno
 Configura estas variables para habilitar todas las funciones administrativas:
 - `FIREBASE_PROJECT_ID`: `studio-9886993662-50a10`
 - `FIREBASE_CLIENT_EMAIL`: Tu cuenta de servicio de Firebase.

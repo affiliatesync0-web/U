@@ -19,7 +19,7 @@ import {
   Smartphone,
   ShieldCheck,
   CheckCircle2,
-  Globe
+  AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -45,6 +45,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { sendEmail } from '@/lib/email'
 import { COUNTRY_CODES } from '@/lib/constants'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -66,6 +67,7 @@ export default function LoginPage() {
   const [verificationCode, setVerificationCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const [phoneStep, setPhoneStep] = useState<'number' | 'code'>('number')
+  const [configError, setConfigError] = useState<string | null>(null)
 
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -88,12 +90,12 @@ export default function LoginPage() {
     } else {
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        toast({ title: t.welcomeBack, description: "Accediendo a tu panel de socio..." });
+        toast({ title: "Bienvenido de nuevo", description: "Accediendo a tu panel de socio..." });
         router.push('/dashboard/affiliate');
       } else {
         const buyerSnap = await getDoc(doc(db, 'buyers', uid));
         if (buyerSnap.exists()) {
-          toast({ title: t.welcomeBack, description: "Accediendo a tu aula virtual..." });
+          toast({ title: "Bienvenido de nuevo", description: "Accediendo a tu aula virtual..." });
           router.push('/dashboard/buyer');
         } else {
           toast({ variant: "destructive", title: "Perfil no encontrado", description: "Tu cuenta no tiene un perfil asignado. Por favor, regístrate primero." });
@@ -138,11 +140,28 @@ export default function LoginPage() {
     }
   };
 
+  const initRecaptcha = () => {
+    try {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {}
+      });
+      return (window as any).recaptchaVerifier;
+    } catch (e) {
+      console.error("Recaptcha Init Error:", e);
+      return null;
+    }
+  };
+
   const handleSendPhoneCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    setConfigError(null);
     const cleanPhone = phoneNumber.replace(/\D/g, '');
-    if (!cleanPhone) {
-      toast({ variant: "destructive", title: "Campo requerido", description: "Ingresa tu número móvil." });
+    if (!cleanPhone || cleanPhone.length < 8) {
+      toast({ variant: "destructive", title: "Número Inválido", description: "Ingresa un número móvil válido." });
       return;
     }
     
@@ -150,19 +169,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Limpiar verificador previo si existe para evitar conflictos
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
-        (window as any).recaptchaVerifier = null;
-      }
+      const verifier = initRecaptcha();
+      if (!verifier) throw new Error("No se pudo inicializar el verificador de seguridad.");
 
-      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {}
-      });
-      (window as any).recaptchaVerifier = recaptchaVerifier;
-
-      const confirmation = await signInWithPhoneNumber(auth, fullNumber, recaptchaVerifier);
+      const confirmation = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(confirmation);
       setPhoneStep('code');
       toast({ title: "Código Enviado", description: `Revisa tus mensajes en el móvil ${fullNumber}.` });
@@ -170,10 +180,16 @@ export default function LoginPage() {
       console.error("Phone Auth Send Error:", error.code, error.message);
       let errorMsg = "No se pudo enviar el SMS. Verifica el número.";
       
-      if (error.code === 'auth/invalid-phone-number') errorMsg = "El número telefónico no es válido.";
-      else if (error.code === 'auth/too-many-requests') errorMsg = "Muchos intentos. Espera unos minutos.";
-      else if (error.code === 'auth/quota-exceeded') errorMsg = "Cuota de SMS superada en Firebase.";
-      else if (error.code === 'auth/admin-restricted-operation') errorMsg = "Debes activar 'Phone Auth' en tu consola de Firebase.";
+      if (error.code === 'auth/invalid-phone-number') {
+        errorMsg = "El formato del número no es aceptado por el operador.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMsg = "Demasiados intentos. Por favor espera unos minutos.";
+      } else if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/unauthorized-domain') {
+        errorMsg = "Configuración requerida en Firebase.";
+        setConfigError("Este dominio no está autorizado para enviar SMS o el proveedor de teléfono está desactivado en la Consola de Firebase.");
+      } else if (error.code === 'auth/captcha-check-failed') {
+        errorMsg = "La verificación de seguridad falló. Intenta de nuevo.";
+      }
 
       toast({ 
         variant: "destructive", 
@@ -244,6 +260,16 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="p-0 space-y-6">
+            {configError && (
+              <Alert variant="destructive" className="mb-6 rounded-2xl bg-red-50 border-red-100">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="text-[10px] font-black uppercase">Nota del Administrador</AlertTitle>
+                <AlertDescription className="text-[11px] font-medium leading-relaxed">
+                  {configError}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {!showPhoneLogin ? (
               <>
                 <form onSubmit={handleEmailLogin} className="space-y-5">
