@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -83,7 +84,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     }
 
     // 2. REDIRECCIÓN MAESTRA: Si el correo es el de ADMIN, forzar entrada al panel admin
-    // Bloqueamos que el administrador vea el dashboard de "buyer" o "affiliate"
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       window.location.href = '/dashboard/admin'; 
       return;
@@ -109,9 +109,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
-  // Si es ADMIN, no renderizamos nada que no sea del panel admin (Prevención de flash de contenido)
+  // Si es ADMIN pero está en una ruta equivocada, bloqueamos render para evitar confusión
   if (mounted && !isUserLoading && isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black uppercase tracking-widest animate-pulse">Saltando al Centro de Control...</div>;
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black uppercase tracking-widest animate-pulse text-center p-6">Saltando al Centro de Control Maestro...</div>;
   }
 
   if (!mounted || isUserLoading) {
@@ -130,7 +130,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
-  // Verificación de aprobación para afiliados
+  // Verificación de aprobación para afiliados (Si no es admin)
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex items-center justify-center p-6 text-center text-foreground">

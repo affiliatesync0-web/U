@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -70,7 +71,7 @@ export default function LoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  // EFECTO DE SEGURIDAD MAESTRA: Si ya está logueado como admin, saltar el login
+  // SEGURIDAD MAESTRA: Detectar admin logueado y saltar el login inmediatamente
   useEffect(() => {
     if (user && !isGlobalLoading) {
       const cleanEmail = user.email?.toLowerCase().trim();
@@ -113,22 +114,23 @@ export default function LoginPage() {
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. PRIORIDAD ABSOLUTA: Detección de Administrador
+    // 1. PRIORIDAD MAESTRA: Si es admin, no hacemos nada más y redirigimos
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       window.location.href = '/dashboard/admin';
       return;
     }
 
+    // 2. Para otros usuarios, navegación rápida estilo TikTok
     try {
-      // 2. Verificar si es Afiliado
+      // Verificar si es Afiliado existente
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.replace('/dashboard/affiliate');
         return;
       }
 
-      // 3. Flujo TikTok: Creación automática de Comprador si no es Admin ni Afiliado
+      // Si no es afiliado ni admin, es Comprador (Creación silenciosa)
       const names = (displayName || '').split(' ') || ['Usuario', 'Sync'];
       const firstName = names[0] || 'Usuario';
       const lastName = names.slice(1).join(' ') || 'Connect';
@@ -147,6 +149,7 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error("Login Success Error:", err);
+      // En caso de error, intentamos entrar al panel de comprador igual para no bloquear
       router.replace('/dashboard/buyer');
     }
   };
@@ -351,7 +354,7 @@ export default function LoginPage() {
                         <Input 
                           type={showPassword ? "text" : "password"} 
                           placeholder="Contraseña" 
-                          value={password}
+                          value={password} 
                           onChange={(e) => setPassword(e.target.value)}
                           className="h-12 rounded-xl"
                         />
