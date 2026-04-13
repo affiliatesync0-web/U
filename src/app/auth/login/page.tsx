@@ -34,14 +34,14 @@ import {
   signInWithEmailAndPassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult
+  ConfirmationResult,
+  onAuthStateChanged
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { COUNTRY_CODES } from '@/lib/constants'
 
 export default function LoginPage() {
@@ -71,6 +71,18 @@ export default function LoginPage() {
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
+
+  // Efecto para manejar usuarios ya autenticados que entran a login
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && !loading) {
+        // Si el usuario ya está logueado, verificamos su perfil discretamente
+        // Pero no redirigimos automáticamente a menos que sea una acción de login explícita
+        console.log("Usuario detectado en sesión activa");
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, loading]);
 
   // Limpiar recaptcha al desmontar
   useEffect(() => {
@@ -108,42 +120,71 @@ export default function LoginPage() {
   const handleLoginSuccess = async (userEmail: string | null, uid: string) => {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     
-    if (userEmail?.toLowerCase().trim() === ADMIN_EMAIL) {
-      toast({ title: "Acceso Maestro", description: "Bienvenido al centro de mando." });
-      router.push('/dashboard/admin');
-    } else {
+    try {
+      if (userEmail?.toLowerCase().trim() === ADMIN_EMAIL) {
+        toast({ title: "Acceso Maestro", description: "Bienvenido al centro de mando." });
+        router.push('/dashboard/admin');
+        return;
+      }
+
+      // 1. Buscar en Afiliados
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         toast({ title: "Bienvenido de nuevo", description: "Sincronizando tus comisiones..." });
         router.push('/dashboard/affiliate');
-      } else {
-        const buyerSnap = await getDoc(doc(db, 'buyers', uid));
-        if (buyerSnap.exists()) {
-          toast({ title: "Hola de nuevo", description: "Accediendo a tus cursos adquiridos." });
-          router.push('/dashboard/buyer');
-        } else {
-          toast({ title: "Sesión Iniciada", description: "Por favor, completa tu registro de perfil." });
-          router.push('/auth/register');
-        }
+        return;
       }
+
+      // 2. Buscar en Compradores
+      const buyerSnap = await getDoc(doc(db, 'buyers', uid));
+      if (buyerSnap.exists()) {
+        toast({ title: "Hola de nuevo", description: "Accediendo a tus cursos adquiridos." });
+        router.push('/dashboard/buyer');
+        return;
+      }
+
+      // 3. Si no existe en ninguno, es un usuario nuevo o incompleto
+      toast({ title: "Sesión Iniciada", description: "Por favor, completa tu registro de perfil." });
+      router.push('/auth/register');
+    } catch (err) {
+      console.error("Success handling error:", err);
+      toast({ variant: "destructive", title: "Error de Sincronización", description: "No pudimos verificar tu perfil. Intenta de nuevo." });
+      setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    // Forzar la selección de cuenta siempre para evitar logins automáticos no deseados
+    provider.setCustomParameters({ prompt: 'select_account' });
+
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
-      await handleLoginSuccess(result.user.email, result.user.uid);
+      
+      if (result.user) {
+        await handleLoginSuccess(result.user.email, result.user.uid);
+      } else {
+        setLoading(false);
+      }
     } catch (error: any) {
-      console.error("Google Login Error:", error.code);
+      console.error("Google Login Error:", error.code, error.message);
+      setLoading(false);
+
+      // No mostrar error si el usuario simplemente cerró el popup
+      if (error.code === 'auth/popup-closed-by-user') {
+        return;
+      }
+
       let msg = "No se pudo completar el acceso con Google.";
       if (error.code === 'auth/unauthorized-domain') {
-        msg = "Este dominio no está autorizado en la consola de Firebase.";
+        msg = "Este dominio no está autorizado en la consola de Firebase. Revisa el README.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        return; // Otra forma de cancelación
       }
+      
       toast({ variant: "destructive", title: "Error Google", description: msg });
-      setLoading(false);
     }
   };
 
@@ -155,7 +196,8 @@ export default function LoginPage() {
       const result = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       await handleLoginSuccess(result.user.email, result.user.uid);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales inválidas." });
+      console.error("Email Login Error:", error.code);
+      toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales inválidas o cuenta inexistente." });
       setLoading(false);
     }
   };
@@ -186,16 +228,16 @@ export default function LoginPage() {
         description = "Hemos agotado la cuota de SMS para hoy. Intenta por Email o Google.";
       } else if (error.code === 'auth/unauthorized-domain') {
         description = "Configuración: Este dominio no tiene permiso para enviar SMS.";
-      } else if (error.code === 'auth/captcha-check-failed') {
-        description = "Fallo en la verificación de seguridad. Recarga la página.";
       } else if (error.code === 'auth/too-many-requests') {
         description = "Demasiados intentos. Tu número ha sido bloqueado temporalmente.";
       }
 
       toast({ variant: "destructive", title: "Error SMS", description });
       if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
-        (window as any).recaptchaVerifier = null;
+        try {
+          (window as any).recaptchaVerifier.clear();
+          (window as any).recaptchaVerifier = null;
+        } catch (e) {}
       }
     } finally {
       setLoading(false);
