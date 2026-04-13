@@ -13,10 +13,10 @@ Esta es la versión profesional de **Sync Connect**, una plataforma optimizada p
 ## 🚀 Guía de Configuración Crítica (IMPORTANTE)
 
 ### 1. Habilitar Métodos de Autenticación
-Si ves errores como `auth/admin-restricted-operation` o `Error SMS`:
+Si ves errores como `auth/admin-restricted-operation` o `Error Google`:
 1. Ve a **Consola de Firebase** > **Authentication** -> **Sign-in method**.
 2. **Correo electrónico/contraseña**: Habilita y asegúrate de que el registro de nuevos usuarios esté permitido.
-3. **Google**: Habilita el proveedor de Google.
+3. **Google**: Habilita el proveedor de Google. Asegúrate de configurar el email de soporte.
 4. **Teléfono (CRÍTICO)**: 
    - Habilita el proveedor **Teléfono**.
    - Si estás en modo de prueba, añade tu número personal en la sección "Números de teléfono para pruebas" con el código `123456`.
@@ -24,7 +24,8 @@ Si ves errores como `auth/admin-restricted-operation` o `Error SMS`:
    - Ve a **Authentication** -> **Settings** -> **Authorized domains**.
    - Haz clic en **"Añadir dominio"**.
    - Añade `affiliatesync.vercel.app` (o el dominio donde tengas desplegada la app).
-   - **Sin esto, el SMS de verificación NUNCA se enviará desde producción.**
+   - Añade también `localhost` si vas a probar localmente.
+   - **Sin esto, tanto el login de Google como el SMS de verificación fallarán siempre.**
 
 ### 2. Activar Subida de Videos (Storage) - Error de Región y Reglas
 Si la subida de videos falla o el sistema dice "Error Desconocido":

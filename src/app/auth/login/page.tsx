@@ -115,6 +115,7 @@ export default function LoginPage() {
 
     if (!cleanEmail || !cleanPass) return;
     setLoading(true)
+    setConfigError(null);
     try {
       await setPersistence(auth, keepLoggedIn ? browserLocalPersistence : browserSessionPersistence);
       const result = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
@@ -132,14 +133,27 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setConfigError(null);
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
       await handleLoginSuccess(result.user.email, result.user.uid);
     } catch (error: any) {
-      console.error("Google Login Error:", error);
-      toast({ variant: "destructive", title: "Error Google", description: "No se pudo completar el acceso social." });
+      console.error("Google Login Error:", error.code, error.message);
+      let errorMsg = "No se pudo completar el acceso con Google.";
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMsg = "Dominio no autorizado para Google Login.";
+        setConfigError("Debes añadir este dominio en tu Consola de Firebase > Authentication > Settings > Authorized Domains.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMsg = "Proveedor de Google desactivado.";
+        setConfigError("Habilita el método de inicio de sesión 'Google' en la sección Authentication de tu consola de Firebase.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMsg = "Ventana cerrada por el usuario.";
+      }
+
+      toast({ variant: "destructive", title: "Error Google", description: errorMsg });
       setLoading(false);
     }
   };
@@ -198,8 +212,11 @@ export default function LoginPage() {
       } else if (error.code === 'auth/too-many-requests') {
         errorMsg = "Demasiados intentos. Espera unos minutos.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMsg = "Dominio no autorizado.";
-        setConfigError("El dominio affiliatesync.vercel.app no está autorizado en tu consola de Firebase. Añádelo en Auth > Settings > Authorized Domains.");
+        errorMsg = "Dominio no autorizado para SMS.";
+        setConfigError("Debes añadir este dominio en tu Consola de Firebase > Authentication > Settings > Authorized Domains.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMsg = "Proveedor de Teléfono desactivado.";
+        setConfigError("Habilita el método de inicio de sesión 'Teléfono' en la sección Authentication de tu consola de Firebase.");
       }
 
       toast({ variant: "destructive", title: "Error de SMS", description: errorMsg });
