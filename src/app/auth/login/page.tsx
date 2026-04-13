@@ -322,7 +322,7 @@ export default function LoginPage() {
                 <AlertTitle className="text-xs font-black uppercase mb-2 text-red-900">Error de Dominio</AlertTitle>
                 <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
                   Este dominio no está autorizado en tu Firebase Console. <br/><br/>
-                  Ve a <b>Authentication > Settings > Authorized domains</b> y añade este dominio para que Google y SMS funcionen.
+                  Ve a <b>Authentication &gt; Settings &gt; Authorized domains</b> y añade este dominio para que Google y SMS funcionen.
                 </AlertDescription>
               </Alert>
             )}
