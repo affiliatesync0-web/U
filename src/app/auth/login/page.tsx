@@ -37,7 +37,7 @@ import {
   ConfirmationResult,
   onAuthStateChanged
 } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -72,18 +72,6 @@ export default function LoginPage() {
 
   const EXTERNAL_HOME = 'https://syncacademy.systeme.io/sync-connect';
 
-  // Efecto para manejar usuarios ya autenticados que entran a login
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && !loading) {
-        // Si el usuario ya está logueado, verificamos su perfil discretamente
-        // Pero no redirigimos automáticamente a menos que sea una acción de login explícita
-        console.log("Usuario detectado en sesión activa");
-      }
-    });
-    return () => unsubscribe();
-  }, [auth, loading]);
-
   // Limpiar recaptcha al desmontar
   useEffect(() => {
     return () => {
@@ -117,38 +105,53 @@ export default function LoginPage() {
     }
   };
 
-  const handleLoginSuccess = async (userEmail: string | null, uid: string) => {
+  const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
     
     try {
+      // 1. Acceso Maestro
       if (userEmail?.toLowerCase().trim() === ADMIN_EMAIL) {
-        toast({ title: "Acceso Maestro", description: "Bienvenido al centro de mando." });
+        toast({ title: "Acceso Maestro", description: "Iniciando centro de control." });
         router.push('/dashboard/admin');
         return;
       }
 
-      // 1. Buscar en Afiliados
+      // 2. Buscar en Afiliados
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        toast({ title: "Bienvenido de nuevo", description: "Sincronizando tus comisiones..." });
+        toast({ title: "Sesión Iniciada", description: "Bienvenido de nuevo, socio." });
         router.push('/dashboard/affiliate');
         return;
       }
 
-      // 2. Buscar en Compradores
+      // 3. Buscar en Compradores
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
-        toast({ title: "Hola de nuevo", description: "Accediendo a tus cursos adquiridos." });
+        toast({ title: "Sesión Iniciada", description: "Accediendo a tus cursos." });
         router.push('/dashboard/buyer');
         return;
       }
 
-      // 3. Si no existe en ninguno, es un usuario nuevo o incompleto
-      toast({ title: "Sesión Iniciada", description: "Por favor, completa tu registro de perfil." });
-      router.push('/auth/register');
+      // 4. FLUJO TIKTOK: Si no existe, crear perfil de comprador automáticamente
+      const names = displayName?.split(' ') || ['Usuario', 'Sync'];
+      const firstName = names[0];
+      const lastName = names.slice(1).join(' ') || 'Connect';
+
+      await setDoc(doc(db, 'buyers', uid), {
+        id: uid,
+        firstName,
+        lastName,
+        email: userEmail || '',
+        registeredAt: new Date().toISOString(),
+        status: 'Active'
+      });
+
+      toast({ title: "Cuenta Activada", description: "Bienvenido a Sync Connect." });
+      router.push('/dashboard/buyer');
+
     } catch (err) {
       console.error("Success handling error:", err);
-      toast({ variant: "destructive", title: "Error de Sincronización", description: "No pudimos verificar tu perfil. Intenta de nuevo." });
+      toast({ variant: "destructive", title: "Error de Acceso", description: "No pudimos configurar tu sesión." });
       setLoading(false);
     }
   };
@@ -156,7 +159,6 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    // Forzar la selección de cuenta siempre para evitar logins automáticos no deseados
     provider.setCustomParameters({ prompt: 'select_account' });
 
     try {
@@ -164,27 +166,16 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       
       if (result.user) {
-        await handleLoginSuccess(result.user.email, result.user.uid);
+        await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       } else {
         setLoading(false);
       }
     } catch (error: any) {
-      console.error("Google Login Error:", error.code, error.message);
+      console.error("Google Login Error:", error.code);
       setLoading(false);
-
-      // No mostrar error si el usuario simplemente cerró el popup
-      if (error.code === 'auth/popup-closed-by-user') {
-        return;
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ variant: "destructive", title: "Error Google", description: "No se pudo completar el acceso." });
       }
-
-      let msg = "No se pudo completar el acceso con Google.";
-      if (error.code === 'auth/unauthorized-domain') {
-        msg = "Este dominio no está autorizado en la consola de Firebase. Revisa el README.";
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        return; // Otra forma de cancelación
-      }
-      
-      toast({ variant: "destructive", title: "Error Google", description: msg });
     }
   };
 
@@ -194,10 +185,10 @@ export default function LoginPage() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
-      await handleLoginSuccess(result.user.email, result.user.uid);
+      await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       console.error("Email Login Error:", error.code);
-      toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales inválidas o cuenta inexistente." });
+      toast({ variant: "destructive", title: "Error de Acceso", description: "Credenciales inválidas." });
       setLoading(false);
     }
   };
@@ -217,28 +208,10 @@ export default function LoginPage() {
       const verifier = (window as any).recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(result);
-      toast({ title: "Código Enviado", description: "Revisa tu WhatsApp o mensajes SMS." });
+      toast({ title: "Código Enviado", description: "Revisa tu teléfono." });
     } catch (error: any) {
-      console.error("SMS Error Code:", error.code);
-      let description = "Verifica el número o intenta más tarde.";
-      
-      if (error.code === 'auth/invalid-phone-number') {
-        description = "El formato del número no es válido. Revisa el código de país.";
-      } else if (error.code === 'auth/quota-exceeded') {
-        description = "Hemos agotado la cuota de SMS para hoy. Intenta por Email o Google.";
-      } else if (error.code === 'auth/unauthorized-domain') {
-        description = "Configuración: Este dominio no tiene permiso para enviar SMS.";
-      } else if (error.code === 'auth/too-many-requests') {
-        description = "Demasiados intentos. Tu número ha sido bloqueado temporalmente.";
-      }
-
-      toast({ variant: "destructive", title: "Error SMS", description });
-      if ((window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-          (window as any).recaptchaVerifier = null;
-        } catch (e) {}
-      }
+      console.error("SMS Error:", error.code);
+      toast({ variant: "destructive", title: "Error SMS", description: "No se pudo enviar el código." });
     } finally {
       setLoading(false);
     }
@@ -249,10 +222,10 @@ export default function LoginPage() {
     setIsVerifying(true);
     try {
       const result = await confirmationResult.confirm(verificationCode);
-      await handleLoginSuccess(result.user.email, result.user.uid);
+      await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       console.error("Verification Error:", error.code);
-      toast({ variant: "destructive", title: "Código Inválido", description: "El código ingresado no es correcto o ha expirado." });
+      toast({ variant: "destructive", title: "Código Inválido", description: "El código no es correcto." });
       setIsVerifying(false);
     }
   };
@@ -269,7 +242,7 @@ export default function LoginPage() {
       <div className="mb-8 text-center space-y-6">
         <Link href={EXTERNAL_HOME} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          <span>Volver a Sync Academy</span>
+          <span>Volver al sitio oficial</span>
         </Link>
 
         <Link href={EXTERNAL_HOME} className="flex flex-col items-center gap-4 group transition-all">
@@ -299,17 +272,17 @@ export default function LoginPage() {
 
             <CardHeader className="text-center p-0 space-y-2">
               <CardTitle className="text-2xl font-headline font-black text-foreground tracking-tight uppercase italic">
-                Iniciar <span className="text-primary">Sesión</span>
+                Entrar a <span className="text-primary">Sync</span>
               </CardTitle>
               <CardDescription className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                Acceso exclusivo para socios y clientes
+                Acceso instantáneo estilo TikTok
               </CardDescription>
             </CardHeader>
 
             <TabsContent value="email" className="space-y-6 m-0">
               <form onSubmit={handleEmailLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Tu Email de Usuario</Label>
+                  <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Tu Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
@@ -324,7 +297,7 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between px-1">
-                    <Label className="text-[9px] font-black uppercase text-muted-foreground">Tu Contraseña</Label>
+                    <Label className="text-[9px] font-black uppercase text-muted-foreground">Contraseña</Label>
                     <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black uppercase text-primary hover:underline">¿La olvidaste?</Link>
                   </div>
                   <div className="relative">
@@ -342,7 +315,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <><LogIn className="mr-2 h-4 w-4" /> ENTRAR A MI CUENTA</>}
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "INICIAR SESIÓN"}
                 </Button>
               </form>
             </TabsContent>
@@ -374,7 +347,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <Button onClick={handleSendCode} className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading || !phone}>
-                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR CÓDIGO SMS"}
+                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR CÓDIGO"}
                   </Button>
                 </div>
               ) : (
@@ -399,7 +372,7 @@ export default function LoginPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/50" /></div>
-              <div className="relative flex justify-center text-[8px] font-black uppercase"><span className="bg-muted px-4 text-muted-foreground tracking-[0.3em]">O continúa con</span></div>
+              <div className="relative flex justify-center text-[8px] font-black uppercase"><span className="bg-muted px-4 text-muted-foreground tracking-[0.3em]">O entra con</span></div>
             </div>
 
             <Button 
@@ -423,7 +396,7 @@ export default function LoginPage() {
 
           <CardFooter className="justify-center mt-10 p-0 flex flex-col gap-4">
             <p className="text-[10px] font-bold text-muted-foreground uppercase text-center">
-              ¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline ml-1">Regístrate ahora</Link>
+              ¿Quieres ser socio? <Link href="/auth/register/affiliate" className="text-primary font-black hover:underline ml-1">Aplica aquí</Link>
             </p>
           </CardFooter>
         </div>
