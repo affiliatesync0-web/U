@@ -9,13 +9,12 @@ import { ArrowLeft, Lock, Mail, Loader2, Send } from 'lucide-react'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
-import { useAuth } from '@/firebase'
-import { sendPasswordResetEmail } from 'firebase/auth'
+import { adminGenerateResetLink } from '@/lib/auth-actions'
+import { sendPasswordResetEmailCustom } from '@/lib/email'
 import { useToast } from '@/hooks/use-toast'
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast()
-  const auth = useAuth()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -34,23 +33,39 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, cleanEmail);
-      toast({
-        title: "Correo Enviado",
-        description: "Revisa tu bandeja de entrada para restablecer tu contraseña. El correo puede tardar unos minutos."
-      });
-      setEmail('');
-    } catch (error: any) {
-      let description = "No se pudo enviar el correo. Verifica tu conexión e intenta de nuevo.";
-      if (error.code === 'auth/user-not-found') {
-        description = "No se encontró ninguna cuenta registrada con este correo electrónico."
-      } else if (error.code === 'auth/invalid-email') {
-        description = "El formato del correo electrónico no es válido."
+      // 1. Generar enlace seguro en el servidor para el dominio affiliatesync.vercel.app
+      const result = await adminGenerateResetLink(cleanEmail);
+      
+      if (!result.success) {
+        if (result.error === 'USUARIO_NO_EXISTE') {
+          toast({ variant: "destructive", title: "Cuenta no encontrada", description: "No hay ninguna cuenta registrada con este correo." });
+        } else {
+          throw new Error(result.error);
+        }
+        return;
       }
+
+      // 2. Enviar el correo personalizado con el dominio de la app
+      const emailRes = await sendPasswordResetEmailCustom({
+        to: cleanEmail,
+        oobCode: result.oobCode as string
+      });
+
+      if (emailRes.success) {
+        toast({
+          title: "🔑 Enlace de Recuperación Enviado",
+          description: "Revisa tu Gmail. El enlace apunta ahora directamente a nuestra plataforma."
+        });
+        setEmail('');
+      } else {
+        throw new Error(emailRes.error);
+      }
+    } catch (error: any) {
+      console.error("Reset Error:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: description,
+        title: "Fallo en el servidor",
+        description: "No pudimos enviar el correo. Asegúrate de haber configurado tu Gmail en el Panel de Diseño.",
       });
     } finally {
       setLoading(false);
@@ -101,11 +116,13 @@ export default function ForgotPasswordPage() {
               </div>
               <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading}>
                 {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
-                  <><Send className="mr-2 h-4 w-4" /> ENVIAR LINK DE RECUPERACIÓN</>
+                  <><Send className="mr-2 h-4 w-4" /> ENVIAR LINK PERSONALIZADO</>
                 )}
               </Button>
             </form>
-            <p className="text-sm text-center text-muted-foreground">Se enviará un enlace seguro a tu correo electrónico para que puedas establecer una nueva contraseña.</p>
+            <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+              Recibirás un Gmail con un enlace seguro a <b>affiliatesync.vercel.app</b> para establecer tu nueva contraseña.
+            </p>
           </CardContent>
         </div>
       </Card>

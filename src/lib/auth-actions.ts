@@ -27,6 +27,31 @@ export async function adminResetUserPassword(email: string, newPassword: string)
 }
 
 /**
+ * Genera un enlace de restablecimiento de contraseña para un usuario.
+ */
+export async function adminGenerateResetLink(email: string) {
+  if (!adminAuth) {
+    return { success: false, error: 'No hay conexión con el SDK administrativo.' };
+  }
+  try {
+    const cleanEmail = email.toLowerCase().trim();
+    // Generar el enlace oficial de Firebase
+    const link = await adminAuth.generatePasswordResetLink(cleanEmail);
+    
+    // Extraer el oobCode del enlace generado por Firebase
+    const url = new URL(link);
+    const oobCode = url.searchParams.get('oobCode');
+    
+    if (!oobCode) throw new Error("No se pudo generar el código de seguridad.");
+    
+    return { success: true, oobCode };
+  } catch (error: any) {
+    console.error('ERROR GENERATING LINK:', error);
+    return { success: false, error: error.code === 'auth/user-not-found' ? 'USUARIO_NO_EXISTE' : error.message };
+  }
+}
+
+/**
  * Acción de servidor para eliminar permanentemente a un usuario de Firebase Authentication.
  */
 export async function adminDeleteUser(uid: string) {

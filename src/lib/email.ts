@@ -94,6 +94,44 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
 }
 
 /**
+ * Envía el correo de recuperación de contraseña personalizado.
+ */
+export async function sendPasswordResetEmailCustom({ to, oobCode }: { to: string, oobCode: string }) {
+  const resetLink = `https://affiliatesync.vercel.app/auth/reset-password?oobCode=${oobCode}`;
+  
+  return await sendEmail({
+    to,
+    subject: '🔑 Recupera tu acceso - Sync Connect',
+    text: `Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar: ${resetLink}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
+        <div style="margin-bottom: 30px;">
+          <span style="font-size: 40px;">🔑</span>
+        </div>
+        <h2 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase;">Restablecer Clave</h2>
+        <p style="color: #64748b; font-size: 15px; margin-bottom: 30px; line-height: 1.6;">
+          Recibimos una solicitud para cambiar tu contraseña en <strong>Sync Connect</strong>. Si no fuiste tú, puedes ignorar este correo.
+        </p>
+        
+        <div style="margin-bottom: 30px;">
+          <a href="${resetLink}" style="display: inline-block; background-color: #ff5d1b; color: #ffffff; padding: 18px 36px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(255,93,27,0.2);">
+            ESTABLECER NUEVA CONTRASEÑA
+          </a>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px; font-weight: 500;">
+          Este enlace expirará en 1 hora por seguridad.
+        </p>
+        
+        <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #f1f5f9; text-align: center;">
+          <p style="font-size: 10px; color: #cbd5e1; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">© ${new Date().getFullYear()} SYNC CONNECT ACADEMY</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+/**
  * Envía una notificación de pago realizado a un afiliado.
  */
 export async function sendPaymentNotification({ to, name, amount, bank }: { to: string, name: string, amount: number, bank: string }) {
