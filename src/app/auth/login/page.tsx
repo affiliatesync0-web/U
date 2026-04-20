@@ -23,7 +23,8 @@ import {
   Smartphone,
   ExternalLink,
   Settings,
-  HelpCircle
+  HelpCircle,
+  RefreshCw
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -56,7 +57,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [authErrorType, setAuthErrorType] = useState<'domain' | 'method' | 'generic' | null>(null)
+  const [authErrorType, setAuthErrorType] = useState<'domain' | 'method' | 'generic' | 'cancelled' | null>(null)
   const [rawErrorCode, setRawErrorCode] = useState<string | null>(null)
 
   const [email, setEmail] = useState('')
@@ -157,11 +158,12 @@ export default function LoginPage() {
       } else if (error.code === 'auth/operation-not-allowed') {
         setAuthErrorType('method');
       } else if (error.code === 'auth/popup-blocked') {
-        setErrorMsg("El navegador bloqueó la ventana emergente de Google. Por favor, permite los popups para este sitio.");
+        setErrorMsg("El navegador bloqueó la ventana de Google. Por favor, permite las ventanas emergentes (popups) para este sitio.");
       } else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
-        setErrorMsg("Inicio de sesión cancelado por el usuario.");
+        setAuthErrorType('cancelled');
+        setErrorMsg("La ventana de Google se cerró antes de completar el acceso.");
       } else {
-        setErrorMsg("No se pudo conectar con Google. Revisa tu conexión a internet.");
+        setErrorMsg("No se pudo conectar con Google. Revisa tu conexión o los dominios autorizados en Firebase.");
         setAuthErrorType('generic');
       }
     }
@@ -227,6 +229,23 @@ export default function LoginPage() {
               </TabsTrigger>
             </TabsList>
 
+            {/* ERROR DE CANCELACIÓN / POPUP */}
+            {authErrorType === 'cancelled' && (
+              <Alert variant="destructive" className="rounded-[2rem] bg-amber-50 border-amber-200 p-6 animate-in zoom-in-95">
+                <RefreshCw className="h-8 w-8 text-amber-600 mb-4" />
+                <AlertTitle className="text-xs font-black uppercase mb-3 text-amber-900 tracking-widest">Acceso Interrumpido</AlertTitle>
+                <AlertDescription className="text-[11px] font-bold leading-relaxed text-amber-800 space-y-4">
+                  <p>Parece que la ventana de Google se cerró antes de tiempo o fue bloqueada por tu navegador.</p>
+                  <div className="bg-white/50 p-4 rounded-xl border border-amber-100">
+                    <p className="mb-2 font-black uppercase text-[9px]">Cómo solucionar:</p>
+                    <p className="text-[10px]">1. No cierres la ventana que aparece.</p>
+                    <p className="text-[10px]">2. Asegúrate de elegir una cuenta de Google.</p>
+                    <p className="text-[10px]">3. Si estás en móvil, intenta abrir el enlace en Chrome o Safari directamente.</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* ERROR DE DOMINIO */}
             {authErrorType === 'domain' && (
               <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-6 animate-in zoom-in-95">
@@ -260,7 +279,7 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {errorMsg && (
+            {errorMsg && authErrorType !== 'domain' && authErrorType !== 'method' && authErrorType !== 'cancelled' && (
               <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-4 animate-in fade-in">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-[10px] font-black uppercase tracking-widest leading-tight">
