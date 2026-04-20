@@ -33,7 +33,11 @@ import {
   Smartphone,
   AppWindow,
   Download,
-  Terminal
+  Terminal,
+  Cpu,
+  History,
+  Activity,
+  Box
 } from "lucide-react"
 import {
   Sidebar,
@@ -166,7 +170,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: Inbox },
     { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
-    { title: "Gestión de Apps", url: "/dashboard/admin/releases", icon: Smartphone },
+    { title: "Centro de Builds", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
@@ -178,7 +182,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Mi Buzón", url: "/dashboard/affiliate/support", icon: Mail },
-    { title: "Descargar App", url: "/dashboard/affiliate/downloads", icon: Download },
+    { title: "Descargar App", url: "/dashboard/affiliate/downloads", icon: Smartphone },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Bot de Ventas", url: "/dashboard/affiliate/bot-settings", icon: Zap },
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
@@ -209,14 +213,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
-                <ImageIcon className="h-8 w-8 text-muted-foreground opacity-10" />
+                <Terminal className="h-8 w-8 text-muted-foreground opacity-10" />
               )}
             </div>
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
               <span className="font-headline font-black text-xl tracking-tighter text-slate-900 dark:text-white uppercase italic">Sync <span className="text-primary">Connect</span></span>
               <div className="flex items-center gap-1.5">
                 <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase tracking-widest px-2 py-0">
-                  {isUserAdmin ? 'ADMIN' : (role === 'buyer' ? 'ALUMNO' : 'PARTNER')}
+                  {isUserAdmin ? 'ENGINEER' : (role === 'buyer' ? 'STUDENT' : 'PARTNER')}
                 </Badge>
               </div>
             </div>
@@ -225,7 +229,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarContent className="bg-white dark:bg-slate-950 transition-colors px-3 space-y-2">
           <NavMain 
             items={getMenu()} 
-            label={isUserAdmin ? "CENTRO DE MANDO" : "NAVEGACIÓN"} 
+            label={isUserAdmin ? "SISTEMA OPERATIVO" : "NAVEGACIÓN"} 
           />
         </SidebarContent>
         <SidebarFooter className="bg-white dark:bg-slate-950 border-t border-slate-50 dark:border-slate-900 p-6 transition-colors">
@@ -246,14 +250,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <Separator orientation="vertical" className="mx-4 h-6 bg-slate-200 dark:bg-slate-800" />
           <div className="flex-1 overflow-hidden">
              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                <ShieldCheck className="h-3.5 w-3.5 text-primary/40" />
-                {isUserAdmin ? "Admin Control" : (role === 'buyer' ? "Learning Area" : "Business Workspace")}
+                <Cpu className="h-3.5 w-3.5 text-primary/40" />
+                {isUserAdmin ? "Kernel Management" : (role === 'buyer' ? "Learning Workspace" : "Affiliate Environment")}
              </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-1.5 px-4 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
                <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">En línea</span>
+               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Core Active</span>
             </div>
             <ThemeToggle />
             <LanguageToggle />
