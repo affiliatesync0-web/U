@@ -124,6 +124,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: affiliateProfile } = useDoc(affiliateRef);
 
+  const buyerRef = useMemoFirebase(() => (db && user && role === 'buyer' ? doc(db, 'buyers', user.uid) : null), [db, user, role]);
+  const { data: buyerProfile } = useDoc(buyerRef);
+
   const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
@@ -133,6 +136,18 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     await signOut(auth);
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
+
+  // Obtener el nombre para el saludo de forma inteligente
+  const getDisplayName = () => {
+    if (isUserAdmin) return "Admin";
+    if (affiliateProfile?.firstName) return affiliateProfile.firstName;
+    if (buyerProfile?.firstName) return buyerProfile.firstName;
+    if (user?.displayName) return user.displayName.split(' ')[0];
+    if (user?.email) return user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1);
+    return "Invitado";
+  };
+
+  const displayName = getDisplayName();
 
   if (!mounted || isUserLoading || isVerifyingRole) {
     return (
@@ -269,7 +284,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left transition-all">
-                  <span className="text-white text-[12px] leading-none">Hola, {profileLabel(user?.email || 'Socio')}</span>
+                  <span className="text-white text-[12px] leading-none">Hola, {displayName}</span>
                   <div className="flex items-center gap-1">
                     <span className="text-white font-black text-[14px] leading-tight tracking-tight">Cuenta y Listas</span>
                     <ChevronDown className="h-3 w-3 text-[#CCCCCC]" />
@@ -371,7 +386,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                  <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-inner">
                     <UserCircle className="h-8 w-8 text-[#232F3E]" />
                  </div>
-                 <span className="text-white font-black text-xl tracking-tight">Hola, {profileLabel(user?.email || 'Socio')}</span>
+                 <span className="text-white font-black text-xl tracking-tight">Hola, {displayName}</span>
                  <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto text-white p-2 hover:bg-white/10 rounded-full">
                    <X className="h-7 w-7" />
                  </button>
@@ -477,10 +492,4 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       </footer>
     </div>
   )
-}
-
-function profileLabel(email: string) {
-  if (!email) return 'Socio';
-  const name = email.split('@')[0];
-  return name.charAt(0).toUpperCase() + name.slice(1);
 }
