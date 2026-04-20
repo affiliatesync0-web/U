@@ -5,6 +5,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import {
   LayoutDashboard,
   Package,
@@ -22,39 +23,18 @@ import {
   UserCircle,
   Zap,
   MapPin,
-  MessageSquareShare,
-  Globe,
-  Bell,
-  ChevronRight,
   Inbox,
-  Send,
   GraduationCap,
   Sparkles,
   Smartphone,
-  AppWindow,
-  Download,
   Terminal,
   Cpu,
-  History,
-  Activity,
-  Box,
-  PanelLeft
+  Menu,
+  X,
+  Bell,
+  Search,
+  ChevronDown
 } from "lucide-react"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarRail,
-} from "@/components/ui/sidebar"
-import { NavMain } from "@/components/dashboard/nav-main"
-import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -65,6 +45,15 @@ import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { signOut } from "firebase/auth"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -83,6 +72,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   
   const [mounted, setMounted] = useState(false);
   const [isVerifyingRole, setIsVerifyingRole] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const cleanEmail = user?.email?.toLowerCase().trim() || '';
   const isUserAdmin = cleanEmail === ADMIN_EMAIL;
@@ -95,16 +85,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     async function verifyAccess() {
       if (!mounted || isUserLoading) return;
 
-      // SI NO HAY USUARIO, AL LOGIN
       if (!user) {
         window.location.href = '/auth/login';
         return;
       }
 
-      // 1. BLINDAJE MAESTRO (ADMIN): SI ES ADMIN, SIEMPRE AL PANEL ADMIN
       if (isUserAdmin) {
         if (!pathname.startsWith('/dashboard/admin')) {
-          console.warn("ADMIN DETECTADO EN RUTA DE USUARIO. REDIRIGIENDO AL NODO MAESTRO...");
           window.location.href = '/dashboard/admin'; 
           return;
         }
@@ -112,19 +99,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         return;
       }
 
-      // 2. PROTECCIÓN DE RUTA ADMIN: SI NO ES ADMIN, EXPULSAR SI INTENTA ENTRAR
       if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
-        console.warn("ACCESO NO AUTORIZADO A RUTA ADMIN. EXPULSANDO...");
         window.location.href = '/dashboard/affiliate'; 
         return;
       }
 
-      // 3. VERIFICACIÓN DE ROL POR COLECCIÓN (PARA USUARIOS COMUNES)
       try {
         const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
         const isAffiliate = affSnap.exists();
         
-        // Si intenta entrar como afiliado pero no lo es, al área de comprador
         if (role === 'affiliate' && !isAffiliate && !isUserAdmin) {
           router.replace('/dashboard/buyer');
           return;
@@ -152,7 +135,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
-  // PANTALLA DE CARGA DE SEGURIDAD
   if (!mounted || isUserLoading || isVerifyingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -170,9 +152,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     )
   }
 
-  // SI ES ADMIN Y ESTÁ EN UNA RUTA NO ADMIN, NO RENDERIZAMOS NADA (LA REDIRECCIÓN ESTÁ EN CAMINO)
   if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) return null;
-
   if (!user) return null;
 
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
@@ -201,18 +181,18 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
     { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: Inbox },
     { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
-    { title: t.products, url: "/dashboard/admin/products", icon: Package },
+    { title: "Productos", url: "/dashboard/admin/products", icon: Package },
     { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
-    { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
+    { title: "Directorio Socios", url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
-    { title: t.buyers, url: "/dashboard/admin/buyers", icon: Users2 },
-    { title: t.allSales, url: "/dashboard/admin/sales", icon: ShoppingBag },
-    { title: t.design, url: "/dashboard/admin/design", icon: Palette },
+    { title: "Compradores", url: "/dashboard/admin/buyers", icon: Users2 },
+    { title: "Ventas", url: "/dashboard/admin/sales", icon: ShoppingBag },
+    { title: "Diseño", url: "/dashboard/admin/design", icon: Palette },
   ]
 
   const affiliateItems = [
-    { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
+    { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Mi Buzón", url: "/dashboard/affiliate/support", icon: Mail },
     { title: "Descargar App", url: "/dashboard/affiliate/downloads", icon: Smartphone },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
@@ -220,87 +200,169 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
     { title: "Copiloto IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
-    { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
-    { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: "Mi Billetera", url: "/dashboard/affiliate/profile", icon: UserCircle },
+    { title: "Registrar Venta", url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
+    { title: "Mis Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },
+    { title: "Billetera", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
   const buyerItems = [
-    { title: t.dashboard, url: "/dashboard/buyer", icon: LayoutDashboard },
-    { title: "Explorar Cursos", url: "/dashboard/buyer/products", icon: ShoppingBasket },
+    { title: "Panel de Control", url: "/dashboard/buyer", icon: LayoutDashboard },
+    { title: "Productos", url: "/dashboard/buyer/products", icon: ShoppingBasket },
   ]
 
-  const getMenu = () => {
-    if (isUserAdmin) return adminItems;
-    if (role === 'buyer') return buyerItems;
-    return affiliateItems;
-  }
+  const menuItems = isUserAdmin ? adminItems : (role === 'buyer' ? buyerItems : affiliateItems);
+  const roleLabel = isUserAdmin ? 'ENGINEER' : (role === 'buyer' ? 'STUDENT' : 'PARTNER');
 
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon" className="premium-sidebar">
-        <SidebarHeader className="bg-white dark:bg-slate-950 transition-colors">
-          <div className="flex items-center gap-4 px-4 py-10 md:py-12">
-            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-800 flex items-center justify-center shrink-0">
-              {displayLogoUrl ? (
-                <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
-              ) : (
-                <Terminal className="h-8 w-8 text-muted-foreground opacity-10" />
-              )}
-            </div>
-            <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-black text-xl tracking-tighter text-slate-900 dark:text-white uppercase italic">Sync <span className="text-primary">Connect</span></span>
-              <div className="flex items-center gap-1.5">
-                <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase tracking-widest px-2 py-0">
-                  {isUserAdmin ? 'ENGINEER' : (role === 'buyer' ? 'STUDENT' : 'PARTNER')}
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col">
+      {/* TOP NAVIGATION BAR (AMAZON STYLE) */}
+      <header className="sticky top-0 z-50 w-full bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-all h-20 md:h-24">
+        <div className="container mx-auto h-full px-4 md:px-8 flex items-center justify-between gap-4">
+          
+          {/* Logo Section */}
+          <div className="flex items-center gap-4 shrink-0">
+            <Link href="/" className="flex items-center gap-3 group transition-transform active:scale-95">
+              <div className="relative h-10 w-10 md:h-12 md:w-12 overflow-hidden rounded-xl bg-white dark:bg-slate-800 shadow-lg ring-1 ring-slate-100 dark:ring-slate-700 flex items-center justify-center">
+                {displayLogoUrl ? (
+                  <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-1.5" unoptimized />
+                ) : (
+                  <Terminal className="h-6 w-6 text-primary" />
+                )}
+              </div>
+              <div className="flex flex-col leading-none">
+                <span className="font-headline font-black text-lg md:text-xl tracking-tighter text-slate-900 dark:text-white uppercase italic">Sync <span className="text-primary">Connect</span></span>
+                <Badge className="w-fit bg-primary/10 text-primary border-none text-[7px] font-black uppercase tracking-widest px-1.5 py-0 mt-0.5">
+                  {roleLabel}
                 </Badge>
               </div>
+            </Link>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 px-8">
+            <div className="h-10 w-[2px] bg-slate-100 dark:bg-slate-800 mx-4" />
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2">
+              {menuItems.map((item) => (
+                <Link 
+                  key={item.url} 
+                  href={item.url}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap",
+                    pathname === item.url 
+                      ? "bg-primary text-white shadow-xl shadow-primary/20 scale-105" 
+                      : "text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.title}
+                </Link>
+              ))}
+            </div>
+          </nav>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            <div className="hidden md:flex items-center gap-1 mr-2">
+              <ThemeToggle />
+              <LanguageToggle />
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-3 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
+                  <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center text-primary font-black text-xs shadow-lg group-hover:rotate-3 transition-transform">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden md:flex flex-col text-left mr-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Cuenta</span>
+                    <span className="text-xs font-black text-slate-800 dark:text-white truncate max-w-[100px]">Mi Sync</span>
+                  </div>
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 mr-1" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-none shadow-2xl bg-white dark:bg-slate-900">
+                <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-widest text-slate-400 px-4 pt-3 pb-2">Gestión de Perfil</DropdownMenuLabel>
+                <DropdownMenuItem asChild className="rounded-xl focus:bg-slate-50 dark:focus:bg-slate-800">
+                   <Link href="/dashboard/affiliate/profile" className="flex items-center gap-3 p-3 font-bold text-xs">
+                     <UserCircle className="h-4 w-4 text-primary" /> Mi Billetera
+                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-2" />
+                <DropdownMenuItem onClick={handleLogout} className="rounded-xl focus:bg-red-50 dark:focus:bg-red-950/20 text-red-500 p-3 font-bold text-xs gap-3">
+                  <LogOut className="h-4 w-4" /> Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile Menu Trigger */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 transition-all border border-slate-100 dark:border-slate-700"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6 text-primary" /> : <Menu className="h-6 w-6 text-primary" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        <div className={cn(
+          "lg:hidden fixed inset-0 top-20 z-40 bg-white dark:bg-slate-950 transition-all duration-500 ease-in-out transform",
+          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        )}>
+          <div className="p-6 space-y-8 h-full overflow-y-auto pb-32">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-4">Navegación</p>
+              <div className="grid grid-cols-1 gap-2">
+                {menuItems.map((item) => (
+                  <Link 
+                    key={item.url} 
+                    href={item.url}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-4 p-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all",
+                      pathname === item.url 
+                        ? "bg-slate-900 text-white shadow-2xl" 
+                        : "text-slate-500 bg-slate-50 dark:bg-slate-900/50"
+                    )}
+                  >
+                    <div className={cn(
+                      "h-10 w-10 rounded-2xl flex items-center justify-center shadow-lg",
+                      pathname === item.url ? "bg-primary text-white" : "bg-white dark:bg-slate-800"
+                    )}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    {item.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-6 border-t dark:border-slate-800 flex items-center justify-between px-4">
+              <div className="flex gap-2">
+                <ThemeToggle />
+                <LanguageToggle />
+              </div>
+              <Button onClick={handleLogout} variant="ghost" className="text-red-500 font-black text-[10px] uppercase gap-2">
+                <LogOut className="h-4 w-4" /> SALIR
+              </Button>
             </div>
           </div>
-        </SidebarHeader>
-        <SidebarContent className="bg-white dark:bg-slate-950 transition-colors px-3 space-y-2">
-          <NavMain 
-            items={getMenu()} 
-            label={isUserAdmin ? "SISTEMA OPERATIVO" : "NAVEGACIÓN"} 
-          />
-        </SidebarContent>
-        <SidebarFooter className="bg-white dark:bg-slate-950 border-t border-slate-50 dark:border-slate-900 p-6 transition-colors">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} className="h-14 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all group">
-                <LogOut className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-                <span className="font-black uppercase text-[11px] tracking-[0.2em]">{t.logout}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
-      <SidebarInset className="bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
-        <header className="glass-header flex h-20 shrink-0 items-center gap-2 sticky top-0 z-40 px-6 transition-all">
-          <SidebarTrigger className="-ml-1 text-primary hover:bg-primary/5 rounded-xl h-10 w-10 transition-colors" />
-          <Separator orientation="vertical" className="mx-4 h-6 bg-slate-200 dark:bg-slate-800" />
-          <div className="flex-1 overflow-hidden">
-             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                <Cpu className="h-3.5 w-3.5 text-primary/40" />
-                {isUserAdmin ? "Kernel Management" : (role === 'buyer' ? "Learning Workspace" : "Affiliate Environment")}
-             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-1.5 px-4 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
-               <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Core Active</span>
-            </div>
-            <ThemeToggle />
-            <LanguageToggle />
-          </div>
-        </header>
-        <main className="flex-1 p-6 md:p-12 lg:p-16 text-foreground overflow-x-hidden animate-in fade-in slide-in-from-bottom-2 duration-1000">
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 p-4 md:p-8 lg:p-12 animate-in fade-in slide-in-from-bottom-2 duration-1000">
+        <div className="max-w-[1400px] mx-auto">
+          {children}
+        </div>
+      </main>
+
+      {/* FOOTER SIMPLE (OPCIONAL) */}
+      <footer className="py-10 px-8 border-t border-slate-100 dark:border-slate-900 text-center">
+         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Sync Connect Technology • © 2024</p>
+      </footer>
+    </div>
   )
 }
