@@ -74,6 +74,8 @@ export default function LoginPage() {
 
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
+    
+    // 1. VERIFICACIÓN MAESTRA (ADMIN)
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       window.location.href = '/dashboard/admin';
@@ -81,23 +83,35 @@ export default function LoginPage() {
     }
 
     try {
+      // 2. VERIFICACIÓN DE ROL REGISTRADO
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
-      const targetPath = affSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer';
-
-      if (!affSnap.exists()) {
-        const names = (displayName || '').split(' ');
-        setDocumentNonBlocking(doc(db, 'buyers', uid), {
-          id: uid,
-          firstName: names[0] || 'Usuario',
-          lastName: names.slice(1).join(' ') || 'Connect',
-          email: cleanEmail,
-          registeredAt: new Date().toISOString(),
-          status: 'Active'
-        }, { merge: true });
+      if (affSnap.exists()) {
+        toast({ title: "¡Bienvenido Socio!", description: "Entrando a tu panel Platinum." });
+        router.replace('/dashboard/affiliate');
+        return;
       }
 
-      toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
-      router.replace(targetPath);
+      const buyerSnap = await getDoc(doc(db, 'buyers', uid));
+      if (buyerSnap.exists()) {
+        toast({ title: "¡Bienvenido!", description: "Entrando a tu área de estudio." });
+        router.replace('/dashboard/buyer');
+        return;
+      }
+
+      // 3. SI NO EXISTE REGISTRO, CREAR PERFIL DE COMPRADOR (AUTO-ONBOARDING)
+      const names = (displayName || '').split(' ');
+      setDocumentNonBlocking(doc(db, 'buyers', uid), {
+        id: uid,
+        firstName: names[0] || 'Usuario',
+        lastName: names.slice(1).join(' ') || 'Connect',
+        email: cleanEmail,
+        registeredAt: new Date().toISOString(),
+        status: 'Active'
+      }, { merge: true });
+
+      toast({ title: "Cuenta vinculada", description: "Accediendo como cliente." });
+      router.replace('/dashboard/buyer');
+
     } catch (err) {
       console.error("Login Success Error:", err);
       router.replace('/dashboard/buyer');
@@ -116,8 +130,11 @@ export default function LoginPage() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
-      if (result?.user) handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
-      else setLoading(false);
+      if (result?.user) {
+        await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
+      } else {
+        setLoading(false);
+      }
     } catch (error: any) {
       console.error("Google Login Error:", error.code);
       setLoading(false);

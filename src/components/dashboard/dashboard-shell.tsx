@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -37,7 +36,8 @@ import {
   Cpu,
   History,
   Activity,
-  Box
+  Box,
+  PanelLeft
 } from "lucide-react"
 import {
   Sidebar,
@@ -96,11 +96,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       return;
     }
 
+    // SI EL ADMIN ESTÁ EN EL PANEL EQUIVOCADO, FORZAR REDIRECCIÓN
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       window.location.href = '/dashboard/admin'; 
       return;
     }
 
+    // SI UN USUARIO NORMAL INTENTA ENTRAR AL ADMIN, BLOQUEAR
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/affiliate'); 
       return;
@@ -170,7 +172,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: Inbox },
     { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
-    { title: "Centro de Builds", url: "/dashboard/admin/releases", icon: Terminal },
+    { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
