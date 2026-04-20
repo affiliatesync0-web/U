@@ -36,7 +36,8 @@ import {
   ChevronDown,
   Globe,
   ShoppingCart,
-  MapPinned
+  MapPinned,
+  BadgeCheck
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -58,6 +59,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -204,8 +206,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
     { title: "Copiloto IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
-    { title: "Registrar Venta", url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
-    { title: "Mis Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },
+    { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
+    { title: t.myCustomers, url: "/dashboard/affiliate/buyers", icon: Users2 },
     { title: "Billetera", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
@@ -216,6 +218,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const menuItems = isUserAdmin ? adminItems : (role === 'buyer' ? buyerItems : affiliateItems);
   const roleLabel = isUserAdmin ? 'ENGINEER' : (role === 'buyer' ? 'STUDENT' : 'PARTNER');
+  
+  // Dynamic links for the Amazon header
+  const marketUrl = isUserAdmin ? "/dashboard/admin/products" : (role === 'buyer' ? "/dashboard/buyer/products" : "/dashboard/affiliate/products");
+  const profileUrl = isUserAdmin ? "/dashboard/admin/design" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate/profile");
 
   return (
     <div className="min-h-screen bg-[#EAEDED] flex flex-col">
@@ -226,7 +232,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <div className="bg-[#131921] h-[60px] md:h-[72px] flex items-center px-2 md:px-4 gap-2 md:gap-4">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 group">
+          <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 group">
             <div className="relative h-7 w-7 md:h-9 md:w-9 mr-1">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
@@ -257,7 +263,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               </button>
               <Input 
                 placeholder="Buscar en Sync Connect..." 
-                className="flex-1 border-none focus-visible:ring-0 text-[14px] h-full rounded-none" 
+                className="flex-1 border-none focus-visible:ring-0 text-[14px] h-full rounded-none bg-transparent" 
               />
               <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-11 md:w-12 h-full flex items-center justify-center transition-colors">
                 <Search className="h-5 w-5 text-[#333333]" />
@@ -268,7 +274,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           {/* Right Links (Account & Lists) */}
           <div className="flex items-center gap-1 shrink-0">
             
-            {/* Language (Mocked) */}
+            {/* Language */}
             <div className="hidden lg:flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group gap-1">
                <Globe className="h-4 w-4 text-white" />
                <span className="text-white font-black text-[14px]">ES</span>
@@ -289,31 +295,32 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               <DropdownMenuContent align="end" className="w-64 rounded-xl p-4 border-none shadow-2xl bg-white mt-1">
                 <div className="flex flex-col gap-3">
                   <Button className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-medium text-xs rounded-lg h-9 shadow-sm" asChild>
-                    <Link href="/dashboard/affiliate/profile">Mi Perfil Sync</Link>
+                    <Link href={profileUrl}>Mi Perfil Sync</Link>
                   </Button>
-                  <div className="flex justify-center">
-                    <span className="text-[11px] text-[#111]">¿Eres nuevo? <Link href="/auth/register" className="text-[#007185] hover:underline">Empieza aquí.</Link></span>
-                  </div>
                 </div>
                 <DropdownMenuSeparator className="my-4" />
                 <div className="grid grid-cols-1 gap-1">
                   <DropdownMenuLabel className="p-0 text-sm font-black mb-1">Tu Cuenta</DropdownMenuLabel>
-                  <Link href="/dashboard/affiliate/profile" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Mis Comisiones</Link>
-                  <Link href="/dashboard/affiliate/register-sale" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Registrar Venta</Link>
-                  <Link href="/dashboard/affiliate/support" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Soporte VIP</Link>
+                  <Link href={profileUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Ajustes y Pagos</Link>
+                  {!isUserAdmin && role === 'affiliate' && (
+                    <>
+                      <Link href="/dashboard/affiliate/register-sale" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Registrar Venta</Link>
+                      <Link href="/dashboard/affiliate/support" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Soporte VIP</Link>
+                    </>
+                  )}
                   <button onClick={handleLogout} className="text-[13px] text-red-600 hover:underline text-left py-1 mt-2">Cerrar Sesión</button>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
             {/* Billetera (Returns & Orders Style) */}
-            <Link href="/dashboard/affiliate/profile" className="hidden md:flex flex-col items-start p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left">
+            <Link href={profileUrl} className="hidden md:flex flex-col items-start p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left">
                <span className="text-white text-[12px] leading-none">Mi</span>
                <span className="text-white font-black text-[14px] leading-tight">Billetera</span>
             </Link>
 
-            {/* Cart Icon */}
-            <Link href="/dashboard/affiliate/products" className="flex items-end p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group relative">
+            {/* Market Icon */}
+            <Link href={marketUrl} className="flex items-end p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group relative">
                <div className="relative">
                  <ShoppingCart className="h-8 w-8 text-white" />
                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">
@@ -342,7 +349,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                 href={item.url}
                 className={cn(
                   "px-3 h-full flex items-center rounded hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all",
-                  pathname === item.url ? "font-black" : "font-medium"
+                  pathname === item.url ? "font-black border-b-2 border-white mt-[2px]" : "font-medium"
                 )}
                >
                  {item.title}
@@ -383,7 +390,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                             key={item.url} 
                             href={item.url} 
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center justify-between py-3 group"
+                            className="flex items-center justify-between py-3 group border-b border-slate-50 last:border-0"
                           >
                             <span className="text-[14px] text-[#111] group-hover:font-black">{item.title}</span>
                             <ChevronDown className="h-4 w-4 -rotate-90 text-[#888]" />
@@ -394,8 +401,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                     <DropdownMenuSeparator className="bg-slate-100" />
                     <div>
                        <h4 className="text-lg font-black mb-4">Ayuda y Ajustes</h4>
-                       <Link href="/dashboard/affiliate/profile" className="block py-2 text-[14px]">Tu Cuenta</Link>
-                       <button onClick={handleLogout} className="block py-2 text-[14px] w-full text-left">Cerrar Sesión</button>
+                       <Link href={profileUrl} onClick={() => setIsMobileMenuOpen(false)} className="block py-3 text-[14px] text-[#111]">Tu Cuenta y Pagos</Link>
+                       <button onClick={handleLogout} className="block py-3 text-[14px] w-full text-left text-red-600 font-bold">Cerrar Sesión</button>
                     </div>
                  </div>
               </ScrollArea>
