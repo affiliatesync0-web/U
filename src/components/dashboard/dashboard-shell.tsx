@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -28,7 +29,11 @@ import {
   Inbox,
   Send,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Smartphone,
+  AppWindow,
+  Download,
+  Terminal
 } from "lucide-react"
 import {
   Sidebar,
@@ -71,7 +76,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   
   const [mounted, setMounted] = useState(false);
 
-  // IDENTIFICACIÓN MAESTRA: Este correo SIEMPRE es admin
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
   const cleanEmail = user?.email?.toLowerCase().trim() || '';
   const isUserAdmin = cleanEmail === ADMIN_EMAIL;
@@ -162,6 +166,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: Inbox },
     { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
+    { title: "Gestión de Apps", url: "/dashboard/admin/releases", icon: Smartphone },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
@@ -173,6 +178,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Mi Buzón", url: "/dashboard/affiliate/support", icon: Mail },
+    { title: "Descargar App", url: "/dashboard/affiliate/downloads", icon: Download },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Bot de Ventas", url: "/dashboard/affiliate/bot-settings", icon: Zap },
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
