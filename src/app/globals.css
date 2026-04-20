@@ -10,25 +10,20 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 48 100% 50%; /* Amazon Orange/Yellow #FFD814 */
-    --primary-foreground: 0 0% 0%; /* Black text on yellow buttons */
+    --primary: 36 100% 50%; /* Amazon Gold/Orange #FEBD69 */
+    --primary-foreground: 0 0% 0%; 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 187 100% 26%; /* Amazon Link Color #007185 */
+    --accent: 187 100% 26%; /* Amazon Teal #007185 */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 48 100% 50%;
-    --radius: 0.5rem;
-    --chart-1: 36 100% 50%;
-    --chart-2: 210 100% 50%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --ring: 36 100% 50%;
+    --radius: 0.25rem; /* Amazon has sharper corners */
   }
 
   .dark {
@@ -38,7 +33,7 @@
     --card-foreground: 213 31% 91%;
     --popover: 224 71% 4%;
     --popover-foreground: 215 20.2% 65.1%;
-    --primary: 48 100% 50%;
+    --primary: 36 100% 50%;
     --primary-foreground: 0 0% 0%;
     --secondary: 222.2 47.4% 11.2%;
     --secondary-foreground: 210 40% 98%;
@@ -50,74 +45,53 @@
     --destructive-foreground: 210 40% 98%;
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 48 100% 50%;
+    --ring: 36 100% 50%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground font-body;
-    touch-action: manipulation;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-headline font-black;
-  }
-  
-  input, 
-  textarea, 
-  select, 
-  [role="combobox"], 
-  button,
-  .form-control {
-    font-size: 16px !important;
   }
 }
 
-/* Amazon Style Premium Cards */
-.premium-card {
-  @apply border-none shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] rounded-md bg-white transition-all duration-300 hover:shadow-[0_10px_20px_rgba(0,0,0,0.05)];
+/* Amazon Specific Styles */
+.amazon-search-bar {
+  @apply flex-1 flex h-10 md:h-11 items-center rounded-md overflow-hidden bg-white ring-offset-0 focus-within:ring-[3px] focus-within:ring-[#FF9900];
 }
 
-/* Amazon Style Input Focus */
-.amazon-input {
-  @apply border border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] transition-all;
+.amazon-search-cat {
+  @apply hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] font-bold h-full transition-colors;
 }
 
-/* Amazon Style Primary Button */
+.amazon-search-btn {
+  @apply bg-[#FEBD69] hover:bg-[#F3A847] w-12 md:w-14 h-full flex items-center justify-center transition-colors;
+}
+
+.amazon-nav-link {
+  @apply p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white transition-all text-white;
+}
+
+.amazon-card {
+  @apply bg-white p-5 shadow-sm rounded-none border border-transparent hover:border-slate-200 transition-all flex flex-col gap-4;
+}
+
 .amazon-btn-primary {
-  @apply bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-[#111] font-medium shadow-[0_2px_5px_0_rgba(213,217,217,.5)] rounded-md py-1.5 px-4 transition-all;
+  @apply bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-black font-medium py-2 px-4 rounded-md shadow-sm active:scale-[0.98] transition-all;
 }
 
-/* Amazon Style Secondary Button */
 .amazon-btn-secondary {
-  @apply bg-[#f7fafa] hover:bg-[#f0f2f2] border border-[#d5d9d9] text-[#111] font-medium shadow-[0_2px_5px_0_rgba(213,217,217,.5)] rounded-md py-1.5 px-4 transition-all;
+  @apply bg-white hover:bg-slate-50 border border-[#D5D9D9] text-black font-medium py-2 px-4 rounded-md shadow-sm active:scale-[0.98] transition-all;
 }
 
-/* Scrollbar Amazon Style */
-::-webkit-scrollbar {
-  width: 8px;
+/* Hide scrollbars for clean Look */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-::-webkit-scrollbar-track {
-  @apply bg-[#F3F3F3];
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-[#94a3b8] rounded-full hover:bg-primary transition-colors;
-}
-
-/* Ocultar elementos de desarrollo */
-nextjs-portal, 
-#-nextjs-build-indicator, 
-.nextjs-static-indicator, 
-[data-nextjs-toast], 
-[data-nextjs-dialog-overlay],
-[data-nextjs-scroll-focus-boundary] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
