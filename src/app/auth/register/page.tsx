@@ -1,16 +1,14 @@
-
 "use client"
 
 import { Suspense } from 'react'
-import { ShoppingBag, Target, Loader2, ArrowLeft } from 'lucide-react'
+import { ShoppingBag, Target, Loader2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { doc } from 'firebase/firestore'
 import { useFirestore, useMemoFirebase, useDoc } from '@/firebase'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { LanguageToggle } from '@/components/language-toggle'
+import { Button } from '@/components/ui/button'
 
 function RegisterSelectionContent() {
   const db = useFirestore()
@@ -20,59 +18,70 @@ function RegisterSelectionContent() {
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4 transition-colors duration-300">
-      <div className="fixed top-6 right-6 flex items-center gap-2">
-        <ThemeToggle />
-        <LanguageToggle />
-      </div>
-
-      <div className="mb-12 flex flex-col items-center gap-6">
-        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          <span>Volver a Sync Academy</span>
-        </Link>
-
-        <Link href="https://syncacademy.systeme.io/sync-connect" className="group transition-transform hover:scale-105">
-          <div className="h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card flex items-center justify-center ring-8 ring-primary/5 border border-border/50">
+    <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12">
+      
+      {/* LOGO */}
+      <div className="mb-6">
+        <Link href="/">
+          <div className="relative h-12 w-32 md:h-14 md:w-36">
             {displayLogoUrl ? (
-              <Image src={displayLogoUrl} alt="Logo" width={80} height={80} className="p-3 object-contain" unoptimized />
+              <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
             ) : (
-              <span className="text-primary text-2xl font-black">SC</span>
+              <span className="text-[#111] font-black text-2xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
             )}
           </div>
         </Link>
       </div>
 
-      <div className="w-full max-w-4xl">
-        <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
-          <div className="text-center">
-            <h1 className="text-5xl font-headline font-black text-foreground tracking-tight leading-none uppercase italic">Crea tu <span className="text-primary">Cuenta</span></h1>
-            <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-[0.4em] mt-4">Únete a la red líder en Nicaragua</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Link href="/auth/register/buyer" className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left border border-border/50 group block">
-              <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-500 mb-8 group-hover:scale-110 transition-transform">
-                <ShoppingBag className="h-8 w-8" />
-              </div>
-              <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Quiero Comprar</h3>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed">Accede a formación premium y servicios digitales certificados.</p>
-            </Link>
+      <div className="w-full max-w-[400px] bg-white border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] p-8 space-y-6">
+        <h1 className="text-[28px] font-normal text-[#111] leading-tight">Crear cuenta</h1>
+        
+        <p className="text-[14px] text-[#111] font-bold">Selecciona tu objetivo principal:</p>
 
-            <Link href="/auth/register/affiliate" className="p-12 rounded-[3.5rem] bg-card shadow-2xl hover:ring-8 hover:ring-primary/5 transition-all text-left border border-border/50 group block">
-              <div className="h-16 w-16 bg-primary/5 rounded-2xl flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform">
-                <Target className="h-8 w-8" />
+        <div className="space-y-4">
+          <Link href="/auth/register/buyer" className="group flex items-center justify-between p-4 border border-[#ddd] rounded-md hover:bg-[#f7fafa] hover:border-[#007185] transition-all">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-blue-50 flex items-center justify-center rounded-full text-blue-600">
+                <ShoppingBag className="h-5 w-5" />
               </div>
-              <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 uppercase">Quiero Vender</h3>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed">Genera comisiones reales y escala tu negocio digital hoy mismo.</p>
-            </Link>
-          </div>
+              <div>
+                <h3 className="text-[14px] font-bold text-[#111]">Quiero comprar</h3>
+                <p className="text-[11px] text-[#555]">Acceder a formación premium</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-[#888] group-hover:text-[#111] transition-colors" />
+          </Link>
 
-          <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-8">
-            ¿Ya tienes cuenta? <Link href="/auth/login" className="text-primary font-black hover:underline ml-1">Inicia Sesión</Link>
+          <Link href="/auth/register/affiliate" className="group flex items-center justify-between p-4 border border-[#ddd] rounded-md hover:bg-[#f7fafa] hover:border-[#007185] transition-all">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-orange-50 flex items-center justify-center rounded-full text-orange-600">
+                <Target className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-[14px] font-bold text-[#111]">Quiero vender</h3>
+                <p className="text-[11px] text-[#555]">Generar comisiones reales</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-[#888] group-hover:text-[#111] transition-colors" />
+          </Link>
+        </div>
+
+        <div className="pt-6 border-t border-[#eee]">
+          <p className="text-[12px] text-[#111]">
+            ¿Ya tienes una cuenta? <Link href="/auth/login" className="text-[#0066c0] hover:text-[#c45500] hover:underline font-bold">Iniciar sesión <ChevronRight className="inline h-3 w-3" /></Link>
           </p>
         </div>
       </div>
+
+      {/* FOOTER */}
+      <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
+        <div className="flex justify-center gap-8">
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Ayuda</Link>
+        </div>
+        <p className="text-[11px] text-[#555]">© 2024, SyncConnect.com, Inc. o sus afiliados</p>
+      </footer>
     </div>
   )
 }

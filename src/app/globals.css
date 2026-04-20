@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 210 20% 93%; /* Lighter Amazon Background #EAEDED */
+    --background: 210 20% 93%; /* Amazon Background #EAEDED */
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 36 100% 50%; /* Amazon Orange #FF9900 */
-    --primary-foreground: 0 0% 100%;
+    --primary: 48 100% 50%; /* Amazon Orange/Yellow #FFD814 */
+    --primary-foreground: 0 0% 0%; /* Black text on yellow buttons */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 100% 50%; /* Deep Blue Accent */
+    --accent: 187 100% 26%; /* Amazon Link Color #007185 */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 36 100% 50%;
-    --radius: 0.5rem; /* Mas limpio para estilo Amazon */
+    --ring: 48 100% 50%;
+    --radius: 0.5rem;
     --chart-1: 36 100% 50%;
     --chart-2: 210 100% 50%;
     --chart-3: 197 37% 24%;
@@ -38,19 +38,19 @@
     --card-foreground: 213 31% 91%;
     --popover: 224 71% 4%;
     --popover-foreground: 215 20.2% 65.1%;
-    --primary: 36 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 0%;
     --secondary: 222.2 47.4% 11.2%;
     --secondary-foreground: 210 40% 98%;
     --muted: 223 47% 11%;
     --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 216 34% 17%;
+    --accent: 187 100% 26%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 36 100% 50%;
+    --ring: 48 100% 50%;
   }
 }
 
@@ -82,6 +82,21 @@
 /* Amazon Style Premium Cards */
 .premium-card {
   @apply border-none shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] rounded-md bg-white transition-all duration-300 hover:shadow-[0_10px_20px_rgba(0,0,0,0.05)];
+}
+
+/* Amazon Style Input Focus */
+.amazon-input {
+  @apply border border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] transition-all;
+}
+
+/* Amazon Style Primary Button */
+.amazon-btn-primary {
+  @apply bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-[#111] font-medium shadow-[0_2px_5px_0_rgba(213,217,217,.5)] rounded-md py-1.5 px-4 transition-all;
+}
+
+/* Amazon Style Secondary Button */
+.amazon-btn-secondary {
+  @apply bg-[#f7fafa] hover:bg-[#f0f2f2] border border-[#d5d9d9] text-[#111] font-medium shadow-[0_2px_5px_0_rgba(213,217,217,.5)] rounded-md py-1.5 px-4 transition-all;
 }
 
 /* Scrollbar Amazon Style */
