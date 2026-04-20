@@ -24,7 +24,9 @@ import {
   MessageSquareShare,
   Globe,
   Bell,
-  ChevronRight
+  ChevronRight,
+  Inbox,
+  Send
 } from "lucide-react"
 import {
   Sidebar,
@@ -155,7 +157,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
-    { title: "Soporte Central", url: "/dashboard/admin/support", icon: MessageSquareShare },
+    { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: Inbox },
     { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
@@ -168,7 +170,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: "Sync Support", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
+    { title: "Mi Buzón", url: "/dashboard/affiliate/support", icon: Mail },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Bot de Ventas", url: "/dashboard/affiliate/bot-settings", icon: Zap },
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
@@ -237,7 +239,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <div className="flex-1 overflow-hidden">
              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary/40" />
-                {isUserAdmin ? "Admin Control" : (role === 'buyer' ? 'Learning Area' : 'Business Workspace')}
+                {isUserAdmin ? "Admin Control" : (role === 'buyer' ? "Learning Area" : "Business Workspace")}
              </div>
           </div>
           <div className="flex items-center gap-3">
