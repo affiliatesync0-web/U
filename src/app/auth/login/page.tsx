@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   Smartphone,
   Mail,
-  Zap
+  Zap,
+  CreditCard
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -57,7 +58,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState('google')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | null>(null)
+  const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | 'billing' | null>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -98,7 +99,6 @@ export default function LoginPage() {
   const setupRecaptcha = (containerId: string) => {
     if (typeof window === "undefined" || !auth) return null;
 
-    // Si ya existe y está activo, lo reutilizamos para evitar el error de "Already Rendered"
     if ((window as any).recaptchaVerifier) {
       return (window as any).recaptchaVerifier;
     }
@@ -231,7 +231,6 @@ export default function LoginPage() {
       console.error("SMS Code Error:", error.code, error.message);
       setLoading(false);
       
-      // Limpiar reCAPTCHA en caso de error para permitir reintentos frescos
       if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
         try {
           (window as any).recaptchaVerifier.clear();
@@ -241,6 +240,8 @@ export default function LoginPage() {
 
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
+      } else if (error.code === 'auth/billing-not-enabled') {
+        setAuthErrorType('billing');
       } else if (error.code === 'auth/invalid-phone-number') {
         setErrorMsg("El formato del número de teléfono no es válido.");
       } else if (error.code === 'auth/too-many-requests') {
@@ -324,6 +325,21 @@ export default function LoginPage() {
                       Firebase Console &gt; Auth &gt; Settings &gt; Authorized domains
                     </p>
                   </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {authErrorType === 'billing' && (
+              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95">
+                <CreditCard className="h-8 w-8 text-red-600 mb-4" />
+                <AlertTitle className="text-xs font-black uppercase mb-3 text-red-900 tracking-widest">Facturación Requerida</AlertTitle>
+                <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800 space-y-4">
+                  <p>La autenticación por SMS requiere que el proyecto Firebase esté en el <b>Plan Blaze (Pay-as-you-go)</b>.</p>
+                  <div className="bg-white/50 p-4 rounded-xl border border-red-100">
+                    <p className="mb-2">Instrucciones para el Admin:</p>
+                    <p className="text-[10px]">1. Ve a Firebase Console.<br/>2. Haz clic en 'Upgrade' abajo a la izquierda.<br/>3. Selecciona el Plan Blaze.</p>
+                  </div>
+                  <p className="text-[10px] italic">Mientras tanto, puedes usar Google o Email para entrar.</p>
                 </AlertDescription>
               </Alert>
             )}
