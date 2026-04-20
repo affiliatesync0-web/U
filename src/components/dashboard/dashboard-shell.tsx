@@ -27,7 +27,8 @@ import {
   ChevronRight,
   Inbox,
   Send,
-  GraduationCap
+  GraduationCap,
+  Sparkles
 } from "lucide-react"
 import {
   Sidebar,
