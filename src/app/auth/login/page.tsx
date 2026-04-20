@@ -21,7 +21,9 @@ import {
   Mail,
   Zap,
   Smartphone,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  HelpCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -54,7 +56,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | null>(null)
+  const [authErrorType, setAuthErrorType] = useState<'domain' | 'method' | 'generic' | null>(null)
+  const [rawErrorCode, setRawErrorCode] = useState<string | null>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -102,20 +105,18 @@ export default function LoginPage() {
       }
 
       // 4. SI NO ES ADMIN NI AFILIADO, CREAMOS PERFIL DE COMPRADOR (SOLO PARA USUARIOS COMUNES)
-      if (cleanEmail !== ADMIN_EMAIL) {
-        const names = (displayName || 'Usuario Sync').split(' ');
-        setDocumentNonBlocking(doc(db, 'buyers', uid), {
-          id: uid,
-          firstName: names[0] || 'Usuario',
-          lastName: names.slice(1).join(' ') || 'Connect',
-          email: cleanEmail,
-          registeredAt: new Date().toISOString(),
-          status: 'Active'
-        }, { merge: true });
+      const names = (displayName || 'Usuario Sync').split(' ');
+      setDocumentNonBlocking(doc(db, 'buyers', uid), {
+        id: uid,
+        firstName: names[0] || 'Usuario',
+        lastName: names.slice(1).join(' ') || 'Connect',
+        email: cleanEmail,
+        registeredAt: new Date().toISOString(),
+        status: 'Active'
+      }, { merge: true });
 
-        toast({ title: "Perfil Vinculado", description: "Accediendo como cliente." });
-        router.replace('/dashboard/buyer');
-      }
+      toast({ title: "Perfil Vinculado", description: "Accediendo como cliente." });
+      router.replace('/dashboard/buyer');
 
     } catch (err) {
       console.error("Login Success Error:", err);
@@ -124,9 +125,14 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth || !db) return;
+    if (!auth) {
+      toast({ variant: "destructive", title: "Error", description: "El servicio de autenticación no está listo. Por favor refresca la página." });
+      return;
+    }
+
     setAuthErrorType(null);
     setErrorMsg(null);
+    setRawErrorCode(null);
     setLoading(true);
     
     const provider = new GoogleAuthProvider();
@@ -135,17 +141,29 @@ export default function LoginPage() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
+      
       if (result?.user) {
         await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       } else {
         setLoading(false);
       }
     } catch (error: any) {
-      console.error("Google Login Error:", error.code);
+      console.error("Google Login Error:", error.code, error.message);
       setLoading(false);
-      if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
-      else if (error.code === 'auth/popup-blocked') setErrorMsg("Popup bloqueado por el navegador.");
-      else if (error.code !== 'auth/popup-closed-by-user') setErrorMsg(`Error de conexión: ${error.code}`);
+      setRawErrorCode(error.code);
+
+      if (error.code === 'auth/unauthorized-domain') {
+        setAuthErrorType('domain');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setAuthErrorType('method');
+      } else if (error.code === 'auth/popup-blocked') {
+        setErrorMsg("El navegador bloqueó la ventana emergente de Google. Por favor, permite los popups para este sitio.");
+      } else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        setErrorMsg("Inicio de sesión cancelado por el usuario.");
+      } else {
+        setErrorMsg("No se pudo conectar con Google. Revisa tu conexión a internet.");
+        setAuthErrorType('generic');
+      }
     }
   };
 
@@ -209,17 +227,34 @@ export default function LoginPage() {
               </TabsTrigger>
             </TabsList>
 
+            {/* ERROR DE DOMINIO */}
             {authErrorType === 'domain' && (
-              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95">
+              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-6 animate-in zoom-in-95">
                 <ShieldAlert className="h-8 w-8 text-red-600 mb-4" />
                 <AlertTitle className="text-xs font-black uppercase mb-3 text-red-900 tracking-widest">Dominio no Autorizado</AlertTitle>
                 <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800 space-y-4">
-                  <p>Este dominio no está autorizado para usar Google Auth en tu consola.</p>
+                  <p>Este dominio no tiene permiso para usar Google Auth en Firebase.</p>
                   <div className="bg-white/50 p-4 rounded-xl border border-red-100">
-                    <p className="mb-2">Solución:</p>
-                    <p className="font-mono text-[9px] bg-slate-100 p-2 rounded">
-                      Firebase Console &gt; Auth &gt; Settings &gt; Authorized domains
-                    </p>
+                    <p className="mb-2 font-black uppercase text-[9px]">Solución para el Administrador:</p>
+                    <p className="text-[10px]">1. Ve a Firebase Console &gt; Auth &gt; Settings.</p>
+                    <p className="text-[10px]">2. En "Authorized domains", añade este dominio.</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* ERROR DE MÉTODO NO ACTIVADO */}
+            {authErrorType === 'method' && (
+              <Alert variant="destructive" className="rounded-[2rem] bg-amber-50 border-amber-200 p-6 animate-in zoom-in-95">
+                <Settings className="h-8 w-8 text-amber-600 mb-4" />
+                <AlertTitle className="text-xs font-black uppercase mb-3 text-amber-900 tracking-widest">Google Auth Desactivado</AlertTitle>
+                <AlertDescription className="text-[11px] font-bold leading-relaxed text-amber-800 space-y-4">
+                  <p>El método de inicio de sesión con Google no está habilitado en tu proyecto.</p>
+                  <div className="bg-white/50 p-4 rounded-xl border border-amber-100">
+                    <p className="mb-2 font-black uppercase text-[9px]">Pasos a seguir:</p>
+                    <p className="text-[10px]">1. Firebase Console &gt; Authentication &gt; Sign-in method.</p>
+                    <p className="text-[10px]">2. Haz clic en "Add new provider" y elige Google.</p>
+                    <p className="text-[10px]">3. Actívalo y guarda los cambios.</p>
                   </div>
                 </AlertDescription>
               </Alert>
@@ -228,7 +263,9 @@ export default function LoginPage() {
             {errorMsg && (
               <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-4 animate-in fade-in">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-[10px] font-black uppercase tracking-widest leading-tight">{errorMsg}</AlertDescription>
+                <AlertDescription className="text-[10px] font-black uppercase tracking-widest leading-tight">
+                  {errorMsg}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -265,6 +302,17 @@ export default function LoginPage() {
                   </div>
                 )}
               </Button>
+
+              {rawErrorCode && (
+                <div className="p-4 bg-slate-100 rounded-xl">
+                  <button 
+                    onClick={() => setRawErrorCode(null)} 
+                    className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <HelpCircle className="h-3 w-3" /> Error: {rawErrorCode} (Click para cerrar)
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                  {[
