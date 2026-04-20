@@ -26,7 +26,8 @@ import {
   Bell,
   ChevronRight,
   Inbox,
-  Send
+  Send,
+  GraduationCap
 } from "lucide-react"
 import {
   Sidebar,
