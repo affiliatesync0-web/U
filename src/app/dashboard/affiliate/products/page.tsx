@@ -5,7 +5,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Loader2, Info, Flame, Link as LinkIcon, Check, CreditCard, Landmark, GraduationCap } from 'lucide-react'
+import { Search, Loader2, Info, Flame, Link as LinkIcon, Check, CreditCard, Landmark, GraduationCap, Package, Truck } from 'lucide-react'
 import Image from 'next/image'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
@@ -57,8 +57,8 @@ export default function AffiliateProductsPage() {
               </div>
               <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Mercado de Divulgación</span>
             </div>
-            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Vende <span className="text-primary">Digital</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Productos optimizados para cierre con link de pago o transferencia local.</p>
+            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Vende <span className="text-primary">Digital & Físico</span></h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Promociona cursos digitales o productos físicos con entrega local en Nicaragua.</p>
           </div>
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
@@ -72,10 +72,10 @@ export default function AffiliateProductsPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-40"><Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" /></div>
+          <div className="flex justify-center py-40"><Loader2 className="animate-spin h-12 w-12 text-primary opacity-50" /></div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-32 bg-white rounded-[4rem] border-2 border-dashed border-slate-100">
-            <GraduationCap className="h-16 w-16 text-slate-200 mx-auto mb-4" />
+            <Package className="h-16 w-16 text-slate-200 mx-auto mb-4" />
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Catálogo en preparación</p>
           </div>
         ) : (
@@ -92,8 +92,8 @@ export default function AffiliateProductsPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
                   <div className="absolute top-6 left-6 flex gap-2">
-                    <Badge className="bg-primary border-none text-white font-black px-4 py-1 rounded-xl text-[9px] uppercase tracking-widest shadow-xl">
-                      {product.paymentLink ? 'PAGO DIGITAL' : 'TRANSFERENCIA'}
+                    <Badge className={cn("border-none text-white font-black px-4 py-1 rounded-xl text-[9px] uppercase tracking-widest shadow-xl", product.type === 'Físico' ? 'bg-blue-600' : 'bg-primary')}>
+                      {product.type === 'Físico' ? 'CONTRA ENTREGA' : (product.paymentLink ? 'PAGO DIGITAL' : 'TRANSFERENCIA')}
                     </Badge>
                   </div>
                   <div className="absolute bottom-8 left-8 right-8 text-white">
@@ -141,6 +141,8 @@ export default function AffiliateProductsPage() {
 }
 
 function ProductDetailsDialog({ product }: any) {
+  const isPhysical = product.type === 'Físico';
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -151,38 +153,53 @@ function ProductDetailsDialog({ product }: any) {
       <DialogContent className="max-w-xl rounded-[3.5rem] p-10 overflow-hidden border-none shadow-2xl bg-white">
         <div className="space-y-8">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Configuración de <span className="text-primary">Cierre</span></DialogTitle>
+            <DialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Logística de <span className="text-primary">Cierre</span></DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
             <div className="p-6 rounded-[2rem] bg-slate-50 border space-y-4">
               <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-                {product.paymentLink ? <CreditCard className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
-                Método de Pago Activo
+                {isPhysical ? <Truck className="h-4 w-4" /> : (product.paymentLink ? <CreditCard className="h-4 w-4" /> : <Landmark className="h-4 w-4" />)}
+                Método de Entrega & Pago
               </h4>
               
-              {product.paymentLink ? (
-                <div className="bg-white p-4 rounded-xl border border-primary/10 flex items-center justify-between gap-4">
-                  <code className="text-[10px] text-slate-500 truncate flex-1">{product.paymentLink}</code>
-                  <Badge className="bg-blue-100 text-blue-600 text-[8px] font-black">LINK DIGITAL</Badge>
+              {isPhysical ? (
+                <div className="bg-white p-6 rounded-xl border border-blue-100 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase">Tipo:</span>
+                    <span className="text-xs font-black uppercase text-blue-600">PRODUCTO FÍSICO</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase">Pago:</span>
+                    <span className="text-xs font-black">CONTRA ENTREGA</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium italic mt-2">El cliente paga en efectivo al recibir el paquete.</p>
                 </div>
               ) : (
-                <div className="bg-white p-6 rounded-xl border border-amber-100 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase">Banco:</span>
-                    <span className="text-xs font-black uppercase">{product.payoutBankId || product.bankType}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase">Cuenta:</span>
-                    <span className="text-xs font-black font-mono">{product.payoutBankAccountNumber || product.bankAccount}</span>
-                  </div>
-                  <Badge className="w-full justify-center bg-amber-50 text-amber-600 text-[8px] font-black mt-2">TRANSFERENCIA LOCAL</Badge>
-                </div>
+                <>
+                  {product.paymentLink ? (
+                    <div className="bg-white p-4 rounded-xl border border-primary/10 flex items-center justify-between gap-4">
+                      <code className="text-[10px] text-slate-500 truncate flex-1">{product.paymentLink}</code>
+                      <Badge className="bg-blue-100 text-blue-600 text-[8px] font-black">LINK DIGITAL</Badge>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 rounded-xl border border-amber-100 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Banco:</span>
+                        <span className="text-xs font-black uppercase">{product.payoutBankId || product.bankType}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Cuenta:</span>
+                        <span className="text-xs font-black font-mono">{product.payoutBankAccountNumber || product.bankAccount}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción del Curso</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción</h4>
               <p className="text-sm font-medium text-slate-600 leading-relaxed italic border-l-4 border-primary/20 pl-4">
                 "{product.description || 'Sin descripción disponible.'}"
               </p>

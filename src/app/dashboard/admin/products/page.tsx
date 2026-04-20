@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -11,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
-import { PRODUCT_CATEGORIES, NICA_BANKS } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Link as LinkIcon, Edit3, AlertCircle, Save, X, Package } from 'lucide-react'
+import { PRODUCT_CATEGORIES, NICA_BANKS, PRODUCT_TYPES } from '@/lib/constants'
+import { Plus, Trash2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Link as LinkIcon, Edit3, AlertCircle, Save, X, Package, Truck } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -40,6 +41,7 @@ export default function AdminProductsPage() {
   const [generating, setGenerating] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [storageError, setStorageError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -53,7 +55,8 @@ export default function AdminProductsPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Course',
+    type: 'Digital',
+    category: 'Curso',
     code: '',
     price: '',
     commission: '',
@@ -75,7 +78,8 @@ export default function AdminProductsPage() {
       if (p) {
         setFormData({
           name: p.name || '',
-          category: p.category || 'Course',
+          type: p.type || 'Digital',
+          category: p.category || 'Curso',
           code: p.code || '',
           price: p.price?.toString() || '',
           commission: p.commissionRate?.toString() || '',
@@ -186,10 +190,10 @@ export default function AdminProductsPage() {
 
     if (editingId) {
       updateDocumentNonBlocking(doc(db, 'products', editingId), productData);
-      toast({ title: "Curso Actualizado", description: "Los cambios se han guardado con éxito." });
+      toast({ title: "Producto Actualizado", description: "Los cambios se han guardado con éxito." });
     } else {
       addDocumentNonBlocking(collection(db, 'products'), { ...productData, createdAt: new Date().toISOString() });
-      toast({ title: "Curso Publicado", description: "El producto ya es visible para los socios." });
+      toast({ title: "Producto Publicado", description: "El producto ya es visible para los socios." });
     }
     closeDialog();
   }
@@ -197,7 +201,7 @@ export default function AdminProductsPage() {
   const closeDialog = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', category: 'Course', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '' });
+    setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '' });
     setVideos([]);
     setStorageError(null);
   }
@@ -209,30 +213,42 @@ export default function AdminProductsPage() {
     }
   }
 
+  const filteredProducts = (products || []).filter(p => 
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <DashboardShell role="admin">
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Catálogo de <span className="text-primary">Productos</span></h1>
-            <p className="text-slate-500 font-medium mt-2">Sube tus cursos y configura las ganancias de tus socios.</p>
+            <p className="text-slate-500 font-medium mt-2">Gestiona productos digitales y físicos con pagos por link o contra entrega.</p>
           </div>
-          <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary hover:bg-primary/90 rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest gap-2">
-            <Plus className="h-5 w-5" /> CREAR NUEVO PRODUCTO
-          </Button>
+          <div className="flex gap-4">
+             <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-10 h-12 rounded-xl bg-white border-none shadow-sm" />
+             </div>
+             <Button onClick={() => setIsAdding(true)} size="lg" className="h-12 px-6 bg-primary hover:bg-primary/90 rounded-xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest gap-2">
+              <Plus className="h-5 w-5" /> NUEVO
+            </Button>
+          </div>
         </div>
 
         <Dialog open={isAdding} onOpenChange={(open) => !open && closeDialog()}>
           <DialogContent className="max-w-full w-full h-[100dvh] md:max-w-6xl md:h-[90vh] md:rounded-[3.5rem] p-0 border-none shadow-2xl bg-white overflow-hidden flex flex-col">
-            {/* CABECERA ADAPTABLE */}
             <div className="bg-slate-900 p-6 md:p-10 text-white shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 md:h-12 md:w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <GraduationCap className="h-5 w-5 md:h-6 md:w-6" />
+                  {formData.type === 'Digital' ? <GraduationCap className="h-5 w-5 md:h-6 md:w-6" /> : <Package className="h-5 w-5 md:h-6 md:w-6" />}
                 </div>
                 <div>
-                  <DialogTitle className="text-xl md:text-3xl font-headline font-black">{editingId ? 'Editar Producto' : 'Cargar Producto Digital'}</DialogTitle>
-                  <DialogDescription className="text-slate-400 font-bold uppercase text-[8px] md:text-[10px] tracking-widest mt-1">Configuración Maestra Sync Academy</DialogDescription>
+                  <DialogTitle className="text-xl md:text-3xl font-headline font-black">{editingId ? 'Editar Producto' : 'Cargar Producto'}</DialogTitle>
+                  <DialogDescription className="text-slate-400 font-bold uppercase text-[8px] md:text-[10px] tracking-widest mt-1">
+                    {formData.type === 'Digital' ? 'ENTREGA DIGITAL VÍA EMAIL/PLATAFORMA' : 'ENTREGA FÍSICA PAGO CONTRA ENTREGA'}
+                  </DialogDescription>
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="text-white/40 hover:text-white md:hidden" onClick={closeDialog}>
@@ -240,243 +256,182 @@ export default function AdminProductsPage() {
               </Button>
             </div>
             
-            {/* CONTENIDO SCROLLABLE */}
             <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 pb-32">
-              {storageError && (
-                <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="font-black uppercase text-xs">Error de Servidor</AlertTitle>
-                  <AlertDescription className="text-xs font-bold mt-1">{storageError}</AlertDescription>
-                </Alert>
-              )}
-
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                {/* COLUMNA IZQUIERDA: Info Básica */}
                 <div className="lg:col-span-7 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Nombre Comercial del Producto</Label>
-                      <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-14 text-[16px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold" placeholder="Ej: Master en Marketing 2024" />
+                  <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Tipo de Producto</Label>
+                      <Select value={formData.type} onValueChange={v => setFormData({...formData, type: v})}>
+                        <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200 font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRODUCT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Precio de Venta ($)</Label>
-                      <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="h-14 text-[16px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-black" placeholder="99.00" />
+                      <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Categoría</Label>
+                      <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+                        <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200 font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRODUCT_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Nombre Comercial</Label>
+                      <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-14 text-[16px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Precio ($)</Label>
+                      <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="h-14 text-[16px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-black" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Comisión Afiliado (%)</Label>
-                      <Input type="number" value={formData.commission} onChange={e => setFormData({...formData, commission: e.target.value})} className="h-14 text-[16px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-black text-green-600" placeholder="50" />
+                      <Input type="number" value={formData.commission} onChange={e => setFormData({...formData, commission: e.target.value})} className="h-14 text-[16px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-black text-green-600" />
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Imagen de Portada (Miniatura)</Label>
+                    <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Miniatura</Label>
                     <div className="relative h-48 md:h-64 rounded-[2.5rem] bg-slate-50 border-4 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
                       {formData.imageUrl ? (
-                        <img src={formData.imageUrl} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" alt="preview" />
+                        <img src={formData.imageUrl} className="h-full w-full object-cover" alt="preview" />
                       ) : (
-                        <div className="flex flex-col items-center gap-2 opacity-30">
-                          <ImageIcon className="h-10 w-10 md:h-12 md:w-12 text-slate-400" />
-                          <p className="text-[10px] font-black uppercase">Click para subir imagen</p>
-                        </div>
+                        <ImageIcon className="h-12 w-12 text-slate-200" />
                       )}
-                      <Button variant="secondary" size="sm" className="absolute bottom-4 right-4 md:bottom-6 md:right-6 shadow-2xl rounded-xl font-black text-[9px] md:text-[10px] uppercase h-10 px-4 md:px-6" onClick={() => fileInputRef.current?.click()}>CAMBIAR IMAGEN</Button>
+                      <Button variant="secondary" size="sm" className="absolute bottom-4 right-4 shadow-2xl rounded-xl font-black text-[10px] uppercase h-10" onClick={() => fileInputRef.current?.click()}>CAMBIAR</Button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
                   </div>
 
-                  <div className="p-6 md:p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-6">
+                  <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-6">
                     <div className="flex items-center gap-3">
                       <Sparkles className="h-5 w-5 text-primary" />
-                      <h3 className="text-sm font-headline font-black uppercase tracking-widest">Generador de Copy IA</h3>
+                      <h3 className="text-sm font-headline font-black uppercase">Descripción IA</h3>
                     </div>
-                    <div className="space-y-4">
-                      <Label className="text-[10px] font-black text-slate-400 uppercase">Beneficios clave (separados por comas)</Label>
-                      <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="Acceso vitalicio, Mentoría 1-1, Certificado..." className="bg-white/5 border-none h-12 text-[16px] rounded-xl text-white placeholder:text-slate-600" />
-                      <Button onClick={handleAIHelp} variant="outline" className="w-full h-14 border-primary text-primary hover:bg-primary hover:text-white transition-all font-black text-[10px] uppercase tracking-widest" disabled={generating}>
-                        {generating ? <><Loader2 className="animate-spin mr-2 h-4 w-4" /> ESCRIBIENDO...</> : "REDACTAR DESCRIPCIÓN CON IA"}
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-slate-400 uppercase">Descripción / Copy Final</Label>
-                      <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[150px] md:min-h-[180px] rounded-2xl bg-white/5 border-none ring-1 ring-white/10 text-[16px] p-6 leading-relaxed" placeholder="Escribe o deja que la IA redacte tu oferta irresistible..." />
-                    </div>
+                    <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="Características clave..." className="bg-white/5 border-none h-12 text-white" />
+                    <Button onClick={handleAIHelp} variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary hover:text-white font-black text-[10px] uppercase" disabled={generating}>
+                      {generating ? "ESCRIBIENDO..." : "REDACTAR CON IA"}
+                    </Button>
+                    <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[150px] rounded-2xl bg-white/5 border-none p-6" placeholder="Oferta irresistible..." />
                   </div>
                 </div>
 
-                {/* COLUMNA DERECHA: Aula Virtual & Pagos */}
                 <div className="lg:col-span-5 space-y-10">
-                  <div className="p-6 md:p-8 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
-                        <Video className="h-5 w-5" />
+                  {formData.type === 'Digital' && (
+                    <div className="p-8 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-6">
+                      <div className="flex items-center gap-3">
+                        <Video className="h-5 w-5 text-primary" />
+                        <h3 className="text-xs font-black text-primary uppercase">Contenido Digital (Videos/PDF)</h3>
                       </div>
-                      <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em]">Aula Virtual Elite</h3>
-                    </div>
-                    
-                    <div className="space-y-4">
+                      <div className="space-y-4">
+                        <Input value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} placeholder="Título de la clase..." className="h-12 bg-white" />
+                        <Input value={newVideo.url} onChange={e => setNewVideo({...newVideo, url: e.target.value})} placeholder="Link del video o archivo..." className="h-12 bg-white" />
+                        <Button onClick={handleAddVideo} className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase">AÑADIR RECURSO</Button>
+                      </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Título de la Lección</Label>
-                        <Input value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} placeholder="Ej: 01. Mentalidad Ganadora" className="h-12 text-[16px] bg-white rounded-xl" />
-                      </div>
-                      
-                      <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
-                        <Button variant="ghost" className={cn("flex-1 h-10 text-[9px] font-black rounded-xl transition-all", !newVideo.useLocalFile ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")} onClick={() => setNewVideo({...newVideo, useLocalFile: false})}>LINK EXTERNO</Button>
-                        <Button variant="ghost" className={cn("flex-1 h-10 text-[9px] font-black rounded-xl transition-all", newVideo.useLocalFile ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")} onClick={() => setNewVideo({...newVideo, useLocalFile: true})}>SUBIR VIDEO MP4</Button>
-                      </div>
-
-                      {newVideo.useLocalFile ? (
-                        <div className="space-y-3">
-                          <Button variant="outline" className="w-full h-20 border-dashed border-2 bg-white rounded-2xl flex flex-col gap-1 transition-all hover:bg-slate-50" onClick={() => videoInputRef.current?.click()} disabled={uploadProgress !== null}>
-                            {uploadProgress !== null ? (
-                              <>
-                                <Loader2 className="animate-spin h-5 w-5 text-primary" />
-                                <span className="text-[9px] font-black uppercase text-primary">Subiendo: {Math.round(uploadProgress)}%</span>
-                              </>
-                            ) : (
-                              <>
-                                <Upload className="h-5 w-5 text-slate-400" />
-                                <span className="text-[9px] font-black uppercase text-slate-500">{newVideo.url ? "VIDEO CARGADO ✓" : "SELECCIONAR ARCHIVO"}</span>
-                              </>
-                            )}
-                          </Button>
-                          <input type="file" ref={videoInputRef} onChange={handleVideoFileChange} accept="video/*" className="hidden" />
-                          {uploadProgress !== null && <Progress value={uploadProgress} className="h-1.5" />}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">URL del Video (YouTube/Vimeo/Drive)</Label>
-                          <Input value={newVideo.url} onChange={e => setNewVideo({...newVideo, url: e.target.value})} placeholder="https://..." className="h-12 text-[16px] bg-white rounded-xl" />
-                        </div>
-                      )}
-                      
-                      <Button onClick={handleAddVideo} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl" disabled={uploadProgress !== null}>AÑADIR CLASE AL CURSO</Button>
-                    </div>
-
-                    <div className="space-y-3 max-h-[300px] md:max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
-                      {videos.length === 0 ? (
-                        <div className="text-center py-10 opacity-20">
-                          <PlayCircle className="h-10 w-10 mx-auto mb-2" />
-                          <p className="text-[9px] font-black uppercase">Sin clases añadidas</p>
-                        </div>
-                      ) : (
-                        videos.map((v, index) => (
-                          <div key={v.id} className="flex items-center justify-between p-4 bg-white border rounded-2xl shadow-sm group hover:border-primary/30 transition-all">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 shrink-0">
-                                {index + 1}
-                              </div>
-                              <div className="truncate">
-                                <p className="text-[10px] font-black text-slate-800 uppercase truncate">{v.title}</p>
-                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{v.isLocal ? 'Archivo Interno' : 'Link Externo'}</p>
-                              </div>
-                            </div>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl" onClick={() => setVideos(videos.filter(vi => vi.id !== v.id))}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                        {videos.map((v, i) => (
+                          <div key={v.id} className="flex items-center justify-between p-3 bg-white border rounded-xl shadow-sm">
+                            <span className="text-[10px] font-black text-slate-700 truncate">{i+1}. {v.title}</span>
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-red-400" onClick={() => setVideos(videos.filter(vi => vi.id !== v.id))}><Trash2 className="h-3 w-3" /></Button>
                           </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-6 md:p-8 bg-slate-50 rounded-[2.5rem] border space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border">
-                        <Landmark className="h-5 w-5" />
+                        ))}
                       </div>
-                      <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em]">Configuración de Cobros</h3>
+                    </div>
+                  )}
+
+                  <div className="p-8 bg-slate-50 rounded-[2.5rem] border space-y-6">
+                    <div className="flex items-center gap-3">
+                      {formData.type === 'Digital' ? <CreditCard className="h-5 w-5 text-slate-400" /> : <Truck className="h-5 w-5 text-slate-400" />}
+                      <h3 className="text-xs font-black text-slate-800 uppercase">Configuración de Pago</h3>
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase">Banco Local Receptor</Label>
-                        <Select onValueChange={v => setFormData({...formData, bankType: v})} value={formData.bankType}>
-                          <SelectTrigger className="h-14 bg-white text-[16px] rounded-xl border-slate-200">
-                            <SelectValue placeholder="Selecciona un banco" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                    {formData.type === 'Físico' ? (
+                      <Alert className="bg-green-50 border-green-200 rounded-2xl">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <AlertTitle className="text-[10px] font-black uppercase text-green-900">Pago Contra Entrega Activo</AlertTitle>
+                        <AlertDescription className="text-[11px] font-medium text-green-700">El cliente recibirá su pedido y pagará en efectivo al repartidor. Ideal para envíos locales en Nicaragua.</AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black text-slate-500 uppercase">Banco Receptor</Label>
+                          <Select onValueChange={v => setFormData({...formData, bankType: v})} value={formData.bankType}>
+                            <SelectTrigger className="h-12 bg-white rounded-xl border-slate-200">
+                              <SelectValue placeholder="Selecciona banco" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {NICA_BANKS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Input value={formData.bankAccount} onChange={e => setFormData({...formData, bankAccount: e.target.value})} placeholder="Número de cuenta..." className="h-12 bg-white rounded-xl" />
+                        <Input value={formData.paymentLink} onChange={e => setFormData({...formData, paymentLink: e.target.value})} placeholder="Link de pago digital (Opcional)..." className="h-12 bg-white rounded-xl border-primary/20" />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase">Número de Cuenta</Label>
-                        <Input value={formData.bankAccount} onChange={e => setFormData({...formData, bankAccount: e.target.value})} placeholder="Ej: 1234567890" className="h-14 bg-white text-[16px] rounded-xl font-mono" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase">Nombre del Titular</Label>
-                        <Input value={formData.bankHolder} onChange={e => setFormData({...formData, bankHolder: e.target.value})} placeholder="Tal cual aparece en el banco" className="h-14 bg-white text-[16px] rounded-xl font-bold uppercase" />
-                      </div>
-                      <div className="pt-4 space-y-2 border-t mt-4">
-                        <Label className="text-[10px] font-black text-primary uppercase flex items-center gap-2"><LinkIcon className="h-3 w-3" /> Link de Pago Digital (Opcional)</Label>
-                        <Input value={formData.paymentLink} onChange={e => setFormData({...formData, paymentLink: e.target.value})} placeholder="https://link.pagos.com/producto" className="h-14 bg-white text-[16px] rounded-xl border-primary/20" />
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Si añades un link, el sistema habilitará el curso automáticamente tras el pago.</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ACTION BAR FIJA (VISIBLE EN AMBOS DISPOSITIVOS) */}
             <div className="p-4 md:p-8 border-t bg-white/90 backdrop-blur-md flex flex-col md:flex-row gap-3 absolute bottom-0 left-0 right-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-              <Button variant="ghost" onClick={closeDialog} className="order-2 md:order-1 flex-1 h-14 md:h-16 rounded-2xl font-black text-[10px] md:text-xs uppercase text-slate-400 hover:bg-slate-100 transition-all">SALIR SIN GUARDAR</Button>
-              <Button className="order-1 md:order-2 flex-[2] h-14 md:h-16 rounded-2xl bg-slate-900 text-white font-black text-[10px] md:text-xs uppercase shadow-2xl shadow-slate-200 hover:scale-[1.02] active:scale-95 transition-all gap-3" onClick={handleSave}>
-                <Save className="h-5 w-5 text-primary" /> {editingId ? 'ACTUALIZAR CURSO' : 'PUBLICAR CURSO DIGITAL'}
+              <Button variant="ghost" onClick={closeDialog} className="order-2 md:order-1 flex-1 h-14 md:h-16 rounded-2xl font-black text-[10px] md:text-xs uppercase text-slate-400">CANCELAR</Button>
+              <Button className="order-1 md:order-2 flex-[2] h-14 md:h-16 rounded-2xl bg-slate-900 text-white font-black text-[10px] md:text-xs uppercase shadow-2xl" onClick={handleSave}>
+                <Save className="h-5 w-5 text-primary" /> {editingId ? 'ACTUALIZAR' : 'PUBLICAR'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* TABLA RESPONSIVA */}
         <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex justify-center py-40"><Loader2 className="animate-spin h-12 w-12 text-primary opacity-50" /></div>
-            ) : !products || products.length === 0 ? (
-              <div className="text-center py-40 flex flex-col items-center gap-4 opacity-20">
-                <Package className="h-20 w-20" />
-                <p className="font-black uppercase tracking-widest text-xs">Tu catálogo está vacío por ahora</p>
-              </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/50 h-20 border-b">
-                      <TableHead className="px-6 md:px-10 font-black uppercase text-[10px] text-slate-400 tracking-widest">Curso / Producto</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest hidden md:table-cell">Categoría</TableHead>
+                    <TableRow className="bg-slate-50/50 h-20">
+                      <TableHead className="px-6 md:px-10 font-black uppercase text-[10px] text-slate-400 tracking-widest">Producto</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest">Tipo</TableHead>
                       <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest">Precio</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest hidden sm:table-cell">Comisión</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] text-slate-400 tracking-widest">Comisión</TableHead>
                       <TableHead className="px-6 md:px-10 text-right font-black uppercase text-[10px] text-slate-400 tracking-widest">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.map((p) => (
-                      <TableRow key={p.id} className="h-24 border-b last:border-0 hover:bg-slate-50/30 transition-colors group">
+                    {filteredProducts.map((p) => (
+                      <TableRow key={p.id} className="h-20 border-b last:border-0 hover:bg-slate-50/30 transition-colors group">
                         <TableCell className="px-6 md:px-10">
-                          <div className="flex items-center gap-4 md:gap-5">
-                            <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border shadow-inner group-hover:rotate-3 transition-transform">
-                              {p.imageUrl ? <img src={p.imageUrl} className="h-full w-full object-cover" alt="thumb" /> : <GraduationCap className="h-6 w-6 text-slate-300 m-auto mt-4" />}
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-slate-100 overflow-hidden shrink-0 border">
+                              {p.imageUrl && <img src={p.imageUrl} className="h-full w-full object-cover" alt="thumb" />}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-black text-slate-800 uppercase tracking-tight text-xs md:text-sm truncate max-w-[150px] md:max-w-[250px]">{p.name}</p>
-                              <p className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-[0.2em]">ID: {p.code}</p>
+                              <p className="font-black text-slate-800 uppercase text-xs truncate max-w-[200px]">{p.name}</p>
+                              <p className="text-[8px] font-black text-primary uppercase">ID: {p.code}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-3 py-1 rounded-lg border">{p.category}</span>
+                        <TableCell>
+                          <Badge variant="outline" className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-lg", p.type === 'Físico' ? "border-blue-100 bg-blue-50 text-blue-600" : "border-purple-100 bg-purple-50 text-purple-600")}>
+                            {p.type || 'Digital'}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="font-black text-sm md:text-lg text-slate-900">${p.price?.toFixed(2)}</TableCell>
-                        <TableCell className="font-black text-sm md:text-lg text-green-600 hidden sm:table-cell">{p.commissionRate}%</TableCell>
+                        <TableCell className="font-black text-sm text-slate-900">${p.price?.toFixed(2)}</TableCell>
+                        <TableCell className="font-black text-sm text-green-600">{p.commissionRate}%</TableCell>
                         <TableCell className="px-6 md:px-10 text-right">
-                          <div className="flex justify-end gap-2 md:gap-3">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-blue-500 bg-blue-50 rounded-xl md:rounded-2xl hover:bg-blue-500 hover:text-white transition-all" onClick={() => setEditingId(p.id)}>
-                              <Edit3 className="h-4 w-4 md:h-5 md:w-5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-destructive bg-red-50 rounded-xl md:rounded-2xl hover:bg-destructive hover:text-white transition-all" onClick={() => handleDelete(p.id)}>
-                              <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
-                            </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 rounded-lg hover:bg-blue-50" onClick={() => setEditingId(p.id)}><Edit3 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-lg hover:bg-red-50" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, Landmark, FileText } from 'lucide-react'
+import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, Landmark, FileText, Truck, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { sendEmail } from '@/lib/email'
@@ -39,6 +39,8 @@ function CheckoutContent() {
     lastName: '',
     email: '',
     phone: '',
+    address: '',
+    city: '',
     voucherRef: ''
   })
 
@@ -50,9 +52,8 @@ function CheckoutContent() {
       return
     }
 
-    // Si es pago por transferencia (no hay link de pago), el voucher es obligatorio
-    if (!product?.paymentLink && !formData.voucherRef.trim()) {
-      toast({ variant: "destructive", title: "Voucher Requerido", description: "Debes ingresar el número de referencia de tu transferencia." })
+    if (product?.type === 'Físico' && !formData.address) {
+      toast({ variant: "destructive", title: "Dirección Requerida", description: "Dinos dónde entregar tu pedido." })
       return
     }
 
@@ -68,6 +69,8 @@ function CheckoutContent() {
         lastName: formData.lastName,
         email: buyerId,
         phone: formData.phone.trim(),
+        address: formData.address || '',
+        city: formData.city || '',
         referredBy: affiliateId,
         registeredAt: new Date().toISOString()
       }, { merge: true })
@@ -80,16 +83,18 @@ function CheckoutContent() {
         affiliateId: affiliateId,
         productId: productId,
         productName: product?.name || 'Producto',
+        productType: product?.type || 'Digital',
         buyerId: buyerId,
         buyerName: `${formData.firstName} ${formData.lastName}`,
         buyerPhone: formData.phone.trim(),
+        deliveryAddress: formData.address || 'N/A',
         saleDate: new Date().toISOString(),
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
         status: 'Pending',
-        paymentMethod: product?.paymentLink ? 'digital_link' : 'transfer',
-        voucherReference: formData.voucherRef.trim() || 'LINK_DIRECTO'
+        paymentMethod: product?.type === 'Físico' ? 'cod' : (product?.paymentLink ? 'digital_link' : 'transfer'),
+        voucherReference: formData.voucherRef.trim() || (product?.type === 'Físico' ? 'CASH_ON_DELIVERY' : 'LINK_DIRECTO')
       }
 
       const salesRef = collection(db, 'sales')
@@ -98,15 +103,15 @@ function CheckoutContent() {
       await sendEmail({
         to: formData.email,
         subject: `Registro de Compra - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos registrado tu interés en ${product?.name}.\n\nTu acceso será validado por la administración en breve tras verificar el pago.`
+        text: `¡Hola ${formData.firstName}! Hemos registrado tu pedido de ${product?.name}.\n\n${product?.type === 'Físico' ? 'Pagarás en efectivo al recibir tu producto.' : 'Tu acceso será validado en breve.'}`
       }).catch(() => {});
 
-      toast({ title: "Registro Enviado", description: "Tu solicitud está en proceso de validación." })
+      toast({ title: "Pedido Registrado", description: product?.type === 'Físico' ? "Te contactaremos para la entrega." : "Tu solicitud está en proceso." })
 
-      if (product?.paymentLink) {
+      if (product?.paymentLink && product?.type !== 'Físico') {
         window.location.href = product.paymentLink;
       } else {
-        router.push('/auth/login');
+        router.push('/dashboard/buyer');
       }
 
     } catch (error) {
@@ -124,206 +129,159 @@ function CheckoutContent() {
     return <div className="min-h-screen flex items-center justify-center">Producto no encontrado</div>
   }
 
-  const affiliateWhatsApp = affiliateData?.whatsappNumber;
+  const isPhysical = product.type === 'Físico';
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 relative">
-      {affiliateWhatsApp && (
-        <a 
-          href={`https://wa.me/${affiliateWhatsApp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-green-500 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-105 transition-transform"
-        >
-          <MessageCircle className="h-6 w-6" />
-          <div className="flex flex-col text-left">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Soporte Afiliado</span>
-            <span className="text-sm font-black">Hablar con un asesor</span>
-          </div>
-        </a>
-      )}
-
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
+    <div className="min-h-screen bg-[#EAEDED] py-8 px-4 relative">
+      <div className="max-w-6xl mx-auto flex flex-col gap-6">
         
-        <div className="lg:col-span-5 space-y-8">
-          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-sm font-bold uppercase tracking-widest">
-            <ChevronLeft className="h-4 w-4" /> Volver al Inicio
-          </Link>
-          
-          <div className="space-y-6">
-            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none italic">
-              Acceso <span className="text-primary">Especial</span>
-            </h1>
-            <p className="text-slate-500 font-medium leading-relaxed">
-              Estás a un paso de obtener <span className="font-bold text-slate-900">{product.name}</span>.
-            </p>
-          </div>
-
-          <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
-            <div className="relative h-48 w-full">
-              <Image 
-                src={product.imageUrl || 'https://picsum.photos/seed/product/600/400'} 
-                alt={product.name} 
-                fill 
-                className="object-cover"
-                unoptimized={product.imageUrl?.startsWith('data:')}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-6 left-8 text-white">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Resumen del Pedido</p>
-                <h3 className="text-xl font-headline font-black tracking-tight">{product.name}</h3>
-              </div>
-            </div>
-            <CardContent className="p-10 space-y-6">
-              <div className="flex justify-between items-end">
-                <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">Inversión Única</span>
-                <span className="text-4xl font-black text-primary tracking-tighter">${product.price?.toFixed(2)}</span>
-              </div>
-            </CardContent>
-            <CardFooter className="bg-slate-50/50 p-8 flex items-center gap-4">
-               <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                 <ShieldCheck className="h-6 w-6" />
-               </div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
-                 Compra 100% segura procesada por tecnología Sync Connect.
-               </p>
-            </CardFooter>
-          </Card>
+        <div className="flex items-center gap-4">
+           <Link href="/" className="hover:outline hover:outline-1 hover:outline-slate-300 p-2 rounded-sm transition-all">
+             <div className="relative h-8 w-24">
+                <span className="text-[#111] font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
+             </div>
+           </Link>
+           <div className="h-6 w-px bg-slate-300 mx-2" />
+           <h1 className="text-2xl font-normal text-slate-800">Finalizar pedido</h1>
         </div>
 
-        <div className="lg:col-span-7">
-          <form onSubmit={handlePurchase} className="space-y-8">
-            <Card className="border-none shadow-2xl rounded-[3.5rem] bg-white p-2">
-              <div className="bg-slate-50/50 rounded-[3rem] p-8 md:p-12 space-y-10">
-                
-                <div className="space-y-8">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
-                      <ShoppingBag className="h-5 w-5" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          <div className="lg:col-span-8 space-y-6">
+            {/* DIRECCIÓN DE ENVÍO (SOLO FÍSICOS) */}
+            <Card className="premium-card">
+              <CardHeader className="border-b bg-slate-50/50">
+                <CardTitle className="text-lg font-black flex items-center gap-3">
+                  <span className="h-6 w-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">1</span>
+                  {isPhysical ? 'Dirección de envío' : 'Datos del Alumno'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-1">
+                   <Label className="text-[13px] font-bold text-[#111]">Nombre Completo</Label>
+                   <Input value={`${formData.firstName} ${formData.lastName}`} onChange={e => {
+                     const parts = e.target.value.split(' ');
+                     setFormData({...formData, firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || ''})
+                   }} className="amazon-input" placeholder="Ej: Juan Pérez" required />
+                 </div>
+                 <div className="space-y-1">
+                   <Label className="text-[13px] font-bold text-[#111]">E-mail</Label>
+                   <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="amazon-input" required />
+                 </div>
+                 <div className="space-y-1">
+                   <Label className="text-[13px] font-bold text-[#111]">Número de teléfono</Label>
+                   <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="amazon-input" required />
+                   <p className="text-[11px] text-slate-500 italic">Se usará para coordinar la entrega.</p>
+                 </div>
+                 
+                 {isPhysical && (
+                   <>
+                    <div className="md:col-span-2 space-y-1">
+                      <Label className="text-[13px] font-bold text-[#111]">Dirección exacta</Label>
+                      <Input placeholder="Barrio, de la iglesia 2c abajo..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="amazon-input" required />
                     </div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Información del Alumno</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Nombre</Label>
-                      <Input 
-                        required 
-                        placeholder="Juan"
-                        value={formData.firstName}
-                        onChange={e => setFormData({...formData, firstName: e.target.value})}
-                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 px-6 font-bold"
-                      />
+                    <div className="space-y-1">
+                      <Label className="text-[13px] font-bold text-[#111]">Ciudad / Departamento</Label>
+                      <Input placeholder="Ej: Managua" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="amazon-input" required />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Apellido</Label>
-                      <Input 
-                        required 
-                        placeholder="Perez"
-                        value={formData.lastName}
-                        onChange={e => setFormData({...formData, lastName: e.target.value})}
-                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 px-6 font-bold"
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Correo Electrónico</Label>
-                      <Input 
-                        required 
-                        type="email"
-                        placeholder="tu@correo.com"
-                        value={formData.email}
-                        onChange={e => setFormData({...formData, email: e.target.value})}
-                        className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 px-6 font-bold"
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">WhatsApp</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input 
-                          required 
-                          placeholder="50588888888"
-                          value={formData.phone}
-                          onChange={e => setFormData({...formData, phone: e.target.value})}
-                          className="h-14 rounded-2xl bg-white border-none ring-1 ring-slate-200 pl-12 font-bold"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6 pt-6 border-t border-slate-200">
-                  {product.paymentLink ? (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                        <CreditCard className="h-5 w-5 text-blue-600" />
-                        <p className="text-[10px] font-bold text-blue-700 uppercase">Habilitación inmediata mediante pago digital</p>
-                      </div>
-                      <Button 
-                        type="submit" 
-                        disabled={loading}
-                        className="w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-xl rounded-[2rem] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02]"
-                      >
-                        {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
-                          <span className="flex items-center gap-3">
-                            <CreditCard className="h-6 w-6" /> PAGAR CON LINK SEGURO
-                          </span>
-                        )}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 shadow-inner">
-                          <Landmark className="h-5 w-5" />
-                        </div>
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Pago por Transferencia</h3>
-                      </div>
-
-                      <div className="p-8 rounded-[2.5rem] bg-white border-2 border-dashed border-slate-200 space-y-6 text-center shadow-inner">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.bankName}</p>
-                            <p className="text-sm font-black text-slate-800 uppercase">{product.payoutBankId || product.bankType}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Titular de Cuenta</p>
-                            <p className="text-sm font-black text-slate-800 uppercase">{product.payoutBankAccountHolderName || product.bankHolder}</p>
-                          </div>
-                          <div className="md:col-span-2">
-                            <p className="text-[9px] font-black text-primary uppercase tracking-widest">Número de Cuenta</p>
-                            <p className="text-3xl font-black text-slate-900 font-mono tracking-tighter">{product.payoutBankAccountNumber || product.bankAccount}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3 pt-6 border-t">
-                          <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2 justify-center">
-                            <FileText className="h-3 w-3" /> Nº de Referencia del Voucher
-                          </Label>
-                          <Input 
-                            required
-                            placeholder="Ingresa los dígitos de tu comprobante" 
-                            value={formData.voucherRef}
-                            onChange={e => setFormData({...formData, voucherRef: e.target.value})}
-                            className="h-14 rounded-2xl text-center font-black text-xl border-primary/20 ring-4 ring-primary/5"
-                          />
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Este dato es indispensable para validar tu acceso.</p>
-                        </div>
-
-                        <Button 
-                          onClick={handlePurchase} 
-                          disabled={loading}
-                          className="w-full h-18 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all active:scale-95"
-                        >
-                          {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "REGISTRAR PAGO Y FINALIZAR"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                   </>
+                 )}
+              </CardContent>
             </Card>
-          </form>
+
+            {/* MÉTODO DE PAGO */}
+            <Card className="premium-card">
+              <CardHeader className="border-b bg-slate-50/50">
+                <CardTitle className="text-lg font-black flex items-center gap-3">
+                  <span className="h-6 w-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">2</span>
+                  Método de pago
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                {isPhysical ? (
+                  <div className="flex gap-4 p-6 bg-blue-50 rounded-lg border border-blue-100">
+                    <Truck className="h-8 w-8 text-blue-600 shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-blue-900">Pago contra entrega (Efectivo)</h4>
+                      <p className="text-[13px] text-blue-700 leading-relaxed">
+                        Paga al repartidor en efectivo en el momento de recibir tu paquete. 
+                        Nuestros asesores te llamarán al <b>{formData.phone || 'número proporcionado'}</b> para confirmar la hora de llegada.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {product.paymentLink ? (
+                      <div className="flex gap-4 p-6 bg-green-50 rounded-lg border border-green-100">
+                        <CreditCard className="h-8 w-8 text-green-600 shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-green-900">Pago Digital Seguro</h4>
+                          <p className="text-[13px] text-green-700">Habilitación inmediata del contenido tras procesar el link de pago.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="p-6 bg-slate-50 border rounded-lg space-y-4">
+                          <h4 className="font-bold text-slate-800 flex items-center gap-2"><Landmark className="h-4 w-4" /> Transferencia Bancaria Local</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div><p className="text-slate-400 font-medium">Banco:</p><p className="font-bold">{product.payoutBankId || product.bankType}</p></div>
+                            <div><p className="text-slate-400 font-medium">Titular:</p><p className="font-bold">{product.payoutBankAccountHolderName || product.bankHolder}</p></div>
+                            <div className="col-span-2"><p className="text-slate-400 font-medium">Nº Cuenta:</p><p className="font-black text-lg font-mono text-primary">{product.payoutBankAccountNumber || product.bankAccount}</p></div>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[13px] font-bold text-[#111]">Nº Referencia del Voucher</Label>
+                          <Input value={formData.voucherRef} onChange={e => setFormData({...formData, voucherRef: e.target.value})} className="amazon-input" placeholder="Ingresa los dígitos de tu comprobante" required />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* RESUMEN DEL PEDIDO */}
+          <div className="lg:col-span-4 space-y-4 sticky top-24">
+             <Card className="premium-card p-6 border-2 border-primary/20">
+                <Button 
+                  onClick={handlePurchase} 
+                  disabled={loading}
+                  className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold h-12 rounded-md shadow-sm border border-[#F2C200] mb-4"
+                >
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isPhysical ? 'Confirmar Pedido' : 'Finalizar y Pagar')}
+                </Button>
+                <p className="text-[11px] text-center text-slate-500 mb-6">Al realizar el pedido, aceptas las condiciones de uso y el aviso de privacidad de Sync Connect.</p>
+                
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="font-bold text-sm">Resumen del pedido</h3>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-600">Productos:</span>
+                    <span>${product.price?.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-600">Envío y gestión:</span>
+                    <span>$0.00</span>
+                  </div>
+                  <div className="h-px bg-slate-200" />
+                  <div className="flex justify-between text-lg font-black text-[#B12704]">
+                    <span>Total del pedido:</span>
+                    <span>${product.price?.toFixed(2)}</span>
+                  </div>
+                </div>
+             </Card>
+
+             <Card className="premium-card p-4 bg-slate-50/50">
+               <div className="flex gap-3">
+                 <Image src={product.imageUrl || 'https://picsum.photos/seed/p/100/100'} alt="product" width={60} height={60} className="rounded-md object-cover border" unoptimized />
+                 <div className="min-w-0">
+                   <p className="text-[13px] font-bold text-slate-800 line-clamp-2">{product.name}</p>
+                   <p className="text-[12px] text-slate-500 font-bold mt-1 uppercase tracking-widest">{product.type || 'Digital'}</p>
+                 </div>
+               </div>
+             </Card>
+          </div>
+
         </div>
       </div>
     </div>

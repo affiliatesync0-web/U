@@ -10,11 +10,22 @@ export const NICA_BANKS = [
 
 export type NicaBank = typeof NICA_BANKS[number];
 
+export const PRODUCT_TYPES = [
+  "Digital",
+  "Físico"
+] as const;
+
+export type ProductType = typeof PRODUCT_TYPES[number];
+
 export const PRODUCT_CATEGORIES = [
-  "Digital Product",
-  "Service",
-  "Infoproduct",
-  "Course",
+  "Curso",
+  "Servicio",
+  "Infoproducto",
+  "E-book",
+  "Software",
+  "Hardware",
+  "Ropa / Accesorios",
+  "Otros"
 ] as const;
 
 export type ProductCategory = typeof PRODUCT_CATEGORIES[number];
