@@ -95,33 +95,36 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     async function verifyAccess() {
       if (!mounted || isUserLoading) return;
 
+      // SI NO HAY USUARIO, AL LOGIN
       if (!user) {
-        router.replace('/auth/login');
+        window.location.href = '/auth/login';
         return;
       }
 
-      // 1. BLINDAJE MAESTRO (ADMIN)
+      // 1. BLINDAJE MAESTRO (ADMIN): SI ES ADMIN, SIEMPRE AL PANEL ADMIN
       if (isUserAdmin) {
         if (!pathname.startsWith('/dashboard/admin')) {
-          console.log("Admin detectado en zona equivocada. Redirigiendo al Centro de Control...");
-          window.location.replace('/dashboard/admin'); 
+          console.warn("ADMIN DETECTADO EN RUTA DE USUARIO. REDIRIGIENDO AL NODO MAESTRO...");
+          window.location.href = '/dashboard/admin'; 
           return;
         }
         setIsVerifyingRole(false);
         return;
       }
 
-      // 2. PROTECCIÓN DE RUTA ADMIN (NO ADMINS AFUERA)
+      // 2. PROTECCIÓN DE RUTA ADMIN: SI NO ES ADMIN, EXPULSAR SI INTENTA ENTRAR
       if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
-        router.replace('/dashboard/affiliate'); 
+        console.warn("ACCESO NO AUTORIZADO A RUTA ADMIN. EXPULSANDO...");
+        window.location.href = '/dashboard/affiliate'; 
         return;
       }
 
-      // 3. VERIFICACIÓN DE ROL POR COLECCIÓN
+      // 3. VERIFICACIÓN DE ROL POR COLECCIÓN (PARA USUARIOS COMUNES)
       try {
         const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
         const isAffiliate = affSnap.exists();
         
+        // Si intenta entrar como afiliado pero no lo es, al área de comprador
         if (role === 'affiliate' && !isAffiliate && !isUserAdmin) {
           router.replace('/dashboard/buyer');
           return;
@@ -149,21 +152,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
-  // Prevenir parpadeos o renders incorrectos para el admin
-  if (mounted && !isUserLoading && isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6">
-        <div className="flex flex-col items-center gap-6">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="font-black uppercase tracking-[0.5em] text-[10px] animate-pulse">Sincronizando Nodo Maestro...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // PANTALLA DE CARGA DE SEGURIDAD
   if (!mounted || isUserLoading || isVerifyingRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
             <div className="h-24 w-24 rounded-full border-[6px] border-primary/10 border-t-primary animate-spin" />
@@ -177,6 +169,9 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       </div>
     )
   }
+
+  // SI ES ADMIN Y ESTÁ EN UNA RUTA NO ADMIN, NO RENDERIZAMOS NADA (LA REDIRECCIÓN ESTÁ EN CAMINO)
+  if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) return null;
 
   if (!user) return null;
 

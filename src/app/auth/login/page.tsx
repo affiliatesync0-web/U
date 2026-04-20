@@ -64,11 +64,12 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
+  // DETECCIÓN MAESTRA EN CARGA INICIAL
   useEffect(() => {
     if (user && !isGlobalLoading) {
       const cleanEmail = user.email?.toLowerCase().trim();
       if (cleanEmail === ADMIN_EMAIL) {
-        window.location.replace('/dashboard/admin');
+        window.location.href = '/dashboard/admin';
       }
     }
   }, [user, isGlobalLoading]);
@@ -76,23 +77,17 @@ export default function LoginPage() {
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. VERIFICACIÓN MAESTRA (ADMIN) - PRIORIDAD MÁXIMA
+    // 1. VERIFICACIÓN MAESTRA (ADMIN) - PRIORIDAD CRÍTICA
     if (cleanEmail === ADMIN_EMAIL) {
-      toast({ title: "Acceso Maestro", description: "Sincronizando nodo administrativo..." });
-      window.location.replace('/dashboard/admin');
+      toast({ title: "Acceso Maestro", description: "Iniciando protocolos administrativos..." });
+      window.location.href = '/dashboard/admin';
       return;
     }
 
     try {
-      // 2. VERIFICACIÓN PRIORITARIA DE AFILIADO
+      // 2. VERIFICACIÓN DE AFILIADO
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        const affData = affSnap.data();
-        if (affData.status === 'Pending') {
-          toast({ title: "Cuenta en Revisión", description: "Tu perfil de socio aún no ha sido aprobado." });
-          router.replace('/dashboard/affiliate');
-          return;
-        }
         toast({ title: "¡Bienvenido Socio!", description: "Accediendo a tu panel Platinum." });
         router.replace('/dashboard/affiliate');
         return;
@@ -106,19 +101,21 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. SI NO EXISTE Y NO ES ADMIN, CREAMOS PERFIL DE COMPRADOR
-      const names = (displayName || 'Usuario Sync').split(' ');
-      setDocumentNonBlocking(doc(db, 'buyers', uid), {
-        id: uid,
-        firstName: names[0] || 'Usuario',
-        lastName: names.slice(1).join(' ') || 'Connect',
-        email: cleanEmail,
-        registeredAt: new Date().toISOString(),
-        status: 'Active'
-      }, { merge: true });
+      // 4. SI NO ES ADMIN NI AFILIADO, CREAMOS PERFIL DE COMPRADOR (SOLO PARA USUARIOS COMUNES)
+      if (cleanEmail !== ADMIN_EMAIL) {
+        const names = (displayName || 'Usuario Sync').split(' ');
+        setDocumentNonBlocking(doc(db, 'buyers', uid), {
+          id: uid,
+          firstName: names[0] || 'Usuario',
+          lastName: names.slice(1).join(' ') || 'Connect',
+          email: cleanEmail,
+          registeredAt: new Date().toISOString(),
+          status: 'Active'
+        }, { merge: true });
 
-      toast({ title: "Perfil Vinculado", description: "Accediendo como cliente." });
-      router.replace('/dashboard/buyer');
+        toast({ title: "Perfil Vinculado", description: "Accediendo como cliente." });
+        router.replace('/dashboard/buyer');
+      }
 
     } catch (err) {
       console.error("Login Success Error:", err);
