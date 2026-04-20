@@ -74,7 +74,6 @@ export default function LoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  // SEGURIDAD MAESTRA: Si el admin ya está logueado, saltar el login de inmediato
   useEffect(() => {
     if (user && !isGlobalLoading) {
       const cleanEmail = user.email?.toLowerCase().trim();
@@ -84,7 +83,7 @@ export default function LoginPage() {
     }
   }, [user, isGlobalLoading]);
 
-  // Limpieza de reCAPTCHA al desmontar
+  // Limpieza robusta al desmontar
   useEffect(() => {
     return () => {
       if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
@@ -97,21 +96,29 @@ export default function LoginPage() {
   }, []);
 
   const setupRecaptcha = (containerId: string) => {
+    if (typeof window === "undefined" || !auth) return null;
+
+    // Si ya existe y está activo, lo reutilizamos para evitar el error de "Already Rendered"
+    if ((window as any).recaptchaVerifier) {
+      return (window as any).recaptchaVerifier;
+    }
+
     try {
-      if (!auth) return;
-      if (typeof window !== "undefined") {
-        if ((window as any).recaptchaVerifier) {
-          (window as any).recaptchaVerifier.clear();
-        }
-        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-          size: 'invisible',
-          callback: () => { console.log('reCAPTCHA verified'); },
-          'expired-callback': () => {
-            toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor reintenta el envío." });
-            setLoading(false);
+      const verifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: () => { console.log('reCAPTCHA verified'); },
+        'expired-callback': () => {
+          toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor reintenta el envío." });
+          if ((window as any).recaptchaVerifier) {
+            (window as any).recaptchaVerifier.clear();
+            (window as any).recaptchaVerifier = null;
           }
-        });
-      }
+          setLoading(false);
+        }
+      });
+      
+      (window as any).recaptchaVerifier = verifier;
+      return verifier;
     } catch (error) {
       console.error("reCAPTCHA Initialization Error:", error);
       throw error;
@@ -214,8 +221,7 @@ export default function LoginPage() {
     const fullNumber = `${countryCode}${cleanPhone}`;
     
     try {
-      setupRecaptcha('recaptcha-container');
-      const verifier = (window as any).recaptchaVerifier;
+      const verifier = setupRecaptcha('recaptcha-container');
       if (!verifier) throw new Error("No se pudo inicializar el sistema de seguridad reCAPTCHA.");
       
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
@@ -225,6 +231,14 @@ export default function LoginPage() {
       console.error("SMS Code Error:", error.code, error.message);
       setLoading(false);
       
+      // Limpiar reCAPTCHA en caso de error para permitir reintentos frescos
+      if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+          (window as any).recaptchaVerifier = null;
+        } catch (e) {}
+      }
+
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
       } else if (error.code === 'auth/invalid-phone-number') {
