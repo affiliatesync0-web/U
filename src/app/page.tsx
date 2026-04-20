@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
@@ -14,7 +15,11 @@ import {
   Zap,
   TrendingUp,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronDown,
+  UserCircle,
+  X,
+  GraduationCap as GradIcon
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
@@ -24,11 +29,13 @@ import { getGoogleDriveDirectLink } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import placeholderData from '@/app/lib/placeholder-images.json';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function Home() {
   const { t } = useLanguage();
   const db = useFirestore();
   const { user } = useUser();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
   const { data: configs, isLoading: isConfigLoading } = useCollection(configQuery);
@@ -87,7 +94,7 @@ export default function Home() {
         {/* ACTIONS */}
         <div className="flex items-center gap-1 shrink-0">
           <Link href="/auth/login" className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left">
-            <span className="text-white text-[12px] leading-tight">Hola, identifícate</span>
+            <span className="text-white text-[12px] leading-tight">Hola, {user ? user.displayName?.split(' ')[0] : 'identifícate'}</span>
             <div className="flex items-center">
               <span className="text-white font-black text-[14px] leading-tight">Cuenta y Listas</span>
               <ChevronDown className="h-3 w-3 text-[#CCCCCC] ml-1" />
@@ -111,7 +118,10 @@ export default function Home() {
 
       {/* HEADER ROW 2: SUB NAV */}
       <nav className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar border-b border-black/10">
-        <button className="flex items-center gap-1.5 p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-4">
+        <button 
+          onClick={() => setIsMenuOpen(true)}
+          className="flex items-center gap-1.5 p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-4"
+        >
           <Menu className="h-5 w-5" /> Todo
         </button>
         <div className="flex items-center h-full gap-4 text-white text-[14px] font-medium whitespace-nowrap">
@@ -128,6 +138,37 @@ export default function Home() {
           </span>
         </div>
       </nav>
+
+      {/* MOBILE DRAWER */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
+           <div className="absolute inset-0 bg-black/80" onClick={() => setIsMenuOpen(false)} />
+           <div className="relative w-[300px] md:w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-300">
+              <div className="bg-[#232F3E] p-5 flex items-center gap-4 text-white">
+                 <UserCircle className="h-8 w-8" />
+                 <span className="text-xl font-black tracking-tight">Hola, {user ? user.displayName?.split(' ')[0] : 'identifícate'}</span>
+                 <button onClick={() => setIsMenuOpen(false)} className="ml-auto"><X className="h-6 w-6" /></button>
+              </div>
+              <ScrollArea className="flex-1 p-6">
+                 <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Tendencias</h4>
+                 <div className="flex flex-col gap-2 mb-8">
+                    <Link href="#" onClick={() => setIsMenuOpen(false)} className="py-3 border-b border-slate-50 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Lo más vendido</Link>
+                    <Link href="#" onClick={() => setIsMenuOpen(false)} className="py-3 border-b border-slate-50 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Novedades</Link>
+                    <Link href="#" onClick={() => setIsMenuOpen(false)} className="py-3 border-b border-slate-50 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Productos del momento</Link>
+                 </div>
+                 
+                 <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Configuración</h4>
+                 <div className="flex flex-col gap-2">
+                    <Link href="/auth/login" onClick={() => setIsMenuOpen(false)} className="py-3 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Mi Cuenta</Link>
+                    <Link href="/dashboard/affiliate/support" onClick={() => setIsMenuOpen(false)} className="py-3 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Servicio al Cliente</Link>
+                    {!user && (
+                      <Link href="/auth/login" onClick={() => setIsMenuOpen(false)} className="py-3 text-[14px] text-[#FF9900] font-black border-t mt-4 px-2">Iniciar Sesión</Link>
+                    )}
+                 </div>
+              </ScrollArea>
+           </div>
+        </div>
+      )}
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1">
@@ -217,7 +258,7 @@ export default function Home() {
               <h3 className="text-xl font-black text-slate-900 leading-tight">Todo lo que necesitas en Sync Academy</h3>
               <div className="flex-1 relative aspect-square overflow-hidden bg-slate-50 flex items-center justify-center p-6">
                  <div className="h-48 w-48 rounded-full border-[10px] border-primary flex items-center justify-center p-8 bg-white shadow-xl relative overflow-hidden group">
-                    <GraduationCap className="h-20 w-20 text-slate-900 group-hover:rotate-12 transition-transform" />
+                    <GradIcon className="h-20 w-20 text-slate-900 group-hover:rotate-12 transition-transform" />
                     <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
                  </div>
               </div>
@@ -295,16 +336,4 @@ export default function Home() {
       </footer>
     </div>
   );
-}
-
-function ChevronDown(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-  )
-}
-
-function GraduationCap(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.42 10.922 12 4.19 2.58 10.922l8.97 6.444a.8.8 0 0 0 .9 0l8.97-6.444Z"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
-  )
 }

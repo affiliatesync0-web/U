@@ -320,15 +320,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </div>
       </header>
 
-      {/* MOBILE DRAWER */}
+      {/* SIDE DRAWER (MENU TODO) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
            <div className="absolute inset-0 bg-black/80" onClick={() => setIsMobileMenuOpen(false)} />
-           <div className="relative w-[300px] md:w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-300">
+           <div className="relative w-[300px] md:w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-300 shadow-2xl">
               <div className="bg-[#232F3E] p-5 flex items-center gap-4 text-white">
                  <UserCircle className="h-8 w-8" />
                  <span className="text-xl font-black tracking-tight">Hola, {displayName}</span>
-                 <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto"><X className="h-6 w-6" /></button>
+                 <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto hover:scale-110 transition-transform"><X className="h-6 w-6" /></button>
               </div>
               <ScrollArea className="flex-1 p-6">
                  <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Navegar por Sync</h4>
@@ -338,12 +338,18 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                         key={item.url} 
                         href={item.url} 
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center justify-between py-3 border-b border-slate-50 hover:bg-slate-50 px-2 rounded-sm"
+                        className={cn(
+                          "flex items-center justify-between py-3 border-b border-slate-50 hover:bg-slate-50 px-2 rounded-sm transition-colors",
+                          pathname === item.url ? "bg-slate-50 border-primary" : ""
+                        )}
                       >
-                        <span className="text-[14px] text-[#111] font-medium">{item.title}</span>
+                        <div className="flex items-center gap-3">
+                          {item.icon && <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />}
+                          <span className={cn("text-[14px] font-medium", pathname === item.url ? "font-black text-slate-900" : "text-[#111]")}>{item.title}</span>
+                        </div>
                       </Link>
                     ))}
-                    <button onClick={handleLogout} className="text-left py-3 text-red-600 font-bold mt-4 border-t px-2">Cerrar Sesión</button>
+                    <button onClick={handleLogout} className="text-left py-3 text-red-600 font-bold mt-4 border-t px-2 hover:bg-red-50 rounded-sm transition-colors">Cerrar Sesión</button>
                  </div>
               </ScrollArea>
            </div>
