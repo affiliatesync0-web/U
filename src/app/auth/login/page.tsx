@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Loader2, 
   Image as ImageIcon, 
@@ -18,10 +17,9 @@ import {
   ShieldAlert,
   Sparkles,
   ShieldCheck,
-  Smartphone,
   Mail,
   Zap,
-  CreditCard,
+  Smartphone,
   ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
@@ -34,19 +32,14 @@ import {
   browserLocalPersistence, 
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithEmailAndPassword,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  type ConfirmationResult
+  signInWithEmailAndPassword
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
-import { COUNTRY_CODES } from '@/lib/constants'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -57,17 +50,11 @@ export default function LoginPage() {
   
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [activeTab, setActiveTab] = useState('google')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | 'billing' | null>(null)
+  const [authErrorType, setAuthErrorType] = useState<'domain' | 'generic' | null>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [phone, setPhone] = useState('')
-  const [countryCode, setCountryCode] = useState('+505')
-  const [verificationCode, setVerificationCode] = useState('')
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
 
   const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -84,42 +71,6 @@ export default function LoginPage() {
       }
     }
   }, [user, isGlobalLoading]);
-
-  useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-          (window as any).recaptchaVerifier = null;
-        } catch (e) {}
-      }
-    };
-  }, []);
-
-  const setupRecaptcha = (containerId: string) => {
-    if (typeof window === "undefined" || !auth) return null;
-    if ((window as any).recaptchaVerifier) return (window as any).recaptchaVerifier;
-
-    try {
-      const verifier = new RecaptchaVerifier(auth, containerId, {
-        size: 'invisible',
-        callback: () => { console.log('reCAPTCHA verified'); },
-        'expired-callback': () => {
-          toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor reintenta el envío." });
-          if ((window as any).recaptchaVerifier) {
-            (window as any).recaptchaVerifier.clear();
-            (window as any).recaptchaVerifier = null;
-          }
-          setLoading(false);
-        }
-      });
-      (window as any).recaptchaVerifier = verifier;
-      return verifier;
-    } catch (error) {
-      console.error("reCAPTCHA Initialization Error:", error);
-      throw error;
-    }
-  };
 
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
@@ -192,55 +143,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleSendCode = async () => {
-    if (!auth) return;
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Número Inválido", description: "Ingresa un número real de al menos 7 dígitos." });
-      return;
-    }
-
-    setAuthErrorType(null);
-    setErrorMsg(null);
-    setLoading(true);
-    const fullNumber = `${countryCode}${cleanPhone}`;
-    
-    try {
-      const verifier = setupRecaptcha('recaptcha-container');
-      if (!verifier) throw new Error("No se pudo inicializar el sistema de seguridad reCAPTCHA.");
-      
-      const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
-      setConfirmationResult(result);
-      toast({ title: "Código Enviado", description: `Revisa tu SMS al número ${fullNumber}` });
-    } catch (error: any) {
-      console.error("SMS Code Error:", error.code, error.message);
-      setLoading(false);
-      
-      if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
-      else if (error.code === 'auth/billing-not-enabled') setAuthErrorType('billing');
-      else if (error.code === 'auth/invalid-phone-number') setErrorMsg("El formato del número de teléfono no es válido.");
-      else if (error.code === 'auth/too-many-requests') setErrorMsg("Demasiados intentos. Por favor espera unos minutos.");
-      else setErrorMsg(`Fallo al enviar SMS: ${error.message || "Error desconocido"}`);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    if (!verificationCode || !confirmationResult || isVerifying) return;
-    setIsVerifying(true);
-    try {
-      const result = await confirmationResult.confirm(verificationCode);
-      handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
-    } catch (error: any) {
-      console.error("Verification Error:", error.code);
-      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código de 6 dígitos no coincide." });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 selection:bg-primary/30">
-      <div id="recaptcha-container"></div>
       
       <div className="fixed top-6 right-6 flex items-center gap-2 z-50">
         <ThemeToggle />
@@ -273,56 +177,22 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50 animate-in zoom-in-95 duration-700">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">
           
-          <Tabs defaultValue="google" className="space-y-10" onValueChange={(v) => { setActiveTab(v); setAuthErrorType(null); setErrorMsg(null); }}>
+          <Tabs defaultValue="google" className="space-y-10">
             <TabsList className="grid grid-cols-2 h-14 bg-card border border-border p-1.5 rounded-2xl shadow-inner">
               <TabsTrigger value="google" className="rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-                <Sparkles className="h-3.5 w-3.5" /> ACCESO RÁPIDO
+                <Sparkles className="h-3.5 w-3.5" /> ACCESO GOOGLE
               </TabsTrigger>
-              <TabsTrigger value="others" className="rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white transition-all">
-                <LogIn className="h-3.5 w-3.5" /> OTROS MÉTODOS
+              <TabsTrigger value="email" className="rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white transition-all">
+                <Mail className="h-3.5 w-3.5" /> EMAIL
               </TabsTrigger>
             </TabsList>
-
-            {authErrorType === 'billing' && (
-              <Alert variant="destructive" className="rounded-[2.5rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95 border-2 shadow-2xl">
-                <div className="flex flex-col items-center text-center space-y-6">
-                  <div className="h-16 w-16 rounded-3xl bg-red-100 flex items-center justify-center text-red-600 shadow-inner">
-                    <CreditCard className="h-8 w-8" />
-                  </div>
-                  <div className="space-y-2">
-                    <AlertTitle className="text-xs font-black uppercase text-red-900 tracking-widest">Facturación Requerida</AlertTitle>
-                    <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
-                      La autenticación por SMS requiere que el proyecto Firebase esté en el <b>Plan Blaze (Pay-as-you-go)</b>.
-                    </AlertDescription>
-                  </div>
-                  
-                  <div className="w-full bg-white/50 p-6 rounded-[2rem] border border-red-100 text-left space-y-3">
-                    <p className="text-[10px] font-black uppercase text-red-900 border-b border-red-100 pb-2">Instrucciones para el Admin:</p>
-                    <ol className="text-[10px] text-red-800 space-y-2 font-bold">
-                      <li className="flex gap-2"><span>1.</span> Ve a Firebase Console.</li>
-                      <li className="flex gap-2"><span>2.</span> Haz clic en 'Upgrade' abajo a la izquierda.</li>
-                      <li className="flex gap-2"><span>3.</span> Selecciona el Plan Blaze.</li>
-                    </ol>
-                  </div>
-
-                  <div className="space-y-4 w-full">
-                    <Button asChild variant="outline" className="w-full h-14 rounded-2xl border-red-200 text-red-700 font-black text-[10px] uppercase hover:bg-red-100 transition-all">
-                      <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="mr-2 h-4 w-4" /> ABRIR CONSOLA FIREBASE
-                      </a>
-                    </Button>
-                    <p className="text-[9px] italic text-red-500 font-bold uppercase tracking-widest">Mientras tanto, puedes usar Google o Email para entrar.</p>
-                  </div>
-                </div>
-              </Alert>
-            )}
 
             {authErrorType === 'domain' && (
               <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95">
                 <ShieldAlert className="h-8 w-8 text-red-600 mb-4" />
                 <AlertTitle className="text-xs font-black uppercase mb-3 text-red-900 tracking-widest">Dominio no Autorizado</AlertTitle>
                 <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800 space-y-4">
-                  <p>Este dominio no está autorizado para usar Google Auth o SMS en tu consola.</p>
+                  <p>Este dominio no está autorizado para usar Google Auth en tu consola.</p>
                   <div className="bg-white/50 p-4 rounded-xl border border-red-100">
                     <p className="mb-2">Solución:</p>
                     <p className="font-mono text-[9px] bg-slate-100 p-2 rounded">
@@ -388,101 +258,45 @@ export default function LoginPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="others" className="space-y-8 m-0 animate-in fade-in zoom-in-95 duration-500">
-              <Accordion type="single" collapsible className="w-full space-y-4">
-                <AccordionItem value="email" className="border-none">
-                  <AccordionTrigger className="h-16 bg-card rounded-2xl border px-6 font-black text-[10px] uppercase hover:no-underline group data-[state=open]:border-primary transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-data-[state=open]:bg-primary group-data-[state=open]:text-white transition-colors">
-                        <Mail className="h-4 w-4" />
-                      </div>
-                      Email & Contraseña
+            <TabsContent value="email" className="space-y-8 m-0 animate-in fade-in zoom-in-95 duration-500">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tu Correo</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="email" 
+                        placeholder="ejemplo@correo.com" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-14 rounded-2xl bg-muted/50 border-none pl-12 pr-6 font-bold"
+                      />
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-6 px-2 space-y-5">
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tu Correo</Label>
-                        <Input 
-                          type="email" 
-                          placeholder="ejemplo@correo.com" 
-                          value={email} 
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="h-14 rounded-2xl bg-muted/50 border-none px-6 font-bold"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between items-center px-1">
-                          <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Tu Clave</Label>
-                          <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Olvidé mi clave</Link>
-                        </div>
-                        <div className="relative">
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="••••••••" 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="h-14 rounded-2xl bg-muted/50 border-none px-6 font-bold"
-                          />
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                          </button>
-                        </div>
-                      </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Tu Clave</Label>
+                      <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Olvidé mi clave</Link>
                     </div>
-                    <Button onClick={handleEmailLogin} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading}>
-                      {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "INICIAR SESIÓN"}
-                    </Button>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="phone" className="border-none">
-                  <AccordionTrigger className="h-16 bg-card rounded-2xl border px-6 font-black text-[10px] uppercase hover:no-underline group data-[state=open]:border-primary transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-data-[state=open]:bg-primary group-data-[state=open]:text-white transition-colors">
-                        <Smartphone className="h-4 w-4" />
-                      </div>
-                      Número de Teléfono
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-14 rounded-2xl bg-muted/50 border-none px-6 font-bold"
+                      />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-6 px-2">
-                    {!confirmationResult ? (
-                      <div className="space-y-5">
-                        <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código de País & Número</Label>
-                          <div className="flex gap-3">
-                            <Select value={countryCode} onValueChange={setCountryCode}>
-                              <SelectTrigger className="w-32 h-14 rounded-2xl bg-muted/50 border-none font-bold px-4"><SelectValue /></SelectTrigger>
-                              <SelectContent className="rounded-2xl">{COUNTRY_CODES.map(c => <SelectItem key={c.code} value={c.code} className="rounded-xl">{c.flag} {c.code}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <Input placeholder="8888 8888" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-14 rounded-2xl bg-muted/50 border-none flex-1 font-bold text-lg px-6" />
-                          </div>
-                        </div>
-                        <Button onClick={handleSendCode} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl" disabled={loading}>
-                          {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR CÓDIGO SMS"}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-5 animate-in slide-in-from-bottom-2 duration-300">
-                        <div className="space-y-2 text-center">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Ingresa el código de 6 dígitos</Label>
-                          <Input 
-                            placeholder="000000" 
-                            value={verificationCode} 
-                            onChange={(e) => setVerificationCode(e.target.value)} 
-                            className="h-20 rounded-[2rem] bg-muted/50 border-none text-center text-3xl font-black tracking-[0.5em] px-0" 
-                            maxLength={6}
-                          />
-                        </div>
-                        <Button onClick={handleVerifyCode} className="w-full h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase shadow-xl" disabled={isVerifying}>
-                          {isVerifying ? <Loader2 className="animate-spin h-6 w-6" /> : "VERIFICAR Y ENTRAR"}
-                        </Button>
-                        <Button variant="ghost" onClick={() => { setConfirmationResult(null); setErrorMsg(null); setAuthErrorType(null); }} className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">Volver a intentar</Button>
-                      </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                  </div>
+                </div>
+                <Button onClick={handleEmailLogin} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "INICIAR SESIÓN"}
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
 
