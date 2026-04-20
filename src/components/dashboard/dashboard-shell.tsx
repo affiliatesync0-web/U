@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -58,7 +59,7 @@ import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
-import { doc } from "firebase/firestore"
+import { doc, getDoc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -79,6 +80,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const auth = useAuth();
   
   const [mounted, setMounted] = useState(false);
+  const [isVerifyingRole, setIsVerifyingRole] = useState(true);
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
   const cleanEmail = user?.email?.toLowerCase().trim() || '';
@@ -89,25 +91,53 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   }, []);
 
   useEffect(() => {
-    if (!mounted || isUserLoading) return;
+    async function verifyAccess() {
+      if (!mounted || isUserLoading) return;
 
-    if (!user) {
-      router.replace('/auth/login');
-      return;
+      if (!user) {
+        router.replace('/auth/login');
+        return;
+      }
+
+      // 1. SI EL ADMIN ESTÁ EN EL PANEL EQUIVOCADO, REDIRIGIR
+      if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
+        window.location.href = '/dashboard/admin'; 
+        return;
+      }
+
+      // 2. SI NO ES ADMIN E INTENTA ENTRAR AL ADMIN, BLOQUEAR
+      if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
+        router.replace('/dashboard/affiliate'); 
+        return;
+      }
+
+      // 3. VERIFICACIÓN DE ROL POR COLECCIÓN (PARA EVITAR ENTRAR A PANELES EQUIVOCADOS)
+      try {
+        const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
+        const isAffiliate = affSnap.exists();
+        
+        const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
+        const isBuyer = buyerSnap.exists();
+
+        // Si es afiliado e intenta entrar al panel de comprador, permitir pero avisar (o viceversa)
+        // Pero si no es afiliado e intenta entrar al panel de afiliado, redirigir a su área correcta
+        if (role === 'affiliate' && !isAffiliate && !isUserAdmin) {
+          router.replace('/dashboard/buyer');
+          return;
+        }
+
+        if (role === 'buyer' && !isBuyer && isAffiliate) {
+          // Permitir si es afiliado (un afiliado también puede ser comprador)
+        }
+      } catch (err) {
+        console.error("Access verification error:", err);
+      } finally {
+        setIsVerifyingRole(false);
+      }
     }
 
-    // SI EL ADMIN ESTÁ EN EL PANEL EQUIVOCADO, FORZAR REDIRECCIÓN
-    if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-      window.location.href = '/dashboard/admin'; 
-      return;
-    }
-
-    // SI UN USUARIO NORMAL INTENTA ENTRAR AL ADMIN, BLOQUEAR
-    if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
-      router.replace('/dashboard/affiliate'); 
-      return;
-    }
-  }, [user, isUserLoading, mounted, pathname, isUserAdmin, router]);
+    verifyAccess();
+  }, [user, isUserLoading, mounted, pathname, isUserAdmin, router, role, db]);
 
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: affiliateProfile } = useDoc(affiliateRef);
@@ -126,7 +156,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white font-black uppercase tracking-[0.5em] animate-pulse text-center p-6">Sincronizando Nodo Maestro...</div>;
   }
 
-  if (!mounted || isUserLoading) {
+  if (!mounted || isUserLoading || isVerifyingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-6">

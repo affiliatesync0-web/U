@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -83,23 +84,32 @@ export default function LoginPage() {
     }
 
     try {
-      // 2. VERIFICACIÓN DE ROL REGISTRADO
+      // 2. VERIFICACIÓN PRIORITARIA DE AFILIADO
+      // Buscamos primero si el UID existe en la colección de afiliados
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        toast({ title: "¡Bienvenido Socio!", description: "Entrando a tu panel Platinum." });
+        const affData = affSnap.data();
+        if (affData.status === 'Pending') {
+          toast({ title: "Cuenta en Revisión", description: "Tu perfil de socio aún no ha sido aprobado." });
+          router.replace('/dashboard/affiliate'); // El Shell manejará la pantalla de "En revisión"
+          return;
+        }
+        toast({ title: "¡Bienvenido Socio!", description: "Accediendo a tu panel de control Platinum." });
         router.replace('/dashboard/affiliate');
         return;
       }
 
+      // 3. VERIFICACIÓN DE COMPRADOR EXISTENTE
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
-        toast({ title: "¡Bienvenido!", description: "Entrando a tu área de estudio." });
+        toast({ title: "¡Hola de nuevo!", description: "Entrando a tu área de aprendizaje." });
         router.replace('/dashboard/buyer');
         return;
       }
 
-      // 3. SI NO EXISTE REGISTRO, CREAR PERFIL DE COMPRADOR (AUTO-ONBOARDING)
-      const names = (displayName || '').split(' ');
+      // 4. SI NO EXISTE EN NINGUNA LISTA, ASUMIMOS QUE ES UN NUEVO CLIENTE (ONBOARDING)
+      // Esto pasa cuando alguien se loguea con Google por primera vez sin registro previo
+      const names = (displayName || 'Usuario Sync').split(' ');
       setDocumentNonBlocking(doc(db, 'buyers', uid), {
         id: uid,
         firstName: names[0] || 'Usuario',
@@ -109,7 +119,7 @@ export default function LoginPage() {
         status: 'Active'
       }, { merge: true });
 
-      toast({ title: "Cuenta vinculada", description: "Accediendo como cliente." });
+      toast({ title: "Perfil Vinculado", description: "Accediendo como cliente." });
       router.replace('/dashboard/buyer');
 
     } catch (err) {
