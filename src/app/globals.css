@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 210 20% 93%; /* Light Amazon Background #EAEDED */
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 18 100% 55%; /* Hotmart Orange #FF5D1B */
+    --primary: 36 100% 50%; /* Amazon Orange #FF9900 */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
@@ -22,21 +22,21 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 18 100% 55%;
-    --radius: 2.5rem;
-    --chart-1: 18 100% 55%;
+    --ring: 36 100% 50%;
+    --radius: 1rem; /* Mas limpio para estilo Amazon */
+    --chart-1: 36 100% 50%;
     --chart-2: 210 100% 50%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 18 100% 55%;
+    --sidebar-primary: 36 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 18 100% 55%;
+    --sidebar-accent-foreground: 36 100% 50%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 18 100% 55%;
+    --sidebar-ring: 36 100% 50%;
   }
 
   .dark {
@@ -46,7 +46,7 @@
     --card-foreground: 213 31% 91%;
     --popover: 224 71% 4%;
     --popover-foreground: 215 20.2% 65.1%;
-    --primary: 18 100% 55%;
+    --primary: 36 100% 50%;
     --primary-foreground: 210 40% 98%;
     --secondary: 222.2 47.4% 11.2%;
     --secondary-foreground: 210 40% 98%;
@@ -58,15 +58,15 @@
     --destructive-foreground: 210 40% 98%;
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 18 100% 55%;
+    --ring: 36 100% 50%;
     --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 18 100% 55%;
+    --sidebar-primary: 36 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 216 34% 17%;
-    --sidebar-accent-foreground: 18 100% 55%;
+    --sidebar-accent-foreground: 36 100% 50%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 18 100% 55%;
+    --sidebar-ring: 36 100% 50%;
   }
 }
 
@@ -95,17 +95,9 @@
   }
 }
 
-/* Glassmorphism Classes */
-.glass-header {
-  @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/50;
-}
-
+/* Amazon Style Premium Cards */
 .premium-card {
-  @apply border-none shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-[3rem] bg-white dark:bg-slate-900 ring-1 ring-slate-100 dark:ring-slate-800 transition-all duration-500 hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)];
-}
-
-.premium-sidebar {
-  @apply bg-white dark:bg-slate-950 border-r border-slate-100 dark:border-slate-900 shadow-2xl;
+  @apply border-none shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] rounded-xl bg-white dark:bg-slate-900 transition-all duration-300 hover:shadow-[0_10px_20px_rgba(0,0,0,0.08)];
 }
 
 /* Ocultar elementos de desarrollo */
@@ -128,11 +120,4 @@ nextjs-portal,
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
-}
-
-.chat-bg {
-  background-color: #E5DDD5;
-  background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-  background-repeat: repeat;
-  background-attachment: fixed;
 }
