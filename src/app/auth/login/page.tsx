@@ -21,7 +21,8 @@ import {
   Smartphone,
   Mail,
   Zap,
-  CreditCard
+  CreditCard,
+  ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -84,7 +85,6 @@ export default function LoginPage() {
     }
   }, [user, isGlobalLoading]);
 
-  // Limpieza robusta al desmontar
   useEffect(() => {
     return () => {
       if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
@@ -98,10 +98,7 @@ export default function LoginPage() {
 
   const setupRecaptcha = (containerId: string) => {
     if (typeof window === "undefined" || !auth) return null;
-
-    if ((window as any).recaptchaVerifier) {
-      return (window as any).recaptchaVerifier;
-    }
+    if ((window as any).recaptchaVerifier) return (window as any).recaptchaVerifier;
 
     try {
       const verifier = new RecaptchaVerifier(auth, containerId, {
@@ -116,7 +113,6 @@ export default function LoginPage() {
           setLoading(false);
         }
       });
-      
       (window as any).recaptchaVerifier = verifier;
       return verifier;
     } catch (error) {
@@ -127,7 +123,6 @@ export default function LoginPage() {
 
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
-    
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       window.location.href = '/dashboard/admin';
@@ -152,7 +147,6 @@ export default function LoginPage() {
 
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
       router.replace(targetPath);
-
     } catch (err) {
       console.error("Login Success Error:", err);
       router.replace('/dashboard/buyer');
@@ -171,23 +165,14 @@ export default function LoginPage() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
-      
-      if (result?.user) {
-        handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
-      } else {
-        setLoading(false);
-      }
+      if (result?.user) handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
+      else setLoading(false);
     } catch (error: any) {
       console.error("Google Login Error:", error.code);
       setLoading(false);
-      
-      if (error.code === 'auth/unauthorized-domain') {
-        setAuthErrorType('domain');
-      } else if (error.code === 'auth/popup-blocked') {
-        setErrorMsg("Popup bloqueado por el navegador.");
-      } else if (error.code !== 'auth/popup-closed-by-user') {
-        setErrorMsg(`Error de conexión: ${error.code}`);
-      }
+      if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
+      else if (error.code === 'auth/popup-blocked') setErrorMsg("Popup bloqueado por el navegador.");
+      else if (error.code !== 'auth/popup-closed-by-user') setErrorMsg(`Error de conexión: ${error.code}`);
     }
   };
 
@@ -231,26 +216,11 @@ export default function LoginPage() {
       console.error("SMS Code Error:", error.code, error.message);
       setLoading(false);
       
-      if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-          (window as any).recaptchaVerifier = null;
-        } catch (e) {}
-      }
-
-      if (error.code === 'auth/unauthorized-domain') {
-        setAuthErrorType('domain');
-      } else if (error.code === 'auth/billing-not-enabled') {
-        setAuthErrorType('billing');
-      } else if (error.code === 'auth/invalid-phone-number') {
-        setErrorMsg("El formato del número de teléfono no es válido.");
-      } else if (error.code === 'auth/too-many-requests') {
-        setErrorMsg("Demasiados intentos. Por favor espera unos minutos antes de reintentar.");
-      } else if (error.code === 'auth/captcha-check-failed') {
-        setErrorMsg("La validación de seguridad falló. Refresca la página e intenta de nuevo.");
-      } else {
-        setErrorMsg(`Fallo al enviar SMS: ${error.message || "Error desconocido"}`);
-      }
+      if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
+      else if (error.code === 'auth/billing-not-enabled') setAuthErrorType('billing');
+      else if (error.code === 'auth/invalid-phone-number') setErrorMsg("El formato del número de teléfono no es válido.");
+      else if (error.code === 'auth/too-many-requests') setErrorMsg("Demasiados intentos. Por favor espera unos minutos.");
+      else setErrorMsg(`Fallo al enviar SMS: ${error.message || "Error desconocido"}`);
     }
   };
 
@@ -262,7 +232,7 @@ export default function LoginPage() {
       handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       console.error("Verification Error:", error.code);
-      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código de 6 dígitos no coincide. Reintenta." });
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código de 6 dígitos no coincide." });
     } finally {
       setIsVerifying(false);
     }
@@ -303,7 +273,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50 animate-in zoom-in-95 duration-700">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">
           
-          <Tabs defaultValue="google" className="space-y-10" onValueChange={(v) => setActiveTab(v)}>
+          <Tabs defaultValue="google" className="space-y-10" onValueChange={(v) => { setActiveTab(v); setAuthErrorType(null); setErrorMsg(null); }}>
             <TabsList className="grid grid-cols-2 h-14 bg-card border border-border p-1.5 rounded-2xl shadow-inner">
               <TabsTrigger value="google" className="rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
                 <Sparkles className="h-3.5 w-3.5" /> ACCESO RÁPIDO
@@ -312,6 +282,40 @@ export default function LoginPage() {
                 <LogIn className="h-3.5 w-3.5" /> OTROS MÉTODOS
               </TabsTrigger>
             </TabsList>
+
+            {authErrorType === 'billing' && (
+              <Alert variant="destructive" className="rounded-[2.5rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95 border-2 shadow-2xl">
+                <div className="flex flex-col items-center text-center space-y-6">
+                  <div className="h-16 w-16 rounded-3xl bg-red-100 flex items-center justify-center text-red-600 shadow-inner">
+                    <CreditCard className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <AlertTitle className="text-xs font-black uppercase text-red-900 tracking-widest">Facturación Requerida</AlertTitle>
+                    <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
+                      La autenticación por SMS requiere que el proyecto Firebase esté en el <b>Plan Blaze (Pay-as-you-go)</b>.
+                    </AlertDescription>
+                  </div>
+                  
+                  <div className="w-full bg-white/50 p-6 rounded-[2rem] border border-red-100 text-left space-y-3">
+                    <p className="text-[10px] font-black uppercase text-red-900 border-b border-red-100 pb-2">Instrucciones para el Admin:</p>
+                    <ol className="text-[10px] text-red-800 space-y-2 font-bold">
+                      <li className="flex gap-2"><span>1.</span> Ve a Firebase Console.</li>
+                      <li className="flex gap-2"><span>2.</span> Haz clic en 'Upgrade' abajo a la izquierda.</li>
+                      <li className="flex gap-2"><span>3.</span> Selecciona el Plan Blaze.</li>
+                    </ol>
+                  </div>
+
+                  <div className="space-y-4 w-full">
+                    <Button asChild variant="outline" className="w-full h-14 rounded-2xl border-red-200 text-red-700 font-black text-[10px] uppercase hover:bg-red-100 transition-all">
+                      <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-2 h-4 w-4" /> ABRIR CONSOLA FIREBASE
+                      </a>
+                    </Button>
+                    <p className="text-[9px] italic text-red-500 font-bold uppercase tracking-widest">Mientras tanto, puedes usar Google o Email para entrar.</p>
+                  </div>
+                </div>
+              </Alert>
+            )}
 
             {authErrorType === 'domain' && (
               <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95">
@@ -325,21 +329,6 @@ export default function LoginPage() {
                       Firebase Console &gt; Auth &gt; Settings &gt; Authorized domains
                     </p>
                   </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {authErrorType === 'billing' && (
-              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95">
-                <CreditCard className="h-8 w-8 text-red-600 mb-4" />
-                <AlertTitle className="text-xs font-black uppercase mb-3 text-red-900 tracking-widest">Facturación Requerida</AlertTitle>
-                <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800 space-y-4">
-                  <p>La autenticación por SMS requiere que el proyecto Firebase esté en el <b>Plan Blaze (Pay-as-you-go)</b>.</p>
-                  <div className="bg-white/50 p-4 rounded-xl border border-red-100">
-                    <p className="mb-2">Instrucciones para el Admin:</p>
-                    <p className="text-[10px]">1. Ve a Firebase Console.<br/>2. Haz clic en 'Upgrade' abajo a la izquierda.<br/>3. Selecciona el Plan Blaze.</p>
-                  </div>
-                  <p className="text-[10px] italic">Mientras tanto, puedes usar Google o Email para entrar.</p>
                 </AlertDescription>
               </Alert>
             )}
@@ -384,12 +373,6 @@ export default function LoginPage() {
                   </div>
                 )}
               </Button>
-
-              <div className="flex items-center gap-4 py-2">
-                <div className="h-px bg-border flex-1" />
-                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Garantía Sync</span>
-                <div className="h-px bg-border flex-1" />
-              </div>
 
               <div className="grid grid-cols-3 gap-3">
                  {[
@@ -494,7 +477,7 @@ export default function LoginPage() {
                         <Button onClick={handleVerifyCode} className="w-full h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase shadow-xl" disabled={isVerifying}>
                           {isVerifying ? <Loader2 className="animate-spin h-6 w-6" /> : "VERIFICAR Y ENTRAR"}
                         </Button>
-                        <Button variant="ghost" onClick={() => { setConfirmationResult(null); setErrorMsg(null); }} className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">Volver a intentar</Button>
+                        <Button variant="ghost" onClick={() => { setConfirmationResult(null); setErrorMsg(null); setAuthErrorType(null); }} className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">Volver a intentar</Button>
                       </div>
                     )}
                   </AccordionContent>
