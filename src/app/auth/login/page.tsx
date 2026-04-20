@@ -17,7 +17,11 @@ import {
   EyeOff,
   AlertCircle,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  Smartphone,
+  Mail,
+  Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -71,7 +75,7 @@ export default function LoginPage() {
 
   const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-  // SEGURIDAD MAESTRA: Detectar admin logueado y saltar el login inmediatamente
+  // SEGURIDAD MAESTRA: Si el admin ya está logueado, saltar el login de inmediato
   useEffect(() => {
     if (user && !isGlobalLoading) {
       const cleanEmail = user.email?.toLowerCase().trim();
@@ -81,6 +85,7 @@ export default function LoginPage() {
     }
   }, [user, isGlobalLoading]);
 
+  // Limpieza de reCAPTCHA al desmontar
   useEffect(() => {
     return () => {
       if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
@@ -114,43 +119,38 @@ export default function LoginPage() {
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. PRIORIDAD MAESTRA: Si es admin, no hacemos nada más y redirigimos
+    // 1. PRIORIDAD MAESTRA: Redirección inmediata para Admin
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       window.location.href = '/dashboard/admin';
       return;
     }
 
-    // 2. Para otros usuarios, navegación rápida estilo TikTok
+    // 2. REDIRECCIÓN TIKTOK (Vía Rápida)
     try {
-      // Verificar si es Afiliado existente
+      // Intentar identificar rol rápidamente
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
-      if (affSnap.exists()) {
-        router.replace('/dashboard/affiliate');
-        return;
+      const targetPath = affSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer';
+
+      // Si no es afiliado, crear registro de comprador de forma silenciosa y NO bloqueante
+      if (!affSnap.exists()) {
+        const names = (displayName || '').split(' ');
+        setDocumentNonBlocking(doc(db, 'buyers', uid), {
+          id: uid,
+          firstName: names[0] || 'Usuario',
+          lastName: names.slice(1).join(' ') || 'Connect',
+          email: cleanEmail,
+          registeredAt: new Date().toISOString(),
+          status: 'Active'
+        }, { merge: true });
       }
 
-      // Si no es afiliado ni admin, es Comprador (Creación silenciosa)
-      const names = (displayName || '').split(' ') || ['Usuario', 'Sync'];
-      const firstName = names[0] || 'Usuario';
-      const lastName = names.slice(1).join(' ') || 'Connect';
-
-      setDocumentNonBlocking(doc(db, 'buyers', uid), {
-        id: uid,
-        firstName,
-        lastName,
-        email: cleanEmail,
-        registeredAt: new Date().toISOString(),
-        status: 'Active'
-      }, { merge: true });
-
       toast({ title: "¡Bienvenido!", description: "Entrando a tu panel VIP." });
-      router.replace('/dashboard/buyer');
+      router.replace(targetPath);
 
     } catch (err) {
       console.error("Login Success Error:", err);
-      // En caso de error, intentamos entrar al panel de comprador igual para no bloquear
-      router.replace('/dashboard/buyer');
+      router.replace('/dashboard/buyer'); // Fallback seguro
     }
   };
 
@@ -178,11 +178,10 @@ export default function LoginPage() {
       
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
-        setErrorMsg("DOMINIO NO AUTORIZADO en Firebase Console.");
       } else if (error.code === 'auth/popup-blocked') {
         setErrorMsg("Popup bloqueado por el navegador.");
       } else if (error.code !== 'auth/popup-closed-by-user') {
-        setErrorMsg("Fallo al conectar con Google.");
+        setErrorMsg("Error de conexión con Google.");
       }
     }
   };
@@ -199,7 +198,7 @@ export default function LoginPage() {
       handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       setLoading(false);
-      setErrorMsg("Credenciales incorrectas.");
+      setErrorMsg("Credenciales incorrectas o cuenta no registrada.");
     }
   };
 
@@ -219,18 +218,17 @@ export default function LoginPage() {
     try {
       setupRecaptcha('recaptcha-container');
       const verifier = (window as any).recaptchaVerifier;
-      if (!verifier) throw new Error("reCAPTCHA not initialized");
+      if (!verifier) throw new Error("reCAPTCHA no inicializado");
       
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(result);
-      toast({ title: "Código Enviado" });
+      toast({ title: "Código Enviado", description: "Revisa tus mensajes." });
     } catch (error: any) {
       console.error("SMS Code Error:", error.code);
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
-        setErrorMsg("DOMINIO NO AUTORIZADO para SMS.");
       } else {
-        setErrorMsg("Error al enviar código.");
+        setErrorMsg("Error al enviar código SMS.");
       }
     } finally {
       setLoading(false);
@@ -251,148 +249,234 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 transition-all duration-500">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 selection:bg-primary/30">
       <div id="recaptcha-container"></div>
       
-      <div className="fixed top-6 right-6 flex items-center gap-2">
+      {/* HEADER DE NAVEGACIÓN */}
+      <div className="fixed top-6 right-6 flex items-center gap-2 z-50">
         <ThemeToggle />
         <LanguageToggle />
       </div>
 
-      <div className="mb-8 text-center space-y-6">
-        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
+      <div className="mb-10 text-center space-y-8 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <Link href="https://syncacademy.systeme.io/sync-connect" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-all font-black uppercase text-[10px] tracking-[0.2em] group">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span>Volver al sitio oficial</span>
         </Link>
 
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative h-16 w-16 shadow-2xl rounded-[2rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50">
+        <div className="flex flex-col items-center gap-5">
+          <div className="relative h-20 w-20 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card ring-8 ring-primary/5 flex items-center justify-center border border-border/50 rotate-3 hover:rotate-0 transition-transform duration-500">
             {displayLogoUrl ? (
-              <Image src={displayLogoUrl} alt="Sync Connect" fill className="object-contain p-2" unoptimized />
+              <Image src={displayLogoUrl} alt="Sync Connect" fill className="object-contain p-3" unoptimized />
             ) : (
-              <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
+              <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />
             )}
           </div>
-          <span className="font-headline font-black text-2xl text-foreground tracking-tight uppercase italic">Sync <span className="text-primary">Connect</span></span>
+          <div className="space-y-1">
+            <h1 className="font-headline font-black text-3xl text-foreground tracking-tighter uppercase italic leading-none">
+              Sync <span className="text-primary">Connect</span>
+            </h1>
+            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.4em]">Plataforma de Afiliados Elite</p>
+          </div>
         </div>
       </div>
 
-      <Card className="w-full max-w-md shadow-2xl border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50">
-        <div className="bg-muted/30 rounded-[3rem] p-8 md:p-10">
+      {/* CARD DE LOGIN PROFESIONAL */}
+      <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50 animate-in zoom-in-95 duration-700">
+        <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">
           
-          <Tabs defaultValue="google" className="space-y-8" onValueChange={(v) => setActiveTab(v)}>
-            <TabsList className="grid grid-cols-2 h-12 bg-card border border-border p-1 rounded-2xl">
-              <TabsTrigger value="google" className="rounded-xl font-black text-[10px] uppercase gap-2">
-                <Sparkles className="h-3 w-3 text-primary" /> ACCESO RÁPIDO
+          <Tabs defaultValue="google" className="space-y-10" onValueChange={(v) => setActiveTab(v)}>
+            <TabsList className="grid grid-cols-2 h-14 bg-card border border-border p-1.5 rounded-2xl shadow-inner">
+              <TabsTrigger value="google" className="rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+                <Sparkles className="h-3.5 w-3.5" /> ACCESO RÁPIDO
               </TabsTrigger>
-              <TabsTrigger value="others" className="rounded-xl font-black text-[10px] uppercase gap-2">
-                <LogIn className="h-3 w-3" /> OTROS
+              <TabsTrigger value="others" className="rounded-xl font-black text-[10px] uppercase gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white transition-all">
+                <LogIn className="h-3.5 w-3.5" /> OTROS MÉTODOS
               </TabsTrigger>
             </TabsList>
 
-            <CardHeader className="text-center p-0 space-y-2">
-              <CardTitle className="text-2xl font-headline font-black text-foreground tracking-tight uppercase italic">
-                {activeTab === 'google' ? 'Entrada' : 'Inicia'} <span className="text-primary">Sesión</span>
-              </CardTitle>
-              <CardDescription className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                Experiencia instantánea estilo TikTok
-              </CardDescription>
-            </CardHeader>
-
             {authErrorType === 'domain' && (
-              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-6 animate-in zoom-in-95">
-                <ShieldAlert className="h-6 w-6 text-red-600" />
-                <AlertTitle className="text-xs font-black uppercase mb-2 text-red-900">Error de Dominio</AlertTitle>
-                <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800">
-                  Este dominio no está autorizado en tu Firebase Console. <br/><br/>
-                  Ve a <b>Authentication &gt; Settings &gt; Authorized domains</b> y añade este dominio para que Google y SMS funcionen.
+              <Alert variant="destructive" className="rounded-[2rem] bg-red-50 border-red-200 p-8 animate-in zoom-in-95">
+                <ShieldAlert className="h-8 w-8 text-red-600 mb-4" />
+                <AlertTitle className="text-xs font-black uppercase mb-3 text-red-900 tracking-widest">Dominio no Autorizado</AlertTitle>
+                <AlertDescription className="text-[11px] font-bold leading-relaxed text-red-800 space-y-4">
+                  <p>Este dominio no está autorizado para usar Google Auth o SMS en tu consola.</p>
+                  <div className="bg-white/50 p-4 rounded-xl border border-red-100">
+                    <p className="mb-2">Solución:</p>
+                    <p className="font-mono text-[9px] bg-slate-100 p-2 rounded">
+                      Firebase Console &gt; Auth &gt; Settings &gt; Authorized domains
+                    </p>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
 
-            {errorMsg && authErrorType !== 'domain' && (
-              <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-3">
+            {errorMsg && (
+              <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-4 animate-in fade-in">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-[11px] font-bold uppercase">{errorMsg}</AlertDescription>
+                <AlertDescription className="text-[10px] font-black uppercase tracking-widest">{errorMsg}</AlertDescription>
               </Alert>
             )}
 
-            <TabsContent value="google" className="space-y-6 m-0">
+            <TabsContent value="google" className="space-y-8 m-0 animate-in fade-in duration-500">
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-headline font-black text-foreground tracking-tight uppercase italic">
+                  Bienvenido de <span className="text-primary">Nuevo</span>
+                </h2>
+                <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+                  Entra sin contraseñas en un solo clic
+                </p>
+              </div>
+
               <Button 
-                className="w-full h-20 rounded-[2rem] bg-white hover:bg-slate-50 border-2 border-slate-100 text-slate-900 font-black text-xs shadow-xl transition-all gap-4 group"
+                className="w-full h-24 rounded-[2.5rem] bg-white hover:bg-slate-50 border-2 border-slate-100 text-slate-900 font-black text-sm shadow-xl transition-all gap-4 group relative overflow-hidden active:scale-95"
                 onClick={handleGoogleLogin}
                 disabled={loading}
               >
                 {!loading ? (
                   <>
-                    <svg className="h-6 w-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <svg className="h-8 w-8 group-hover:scale-110 transition-transform duration-500" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.16H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.84l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.16l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
                     </svg>
-                    ENTRAR CON GOOGLE
+                    <span>CONTINUAR CON GOOGLE</span>
                   </>
-                ) : <Loader2 className="animate-spin h-6 w-6 text-primary" />}
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Verificando...</span>
+                  </div>
+                )}
               </Button>
+
+              <div className="flex items-center gap-4 py-2">
+                <div className="h-px bg-border flex-1" />
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Garantía Sync</span>
+                <div className="h-px bg-border flex-1" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                 {[
+                   { icon: ShieldCheck, label: "SEGURO" },
+                   { icon: Zap, label: "RÁPIDO" },
+                   { icon: Smartphone, label: "MÓVIL" }
+                 ].map((item, i) => (
+                   <div key={i} className="flex flex-col items-center gap-1.5 opacity-40 grayscale group-hover:grayscale-0 transition-all">
+                     <item.icon className="h-4 w-4" />
+                     <span className="text-[7px] font-black uppercase tracking-[0.2em]">{item.label}</span>
+                   </div>
+                 ))}
+              </div>
             </TabsContent>
 
-            <TabsContent value="others" className="space-y-10 m-0 animate-in fade-in zoom-in-95">
-              <div className="space-y-6">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="email" className="border-none">
-                    <AccordionTrigger className="h-14 bg-card rounded-2xl border px-6 font-black text-[10px] uppercase hover:no-underline">Email & Clave</AccordionTrigger>
-                    <AccordionContent className="pt-4 px-2 space-y-4">
-                      <div className="space-y-2">
+            <TabsContent value="others" className="space-y-8 m-0 animate-in fade-in zoom-in-95 duration-500">
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                <AccordionItem value="email" className="border-none">
+                  <AccordionTrigger className="h-16 bg-card rounded-2xl border px-6 font-black text-[10px] uppercase hover:no-underline group data-[state=open]:border-primary transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-data-[state=open]:bg-primary group-data-[state=open]:text-white transition-colors">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      Email & Contraseña
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6 px-2 space-y-5">
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tu Correo</Label>
                         <Input 
                           type="email" 
-                          placeholder="Tu Email" 
+                          placeholder="ejemplo@correo.com" 
                           value={email} 
                           onChange={(e) => setEmail(e.target.value)}
-                          className="h-12 rounded-xl"
-                        />
-                        <Input 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="Contraseña" 
-                          value={password} 
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 rounded-xl"
+                          className="h-14 rounded-2xl bg-muted/50 border-none px-6 font-bold"
                         />
                       </div>
-                      <Button onClick={handleEmailLogin} className="w-full h-12 rounded-xl font-black" disabled={loading}>INICIAR</Button>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="phone" className="border-none mt-2">
-                    <AccordionTrigger className="h-14 bg-card rounded-2xl border px-6 font-black text-[10px] uppercase hover:no-underline">Número Telefónico</AccordionTrigger>
-                    <AccordionContent className="pt-4 px-2">
-                      {!confirmationResult ? (
-                        <div className="space-y-4">
-                          <div className="flex gap-2">
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center px-1">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Tu Clave</Label>
+                          <Link href="/auth/forgot-password" size="sm" className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Olvidé mi clave</Link>
+                        </div>
+                        <div className="relative">
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="h-14 rounded-2xl bg-muted/50 border-none px-6 font-bold"
+                          />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <Button onClick={handleEmailLogin} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-xl" disabled={loading}>
+                      {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "INICIAR SESIÓN"}
+                    </Button>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="phone" className="border-none">
+                  <AccordionTrigger className="h-16 bg-card rounded-2xl border px-6 font-black text-[10px] uppercase hover:no-underline group data-[state=open]:border-primary transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-data-[state=open]:bg-primary group-data-[state=open]:text-white transition-colors">
+                        <Smartphone className="h-4 w-4" />
+                      </div>
+                      Número de Teléfono
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6 px-2">
+                    {!confirmationResult ? (
+                      <div className="space-y-5">
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código de País & Número</Label>
+                          <div className="flex gap-3">
                             <Select value={countryCode} onValueChange={setCountryCode}>
-                              <SelectTrigger className="w-24 h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                              <SelectContent>{COUNTRY_CODES.map(c => <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>)}</SelectContent>
+                              <SelectTrigger className="w-32 h-14 rounded-2xl bg-muted/50 border-none font-bold px-4"><SelectValue /></SelectTrigger>
+                              <SelectContent className="rounded-2xl">{COUNTRY_CODES.map(c => <SelectItem key={c.code} value={c.code} className="rounded-xl">{c.flag} {c.code}</SelectItem>)}</SelectContent>
                             </Select>
-                            <Input placeholder="8888 8888" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-12 rounded-xl flex-1" />
+                            <Input placeholder="8888 8888" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-14 rounded-2xl bg-muted/50 border-none flex-1 font-bold text-lg px-6" />
                           </div>
-                          <Button onClick={handleSendCode} className="w-full h-12 rounded-xl" disabled={loading}>ENVIAR SMS</Button>
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <Input placeholder="Código 6 dígitos" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} className="h-12 rounded-xl text-center text-xl font-black" />
-                          <Button onClick={handleVerifyCode} className="w-full h-12 rounded-xl bg-primary" disabled={isVerifying}>VERIFICAR</Button>
+                        <Button onClick={handleSendCode} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl" disabled={loading}>
+                          {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR CÓDIGO SMS"}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-5 animate-in slide-in-from-bottom-2 duration-300">
+                        <div className="space-y-2 text-center">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Ingresa el código de 6 dígitos</Label>
+                          <Input 
+                            placeholder="000000" 
+                            value={verificationCode} 
+                            onChange={(e) => setVerificationCode(e.target.value)} 
+                            className="h-20 rounded-[2rem] bg-muted/50 border-none text-center text-3xl font-black tracking-[0.5em] px-0" 
+                            maxLength={6}
+                          />
                         </div>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
+                        <Button onClick={handleVerifyCode} className="w-full h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase shadow-xl" disabled={isVerifying}>
+                          {isVerifying ? <Loader2 className="animate-spin h-6 w-6" /> : "VERIFICAR Y ENTRAR"}
+                        </Button>
+                        <Button variant="ghost" onClick={() => setConfirmationResult(null)} className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">Volver a intentar</Button>
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </TabsContent>
           </Tabs>
 
-          <CardFooter className="justify-center mt-10 p-0">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase text-center leading-relaxed">
-              ¿Deseas vender? <Link href="/auth/register/affiliate" className="text-primary font-black hover:underline block mt-1">Aplica para Afiliación Platinum</Link>
+          <CardFooter className="justify-center mt-12 p-0 flex flex-col gap-6">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase text-center leading-relaxed tracking-widest">
+              ¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-black hover:underline block mt-2">Crea tu acceso ahora</Link>
             </p>
+            <div className="pt-6 border-t w-full flex justify-center">
+               <Link href="/auth/admin-login" className="text-[8px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-[0.5em] transition-colors">CENTRO DE CONTROL MAESTRO</Link>
+            </div>
           </CardFooter>
         </div>
       </Card>
