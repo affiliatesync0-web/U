@@ -31,7 +31,8 @@ import {
   Search,
   ChevronDown,
   Globe,
-  ShoppingCart
+  ShoppingCart,
+  PhoneCall
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -157,16 +158,16 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     return (
       <div className="min-h-screen bg-[#EAEDED] flex items-center justify-center p-6 text-center text-foreground">
         <div className="max-w-md space-y-10 animate-in fade-in zoom-in duration-700">
-          <div className="h-32 w-32 bg-primary/10 rounded-[3.5rem] flex items-center justify-center text-primary shadow-2xl mx-auto rotate-3 group">
+          <div className="h-32 w-32 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary shadow-2xl mx-auto rotate-3 group">
             <Clock className="h-16 w-16 animate-pulse group-hover:rotate-12 transition-transform" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-5xl font-headline font-black tracking-tight leading-none uppercase italic">Estatus: <span className="text-primary">En Revisión</span></h1>
+            <h1 className="text-4xl font-headline font-black tracking-tight leading-none uppercase italic">Estatus: <span className="text-primary">En Revisión</span></h1>
             <p className="text-slate-500 font-medium leading-relaxed mt-6">Tu perfil está siendo auditado por el equipo legal. Recibirás un Gmail de confirmación cuando tu licencia Platinum sea habilitada.</p>
           </div>
           <div className="flex flex-col gap-4 pt-4">
-            <Button onClick={() => window.location.reload()} className="h-20 rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/30 active:scale-95 transition-all">REVISAR AHORA</Button>
-            <Button onClick={handleLogout} variant="ghost" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-red-500">
+            <Button onClick={() => window.location.reload()} className="h-20 rounded-xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/30 active:scale-95 transition-all">REVISAR AHORA</Button>
+            <Button onClick={handleLogout} variant="ghost" className="h-14 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-red-500">
               SALIR DE LA PLATAFORMA
             </Button>
           </div>
@@ -214,15 +215,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const profileUrl = isUserAdmin ? "/dashboard/admin/design" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate/profile");
 
   return (
-    <div className="min-h-screen bg-[#EAEDED] flex flex-col font-body">
+    <div className="min-h-screen bg-[#EAEDED] flex flex-col font-body selection:bg-[#FEBD69]/30">
       {/* AMAZON MASTER HEADER */}
       <header className="sticky top-0 z-50 w-full flex flex-col shrink-0 shadow-md">
         
-        {/* ROW 1: DARK NAVY BAR */}
-        <div className="bg-[#131921] h-[60px] md:h-[72px] flex items-center px-2 md:px-4 gap-1 md:gap-4">
+        {/* ROW 1: DARK NAVY BAR (#131921) */}
+        <div className="bg-[#131921] h-[60px] md:h-[72px] flex items-center px-2 md:px-4 gap-1 md:gap-4 border-b border-black/10">
           
-          {/* Logo & Role */}
-          <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0">
+          {/* Logo & Role Badge */}
+          <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="flex items-center p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white shrink-0 transition-all duration-200">
             <div className="relative h-7 w-7 md:h-9 md:w-9 mr-1">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
@@ -236,8 +237,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             </div>
           </Link>
 
-          {/* Location Selector (Deliver to) */}
-          <div className="hidden xl:flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group shrink-0">
+          {/* Location / Delivery Info */}
+          <div className="hidden xl:flex items-center p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer group shrink-0 transition-all">
              <MapPin className="h-5 w-5 text-white mt-1.5" />
              <div className="flex flex-col ml-1">
                 <span className="text-[#CCCCCC] text-[12px] leading-none">Entregar en</span>
@@ -245,15 +246,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
              </div>
           </div>
 
-          {/* Search Bar (Amazon Style) */}
-          <div className="flex-1 flex h-10 md:h-11 items-center mx-1 md:mx-4">
-            <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden focus-within:ring-[3px] focus-within:ring-[#FF9900]">
-              <button className="hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] transition-colors font-medium">
-                Sync <ChevronDown className="h-3 w-3 ml-2" />
+          {/* Amazon Search Bar (dropdown + input + button) */}
+          <div className="flex-1 flex h-10 md:h-11 items-center mx-1 md:mx-4 group">
+            <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden ring-offset-0 focus-within:ring-[3px] focus-within:ring-[#FF9900] transition-shadow">
+              <button className="hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] transition-colors font-bold uppercase tracking-widest">
+                Categorías <ChevronDown className="h-3 w-3 ml-2" />
               </button>
               <Input 
-                placeholder="Buscar herramientas y productos..." 
-                className="flex-1 border-none focus-visible:ring-0 text-[15px] h-full rounded-none bg-transparent px-4 font-medium" 
+                placeholder="Buscar en la red Sync..." 
+                className="flex-1 border-none focus-visible:ring-0 text-[15px] h-full rounded-none bg-transparent px-4 font-medium text-slate-800 placeholder:text-slate-400" 
               />
               <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-12 md:w-14 h-full flex items-center justify-center transition-colors">
                 <Search className="h-6 w-6 text-[#333333]" />
@@ -261,13 +262,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             </div>
           </div>
 
-          {/* Action Links */}
+          {/* User & Global Actions */}
           <div className="flex items-center gap-0 md:gap-1 shrink-0">
             
-            {/* Account & Lists */}
+            {/* Account Management Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex flex-col items-start p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left">
+                <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left transition-all">
                   <span className="text-white text-[12px] leading-none">Hola, {profileLabel(user?.email || 'Socio')}</span>
                   <div className="flex items-center gap-1">
                     <span className="text-white font-black text-[14px] leading-tight tracking-tight">Cuenta y Listas</span>
@@ -275,34 +276,44 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 rounded-xl p-5 border-none shadow-2xl bg-white mt-1">
-                <div className="flex flex-col gap-3">
-                  <Button className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-medium text-xs rounded-lg h-10 shadow-sm border border-[#F2C200]" asChild>
-                    <Link href={profileUrl}>Entrar a Mi Panel</Link>
+              <DropdownMenuContent align="end" className="w-72 rounded-md p-6 border-none shadow-[0_10px_30px_rgba(0,0,0,0.2)] bg-white mt-1 animate-in fade-in zoom-in-95">
+                <div className="flex flex-col gap-4">
+                  <Button className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold text-[13px] rounded-md h-10 shadow-sm border border-[#F2C200] active:scale-95 transition-all" asChild>
+                    <Link href={profileUrl}>Panel de Control Maestro</Link>
                   </Button>
+                  <p className="text-[11px] text-center text-[#444]">¿Nuevo socio? <Link href="/auth/register" className="text-[#007185] hover:underline hover:text-[#C45500]">Empieza aquí</Link></p>
                 </div>
                 <DropdownMenuSeparator className="my-5" />
-                <div className="grid grid-cols-1 gap-2">
-                  <DropdownMenuLabel className="p-0 text-sm font-black mb-1">Mi Ecosistema</DropdownMenuLabel>
-                  <Link href={profileUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-0.5">Perfil y Billetera</Link>
-                  <Link href={marketUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-0.5">Catálogo de Productos</Link>
-                  <DropdownMenuSeparator className="my-2" />
-                  <button onClick={handleLogout} className="text-[13px] text-[#C45500] hover:underline text-left py-1 font-bold">Cerrar Sesión</button>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <DropdownMenuLabel className="p-0 text-sm font-black mb-2 text-[#111]">Tus Listas</DropdownMenuLabel>
+                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Crear una lista</Link>
+                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Lista de deseos</Link>
+                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Afiliados</Link>
+                  </div>
+                  <div className="space-y-2">
+                    <DropdownMenuLabel className="p-0 text-sm font-black mb-2 text-[#111]">Tu Cuenta</DropdownMenuLabel>
+                    <Link href={profileUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Billetera Sync</Link>
+                    <Link href={marketUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Pedidos</Link>
+                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Suscripciones</Link>
+                    <DropdownMenuSeparator className="my-2" />
+                    <button onClick={handleLogout} className="text-[13px] text-[#C45500] hover:underline text-left py-1 font-bold w-full">Cerrar Sesión</button>
+                  </div>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Orders Link */}
-            <Link href={marketUrl} className="hidden md:flex flex-col items-start p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left">
+            {/* Orders Quick Link */}
+            <Link href={marketUrl} className="hidden md:flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left transition-all">
                <span className="text-white text-[12px] leading-none">Mis</span>
-               <span className="text-white font-black text-[14px] leading-tight">Pedidos</span>
+               <span className="text-white font-black text-[14px] leading-tight">Vouchers</span>
             </Link>
 
-            {/* Cart Icon (Market) */}
-            <Link href={marketUrl} className="flex items-end p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group relative">
+            {/* Marketplace Cart Style */}
+            <Link href={marketUrl} className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer group relative transition-all">
                <div className="relative">
                  <ShoppingCart className="h-9 w-9 text-white" />
-                 <span className="absolute top-[-2px] left-[55%] -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">
+                 <span className="absolute top-[-3px] left-[55%] -translate-x-1/2 text-[#FF9900] font-black text-[18px] leading-none">
                    {(affiliateProfile?.currentBalance > 0) ? '1' : '0'}
                  </span>
                </div>
@@ -311,23 +322,23 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           </div>
         </div>
 
-        {/* ROW 2: NAV LIGHT BAR */}
-        <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar border-t border-white/5">
+        {/* ROW 2: NAV LIGHT BLUE BAR (#232F3E) */}
+        <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar">
           
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            className="flex items-center gap-1.5 p-2 rounded hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-3"
+            className="flex items-center gap-1.5 p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-3 transition-all"
           >
             <Menu className="h-5 w-5" /> Todo
           </button>
 
           <nav className="flex items-center h-full gap-2">
-             {menuItems.slice(0, 7).map((item) => (
+             {menuItems.slice(0, 8).map((item) => (
                <Link 
                 key={item.url} 
                 href={item.url}
                 className={cn(
-                  "px-3 h-full flex items-center rounded hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all",
+                  "px-3 h-full flex items-center rounded-sm hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all",
                   pathname === item.url ? "font-black" : "font-medium"
                 )}
                >
@@ -340,48 +351,58 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
              <div className="hidden md:block transform scale-90">
                <ThemeToggle />
              </div>
-             <span className="hidden xl:inline text-white font-black text-[14px] uppercase italic tracking-tighter opacity-80">Sync Academy: <span className="text-[#FF9900]">Estrategia de Élite</span></span>
+             <div className="hidden xl:flex items-center gap-2">
+               <span className="text-white font-black text-[14px] uppercase italic tracking-tighter opacity-90">
+                 Sync Academy: <span className="text-[#FF9900]">Estrategia de Élite</span>
+               </span>
+               <div className="h-4 w-px bg-white/20 mx-2" />
+               <Link href="/dashboard/affiliate/support" className="text-white hover:text-[#FF9900] transition-colors"><PhoneCall className="h-4 w-4" /></Link>
+             </div>
           </div>
         </div>
       </header>
 
-      {/* MOBILE DRAWER */}
+      {/* AMAZON STYLE SIDE DRAWER */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300">
            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-           <div className="relative w-[85%] max-w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-500 overflow-hidden shadow-2xl">
-              <div className="bg-[#232F3E] p-5 flex items-center gap-3 shrink-0">
-                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center">
+           <div className="relative w-[85%] max-w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-400 overflow-hidden shadow-[10px_0_50px_rgba(0,0,0,0.5)]">
+              <div className="bg-[#232F3E] p-5 flex items-center gap-4 shrink-0 shadow-lg">
+                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-inner">
                     <UserCircle className="h-8 w-8 text-[#232F3E]" />
                  </div>
-                 <span className="text-white font-black text-xl">Hola, {profileLabel(user?.email || 'Socio')}</span>
-                 <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto text-white p-2">
+                 <span className="text-white font-black text-xl tracking-tight">Hola, {profileLabel(user?.email || 'Socio')}</span>
+                 <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto text-white p-2 hover:bg-white/10 rounded-full">
                    <X className="h-7 w-7" />
                  </button>
               </div>
-              <ScrollArea className="flex-1 py-6">
-                 <div className="px-8 space-y-10">
-                    <div>
-                      <h4 className="text-xl font-black mb-5 text-[#111]">Navegar por Sync</h4>
-                      <div className="flex flex-col gap-2">
+              
+              <ScrollArea className="flex-1">
+                 <div className="py-6">
+                    <div className="px-8 mb-6">
+                      <h4 className="text-xl font-black mb-4 text-[#111] uppercase tracking-tighter">Navegar por Sync</h4>
+                      <div className="flex flex-col">
                         {menuItems.map((item) => (
                           <Link 
                             key={item.url} 
                             href={item.url} 
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center justify-between py-4 group border-b border-slate-50 last:border-0"
+                            className="flex items-center justify-between py-4 group border-b border-slate-50 last:border-0 hover:bg-slate-50 -mx-8 px-8 transition-colors"
                           >
-                            <span className="text-[15px] text-[#111] group-hover:font-black transition-all">{item.title}</span>
+                            <span className="text-[15px] text-[#111] font-medium group-hover:font-black transition-all">{item.title}</span>
                             <ChevronDown className="h-4 w-4 -rotate-90 text-[#888]" />
                           </Link>
                         ))}
                       </div>
                     </div>
-                    <DropdownMenuSeparator className="bg-slate-100" />
-                    <div>
-                       <h4 className="text-xl font-black mb-5 text-[#111]">Ayuda y Ajustes</h4>
-                       <Link href={profileUrl} onClick={() => setIsMobileMenuOpen(false)} className="block py-4 text-[15px] text-[#111]">Configurar mi Cuenta</Link>
-                       <button onClick={handleLogout} className="block py-4 text-[15px] w-full text-left text-red-600 font-bold">Cerrar Sesión</button>
+                    
+                    <div className="h-1.5 bg-[#EAEDED] w-full" />
+                    
+                    <div className="px-8 py-6">
+                       <h4 className="text-xl font-black mb-4 text-[#111] uppercase tracking-tighter">Ayuda y Ajustes</h4>
+                       <Link href={profileUrl} onClick={() => setIsMobileMenuOpen(false)} className="block py-3 text-[14px] text-[#111] hover:font-bold">Configurar mi Cuenta</Link>
+                       <Link href="/dashboard/affiliate/support" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 text-[14px] text-[#111] hover:font-bold">Centro de Ayuda</Link>
+                       <button onClick={handleLogout} className="block py-4 text-[14px] w-full text-left text-red-600 font-bold mt-4 border-t border-slate-100">Cerrar Sesión</button>
                     </div>
                  </div>
               </ScrollArea>
@@ -389,28 +410,69 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </div>
       )}
 
-      {/* CONTENT AREA */}
-      <main className="flex-1 animate-in fade-in duration-700">
+      {/* MAIN CONTENT AREA WITH AMAZON BACKGROUND */}
+      <main className="flex-1 animate-in fade-in duration-1000">
         <div className="max-w-[1500px] mx-auto px-4 md:px-10 py-10 md:py-14">
           {children}
         </div>
       </main>
 
-      {/* AMAZON STYLE FOOTER */}
-      <footer className="bg-[#131A22] text-white py-16 px-8 text-center border-t-8 border-[#232F3E]">
-         <div className="max-w-2xl mx-auto space-y-6">
-            <div className="flex justify-center mb-8">
-               <Terminal className="h-12 w-12 text-[#FF9900]" />
+      {/* MULTI-COLUMN AMAZON STYLE FOOTER */}
+      <footer className="bg-[#131A22] text-white pt-16 pb-8 border-t-8 border-[#232F3E]">
+         <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            <div className="space-y-6">
+               <h4 className="text-sm font-black uppercase tracking-widest text-[#FF9900]">Conócenos</h4>
+               <ul className="space-y-3 text-[13px] text-[#CCCCCC]">
+                  <li><Link href="#" className="hover:underline">Quiénes Somos</Link></li>
+                  <li><Link href="#" className="hover:underline">Licencia Platinum</Link></li>
+                  <li><Link href="#" className="hover:underline">Accesibilidad</Link></li>
+               </ul>
             </div>
-            <p className="text-[13px] text-[#CCCCCC] leading-relaxed max-w-lg mx-auto">
-              Sync Connect es la infraestructura líder en sincronización de negocios digitales en Nicaragua. Seguridad, rapidez y escala garantizada.
-            </p>
-            <div className="flex justify-center gap-10 pt-8 flex-wrap">
-               <Link href="#" className="text-[12px] text-white hover:underline">Condiciones de Uso</Link>
-               <Link href="#" className="text-[12px] text-white hover:underline">Aviso de Privacidad</Link>
-               <Link href="#" className="text-[12px] text-white hover:underline">Ayuda de Sync Academy</Link>
+            <div className="space-y-6">
+               <h4 className="text-sm font-black uppercase tracking-widest text-[#FF9900]">Gana Dinero</h4>
+               <ul className="space-y-3 text-[13px] text-[#CCCCCC]">
+                  <li><Link href="/auth/register" className="hover:underline">Vender en Sync</Link></li>
+                  <li><Link href="#" className="hover:underline">Programa de Afiliados</Link></li>
+                  <li><Link href="#" className="hover:underline">Anuncia tus Cursos</Link></li>
+               </ul>
             </div>
-            <p className="text-[11px] text-[#888] font-bold mt-10">© 2024 Sync Connect Nicaragua. Todos los derechos reservados.</p>
+            <div className="space-y-6">
+               <h4 className="text-sm font-black uppercase tracking-widest text-[#FF9900]">Métodos de Pago</h4>
+               <ul className="space-y-3 text-[13px] text-[#CCCCCC]">
+                  <li><Link href="#" className="hover:underline">Transferencia Local (NI)</Link></li>
+                  <li><Link href="#" className="hover:underline">Billetera Digital</Link></li>
+                  <li><Link href="#" className="hover:underline">Conversor de Moneda</Link></li>
+               </ul>
+            </div>
+            <div className="space-y-6">
+               <h4 className="text-sm font-black uppercase tracking-widest text-[#FF9900]">Podemos Ayudarte</h4>
+               <ul className="space-y-3 text-[13px] text-[#CCCCCC]">
+                  <li><Link href="/dashboard/affiliate/support" className="hover:underline">Centro de Soporte</Link></li>
+                  <li><Link href="#" className="hover:underline">Tus Comisiones</Link></li>
+                  <li><Link href="#" className="hover:underline">Políticas de Devolución</Link></li>
+               </ul>
+            </div>
+         </div>
+
+         <div className="border-t border-white/5 py-12 flex flex-col items-center gap-8">
+            <Link href="/" className="group transition-transform hover:scale-110">
+               <div className="h-14 w-40 relative">
+                  {displayLogoUrl ? (
+                    <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
+                  ) : (
+                    <span className="text-white font-black text-2xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
+                  )}
+               </div>
+            </Link>
+            
+            <div className="flex flex-wrap justify-center gap-6 text-[12px] text-white">
+               <Link href="#" className="hover:underline">Condiciones de Uso</Link>
+               <Link href="#" className="hover:underline">Aviso de Privacidad</Link>
+               <Link href="#" className="hover:underline">Cookies</Link>
+               <Link href="#" className="hover:underline">Publicidad basada en intereses</Link>
+            </div>
+            
+            <p className="text-[11px] text-[#888] font-bold">© 2024 Sync Connect Nicaragua. Una infraestructura de Sync Academy.</p>
          </div>
       </footer>
     </div>
