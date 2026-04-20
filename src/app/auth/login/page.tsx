@@ -1,11 +1,10 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Loader2, 
@@ -21,10 +20,10 @@ import {
   Mail,
   Zap,
   Smartphone,
-  ExternalLink,
   Settings,
   HelpCircle,
-  RefreshCw
+  RefreshCw,
+  Info
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -105,7 +104,7 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. SI NO ES ADMIN NI AFILIADO, CREAMOS PERFIL DE COMPRADOR (SOLO PARA USUARIOS COMUNES)
+      // 4. SI NO ES ADMIN NI AFILIADO, CREAMOS PERFIL DE COMPRADOR
       const names = (displayName || 'Usuario Sync').split(' ');
       setDocumentNonBlocking(doc(db, 'buyers', uid), {
         id: uid,
@@ -127,7 +126,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     if (!auth) {
-      toast({ variant: "destructive", title: "Error", description: "El servicio de autenticación no está listo. Por favor refresca la página." });
+      toast({ variant: "destructive", title: "Error", description: "El servicio de autenticación no está listo." });
       return;
     }
 
@@ -149,7 +148,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch (error: any) {
-      console.error("Google Login Error:", error.code, error.message);
+      console.error("Google Login Error:", error.code);
       setLoading(false);
       setRawErrorCode(error.code);
 
@@ -158,12 +157,11 @@ export default function LoginPage() {
       } else if (error.code === 'auth/operation-not-allowed') {
         setAuthErrorType('method');
       } else if (error.code === 'auth/popup-blocked') {
-        setErrorMsg("El navegador bloqueó la ventana de Google. Por favor, permite las ventanas emergentes (popups) para este sitio.");
+        setErrorMsg("El navegador bloqueó la ventana de Google. Por favor, permite las ventanas emergentes.");
       } else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
         setAuthErrorType('cancelled');
-        setErrorMsg("La ventana de Google se cerró antes de completar el acceso.");
       } else {
-        setErrorMsg("No se pudo conectar con Google. Revisa tu conexión o los dominios autorizados en Firebase.");
+        setErrorMsg("No se pudo conectar con Google. Revisa tu conexión.");
         setAuthErrorType('generic');
       }
     }
@@ -186,7 +184,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 selection:bg-primary/30">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 selection:bg-primary/30 transition-colors duration-500">
       
       <div className="fixed top-6 right-6 flex items-center gap-2 z-50">
         <ThemeToggle />
@@ -229,19 +227,35 @@ export default function LoginPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* ERROR DE CANCELACIÓN / POPUP */}
+            {/* ERROR DE CANCELACIÓN / POPUP SOLICITADO */}
             {authErrorType === 'cancelled' && (
-              <Alert variant="destructive" className="rounded-[2rem] bg-amber-50 border-amber-200 p-6 animate-in zoom-in-95">
-                <RefreshCw className="h-8 w-8 text-amber-600 mb-4" />
-                <AlertTitle className="text-xs font-black uppercase mb-3 text-amber-900 tracking-widest">Acceso Interrumpido</AlertTitle>
-                <AlertDescription className="text-[11px] font-bold leading-relaxed text-amber-800 space-y-4">
+              <Alert variant="destructive" className="rounded-[2.5rem] bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 p-8 animate-in zoom-in-95 duration-500">
+                <RefreshCw className="h-10 w-10 text-amber-600 mb-6 animate-spin-slow" />
+                <AlertTitle className="text-sm font-black uppercase mb-4 text-amber-900 dark:text-amber-400 tracking-widest leading-none">Acceso Interrumpido</AlertTitle>
+                <AlertDescription className="text-[11px] font-bold leading-relaxed text-amber-800 dark:text-amber-300 space-y-6">
                   <p>Parece que la ventana de Google se cerró antes de tiempo o fue bloqueada por tu navegador.</p>
-                  <div className="bg-white/50 p-4 rounded-xl border border-amber-100">
-                    <p className="mb-2 font-black uppercase text-[9px]">Cómo solucionar:</p>
-                    <p className="text-[10px]">1. No cierres la ventana que aparece.</p>
-                    <p className="text-[10px]">2. Asegúrate de elegir una cuenta de Google.</p>
-                    <p className="text-[10px]">3. Si estás en móvil, intenta abrir el enlace en Chrome o Safari directamente.</p>
+                  <div className="bg-white/60 dark:bg-black/20 p-6 rounded-3xl border border-amber-100 dark:border-amber-900/30 space-y-4">
+                    <p className="mb-2 font-black uppercase text-[9px] flex items-center gap-2">
+                      <Info className="h-3 w-3" /> Cómo solucionar:
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex gap-2">
+                        <span className="h-5 w-5 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] shrink-0 font-black">1</span>
+                        <p className="text-[10px]">No cierres la ventana que aparece.</p>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="h-5 w-5 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] shrink-0 font-black">2</span>
+                        <p className="text-[10px]">Asegúrate de elegir una cuenta de Google.</p>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="h-5 w-5 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] shrink-0 font-black">3</span>
+                        <p className="text-[10px]">Si estás en móvil, intenta abrir el enlace en Chrome o Safari directamente.</p>
+                      </li>
+                    </ul>
                   </div>
+                  <Button onClick={() => setAuthErrorType(null)} variant="outline" className="w-full h-12 rounded-2xl border-amber-200 bg-white hover:bg-amber-100 text-amber-900 font-black text-[10px] uppercase">
+                    ENTENDIDO, REINTENTAR
+                  </Button>
                 </AlertDescription>
               </Alert>
             )}
@@ -262,24 +276,7 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {/* ERROR DE MÉTODO NO ACTIVADO */}
-            {authErrorType === 'method' && (
-              <Alert variant="destructive" className="rounded-[2rem] bg-amber-50 border-amber-200 p-6 animate-in zoom-in-95">
-                <Settings className="h-8 w-8 text-amber-600 mb-4" />
-                <AlertTitle className="text-xs font-black uppercase mb-3 text-amber-900 tracking-widest">Google Auth Desactivado</AlertTitle>
-                <AlertDescription className="text-[11px] font-bold leading-relaxed text-amber-800 space-y-4">
-                  <p>El método de inicio de sesión con Google no está habilitado en tu proyecto.</p>
-                  <div className="bg-white/50 p-4 rounded-xl border border-amber-100">
-                    <p className="mb-2 font-black uppercase text-[9px]">Pasos a seguir:</p>
-                    <p className="text-[10px]">1. Firebase Console &gt; Authentication &gt; Sign-in method.</p>
-                    <p className="text-[10px]">2. Haz clic en "Add new provider" y elige Google.</p>
-                    <p className="text-[10px]">3. Actívalo y guarda los cambios.</p>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {errorMsg && authErrorType !== 'domain' && authErrorType !== 'method' && authErrorType !== 'cancelled' && (
+            {errorMsg && authErrorType !== 'cancelled' && authErrorType !== 'domain' && (
               <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-4 animate-in fade-in">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-[10px] font-black uppercase tracking-widest leading-tight">
@@ -321,17 +318,6 @@ export default function LoginPage() {
                   </div>
                 )}
               </Button>
-
-              {rawErrorCode && (
-                <div className="p-4 bg-slate-100 rounded-xl">
-                  <button 
-                    onClick={() => setRawErrorCode(null)} 
-                    className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <HelpCircle className="h-3 w-3" /> Error: {rawErrorCode} (Click para cerrar)
-                  </button>
-                </div>
-              )}
 
               <div className="grid grid-cols-3 gap-3">
                  {[
