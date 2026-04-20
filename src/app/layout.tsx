@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/components/theme-context';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 export const revalidate = 0;
 
@@ -22,7 +23,10 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();
-  let iconUrl = "/favicon.ico";
+  
+  // URL del logo por defecto del sistema
+  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  let iconUrl = getGoogleDriveDirectLink(defaultLogo?.imageUrl || "/favicon.ico");
   
   try {
     const logoSnap = await getDoc(doc(firestore, 'site_config', 'site-logo'));
@@ -35,12 +39,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: 'Sync Connect | Potenciando Afiliados en Nicaragua',
-    description: 'Gestiona tus productos digitales y comisiones de afiliados sin problemas con Sync Connect.',
+    description: 'La plataforma definitiva para la sincronización de marketing en Nicaragua. Gestiona tus productos digitales y comisiones de forma segura.',
     icons: {
-      icon: iconUrl,
+      icon: [
+        { url: iconUrl },
+        { url: iconUrl, sizes: '32x32', type: 'image/png' },
+        { url: iconUrl, sizes: '16x16', type: 'image/png' },
+      ],
       shortcut: iconUrl,
       apple: iconUrl,
-    }
+    },
+    manifest: '/site.webmanifest',
   };
 }
 
