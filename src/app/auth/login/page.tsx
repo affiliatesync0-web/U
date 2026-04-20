@@ -42,6 +42,8 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
 export default function LoginPage() {
   const { toast } = useToast()
   const auth = useAuth()
@@ -62,13 +64,11 @@ export default function LoginPage() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
-
   useEffect(() => {
     if (user && !isGlobalLoading) {
       const cleanEmail = user.email?.toLowerCase().trim();
       if (cleanEmail === ADMIN_EMAIL) {
-        window.location.href = '/dashboard/admin';
+        window.location.replace('/dashboard/admin');
       }
     }
   }, [user, isGlobalLoading]);
@@ -76,25 +76,24 @@ export default function LoginPage() {
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. VERIFICACIÓN MAESTRA (ADMIN)
+    // 1. VERIFICACIÓN MAESTRA (ADMIN) - PRIORIDAD MÁXIMA
     if (cleanEmail === ADMIN_EMAIL) {
-      toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
-      window.location.href = '/dashboard/admin';
+      toast({ title: "Acceso Maestro", description: "Sincronizando nodo administrativo..." });
+      window.location.replace('/dashboard/admin');
       return;
     }
 
     try {
       // 2. VERIFICACIÓN PRIORITARIA DE AFILIADO
-      // Buscamos primero si el UID existe en la colección de afiliados
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         const affData = affSnap.data();
         if (affData.status === 'Pending') {
           toast({ title: "Cuenta en Revisión", description: "Tu perfil de socio aún no ha sido aprobado." });
-          router.replace('/dashboard/affiliate'); // El Shell manejará la pantalla de "En revisión"
+          router.replace('/dashboard/affiliate');
           return;
         }
-        toast({ title: "¡Bienvenido Socio!", description: "Accediendo a tu panel de control Platinum." });
+        toast({ title: "¡Bienvenido Socio!", description: "Accediendo a tu panel Platinum." });
         router.replace('/dashboard/affiliate');
         return;
       }
@@ -102,13 +101,12 @@ export default function LoginPage() {
       // 3. VERIFICACIÓN DE COMPRADOR EXISTENTE
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
-        toast({ title: "¡Hola de nuevo!", description: "Entrando a tu área de aprendizaje." });
+        toast({ title: "¡Hola!", description: "Entrando a tu área de aprendizaje." });
         router.replace('/dashboard/buyer');
         return;
       }
 
-      // 4. SI NO EXISTE EN NINGUNA LISTA, ASUMIMOS QUE ES UN NUEVO CLIENTE (ONBOARDING)
-      // Esto pasa cuando alguien se loguea con Google por primera vez sin registro previo
+      // 4. SI NO EXISTE Y NO ES ADMIN, CREAMOS PERFIL DE COMPRADOR
       const names = (displayName || 'Usuario Sync').split(' ');
       setDocumentNonBlocking(doc(db, 'buyers', uid), {
         id: uid,

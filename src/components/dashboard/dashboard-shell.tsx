@@ -71,6 +71,8 @@ interface DashboardShellProps {
   role: "admin" | "affiliate" | "buyer"
 }
 
+const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
 export function DashboardShell({ children, role }: DashboardShellProps) {
   const { t } = useLanguage();
   const { user, isUserLoading } = useUser();
@@ -82,7 +84,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const [mounted, setMounted] = useState(false);
   const [isVerifyingRole, setIsVerifyingRole] = useState(true);
 
-  const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
   const cleanEmail = user?.email?.toLowerCase().trim() || '';
   const isUserAdmin = cleanEmail === ADMIN_EMAIL;
 
@@ -99,35 +100,31 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         return;
       }
 
-      // 1. SI EL ADMIN ESTÁ EN EL PANEL EQUIVOCADO, REDIRIGIR
-      if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-        window.location.href = '/dashboard/admin'; 
+      // 1. BLINDAJE MAESTRO (ADMIN)
+      if (isUserAdmin) {
+        if (!pathname.startsWith('/dashboard/admin')) {
+          console.log("Admin detectado en zona equivocada. Redirigiendo al Centro de Control...");
+          window.location.replace('/dashboard/admin'); 
+          return;
+        }
+        setIsVerifyingRole(false);
         return;
       }
 
-      // 2. SI NO ES ADMIN E INTENTA ENTRAR AL ADMIN, BLOQUEAR
+      // 2. PROTECCIÓN DE RUTA ADMIN (NO ADMINS AFUERA)
       if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
         router.replace('/dashboard/affiliate'); 
         return;
       }
 
-      // 3. VERIFICACIÓN DE ROL POR COLECCIÓN (PARA EVITAR ENTRAR A PANELES EQUIVOCADOS)
+      // 3. VERIFICACIÓN DE ROL POR COLECCIÓN
       try {
         const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
         const isAffiliate = affSnap.exists();
         
-        const buyerSnap = await getDoc(doc(db, 'buyers', user.uid));
-        const isBuyer = buyerSnap.exists();
-
-        // Si es afiliado e intenta entrar al panel de comprador, permitir pero avisar (o viceversa)
-        // Pero si no es afiliado e intenta entrar al panel de afiliado, redirigir a su área correcta
         if (role === 'affiliate' && !isAffiliate && !isUserAdmin) {
           router.replace('/dashboard/buyer');
           return;
-        }
-
-        if (role === 'buyer' && !isBuyer && isAffiliate) {
-          // Permitir si es afiliado (un afiliado también puede ser comprador)
         }
       } catch (err) {
         console.error("Access verification error:", err);
@@ -152,8 +149,16 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
+  // Prevenir parpadeos o renders incorrectos para el admin
   if (mounted && !isUserLoading && isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white font-black uppercase tracking-[0.5em] animate-pulse text-center p-6">Sincronizando Nodo Maestro...</div>;
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6">
+        <div className="flex flex-col items-center gap-6">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="font-black uppercase tracking-[0.5em] text-[10px] animate-pulse">Sincronizando Nodo Maestro...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!mounted || isUserLoading || isVerifyingRole) {
