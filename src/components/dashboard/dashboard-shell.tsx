@@ -34,7 +34,9 @@ import {
   Bell,
   Search,
   ChevronDown,
-  Globe
+  Globe,
+  ShoppingCart,
+  MapPinned
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -55,6 +57,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -215,155 +218,217 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const roleLabel = isUserAdmin ? 'ENGINEER' : (role === 'buyer' ? 'STUDENT' : 'PARTNER');
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col">
-      {/* TOP NAVIGATION BAR (AMAZON STYLE) */}
-      <header className="sticky top-0 z-50 w-full bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-all h-20 md:h-24">
-        <div className="container mx-auto h-full px-4 md:px-8 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-[#EAEDED] flex flex-col">
+      {/* AMAZON STYLE TOP NAVIGATION */}
+      <header className="sticky top-0 z-50 w-full flex flex-col shrink-0 shadow-md">
+        
+        {/* ROW 1: Main Header (Amazon Navy) */}
+        <div className="bg-[#131921] h-[60px] md:h-[72px] flex items-center px-2 md:px-4 gap-2 md:gap-4">
           
-          {/* Logo Section */}
-          <div className="flex items-center gap-4 shrink-0">
-            <Link href="/" className="flex items-center gap-3 group transition-transform active:scale-95">
-              <div className="relative h-10 w-10 md:h-12 md:w-12 overflow-hidden rounded-xl bg-white dark:bg-slate-800 shadow-lg ring-1 ring-slate-100 dark:ring-slate-700 flex items-center justify-center">
-                {displayLogoUrl ? (
-                  <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-1.5" unoptimized />
-                ) : (
-                  <Terminal className="h-6 w-6 text-primary" />
-                )}
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-headline font-black text-lg md:text-xl tracking-tighter text-slate-900 dark:text-white uppercase italic">Sync <span className="text-primary">Connect</span></span>
-                <Badge className="w-fit bg-primary/10 text-primary border-none text-[7px] font-black uppercase tracking-widest px-1.5 py-0 mt-0.5">
-                  {roleLabel}
-                </Badge>
-              </div>
-            </Link>
+          {/* Logo */}
+          <Link href="/" className="flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 group">
+            <div className="relative h-7 w-7 md:h-9 md:w-9 mr-1">
+              {displayLogoUrl ? (
+                <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
+              ) : (
+                <Terminal className="h-full w-full text-white" />
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white font-black text-sm md:text-lg tracking-tighter leading-none italic">Sync<span className="text-[#FF9900]">.connect</span></span>
+              <span className="text-[#FF9900] text-[8px] font-bold text-right uppercase tracking-[0.2em]">{roleLabel}</span>
+            </div>
+          </Link>
+
+          {/* Deliver To (Location) */}
+          <div className="hidden xl:flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group shrink-0">
+             <MapPin className="h-5 w-5 text-white mt-2" />
+             <div className="flex flex-col ml-1">
+                <span className="text-[#CCCCCC] text-[12px] leading-none">Entregar en</span>
+                <span className="text-white text-[14px] font-black leading-tight">Nicaragua</span>
+             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 px-8">
-            <div className="h-10 w-[2px] bg-slate-100 dark:bg-slate-800 mx-4" />
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2">
-              {menuItems.map((item) => (
-                <Link 
-                  key={item.url} 
-                  href={item.url}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap",
-                    pathname === item.url 
-                      ? "bg-primary text-white shadow-xl shadow-primary/20 scale-105" 
-                      : "text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.title}
-                </Link>
-              ))}
+          {/* Search Bar */}
+          <div className="flex-1 flex h-10 md:h-11 items-center mx-2 md:mx-4">
+            <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-[#FF9900]">
+              <button className="hidden md:flex items-center px-3 bg-[#F3F3F3] text-[#555555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] transition-colors">
+                Todas <ChevronDown className="h-3 w-3 ml-1" />
+              </button>
+              <Input 
+                placeholder="Buscar en Sync Connect..." 
+                className="flex-1 border-none focus-visible:ring-0 text-[14px] h-full rounded-none" 
+              />
+              <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-11 md:w-12 h-full flex items-center justify-center transition-colors">
+                <Search className="h-5 w-5 text-[#333333]" />
+              </button>
             </div>
-          </nav>
+          </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            <div className="hidden md:flex items-center gap-1 mr-2">
-              <ThemeToggle />
-              <LanguageToggle />
+          {/* Right Links (Account & Lists) */}
+          <div className="flex items-center gap-1 shrink-0">
+            
+            {/* Language (Mocked) */}
+            <div className="hidden lg:flex items-center p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group gap-1">
+               <Globe className="h-4 w-4 text-white" />
+               <span className="text-white font-black text-[14px]">ES</span>
+               <ChevronDown className="h-3 w-3 text-[#CCCCCC]" />
             </div>
 
+            {/* Account */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                  <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center text-primary font-black text-xs shadow-lg group-hover:rotate-3 transition-transform">
-                    {user.email?.charAt(0).toUpperCase()}
+                <button className="flex flex-col items-start p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left">
+                  <span className="text-white text-[12px] leading-none">Hola, {profileLabel(user?.email || 'Mi Sync')}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-white font-black text-[14px] leading-tight tracking-tight">Cuenta y Listas</span>
+                    <ChevronDown className="h-3 w-3 text-[#CCCCCC]" />
                   </div>
-                  <div className="hidden md:flex flex-col text-left mr-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Cuenta</span>
-                    <span className="text-xs font-black text-slate-800 dark:text-white truncate max-w-[100px]">Mi Sync</span>
-                  </div>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 mr-1" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-none shadow-2xl bg-white dark:bg-slate-900">
-                <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-widest text-slate-400 px-4 pt-3 pb-2">Gestión de Perfil</DropdownMenuLabel>
-                <DropdownMenuItem asChild className="rounded-xl focus:bg-slate-50 dark:focus:bg-slate-800">
-                   <Link href="/dashboard/affiliate/profile" className="flex items-center gap-3 p-3 font-bold text-xs">
-                     <UserCircle className="h-4 w-4 text-primary" /> Mi Billetera
-                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-2" />
-                <DropdownMenuItem onClick={handleLogout} className="rounded-xl focus:bg-red-50 dark:focus:bg-red-950/20 text-red-500 p-3 font-bold text-xs gap-3">
-                  <LogOut className="h-4 w-4" /> Cerrar Sesión
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-64 rounded-xl p-4 border-none shadow-2xl bg-white mt-1">
+                <div className="flex flex-col gap-3">
+                  <Button className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-medium text-xs rounded-lg h-9 shadow-sm" asChild>
+                    <Link href="/dashboard/affiliate/profile">Mi Perfil Sync</Link>
+                  </Button>
+                  <div className="flex justify-center">
+                    <span className="text-[11px] text-[#111]">¿Eres nuevo? <Link href="/auth/register" className="text-[#007185] hover:underline">Empieza aquí.</Link></span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="my-4" />
+                <div className="grid grid-cols-1 gap-1">
+                  <DropdownMenuLabel className="p-0 text-sm font-black mb-1">Tu Cuenta</DropdownMenuLabel>
+                  <Link href="/dashboard/affiliate/profile" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Mis Comisiones</Link>
+                  <Link href="/dashboard/affiliate/register-sale" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Registrar Venta</Link>
+                  <Link href="/dashboard/affiliate/support" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline py-1">Soporte VIP</Link>
+                  <button onClick={handleLogout} className="text-[13px] text-red-600 hover:underline text-left py-1 mt-2">Cerrar Sesión</button>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Mobile Menu Trigger */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="lg:hidden h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 transition-all border border-slate-100 dark:border-slate-700"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6 text-primary" /> : <Menu className="h-6 w-6 text-primary" />}
-            </Button>
+            {/* Billetera (Returns & Orders Style) */}
+            <Link href="/dashboard/affiliate/profile" className="hidden md:flex flex-col items-start p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group text-left">
+               <span className="text-white text-[12px] leading-none">Mi</span>
+               <span className="text-white font-black text-[14px] leading-tight">Billetera</span>
+            </Link>
+
+            {/* Cart Icon */}
+            <Link href="/dashboard/affiliate/products" className="flex items-end p-2 rounded hover:outline hover:outline-1 hover:outline-white cursor-pointer group relative">
+               <div className="relative">
+                 <ShoppingCart className="h-8 w-8 text-white" />
+                 <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">
+                   {(affiliateProfile?.currentBalance > 0) ? '!' : '0'}
+                 </span>
+               </div>
+               <span className="text-white font-black text-[14px] mb-1 hidden sm:inline ml-1">Market</span>
+            </Link>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
-        <div className={cn(
-          "lg:hidden fixed inset-0 top-20 z-40 bg-white dark:bg-slate-950 transition-all duration-500 ease-in-out transform",
-          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        )}>
-          <div className="p-6 space-y-8 h-full overflow-y-auto pb-32">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-4">Navegación</p>
-              <div className="grid grid-cols-1 gap-2">
-                {menuItems.map((item) => (
-                  <Link 
-                    key={item.url} 
-                    href={item.url}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={cn(
-                      "flex items-center gap-4 p-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all",
-                      pathname === item.url 
-                        ? "bg-slate-900 text-white shadow-2xl" 
-                        : "text-slate-500 bg-slate-50 dark:bg-slate-900/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "h-10 w-10 rounded-2xl flex items-center justify-center shadow-lg",
-                      pathname === item.url ? "bg-primary text-white" : "bg-white dark:bg-slate-800"
-                    )}>
-                      <item.icon className="h-5 w-5" />
-                    </div>
-                    {item.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
+        {/* ROW 2: Sub-Nav (Navy Light) */}
+        <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar">
+          
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex items-center gap-1 p-2 rounded hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-2"
+          >
+            <Menu className="h-5 w-5" /> Todo
+          </button>
 
-            <div className="pt-6 border-t dark:border-slate-800 flex items-center justify-between px-4">
-              <div className="flex gap-2">
-                <ThemeToggle />
-                <LanguageToggle />
-              </div>
-              <Button onClick={handleLogout} variant="ghost" className="text-red-500 font-black text-[10px] uppercase gap-2">
-                <LogOut className="h-4 w-4" /> SALIR
-              </Button>
-            </div>
+          <nav className="flex items-center h-full">
+             {menuItems.map((item) => (
+               <Link 
+                key={item.url} 
+                href={item.url}
+                className={cn(
+                  "px-3 h-full flex items-center rounded hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all",
+                  pathname === item.url ? "font-black" : "font-medium"
+                )}
+               >
+                 {item.title}
+               </Link>
+             ))}
+          </nav>
+          
+          <div className="ml-auto flex items-center gap-4">
+             <div className="hidden md:block">
+               <ThemeToggle />
+             </div>
+             <span className="hidden xl:inline text-white font-black text-[14px] uppercase italic tracking-tighter">Sync Academy: <span className="text-[#FF9900]">Acceso de Élite</span></span>
           </div>
         </div>
       </header>
 
+      {/* Mobile Drawer (Amazon Style) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300">
+           <div className="absolute inset-0 bg-black/80" onClick={() => setIsMobileMenuOpen(false)} />
+           <div className="relative w-[80%] max-w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-500 overflow-hidden">
+              <div className="bg-[#232F3E] p-4 flex items-center gap-3 shrink-0">
+                 <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center">
+                    <UserCircle className="h-6 w-6 text-[#232F3E]" />
+                 </div>
+                 <span className="text-white font-black text-lg">Hola, {profileLabel(user?.email || 'Socio')}</span>
+                 <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto text-white">
+                   <X className="h-7 w-7" />
+                 </button>
+              </div>
+              <ScrollArea className="flex-1 py-4">
+                 <div className="px-6 space-y-8">
+                    <div>
+                      <h4 className="text-lg font-black mb-4">Navegar por Sync</h4>
+                      <div className="flex flex-col gap-1">
+                        {menuItems.map((item) => (
+                          <Link 
+                            key={item.url} 
+                            href={item.url} 
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center justify-between py-3 group"
+                          >
+                            <span className="text-[14px] text-[#111] group-hover:font-black">{item.title}</span>
+                            <ChevronDown className="h-4 w-4 -rotate-90 text-[#888]" />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator className="bg-slate-100" />
+                    <div>
+                       <h4 className="text-lg font-black mb-4">Ayuda y Ajustes</h4>
+                       <Link href="/dashboard/affiliate/profile" className="block py-2 text-[14px]">Tu Cuenta</Link>
+                       <button onClick={handleLogout} className="block py-2 text-[14px] w-full text-left">Cerrar Sesión</button>
+                    </div>
+                 </div>
+              </ScrollArea>
+           </div>
+        </div>
+      )}
+
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-4 md:p-8 lg:p-12 animate-in fade-in slide-in-from-bottom-2 duration-1000">
-        <div className="max-w-[1400px] mx-auto">
+      <main className="flex-1 animate-in fade-in slide-in-from-bottom-2 duration-1000">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-10">
           {children}
         </div>
       </main>
 
-      {/* FOOTER SIMPLE (OPCIONAL) */}
-      <footer className="py-10 px-8 border-t border-slate-100 dark:border-slate-900 text-center">
-         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Sync Connect Technology • © 2024</p>
+      <footer className="bg-[#131A22] text-white py-12 px-8 text-center border-t-8 border-[#232F3E]">
+         <div className="max-w-xl mx-auto space-y-4">
+            <div className="flex justify-center mb-6">
+               <Terminal className="h-10 w-10 text-white" />
+            </div>
+            <p className="text-[12px] text-[#DDD] leading-relaxed">Sync Connect es la red líder en sincronización de negocios digitales en Nicaragua. Todos los derechos reservados © 2024.</p>
+            <div className="flex justify-center gap-6 pt-4">
+               <Link href="#" className="text-[12px] hover:underline">Condiciones de Uso</Link>
+               <Link href="#" className="text-[12px] hover:underline">Aviso de Privacidad</Link>
+               <Link href="#" className="text-[12px] hover:underline">Ayuda</Link>
+            </div>
+         </div>
       </footer>
     </div>
   )
+}
+
+function profileLabel(email: string) {
+  if (!email) return 'Socio';
+  const name = email.split('@')[0];
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
