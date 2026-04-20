@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -100,39 +99,38 @@ export default function LoginPage() {
   const setupRecaptcha = (containerId: string) => {
     try {
       if (!auth) return;
-      if (typeof window !== "undefined" && (window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
-      }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-        size: 'invisible',
-        callback: () => { console.log('reCAPTCHA verified'); },
-        'expired-callback': () => {
-          toast({ variant: "destructive", title: "Expirado", description: "Reintenta el envío." });
-          setLoading(false);
+      if (typeof window !== "undefined") {
+        if ((window as any).recaptchaVerifier) {
+          (window as any).recaptchaVerifier.clear();
         }
-      });
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+          size: 'invisible',
+          callback: () => { console.log('reCAPTCHA verified'); },
+          'expired-callback': () => {
+            toast({ variant: "destructive", title: "reCAPTCHA Expirado", description: "Por favor reintenta el envío." });
+            setLoading(false);
+          }
+        });
+      }
     } catch (error) {
-      console.error("reCAPTCHA Error:", error);
+      console.error("reCAPTCHA Initialization Error:", error);
+      throw error;
     }
   };
 
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. PRIORIDAD MAESTRA: Redirección inmediata para Admin
     if (cleanEmail === ADMIN_EMAIL) {
       toast({ title: "Acceso Maestro", description: "Iniciando centro de control..." });
       window.location.href = '/dashboard/admin';
       return;
     }
 
-    // 2. REDIRECCIÓN TIKTOK (Vía Rápida)
     try {
-      // Intentar identificar rol rápidamente
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       const targetPath = affSnap.exists() ? '/dashboard/affiliate' : '/dashboard/buyer';
 
-      // Si no es afiliado, crear registro de comprador de forma silenciosa y NO bloqueante
       if (!affSnap.exists()) {
         const names = (displayName || '').split(' ');
         setDocumentNonBlocking(doc(db, 'buyers', uid), {
@@ -150,7 +148,7 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error("Login Success Error:", err);
-      router.replace('/dashboard/buyer'); // Fallback seguro
+      router.replace('/dashboard/buyer');
     }
   };
 
@@ -181,7 +179,7 @@ export default function LoginPage() {
       } else if (error.code === 'auth/popup-blocked') {
         setErrorMsg("Popup bloqueado por el navegador.");
       } else if (error.code !== 'auth/popup-closed-by-user') {
-        setErrorMsg("Error de conexión con Google.");
+        setErrorMsg(`Error de conexión: ${error.code}`);
       }
     }
   };
@@ -206,7 +204,7 @@ export default function LoginPage() {
     if (!auth) return;
     const cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: "destructive", title: "Inválido", description: "Ingresa un número real." });
+      toast({ variant: "destructive", title: "Número Inválido", description: "Ingresa un número real de al menos 7 dígitos." });
       return;
     }
 
@@ -218,20 +216,26 @@ export default function LoginPage() {
     try {
       setupRecaptcha('recaptcha-container');
       const verifier = (window as any).recaptchaVerifier;
-      if (!verifier) throw new Error("reCAPTCHA no inicializado");
+      if (!verifier) throw new Error("No se pudo inicializar el sistema de seguridad reCAPTCHA.");
       
       const result = await signInWithPhoneNumber(auth, fullNumber, verifier);
       setConfirmationResult(result);
-      toast({ title: "Código Enviado", description: "Revisa tus mensajes." });
+      toast({ title: "Código Enviado", description: `Revisa tu SMS al número ${fullNumber}` });
     } catch (error: any) {
-      console.error("SMS Code Error:", error.code);
+      console.error("SMS Code Error:", error.code, error.message);
+      setLoading(false);
+      
       if (error.code === 'auth/unauthorized-domain') {
         setAuthErrorType('domain');
+      } else if (error.code === 'auth/invalid-phone-number') {
+        setErrorMsg("El formato del número de teléfono no es válido.");
+      } else if (error.code === 'auth/too-many-requests') {
+        setErrorMsg("Demasiados intentos. Por favor espera unos minutos antes de reintentar.");
+      } else if (error.code === 'auth/captcha-check-failed') {
+        setErrorMsg("La validación de seguridad falló. Refresca la página e intenta de nuevo.");
       } else {
-        setErrorMsg("Error al enviar código SMS.");
+        setErrorMsg(`Fallo al enviar SMS: ${error.message || "Error desconocido"}`);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -242,7 +246,8 @@ export default function LoginPage() {
       const result = await confirmationResult.confirm(verificationCode);
       handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Código incorrecto." });
+      console.error("Verification Error:", error.code);
+      toast({ variant: "destructive", title: "Código Incorrecto", description: "El código de 6 dígitos no coincide. Reintenta." });
     } finally {
       setIsVerifying(false);
     }
@@ -252,7 +257,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 selection:bg-primary/30">
       <div id="recaptcha-container"></div>
       
-      {/* HEADER DE NAVEGACIÓN */}
       <div className="fixed top-6 right-6 flex items-center gap-2 z-50">
         <ThemeToggle />
         <LanguageToggle />
@@ -281,7 +285,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* CARD DE LOGIN PROFESIONAL */}
       <Card className="w-full max-w-md shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border-none rounded-[3.5rem] overflow-hidden bg-card p-2 ring-1 ring-border/50 animate-in zoom-in-95 duration-700">
         <div className="bg-muted/30 rounded-[3rem] p-8 md:p-12">
           
@@ -314,7 +317,7 @@ export default function LoginPage() {
             {errorMsg && (
               <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 py-4 animate-in fade-in">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-[10px] font-black uppercase tracking-widest">{errorMsg}</AlertDescription>
+                <AlertDescription className="text-[10px] font-black uppercase tracking-widest leading-tight">{errorMsg}</AlertDescription>
               </Alert>
             )}
 
@@ -461,7 +464,7 @@ export default function LoginPage() {
                         <Button onClick={handleVerifyCode} className="w-full h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase shadow-xl" disabled={isVerifying}>
                           {isVerifying ? <Loader2 className="animate-spin h-6 w-6" /> : "VERIFICAR Y ENTRAR"}
                         </Button>
-                        <Button variant="ghost" onClick={() => setConfirmationResult(null)} className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">Volver a intentar</Button>
+                        <Button variant="ghost" onClick={() => { setConfirmationResult(null); setErrorMsg(null); }} className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">Volver a intentar</Button>
                       </div>
                     )}
                   </AccordionContent>
