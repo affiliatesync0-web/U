@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,7 +22,9 @@ import {
   Zap,
   MapPin,
   MessageSquareShare,
-  Globe
+  Globe,
+  Bell,
+  ChevronRight
 } from "lucide-react"
 import {
   Sidebar,
@@ -49,6 +50,7 @@ import placeholderData from "@/app/lib/placeholder-images.json"
 import { getGoogleDriveDirectLink } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { signOut } from "firebase/auth"
+import { Badge } from "@/components/ui/badge"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -77,19 +79,16 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     if (!mounted || isUserLoading) return;
 
-    // 1. Si no hay sesión, al login
     if (!user) {
       router.replace('/auth/login');
       return;
     }
 
-    // 2. REDIRECCIÓN MAESTRA: Si el correo es el de ADMIN, forzar entrada al panel admin
     if (isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
       window.location.href = '/dashboard/admin'; 
       return;
     }
 
-    // 3. Si NO es ADMIN, tiene prohibido entrar a rutas administrativas
     if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
       router.replace('/dashboard/affiliate'); 
       return;
@@ -109,9 +108,8 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
 
-  // Si es ADMIN pero está en una ruta equivocada, bloqueamos render para evitar confusión
   if (mounted && !isUserLoading && isUserAdmin && !pathname.startsWith('/dashboard/admin')) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black uppercase tracking-widest animate-pulse text-center p-6">Saltando al Centro de Control Maestro...</div>;
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white font-black uppercase tracking-[0.5em] animate-pulse text-center p-6">Sincronizando Nodo Maestro...</div>;
   }
 
   if (!mounted || isUserLoading) {
@@ -119,10 +117,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
-            <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
-            <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary/20" />
+            <div className="h-24 w-24 rounded-full border-[6px] border-primary/10 border-t-primary animate-spin" />
+            <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-primary/30" />
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse text-center">Sincronizando Identidad...</p>
+          <div className="space-y-2 text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-400 animate-pulse">Sincronizando Identidad</p>
+            <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300">Sync Connect v2.0</p>
+          </div>
         </div>
       </div>
     )
@@ -130,22 +131,21 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!user) return null;
 
-  // Verificación de aprobación para afiliados (Si no es admin)
   if (role === 'affiliate' && affiliateProfile?.status === 'Pending' && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex items-center justify-center p-6 text-center text-foreground">
-        <div className="max-w-md space-y-10 animate-in fade-in zoom-in duration-500">
-          <div className="h-28 w-28 bg-primary/10 rounded-[3rem] flex items-center justify-center text-primary shadow-inner mx-auto">
-            <Clock className="h-14 w-14 animate-pulse" />
+        <div className="max-w-md space-y-10 animate-in fade-in zoom-in duration-700">
+          <div className="h-32 w-32 bg-primary/10 rounded-[3.5rem] flex items-center justify-center text-primary shadow-2xl mx-auto rotate-3 group">
+            <Clock className="h-16 w-16 animate-pulse group-hover:rotate-12 transition-transform" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-4xl font-headline font-black tracking-tight leading-none">{t.waitingApproval}</h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-4">Tu cuenta está en revisión. Te avisaremos por email cuando tu panel sea habilitado.</p>
+            <h1 className="text-5xl font-headline font-black tracking-tight leading-none uppercase italic">Estatus: <span className="text-primary">En Revisión</span></h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-6">Tu perfil está siendo auditado por el equipo legal. Recibirás un Gmail de confirmación cuando tu licencia Platinum sea habilitada.</p>
           </div>
-          <div className="flex flex-col gap-4">
-            <Button onClick={() => window.location.reload()} variant="default" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20">ACTUALIZAR ESTADO</Button>
-            <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200 dark:border-slate-800">
-              {t.logout}
+          <div className="flex flex-col gap-4 pt-4">
+            <Button onClick={() => window.location.reload()} className="h-20 rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/30 active:scale-95 transition-all">REVISAR AHORA</Button>
+            <Button onClick={handleLogout} variant="ghost" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-red-500">
+              SALIR DE LA PLATAFORMA
             </Button>
           </div>
         </div>
@@ -155,12 +155,12 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
-    { title: "Grupo de Apoyo", url: "/dashboard/admin/support", icon: MessageSquareShare },
+    { title: "Soporte Central", url: "/dashboard/admin/support", icon: MessageSquareShare },
+    { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: t.products, url: "/dashboard/admin/products", icon: Package },
-    { title: "Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
+    { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: t.affiliateDirectory, url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
-    { title: t.affiliateGmailList, url: "/dashboard/admin/affiliates-contacts", icon: Mail },
     { title: t.buyers, url: "/dashboard/admin/buyers", icon: Users2 },
     { title: t.allSales, url: "/dashboard/admin/sales", icon: ShoppingBag },
     { title: t.design, url: "/dashboard/admin/design", icon: Palette },
@@ -168,18 +168,20 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: t.dashboard, url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: "Soporte Sync", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
+    { title: "Sync Support", url: "/dashboard/affiliate/support", icon: MessageSquareShare },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "Bot de Ventas", url: "/dashboard/affiliate/bot-settings", icon: Zap },
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
-    { title: "Estrategias", url: "/dashboard/affiliate/sales-lab", icon: Zap },
+    { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
+    { title: "Copiloto IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.buyers, url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: "Perfil / Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
+    { title: "Mi Billetera", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
   const buyerItems = [
     { title: t.dashboard, url: "/dashboard/buyer", icon: LayoutDashboard },
-    { title: t.browseMarketplace, url: "/dashboard/buyer/products", icon: ShoppingBasket },
+    { title: "Explorar Cursos", url: "/dashboard/buyer/products", icon: ShoppingBasket },
   ]
 
   const getMenu = () => {
@@ -190,39 +192,38 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" className="border-r border-slate-100 dark:border-slate-800">
-        <SidebarHeader className="bg-white dark:bg-slate-900 transition-colors">
-          <div className="flex items-center gap-4 px-3 py-6 md:py-10">
-            <div className="relative h-12 w-12 md:h-14 md:w-14 overflow-hidden rounded-xl md:rounded-[1.25rem] bg-white dark:bg-slate-800 shadow-xl ring-1 ring-slate-100 dark:ring-slate-700 flex items-center justify-center">
+      <Sidebar collapsible="icon" className="premium-sidebar">
+        <SidebarHeader className="bg-white dark:bg-slate-950 transition-colors">
+          <div className="flex items-center gap-4 px-4 py-10 md:py-12">
+            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-800 flex items-center justify-center shrink-0">
               {displayLogoUrl ? (
                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain p-2" unoptimized />
               ) : (
-                <ImageIcon className="h-6 w-6 text-muted-foreground opacity-20" />
+                <ImageIcon className="h-8 w-8 text-muted-foreground opacity-10" />
               )}
             </div>
-            <div className="flex flex-col gap-0 leading-none group-data-[collapsible=icon]:hidden">
-              <span className="font-headline font-black text-lg md:text-xl tracking-tight text-slate-900 dark:text-white leading-tight">Sync <span className="text-primary">Connect</span></span>
-              <div className="flex items-center gap-1 mt-1">
-                <Flame className="h-2.5 w-2.5 text-primary" />
-                <span className="text-[8px] md:text-[9px] text-slate-400 uppercase tracking-[0.2em] font-black">
-                  {isUserAdmin ? 'SYSTEM' : (role === 'buyer' ? 'CLIENT' : 'PLATINUM')}
-                </span>
+            <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
+              <span className="font-headline font-black text-xl tracking-tighter text-slate-900 dark:text-white uppercase italic">Sync <span className="text-primary">Connect</span></span>
+              <div className="flex items-center gap-1.5">
+                <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase tracking-widest px-2 py-0">
+                  {isUserAdmin ? 'ADMIN' : (role === 'buyer' ? 'ALUMNO' : 'PARTNER')}
+                </Badge>
               </div>
             </div>
           </div>
         </SidebarHeader>
-        <SidebarContent className="bg-white dark:bg-slate-900 transition-colors px-2">
+        <SidebarContent className="bg-white dark:bg-slate-950 transition-colors px-3 space-y-2">
           <NavMain 
             items={getMenu()} 
-            label={isUserAdmin ? "ADMINISTRACIÓN" : (role === 'buyer' ? 'TU CUENTA' : 'TU NEGOCIO')} 
+            label={isUserAdmin ? "CENTRO DE MANDO" : "NAVEGACIÓN"} 
           />
         </SidebarContent>
-        <SidebarFooter className="bg-white dark:bg-slate-900 border-t border-slate-50 dark:border-slate-800 p-4 transition-colors">
+        <SidebarFooter className="bg-white dark:bg-slate-950 border-t border-slate-50 dark:border-slate-900 p-6 transition-colors">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} className="h-12 rounded-xl text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
-                <LogOut className="h-5 w-5" />
-                <span className="font-black uppercase text-[10px] md:text-[11px] tracking-widest">{t.logout}</span>
+              <SidebarMenuButton onClick={handleLogout} className="h-14 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all group">
+                <LogOut className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                <span className="font-black uppercase text-[11px] tracking-[0.2em]">{t.logout}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -230,20 +231,25 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
-        <header className="flex h-16 md:h-20 shrink-0 items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-4 md:px-6 transition-colors">
-          <SidebarTrigger className="-ml-1 text-primary" />
-          <Separator orientation="vertical" className="mx-2 h-6 bg-slate-100 dark:border-slate-800" />
+        <header className="glass-header flex h-20 shrink-0 items-center gap-2 sticky top-0 z-40 px-6 transition-all">
+          <SidebarTrigger className="-ml-1 text-primary hover:bg-primary/5 rounded-xl h-10 w-10 transition-colors" />
+          <Separator orientation="vertical" className="mx-4 h-6 bg-slate-200 dark:bg-slate-800" />
           <div className="flex-1 overflow-hidden">
-             <h2 className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-slate-400 truncate">
-                {isUserAdmin ? "Centro de Control" : (role === 'buyer' ? 'Área de Compras' : 'Workspace Afiliado')}
-             </h2>
+             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                <ShieldCheck className="h-3.5 w-3.5 text-primary/40" />
+                {isUserAdmin ? "Admin Control" : (role === 'buyer' ? 'Learning Area' : 'Business Workspace')}
+             </div>
           </div>
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1.5 px-4 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+               <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">En línea</span>
+            </div>
             <ThemeToggle />
             <LanguageToggle />
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-12 text-foreground overflow-x-hidden">
+        <main className="flex-1 p-6 md:p-12 lg:p-16 text-foreground overflow-x-hidden animate-in fade-in slide-in-from-bottom-2 duration-1000">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>

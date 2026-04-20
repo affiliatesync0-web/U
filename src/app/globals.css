@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,7 +23,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 18 100% 55%;
-    --radius: 2rem;
+    --radius: 2.5rem;
     --chart-1: 18 100% 55%;
     --chart-2: 210 100% 50%;
     --chart-3: 197 37% 24%;
@@ -86,7 +85,6 @@
     @apply font-headline font-black;
   }
   
-  /* CRÍTICO: FUENTE DE 16PX GLOBAL PARA EVITAR ZOOM EN MÓVILES (iOS/ANDROID) */
   input, 
   textarea, 
   select, 
@@ -95,13 +93,19 @@
   .form-control {
     font-size: 16px !important;
   }
-  
-  /* Mantener estética compacta en desktop pero respetar los 16px mínimos */
-  @media screen and (min-width: 1024px) {
-    .text-sm-desktop {
-      font-size: 0.875rem !important;
-    }
-  }
+}
+
+/* Glassmorphism Classes */
+.glass-header {
+  @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/50;
+}
+
+.premium-card {
+  @apply border-none shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-[3rem] bg-white dark:bg-slate-900 ring-1 ring-slate-100 dark:ring-slate-800 transition-all duration-500 hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)];
+}
+
+.premium-sidebar {
+  @apply bg-white dark:bg-slate-950 border-r border-slate-100 dark:border-slate-900 shadow-2xl;
 }
 
 /* Ocultar elementos de desarrollo */
@@ -116,22 +120,14 @@ nextjs-portal,
   pointer-events: none !important;
 }
 
-/* Scrollbar personalizado */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full;
 }
 
 .chat-bg {
