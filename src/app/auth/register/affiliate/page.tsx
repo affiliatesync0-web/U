@@ -7,14 +7,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, AlertCircle, Camera, ChevronRight, Triangle } from 'lucide-react'
+import { Loader2, Triangle, ChevronRight, Camera } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useUser } from '@/firebase'
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
-import { sendEmail } from '@/lib/email'
 import { cn } from '@/lib/utils'
 import { COUNTRY_CODES } from '@/lib/constants'
 
@@ -141,12 +140,6 @@ function AffiliateRegisterContent() {
         examAnswers: examData
       });
 
-      await sendEmail({
-        to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Nueva Solicitud Embajador: ${formData.firstName}`,
-        text: `Nuevo embajador registrado.\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
-      }).catch(() => {});
-
       await signOut(auth);
       toast({ title: "Registro Completado", description: "Tu perfil está en revisión. Te avisaremos pronto." });
       router.push('/auth/login');
@@ -166,7 +159,7 @@ function AffiliateRegisterContent() {
       <div className="mb-4">
         <Link href="/">
           <div className="relative h-12 w-32 md:h-14 md:w-36">
-            <span className="text-[#111] font-black text-2xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
+             <span className="text-[#111] font-black text-2xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
           </div>
         </Link>
       </div>
@@ -309,15 +302,6 @@ function AffiliateRegisterContent() {
           </p>
         </div>
       </Card>
-
-      <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
-        <div className="flex justify-center gap-8">
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Ayuda</Link>
-        </div>
-        <p className="text-[11px] text-[#555]">© 2024, SyncConnect.com, Inc. o sus afiliados</p>
-      </footer>
     </div>
   )
 }

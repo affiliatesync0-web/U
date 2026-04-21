@@ -16,7 +16,6 @@ import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { sendEmail } from '@/lib/email'
 import { COUNTRY_CODES } from '@/lib/constants'
 
 function BuyerRegisterContent() {
@@ -64,12 +63,6 @@ function BuyerRegisterContent() {
         registeredAt: new Date().toISOString(),
         status: 'Active'
       });
-
-      sendEmail({
-        to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Nuevo Registro: COMPRADOR`,
-        text: `Un nuevo cliente se ha registrado.\n\nNombre: ${formData.firstName} ${formData.lastName}\nEmail: ${formData.email}`
-      }).catch(() => {});
 
       await signOut(auth);
       toast({ title: "¡Cuenta Creada!", description: "Ahora inicia sesión con tus datos." });
@@ -177,12 +170,6 @@ function BuyerRegisterContent() {
               placeholder="Al menos 6 caracteres"
               className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" 
             />
-            <div className="flex gap-1.5 items-center pt-1">
-              <div className="h-3.5 w-3.5 flex items-center justify-center border border-[#0066c0] rounded-sm bg-white shrink-0">
-                <span className="text-[#0066c0] text-[10px] font-bold">i</span>
-              </div>
-              <p className="text-[12px] text-[#111]">Las contraseñas deben tener al menos 6 caracteres.</p>
-            </div>
           </div>
 
           <Button 
@@ -194,7 +181,7 @@ function BuyerRegisterContent() {
           </Button>
 
           <p className="text-[12px] text-[#111] leading-snug pt-2">
-            Al crear una cuenta, aceptas las <Link href="#" className="text-[#0066c0] hover:underline hover:text-[#c45500]">Condiciones de uso</Link> y el <Link href="#" className="text-[#0066c0] hover:underline hover:text-[#c45500]">Aviso de privacidad</Link> de Sync Connect.
+            Al crear una cuenta, aceptas las <Link href="#" className="text-[#0066c0] hover:underline hover:text-[#c45500]">Condiciones de uso</Link> de Sync Connect.
           </p>
         </form>
 
@@ -207,9 +194,8 @@ function BuyerRegisterContent() {
 
       <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
         <div className="flex justify-center gap-8">
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
           <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Ayuda</Link>
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
         </div>
         <p className="text-[11px] text-[#555]">© 2024, SyncConnect.com, Inc. o sus afiliados</p>
       </footer>

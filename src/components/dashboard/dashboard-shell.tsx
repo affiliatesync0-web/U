@@ -15,20 +15,16 @@ import {
   Users2,
   Flame,
   ShoppingBasket,
-  Mail,
-  ShieldCheck,
   UserCircle,
   Zap,
-  Inbox,
-  GraduationCap,
   Terminal,
   Menu,
   X,
   Search,
   ChevronDown,
-  Globe,
   ShoppingCart,
-  MapPin
+  MapPin,
+  LogOut
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -161,7 +157,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
-    { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: "Productos", url: "/dashboard/admin/products", icon: Package },
     { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
@@ -247,23 +242,18 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-2">
                     <DropdownMenuLabel className="p-0 text-sm font-black mb-2">Tus Listas</DropdownMenuLabel>
-                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Cursos</Link>
-                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Favoritos</Link>
+                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Listas</Link>
                   </div>
                   <div className="space-y-2">
                     <DropdownMenuLabel className="p-0 text-sm font-black mb-2">Tu Cuenta</DropdownMenuLabel>
                     <Link href={profileUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mi Perfil</Link>
-                    <Link href={marketUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Pedidos</Link>
-                    <button onClick={handleLogout} className="text-[13px] text-[#C45500] hover:underline text-left py-1 font-bold w-full">Cerrar Sesión</button>
+                    <button onClick={handleLogout} className="text-[13px] text-[#C45500] hover:underline text-left py-1 font-bold w-full flex items-center gap-2">
+                      <LogOut className="h-3 w-3" /> Cerrar Sesión
+                    </button>
                   </div>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Link href={marketUrl} className="hidden md:flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left">
-               <span className="text-white text-[12px] leading-tight">Devoluciones</span>
-               <span className="text-white font-black text-[14px] leading-tight">y Pedidos</span>
-            </Link>
 
             <Link href={marketUrl} className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
                <div className="relative">
@@ -324,7 +314,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       <footer className="bg-[#131A22] text-white pt-10 pb-10 border-t-8 border-[#232F3E]">
          <div className="text-center py-10 border-t border-white/5 space-y-4">
             <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-            <p className="text-[11px] text-[#888]">© 2024 Sync Connect Nicaragua. Una infraestructura de Sync Academy.</p>
+            <p className="text-[11px] text-[#888]">© 2024 Sync Connect Nicaragua. Todos los productos reales.</p>
          </div>
       </footer>
     </div>

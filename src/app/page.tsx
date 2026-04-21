@@ -4,23 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
-  ArrowRight, 
-  ChevronLeft, 
-  ChevronRight, 
   Search, 
   MapPin, 
   Menu, 
   ShoppingCart,
-  Star,
-  Zap,
-  TrendingUp,
   Loader2,
-  Image as ImageIcon,
   ChevronDown,
   UserCircle,
   X,
-  GraduationCap as GradIcon,
-  Package
+  Package,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
@@ -29,8 +23,6 @@ import { collection, doc } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import placeholderData from '@/app/lib/placeholder-images.json';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function Home() {
   const { t } = useLanguage();
@@ -49,9 +41,8 @@ export default function Home() {
   const displayLogoUrl = getGoogleDriveDirectLink(getOverride('site-logo')?.imageUrl || defaultLogo?.imageUrl || "");
 
   const carouselImages = [
-    "https://picsum.photos/seed/amazon1/1500/600",
-    "https://picsum.photos/seed/amazon2/1500/600",
-    "https://picsum.photos/seed/amazon3/1500/600"
+    "https://picsum.photos/seed/sync1/1500/600",
+    "https://picsum.photos/seed/sync2/1500/600"
   ];
 
   return (
@@ -83,10 +74,10 @@ export default function Home() {
         <div className="flex-1 flex h-10 md:h-11 items-center group">
           <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden ring-offset-0 focus-within:ring-[3px] focus-within:ring-[#FF9900] transition-shadow">
             <button className="hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] font-bold uppercase">
-              Todas las categorías <ChevronDown className="h-3 w-3 ml-2" />
+              Todos <ChevronDown className="h-3 w-3 ml-2" />
             </button>
             <Input 
-              placeholder="Buscar en Sync Connect..." 
+              placeholder="Buscar productos reales..." 
               className="flex-1 border-none focus-visible:ring-0 text-[15px] h-full rounded-none bg-transparent px-4 font-medium text-slate-800 placeholder:text-slate-500" 
             />
             <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-12 md:w-14 h-full flex items-center justify-center transition-colors">
@@ -125,9 +116,8 @@ export default function Home() {
         </button>
         <div className="flex items-center h-full gap-4 text-white text-[14px] font-medium whitespace-nowrap">
           <Link href="/auth/register" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Vender</Link>
-          <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Sync Academy</Link>
           <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Lo más vendido</Link>
-          <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Promociones</Link>
+          <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Ofertas del día</Link>
         </div>
       </nav>
 
@@ -149,38 +139,49 @@ export default function Home() {
 
           <div className="absolute top-10 md:top-20 left-10 md:left-20 z-30 max-w-xl space-y-4 hidden md:block">
              <div className="bg-white/90 backdrop-blur p-10 rounded-none shadow-2xl border-t-8 border-orange-500">
-                <h1 className="text-4xl font-black text-slate-900 leading-tight uppercase tracking-tighter">Lunes de <span className="text-primary">negocios</span></h1>
-                <p className="text-xl font-bold text-slate-600 mt-2">Prepara tu negocio con las mejores herramientas digitales reales.</p>
+                <h1 className="text-4xl font-black text-slate-900 leading-tight uppercase tracking-tighter">Tu tienda <span className="text-primary">local</span></h1>
+                <p className="text-xl font-bold text-slate-600 mt-2">Productos verificados con entrega directa en Nicaragua.</p>
                 <Button asChild className="amazon-btn-primary w-full h-12 mt-10 rounded-md">
-                   <Link href="/auth/register">Crea tu cuenta gratis</Link>
+                   <Link href="/auth/register">Comenzar ahora</Link>
                 </Button>
              </div>
           </div>
         </section>
 
-        {/* CARDS GRID (SOLO PRODUCTOS REALES) */}
+        {/* PRODUCT GRID (SOLO PRODUCTOS REALES) */}
         <section className="container mx-auto px-4 -mt-20 md:-mt-64 relative z-40 pb-20">
           {productsLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
           ) : !products || products.length === 0 ? (
-            <div className="amazon-card p-20 text-center bg-white/80 backdrop-blur rounded-md">
+            <div className="amazon-card p-20 text-center bg-white/80 backdrop-blur rounded-md border-2 border-dashed border-slate-200">
                <Package className="h-16 w-16 mx-auto text-slate-300 mb-4" />
-               <h3 className="text-xl font-black text-slate-900 uppercase">Sin productos destacados</h3>
-               <p className="text-slate-500 mt-2">Próximamente verás aquí las mejores ofertas cargadas por administración.</p>
+               <h3 className="text-xl font-black text-slate-900 uppercase italic">Catálogo en preparación</h3>
+               <p className="text-slate-500 mt-2">Próximamente aparecerán aquí los productos oficiales subidos por el administrador.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.slice(0, 8).map((product) => (
-                <div key={product.id} className="amazon-card group">
-                  <h3 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 min-h-[3rem] uppercase">{product.name}</h3>
-                  <div className="aspect-square relative bg-slate-50 p-4 overflow-hidden mb-4">
-                     <Image src={product.imageUrl || "https://picsum.photos/seed/p/300/300"} alt={product.name} fill className="object-contain p-2 group-hover:scale-105 transition-transform" unoptimized />
+              {products.map((product) => (
+                <div key={product.id} className="amazon-card group bg-white border border-[#ddd] p-5 flex flex-col h-full">
+                  <h3 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 min-h-[3rem] uppercase mb-4">{product.name}</h3>
+                  <div className="aspect-square relative bg-slate-50 p-4 overflow-hidden mb-4 rounded-md">
+                     <Image 
+                       src={product.imageUrl || "https://picsum.photos/seed/prod/300/300"} 
+                       alt={product.name} 
+                       fill 
+                       className="object-contain p-2 group-hover:scale-105 transition-transform" 
+                       unoptimized={product.imageUrl?.startsWith('data:')}
+                     />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[13px] text-slate-500 font-bold uppercase">{product.category}</p>
-                    <p className="text-xl font-black text-[#B12704]">${product.price?.toFixed(2)}</p>
+                  <div className="mt-auto space-y-1">
+                    <p className="text-[12px] text-slate-500 font-bold uppercase tracking-widest">{product.category}</p>
+                    <div className="flex items-center justify-between">
+                       <p className="text-2xl font-black text-[#B12704]">${product.price?.toFixed(2)}</p>
+                       {product.type === 'Físico' && (
+                         <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded">CONTRA ENTREGA</span>
+                       )}
+                    </div>
+                    <Link href={`/checkout/${product.id}`} className="block w-full text-center amazon-btn-primary mt-4 py-2 text-[13px] font-bold">Ver detalles</Link>
                   </div>
-                  <Link href={`/checkout/${product.id}`} className="text-[#007185] hover:text-[#C45500] hover:underline text-[13px] font-medium mt-2">Comprar ahora</Link>
                 </div>
               ))}
             </div>
@@ -191,38 +192,14 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="bg-[#232F3E] text-white pt-10 pb-10 flex flex-col items-center gap-10">
          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="w-full h-12 bg-[#37475A] hover:bg-[#485769] text-white text-[13px] font-medium transition-colors">
-            Inicio de la página
+            Volver arriba
          </button>
-
-         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12 max-w-4xl py-10">
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase">Conócenos</h4>
-               <ul className="space-y-2 text-[13px] text-[#DDD]">
-                  <li><Link href="#" className="hover:underline">Acerca de Sync Connect</Link></li>
-                  <li><Link href="#" className="hover:underline">Sostenibilidad</Link></li>
-               </ul>
-            </div>
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase">Gana dinero</h4>
-               <ul className="space-y-2 text-[13px] text-[#DDD]">
-                  <li><Link href="/auth/register" className="hover:underline">Vender en Sync</Link></li>
-                  <li><Link href="#" className="hover:underline">Programa de Afiliados</Link></li>
-               </ul>
-            </div>
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase">Ayuda</h4>
-               <ul className="space-y-2 text-[13px] text-[#DDD]">
-                  <li><Link href="/auth/login" className="hover:underline">Gestionar mi cuenta</Link></li>
-                  <li><Link href="#" className="hover:underline">Tus pedidos</Link></li>
-               </ul>
-            </div>
-         </div>
 
          <div className="w-full border-t border-white/10 py-10 flex flex-col items-center gap-6">
             <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-            <p className="text-[12px] text-[#AAA] text-center max-w-lg px-4">
-               © 2024 Sync Connect Nicaragua. Todos los derechos reservados. <br/>
-               Solo productos 100% verificados por administración.
+            <p className="text-[12px] text-[#AAA] text-center max-w-lg px-4 leading-relaxed">
+               © 2024 Sync Connect Nicaragua. <br/>
+               Sistema de compras directas con validación local.
             </p>
          </div>
       </footer>
