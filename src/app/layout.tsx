@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
   
   // URL del logo por defecto del sistema
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
-  let iconUrl = getGoogleDriveDirectLink(defaultLogo?.imageUrl || "/favicon.ico");
+  let iconUrl = getGoogleDriveDirectLink(defaultLogo?.imageUrl || "");
   
   try {
     const logoSnap = await getDoc(doc(firestore, 'site_config', 'site-logo'));
@@ -38,18 +38,15 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: 'Sync Connect | Potenciando Afiliados en Nicaragua',
-    description: 'La plataforma definitiva para la sincronización de marketing en Nicaragua. Gestiona tus productos digitales y comisiones de forma segura.',
+    title: 'Sync Connect | Plataforma Elite de Afiliados',
+    description: 'Gestión profesional de marketing y ventas digitales en Nicaragua. La red de afiliados más potente de la región.',
     icons: {
       icon: [
         { url: iconUrl },
-        { url: iconUrl, sizes: '32x32', type: 'image/png' },
-        { url: iconUrl, sizes: '16x16', type: 'image/png' },
       ],
       shortcut: iconUrl,
       apple: iconUrl,
     },
-    manifest: '/site.webmanifest',
   };
 }
 
