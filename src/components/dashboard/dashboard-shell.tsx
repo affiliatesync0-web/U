@@ -176,7 +176,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Mi Buzón", url: "/dashboard/affiliate/support", icon: Mail },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: "Bot de Ventas", url: "/dashboard/affiliate/bot-settings", icon: Zap },
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
     { title: "Copiloto IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
