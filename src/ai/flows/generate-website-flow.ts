@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Generador de landing pages impulsado por OpenAI (GPT-4o).
@@ -43,7 +42,7 @@ const websitePrompt = ai.definePrompt({
   name: 'generateWebsitePrompt',
   input: {schema: GenerateWebsiteInputSchema},
   output: {schema: GenerateWebsiteOutputSchema},
-  prompt: `Eres un experto en Copywriting, Neuromarketing y Psicología de Ventas de clase mundial. Tu misión es crear el contenido de una Landing Page ganadora utilizando el motor GPT-4o.
+  prompt: `Eres un experto en Copywriting, Neuromarketing y Psicología de Ventas de clase mundial. Tu misión es crear el contenido de una Landing Page ganadora.
 
 PRODUCTO: {{{productName}}}
 CONTEXTO TÉCNICO: {{{description}}}
@@ -72,7 +71,6 @@ const generateWebsiteFlow = ai.defineFlow(
     outputSchema: GenerateWebsiteOutputSchema,
   },
   async input => {
-    // El flujo utiliza el modelo configurado por defecto (openai/gpt-4o)
     const {output} = await websitePrompt(input);
     return output!;
   }
