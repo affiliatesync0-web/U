@@ -35,6 +35,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase'
@@ -42,12 +43,14 @@ import { collection, query, where, doc, onSnapshot } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const db = useFirestore();
+  const router = useRouter();
 
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
@@ -133,7 +136,7 @@ export default function AffiliateDashboard() {
               </h1>
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className="bg-slate-900 text-white border-none font-black text-[9px] tracking-widest px-3 py-1 uppercase">
-                   Rango: Platinum Member
+                   Rango: Embajador
                 </Badge>
                 {locationStatus === 'watching' && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest">
