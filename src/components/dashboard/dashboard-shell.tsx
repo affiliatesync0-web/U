@@ -16,15 +16,17 @@ import {
   Flame,
   ShoppingBasket,
   UserCircle,
-  Zap,
-  Terminal,
   Menu,
   X,
   Search,
   ChevronDown,
   ShoppingCart,
   MapPin,
-  LogOut
+  LogOut,
+  Terminal,
+  Zap,
+  Globe,
+  BrainCircuit
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -74,49 +76,25 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     async function verifyAccess() {
       if (!mounted || isUserLoading) return;
-
-      if (!user) {
-        window.location.href = '/auth/login';
-        return;
-      }
+      if (!user) { window.location.href = '/auth/login'; return; }
 
       if (isUserAdmin) {
-        if (!pathname.startsWith('/dashboard/admin')) {
-          window.location.href = '/dashboard/admin'; 
-          return;
-        }
+        if (!pathname.startsWith('/dashboard/admin')) { router.push('/dashboard/admin'); }
         setIsVerifyingRole(false);
         return;
       }
 
-      if (!isUserAdmin && pathname.startsWith('/dashboard/admin')) {
-        window.location.href = '/dashboard/affiliate'; 
-        return;
-      }
+      if (pathname.startsWith('/dashboard/admin')) { router.push('/dashboard/affiliate'); return; }
 
       try {
         const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
-        const isAffiliate = affSnap.exists();
-        
-        if (role === 'affiliate' && !isAffiliate && !isUserAdmin) {
+        if (role === 'affiliate' && !affSnap.exists() && !isUserAdmin) {
           router.replace('/dashboard/buyer');
-          return;
         }
-      } catch (err) {
-        console.error("Access verification error:", err);
-      } finally {
-        setIsVerifyingRole(false);
-      }
+      } catch (err) { console.error(err); } finally { setIsVerifyingRole(false); }
     }
-
     verifyAccess();
   }, [user, isUserLoading, mounted, pathname, isUserAdmin, router, role, db]);
-
-  const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
-  const { data: affiliateProfile } = useDoc(affiliateRef);
-
-  const buyerRef = useMemoFirebase(() => (db && user && role === 'buyer' ? doc(db, 'buyers', user.uid) : null), [db, user, role]);
-  const { data: buyerProfile } = useDoc(buyerRef);
 
   const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -125,64 +103,42 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const handleLogout = async () => {
     if (!auth) return;
-    try {
-      await signOut(auth);
-      window.location.href = '/auth/login';
-    } catch (error) {
-      console.error("Logout error:", error);
-      window.location.href = '/auth/login';
-    }
+    await signOut(auth);
+    window.location.href = '/auth/login';
   }
-
-  const getDisplayName = () => {
-    if (isUserAdmin) return "Admin";
-    if (affiliateProfile?.firstName) return affiliateProfile.firstName;
-    if (buyerProfile?.firstName) return buyerProfile.firstName;
-    if (user?.displayName) return user.displayName.split(' ')[0];
-    return "Invitado";
-  };
-
-  const displayName = getDisplayName();
 
   if (!mounted || isUserLoading || isVerifyingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-6">
-          <div className="h-16 w-16 border-4 border-[#FF9900]/10 border-t-[#FF9900] rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase text-[#111] tracking-[0.4em]">Sincronizando...</p>
-        </div>
+        <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
       </div>
     )
   }
 
   const adminItems = [
-    { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
+    { title: "Resumen", url: "/dashboard/admin", icon: LayoutDashboard },
     { title: "Productos", url: "/dashboard/admin/products", icon: Package },
     { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
     { title: "Directorio Socios", url: "/dashboard/admin/affiliates", icon: Users },
-    { title: "Compradores", url: "/dashboard/admin/buyers", icon: Users2 },
     { title: "Ventas", url: "/dashboard/admin/sales", icon: ShoppingBag },
-    { title: "Diseño", url: "/dashboard/admin/design", icon: Palette },
+    { title: "Diseño & Config", url: "/dashboard/admin/design", icon: Palette },
   ]
 
   const affiliateItems = [
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
-    { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
-    { title: t.myCustomers, url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: "Billetera", url: "/dashboard/affiliate/profile", icon: UserCircle },
+    { title: "Mis Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },
+    { title: "Perfil de Cobros", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
   const buyerItems = [
-    { title: "Panel de Control", url: "/dashboard/buyer", icon: LayoutDashboard },
-    { title: "Productos", url: "/dashboard/buyer/products", icon: ShoppingBasket },
+    { title: "Mis Pedidos", url: "/dashboard/buyer", icon: LayoutDashboard },
+    { title: "Explorar Marketplace", url: "/dashboard/buyer/products", icon: ShoppingBasket },
   ]
 
   const menuItems = isUserAdmin ? adminItems : (role === 'buyer' ? buyerItems : affiliateItems);
-  const profileUrl = isUserAdmin ? "/dashboard/admin/design" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate/profile");
-  const marketUrl = isUserAdmin ? "/dashboard/admin/products" : (role === 'buyer' ? "/dashboard/buyer/products" : "/dashboard/affiliate/products");
 
   return (
     <div className="min-h-screen bg-[#EAEDED] flex flex-col">
@@ -198,25 +154,17 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             </div>
           </Link>
 
-          <div className="hidden xl:flex items-center p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer shrink-0">
-             <MapPin className="h-5 w-5 text-white mt-1" />
-             <div className="flex flex-col ml-1">
-                <span className="text-[#CCCCCC] text-[12px] leading-tight">Enviar a</span>
-                <span className="text-white text-[14px] font-black leading-tight">Nicaragua</span>
-             </div>
-          </div>
-
           <div className="flex-1 flex h-10 md:h-11 items-center mx-4 group">
             <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden ring-offset-0 focus-within:ring-[3px] focus-within:ring-[#FF9900] transition-shadow">
-              <button className="hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] font-bold uppercase">
+              <button className="hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555] text-[12px] border-r border-[#CDCDCD] font-bold uppercase">
                 Todo <ChevronDown className="h-3 w-3 ml-2" />
               </button>
               <Input 
                 placeholder="Buscar en Sync Connect..." 
-                className="flex-1 border-none focus-visible:ring-0 text-[15px] h-full rounded-none bg-transparent px-4 font-medium text-slate-800" 
+                className="flex-1 border-none focus-visible:ring-0 text-[15px] h-full rounded-none bg-transparent px-4 font-medium" 
               />
-              <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-12 md:w-14 h-full flex items-center justify-center transition-colors">
-                <Search className="h-6 w-6 text-[#333333]" />
+              <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-12 md:w-14 h-full flex items-center justify-center">
+                <Search className="h-6 w-6 text-[#333]" />
               </button>
             </div>
           </div>
@@ -224,54 +172,42 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <div className="flex items-center gap-1 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white cursor-pointer text-left">
-                  <span className="text-white text-[12px] leading-tight">Hola, {displayName}</span>
+                <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left">
+                  <span className="text-white text-[12px] leading-tight">Hola, {isUserAdmin ? 'Admin' : (user?.displayName?.split(' ')[0] || 'Usuario')}</span>
                   <div className="flex items-center">
-                    <span className="text-white font-black text-[14px] leading-tight">Cuenta y Listas</span>
+                    <span className="text-white font-black text-[14px] leading-tight">Mi Cuenta</span>
                     <ChevronDown className="h-3 w-3 text-[#CCCCCC] ml-1" />
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72 rounded-md p-6 border-none shadow-2xl bg-white mt-1">
-                <div className="flex flex-col gap-4">
-                  <Button className="amazon-btn-primary w-full" asChild>
-                    <Link href={profileUrl}>Panel Maestro</Link>
-                  </Button>
-                </div>
-                <DropdownMenuSeparator className="my-5" />
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <DropdownMenuLabel className="p-0 text-sm font-black mb-2">Tus Listas</DropdownMenuLabel>
-                    <Link href="#" className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mis Listas</Link>
-                  </div>
-                  <div className="space-y-2">
-                    <DropdownMenuLabel className="p-0 text-sm font-black mb-2">Tu Cuenta</DropdownMenuLabel>
-                    <Link href={profileUrl} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline block">Mi Perfil</Link>
-                    <button onClick={handleLogout} className="text-[13px] text-[#C45500] hover:underline text-left py-1 font-bold w-full flex items-center gap-2">
-                      <LogOut className="h-3 w-3" /> Cerrar Sesión
-                    </button>
-                  </div>
+                <Button className="amazon-btn-primary w-full mb-4" onClick={handleLogout}>Cerrar Sesión</Button>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="p-0 text-sm font-black mb-2">Herramientas</DropdownMenuLabel>
+                <div className="flex flex-col gap-2">
+                   {menuItems.slice(0, 3).map(m => (
+                     <Link key={m.url} href={m.url} className="text-[13px] text-[#444] hover:text-[#C45500] hover:underline font-bold">{m.title}</Link>
+                   ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link href={marketUrl} className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
+            <Link href={isUserAdmin ? "/dashboard/admin/products" : "/dashboard/affiliate/products"} className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
                <div className="relative">
                  <ShoppingCart className="h-9 w-9 text-white" />
                  <span className="absolute top-[-2px] left-[55%] -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">0</span>
                </div>
-               <span className="text-white font-black text-[14px] mb-1.5 hidden sm:inline ml-1">Market</span>
             </Link>
           </div>
         </div>
 
         <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar">
-          <button onClick={() => setIsMobileMenuOpen(true)} className="flex items-center gap-1.5 p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-3">
+          <button onClick={() => setIsMobileMenuOpen(true)} className="flex items-center gap-1.5 p-2 text-white font-black text-[14px] whitespace-nowrap mr-3">
             <Menu className="h-5 w-5" /> Todo
           </button>
           <nav className="flex items-center h-full gap-4">
-             {menuItems.slice(0, 8).map((item) => (
-               <Link key={item.url} href={item.url} className={cn("px-3 h-full flex items-center rounded-sm hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all", pathname === item.url ? "font-black" : "font-medium")}>
+             {menuItems.map((item) => (
+               <Link key={item.url} href={item.url} className={cn("px-3 h-full flex items-center text-white text-[13px] whitespace-nowrap transition-all", pathname === item.url ? "font-black" : "font-medium")}>
                  {item.title}
                </Link>
              ))}
@@ -282,21 +218,16 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
            <div className="absolute inset-0 bg-black/80" onClick={() => setIsMobileMenuOpen(false)} />
-           <div className="relative w-[300px] md:w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-300 shadow-2xl">
-              <div className="bg-[#232F3E] p-5 flex items-center gap-4 text-white">
-                 <UserCircle className="h-8 w-8" />
-                 <span className="text-xl font-black tracking-tight">Hola, {displayName}</span>
-                 <button onClick={() => setIsMobileMenuOpen(false)} className="ml-auto hover:scale-110 transition-transform"><X className="h-6 w-6" /></button>
+           <div className="relative w-[300px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-300">
+              <div className="bg-[#232F3E] p-5 flex items-center justify-between text-white">
+                 <span className="text-xl font-black uppercase italic">Sync Menu</span>
+                 <button onClick={() => setIsMobileMenuOpen(false)}><X className="h-6 w-6" /></button>
               </div>
               <ScrollArea className="flex-1 p-6">
-                 <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Navegar por Sync</h4>
-                 <div className="flex flex-col gap-2">
+                 <div className="flex flex-col gap-4">
                     {menuItems.map((item) => (
-                      <Link key={item.url} href={item.url} onClick={() => setIsMobileMenuOpen(false)} className={cn("flex items-center justify-between py-3 border-b border-slate-50 hover:bg-slate-50 px-2 rounded-sm transition-colors", pathname === item.url ? "bg-slate-50 border-primary" : "")}>
-                        <div className="flex items-center gap-3">
-                          {item.icon && <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />}
-                          <span className={cn("text-[14px] font-medium", pathname === item.url ? "font-black text-slate-900" : "text-[#111]")}>{item.title}</span>
-                        </div>
+                      <Link key={item.url} href={item.url} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 py-3 border-b text-[14px] font-black uppercase text-slate-800">
+                        {item.title}
                       </Link>
                     ))}
                  </div>
@@ -305,17 +236,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </div>
       )}
 
-      <main className="flex-1">
-        <div className="max-w-[1500px] mx-auto p-4 md:p-10">
-          {children}
-        </div>
+      <main className="flex-1 p-4 md:p-10 max-w-[1500px] mx-auto w-full">
+        {children}
       </main>
 
-      <footer className="bg-[#131A22] text-white pt-10 pb-10 border-t-8 border-[#232F3E]">
-         <div className="text-center py-10 border-t border-white/5 space-y-4">
-            <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-            <p className="text-[11px] text-[#888]">© 2024 Sync Connect Nicaragua. Todos los productos reales.</p>
-         </div>
+      <footer className="bg-[#131A22] text-white py-10 border-t-8 border-[#232F3E] text-center">
+         <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
+         <p className="text-[11px] text-[#888] mt-2">© 2024 Nicaragua Elite Network Engine.</p>
       </footer>
     </div>
   )
