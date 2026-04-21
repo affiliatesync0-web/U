@@ -6,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 /**
  * Obtiene la configuración SMTP desde Firestore.
- * Prioriza siempre lo configurado por el usuario en el panel.
+ * Prioriza siempre lo configurado por el usuario en el panel de diseño.
  */
 async function getSmtpConfig() {
   const { firestore } = initializeFirebase();
@@ -39,9 +39,35 @@ async function getSmtpConfig() {
 }
 
 /**
+ * Plantilla Base HTML para todos los correos.
+ */
+function getEmailWrapper(content: string, title: string = "Sync Connect") {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #f1f5f9; border-radius: 32px; overflow: hidden; background-color: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.05);">
+      <div style="background: linear-gradient(135deg, #131921 0%, #232f3e 100%); padding: 50px 40px; text-align: center;">
+        <h1 style="margin: 0; color: #ff9900; font-size: 28px; font-weight: 900; letter-spacing: -1px; font-style: italic;">Sync<span style="color: #ffffff;">.Connect</span></h1>
+        <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 3px;">Elite Network System</p>
+      </div>
+      <div style="padding: 50px 40px; line-height: 1.8; color: #334155; font-size: 16px; background-color: #ffffff;">
+        <div style="margin-bottom: 30px;">
+           <h2 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 0 0 20px 0; text-transform: uppercase; letter-spacing: -0.5px;">${title}</h2>
+        </div>
+        ${content}
+      </div>
+      <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #f1f5f9;">
+        <p style="margin: 0; font-weight: 800; font-size: 10px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px;">&copy; ${new Date().getFullYear()} Sync Connect Nicaragua. Todos los derechos reservados.</p>
+        <div style="margin-top: 15px;">
+           <span style="display: inline-block; padding: 4px 12px; background-color: #e2e8f0; border-radius: 10px; color: #64748b; font-size: 9px; font-weight: 900;">SISTEMA DE SEGURIDAD SSL</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Envía un correo electrónico utilizando la configuración SMTP activa.
  */
-export async function sendEmail({ to, subject, text, html }: { to: string, subject: string, text: string, html?: string }) {
+export async function sendEmail({ to, subject, text, html, title }: { to: string, subject: string, text: string, html?: string, title?: string }) {
   try {
     const config = await getSmtpConfig();
     const isSecure = config.port === 465;
@@ -50,40 +76,24 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
       host: config.host,
       port: config.port,
       secure: isSecure,
-      pool: true,
-      maxConnections: 1,
       auth: {
         user: config.user,
         pass: config.pass,
       },
       tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
+        rejectUnauthorized: false
       }
     });
 
     const fromAddress = `"${config.fromName}" <${config.user}>`;
-
-    const emailHtml = html || `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background-color: #ffffff;">
-        <div style="background-color: #ff5d1b; padding: 40px; text-align: center;">
-          <h1 style="margin: 0; color: #ffffff; font-size: 24px; text-transform: uppercase; font-weight: 900;">Sync Connect</h1>
-        </div>
-        <div style="padding: 40px; line-height: 1.6; color: #334155; font-size: 16px;">
-          ${text.split('\n').map(line => `<p style="margin-bottom: 10px;">${line}</p>`).join('')}
-        </div>
-        <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-          <p style="margin: 0; font-weight: bold;">&copy; ${new Date().getFullYear()} ${config.fromName}</p>
-        </div>
-      </div>
-    `;
+    const finalHtml = html || getEmailWrapper(text.split('\n').map(line => `<p style="margin-bottom: 15px;">${line}</p>`).join(''), title || subject);
 
     const info = await transporter.sendMail({
       from: fromAddress,
       to,
       subject,
       text,
-      html: emailHtml,
+      html: finalHtml,
     });
 
     return { success: true, messageId: info.messageId };
@@ -94,40 +104,77 @@ export async function sendEmail({ to, subject, text, html }: { to: string, subje
 }
 
 /**
- * Envía el correo de recuperación de contraseña personalizado.
+ * Envía el correo de recuperación de contraseña.
  */
 export async function sendPasswordResetEmailCustom({ to, oobCode }: { to: string, oobCode: string }) {
   const resetLink = `https://affiliatesync.vercel.app/auth/reset-password?oobCode=${oobCode}`;
   
+  const content = `
+    <p>Has solicitado restablecer tu contraseña en la plataforma Sync Connect. Si no fuiste tú, puedes ignorar este mensaje de seguridad.</p>
+    <div style="text-align: center; margin: 40px 0;">
+      <a href="${resetLink}" style="display: inline-block; background-color: #ff9900; color: #000000; padding: 20px 40px; border-radius: 16px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; box-shadow: 0 10px 30px rgba(255,153,0,0.3);">
+        Establecer Nueva Contraseña
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #94a3b8; font-weight: 500;">Este enlace expirará en 1 hora por razones de seguridad.</p>
+  `;
+
   return await sendEmail({
     to,
-    subject: '🔑 Recupera tu acceso - Sync Connect',
-    text: `Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar: ${resetLink}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
-        <div style="margin-bottom: 30px;">
-          <span style="font-size: 40px;">🔑</span>
-        </div>
-        <h2 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase;">Restablecer Clave</h2>
-        <p style="color: #64748b; font-size: 15px; margin-bottom: 30px; line-height: 1.6;">
-          Recibimos una solicitud para cambiar tu contraseña en <strong>Sync Connect</strong>. Si no fuiste tú, puedes ignorar este correo.
-        </p>
-        
-        <div style="margin-bottom: 30px;">
-          <a href="${resetLink}" style="display: inline-block; background-color: #ff5d1b; color: #ffffff; padding: 18px 36px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(255,93,27,0.2);">
-            ESTABLECER NUEVA CONTRASEÑA
-          </a>
-        </div>
+    subject: '🔑 Recuperación de Acceso - Sync Connect',
+    text: `Restablece tu clave aquí: ${resetLink}`,
+    html: getEmailWrapper(content, "Recuperar Contraseña"),
+    title: "Seguridad de Cuenta"
+  });
+}
 
-        <p style="color: #94a3b8; font-size: 12px; font-weight: 500;">
-          Este enlace expirará en 1 hora por seguridad.
-        </p>
-        
-        <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #f1f5f9; text-align: center;">
-          <p style="font-size: 10px; color: #cbd5e1; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">© ${new Date().getFullYear()} SYNC CONNECT ACADEMY</p>
-        </div>
-      </div>
-    `
+/**
+ * Notifica al afiliado que su cuenta ha sido activada.
+ */
+export async function sendAccountActivatedEmail({ to, name }: { to: string, name: string }) {
+  const content = `
+    <p>¡Hola <strong>${name}</strong>!</p>
+    <p>Tenemos el placer de informarte que tu solicitud de <strong>Socio Platinum</strong> ha sido aprobada con éxito tras la validación de tus datos.</p>
+    <p>A partir de este momento, tienes acceso total al marketplace y al laboratorio de ventas para empezar a generar comisiones.</p>
+    <div style="text-align: center; margin: 40px 0;">
+      <a href="https://affiliatesync.vercel.app/auth/login" style="display: inline-block; background-color: #131921; color: #ffffff; padding: 20px 40px; border-radius: 16px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase;">
+        Entrar al Panel Maestro
+      </a>
+    </div>
+  `;
+
+  return await sendEmail({
+    to,
+    subject: '✅ Cuenta Activada - Sync Connect',
+    text: `¡Bienvenido! Tu cuenta ha sido activada.`,
+    html: getEmailWrapper(content, "¡Bienvenido a la Red!"),
+    title: "Activación de Cuenta"
+  });
+}
+
+/**
+ * Notificación de compra para el cliente.
+ */
+export async function sendOrderConfirmedEmail({ to, name, product, isPhysical }: { to: string, name: string, product: string, isPhysical: boolean }) {
+  const content = `
+    <p>Hola <strong>${name}</strong>,</p>
+    <p>Hemos registrado correctamente tu pedido de: <strong>${product}</strong>.</p>
+    <div style="background-color: #f1f5f9; padding: 25px; border-radius: 20px; border-left: 6px solid #ff9900; margin: 30px 0;">
+       <p style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b;">
+         ${isPhysical 
+           ? "Tu pedido físico está siendo coordinado. Un repartidor te contactará para el pago en efectivo al recibir." 
+           : "Tu acceso digital está siendo validado. Recibirás un enlace de activación en breve."}
+       </p>
+    </div>
+    <p>Gracias por confiar en la tecnología de Sync Connect para tu formación y consumo.</p>
+  `;
+
+  return await sendEmail({
+    to,
+    subject: `🛒 Confirmación de Pedido - ${product}`,
+    text: `Tu pedido ha sido registrado con éxito.`,
+    html: getEmailWrapper(content, "Registro de Compra"),
+    title: "Estado del Pedido"
   });
 }
 
@@ -135,33 +182,23 @@ export async function sendPasswordResetEmailCustom({ to, oobCode }: { to: string
  * Envía una notificación de pago realizado a un afiliado.
  */
 export async function sendPaymentNotification({ to, name, amount, bank }: { to: string, name: string, amount: number, bank: string }) {
+  const content = `
+    <p>¡Felicidades <strong>${name}</strong>!</p>
+    <p>Se ha procesado un nuevo pago de comisiones hacia tu cuenta bancaria.</p>
+    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 30px; border-radius: 24px; border: 1px solid #bbf7d0; margin: 30px 0; text-align: center;">
+      <p style="margin: 0 0 10px 0; font-size: 11px; font-weight: 900; color: #16a34a; text-transform: uppercase; letter-spacing: 1px;">Monto Liquidado</p>
+      <span style="font-size: 42px; font-weight: 900; color: #166534; letter-spacing: -2px;">$${amount.toFixed(2)}</span>
+      <p style="margin: 15px 0 0 0; font-size: 12px; font-weight: 800; color: #16a34a;">BANCO: ${bank.toUpperCase()}</p>
+    </div>
+    <p>Tu saldo en plataforma se ha actualizado. ¡Sigue escalando tus resultados!</p>
+  `;
+
   return await sendEmail({
     to,
-    subject: `💰 Comisiones Pagadas - Sync Connect`,
-    text: `¡Hola ${name}! Te informamos que hemos procesado un pago de comisiones por valor de $${amount.toFixed(2)}.\n\nEl depósito se ha realizado a tu cuenta en ${bank}.\n\n¡Felicidades por tus resultados!`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
-        <div style="margin-bottom: 30px;">
-          <span style="font-size: 40px;">💰</span>
-        </div>
-        <h2 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; letter-spacing: -0.5px;">¡Pago Enviado!</h2>
-        <p style="color: #64748b; font-size: 15px; margin-bottom: 30px;">Hola <strong>${name}</strong>, tus ganancias han sido transferidas con éxito.</p>
-        
-        <div style="background: #f0fdf4; padding: 30px; border-radius: 24px; border: 1px solid #bbf7d0; margin-bottom: 30px;">
-          <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 900; color: #16a34a; text-transform: uppercase; letter-spacing: 1px;">Monto Total Depositado</p>
-          <span style="font-size: 36px; font-weight: 900; color: #166534;">$${amount.toFixed(2)}</span>
-          <p style="margin: 15px 0 0 0; font-size: 11px; font-weight: 700; color: #16a34a;">BANCO: ${bank.toUpperCase()}</p>
-        </div>
-
-        <p style="color: #94a3b8; font-size: 13px; font-weight: 500; line-height: 1.6;">
-          Tu saldo en plataforma se ha reseteado. Sigue escalando tu negocio digital con Sync Connect.
-        </p>
-        
-        <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #f1f5f9;">
-          <p style="font-size: 10px; color: #cbd5e1; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">© ${new Date().getFullYear()} SYNC CONNECT ACADEMY</p>
-        </div>
-      </div>
-    `
+    subject: `💰 Pago de Comisiones - Sync Connect`,
+    text: `Has recibido un pago de $${amount.toFixed(2)}.`,
+    html: getEmailWrapper(content, "Liquidación Exitosa"),
+    title: "Notificación de Pago"
   });
 }
 
@@ -169,23 +206,19 @@ export async function sendPaymentNotification({ to, name, amount, bank }: { to: 
  * Envía un correo de prueba para verificar la configuración SMTP.
  */
 export async function testEmailConfig(to: string) {
+  const content = `
+    <p>¡Éxito total! La configuración de tu servidor de correo en Sync Connect está operando correctamente.</p>
+    <div style="background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; margin: 30px 0; text-align: center;">
+      <p style="margin: 0; font-size: 13px; font-weight: 800; color: #0f172a; text-transform: uppercase;">Estado: CONECTADO</p>
+      <p style="margin: 5px 0 0 0; font-size: 11px; color: #64748b;">${new Date().toLocaleString()}</p>
+    </div>
+  `;
   return await sendEmail({
     to,
-    subject: '🧪 Prueba de Conexión Sync Connect',
-    text: `¡Éxito! Si estás leyendo esto, la configuración de tu servidor de correo en Sync Connect funciona perfectamente.\n\nEnviado el: ${new Date().toLocaleString()}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
-        <div style="margin-bottom: 30px;">
-          <span style="font-size: 40px;">🧪</span>
-        </div>
-        <h2 style="color: #0f172a; font-size: 22px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase;">Prueba de Conexión</h2>
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">La configuración de tu servidor SMTP es correcta y ya puedes enviar notificaciones automáticas.</p>
-        <div style="background: #f0fdf4; padding: 25px; border-radius: 20px; border: 1px solid #bbf7d0; margin-bottom: 30px;">
-          <p style="margin: 0; font-size: 12px; font-weight: 900; color: #166534; text-transform: uppercase; letter-spacing: 1px;">Estado: CONECTADO</p>
-        </div>
-        <p style="font-size: 10px; color: #94a3b8; margin-top: 30px; font-weight: 700;">ENVIADO EL: ${new Date().toLocaleString()}</p>
-      </div>
-    `
+    subject: '🧪 Prueba de Sistema - Sync Connect',
+    text: `Conexión SMTP verificada exitosamente.`,
+    html: getEmailWrapper(content, "Test de Conectividad"),
+    title: "Prueba de Servidor"
   });
 }
 
@@ -193,23 +226,20 @@ export async function testEmailConfig(to: string) {
  * Envía una nueva contraseña generada por el administrador.
  */
 export async function sendNewPasswordAdmin({ to, name, newPassword }: { to: string, name: string, newPassword: string }) {
+  const content = `
+    <p>Hola <strong>${name}</strong>,</p>
+    <p>Un administrador ha restablecido tus credenciales de acceso por motivos de seguridad o mantenimiento.</p>
+    <div style="background: #f1f5f9; padding: 30px; border-radius: 24px; border: 1px solid #e2e8f0; margin: 30px 0; text-align: center;">
+      <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase;">Tu Nueva Clave Temporal</p>
+      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 900; color: #ff5d1b; letter-spacing: 4px;">${newPassword}</span>
+    </div>
+    <p style="font-size: 12px; color: #ef4444; font-weight: 700;">AVISO: Cambia esta contraseña inmediatamente después de iniciar sesión.</p>
+  `;
   return await sendEmail({
     to,
-    subject: '🔐 Tus nuevas credenciales de acceso - Sync Connect',
-    text: `Hola ${name},\n\nUn administrador ha restablecido tu contraseña de acceso por seguridad.\n\nNUEVOS DATOS DE ACCESO:\n- Email: ${to}\n- Contraseña: ${newPassword}\n\nTe recomendamos cambiar esta contraseña una vez que ingreses a tu panel.`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 32px; background-color: #ffffff; text-align: center;">
-        <div style="margin-bottom: 30px;">
-          <span style="font-size: 40px;">🔐</span>
-        </div>
-        <h2 style="color: #0f172a; font-size: 22px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase;">Nueva Contraseña</h2>
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 30px;">Tus credenciales han sido actualizadas por el administrador:</p>
-        <div style="background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
-          <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Tu nueva clave es:</p>
-          <span style="font-family: monospace; font-size: 32px; font-weight: 900; color: #ff5d1b;">${newPassword}</span>
-        </div>
-        <p style="font-size: 10px; color: #94a3b8; margin-top: 30px; font-weight: 700;">POR SEGURIDAD, NO COMPARTAS ESTOS DATOS CON NADIE.</p>
-      </div>
-    `
+    subject: '🔐 Nuevas Credenciales - Sync Connect',
+    text: `Tu nueva clave es: ${newPassword}`,
+    html: getEmailWrapper(content, "Acceso Restablecido"),
+    title: "Seguridad de Usuario"
   });
 }

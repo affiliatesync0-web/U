@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense, useEffect } from 'react'
@@ -14,7 +13,7 @@ import { useLanguage } from '@/components/language-context'
 import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, Landmark, FileText, Truck, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { sendEmail } from '@/lib/email'
+import { sendOrderConfirmedEmail } from '@/lib/email'
 
 function CheckoutContent() {
   const params = useParams()
@@ -100,11 +99,13 @@ function CheckoutContent() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      await sendEmail({
+      // Enviar email con plantilla premium
+      await sendOrderConfirmedEmail({
         to: formData.email,
-        subject: `Registro de Compra - ${product?.name}`,
-        text: `¡Hola ${formData.firstName}! Hemos registrado tu pedido de ${product?.name}.\n\n${product?.type === 'Físico' ? 'Pagarás en efectivo al recibir tu producto.' : 'Tu acceso será validado en breve.'}`
-      }).catch(() => {});
+        name: formData.firstName,
+        product: product?.name || 'Producto Sync',
+        isPhysical: product?.type === 'Físico'
+      }).catch(err => console.error("Error enviando email compra:", err));
 
       toast({ title: "Pedido Registrado", description: product?.type === 'Físico' ? "Te contactaremos para la entrega." : "Tu solicitud está en proceso." })
 

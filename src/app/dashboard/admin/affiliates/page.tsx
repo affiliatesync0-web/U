@@ -53,7 +53,7 @@ import {
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
-import { sendEmail, sendNewPasswordAdmin, sendPaymentNotification } from '@/lib/email'
+import { sendEmail, sendNewPasswordAdmin, sendPaymentNotification, sendAccountActivatedEmail } from '@/lib/email'
 import { adminResetUserPassword, adminDeleteUser } from '@/lib/auth-actions'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -226,11 +226,13 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
     setIsProcessing(true);
     try {
       await updateDocumentNonBlocking(doc(db, 'affiliates', affiliate.id), { status: 'Active' });
-      await sendEmail({
+      
+      // Enviar email con plantilla premium
+      await sendAccountActivatedEmail({
         to: affiliate.email,
-        subject: `✅ Cuenta Activada - Sync Connect`,
-        text: `¡Hola ${affiliate.firstName}! Tu solicitud ha sido aprobada con éxito tras la validación biométrica. Ya puedes acceder a tu panel de afiliados.`
-      });
+        name: affiliate.firstName
+      }).catch(err => console.error("Error enviando email activación:", err));
+
       toast({ title: "Afiliado Activado", description: "Identidad confirmada y notificación enviada." });
     } catch (e) {
       toast({ variant: "destructive", title: "Error en activación" });
@@ -272,12 +274,13 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
         isRead: false
       });
 
+      // Enviar email de pago con plantilla premium
       await sendPaymentNotification({
         to: affiliate.email,
         name: affiliate.firstName,
         amount: amountPaid,
         bank: bankName
-      });
+      }).catch(err => console.error("Error enviando email pago:", err));
 
       toast({ title: "¡Pago Registrado!", description: "Notificación enviada." });
     } catch (error) {
