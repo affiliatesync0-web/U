@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, Suspense, useRef, useEffect } from 'react'
@@ -146,8 +147,8 @@ function AffiliateRegisterContent() {
 
       await sendEmail({
         to: 'affiliatesync0@gmail.com',
-        subject: `🆕 Solicitud Afiliado: ${formData.firstName}`,
-        text: `Nuevo socio registrado.\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
+        subject: `🆕 Nueva Solicitud Embajador: ${formData.firstName}`,
+        text: `Nuevo embajador registrado.\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
       }).catch(() => {});
 
       // Forzar cierre de sesión para que el admin lo apruebe antes de que entre
@@ -187,9 +188,9 @@ function AffiliateRegisterContent() {
                   <Target className="h-8 w-8" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">Registro de <span className="text-primary">Afiliado Platinum</span></h2>
+                  <h2 className="text-3xl font-headline font-black uppercase italic">Inscripción de <span className="text-primary">Embajador</span></h2>
                   <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">
-                    {existingUser ? 'Vinculando tu cuenta social' : 'Crea tu cuenta de acceso'}
+                    Iniciando configuración de acceso
                   </p>
                 </div>
               </div>
@@ -222,7 +223,7 @@ function AffiliateRegisterContent() {
                 )}
 
                 <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20">
-                  SIGUIENTE: KYC LEGAL
+                  CONTINUAR REGISTRO
                 </Button>
               </form>
             </div>
@@ -237,7 +238,7 @@ function AffiliateRegisterContent() {
                   <FileCheck className="h-8 w-8" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">Validación <span className="text-blue-600">Legal</span></h2>
+                  <h2 className="text-3xl font-headline font-black uppercase italic">Validación <span className="text-blue-600">de Identidad</span></h2>
                   <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Requerido para el desembolso de comisiones</p>
                 </div>
               </div>
