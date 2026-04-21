@@ -1,11 +1,11 @@
+
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 import {openAI} from 'genkitx-openai';
 
 /**
- * Configuración maestra de Genkit con soporte para OpenAI (ChatGPT) y Google AI (Gemini).
- * Se establece GPT-4o como el motor de élite para el Site Builder y copywriting.
- * Los plugins se inicializan sin argumentos para que utilicen las variables de entorno estándar.
+ * Configuración maestra de Genkit compatible con v1.x.
+ * Se utiliza el plugin de OpenAI para habilitar GPT-4o en el generador de sitios.
  */
 export const ai = genkit({
   plugins: [

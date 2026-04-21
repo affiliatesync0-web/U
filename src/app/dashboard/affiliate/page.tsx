@@ -12,16 +12,10 @@ import {
   Link as LinkIcon, 
   Copy, 
   Check, 
-  Smartphone, 
   Camera, 
-  MapPin, 
-  Bell, 
   BadgeCheck,
   ArrowUpRight,
-  Sparkles,
   Zap,
-  CheckCircle2,
-  Users2,
   ShieldCheck
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'

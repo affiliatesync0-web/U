@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, AlertCircle, Triangle, ChevronRight } from 'lucide-react'
+import { Loader2, Triangle, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -17,7 +18,6 @@ import { doc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { COUNTRY_CODES } from '@/lib/constants'
 
 function BuyerRegisterContent() {
@@ -38,13 +38,14 @@ function BuyerRegisterContent() {
     password: ''
   })
 
-  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth || !db) return;
     setLoading(true);
     setErrorMsg(null);
 
@@ -87,7 +88,7 @@ function BuyerRegisterContent() {
   };
 
   return (
-    <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12">
+    <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12 px-4">
       
       {/* LOGO */}
       <div className="mb-4">
@@ -103,7 +104,7 @@ function BuyerRegisterContent() {
       </div>
 
       <Card className="w-full max-w-[350px] border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] bg-white p-6 md:p-8">
-        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Crear cuenta</h1>
+        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight text-left">Crear cuenta</h1>
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start animate-in fade-in">

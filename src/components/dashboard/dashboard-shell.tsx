@@ -17,15 +17,11 @@ import {
   Flame,
   ShoppingBasket,
   Mail,
-  Clock,
   ShieldCheck,
   UserCircle,
   Zap,
-  MapPin,
   Inbox,
   GraduationCap,
-  Sparkles,
-  Smartphone,
   Terminal,
   Menu,
   X,
@@ -33,11 +29,9 @@ import {
   ChevronDown,
   Globe,
   ShoppingCart,
-  PhoneCall,
-  ChevronLeft
+  MapPin
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
 import { doc, getDoc } from "firebase/firestore"
 import placeholderData from "@/app/lib/placeholder-images.json"
@@ -129,12 +123,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const buyerRef = useMemoFirebase(() => (db && user && role === 'buyer' ? doc(db, 'buyers', user.uid) : null), [db, user, role]);
   const { data: buyerProfile } = useDoc(buyerRef);
 
-  const logoConfigRef = useMemoFirebase(() => doc(db, 'site_config', 'site-logo'), [db]);
+  const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     window.location.href = 'https://syncacademy.systeme.io/sync-connect';
   }
@@ -190,18 +185,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   ]
 
   const menuItems = isUserAdmin ? adminItems : (role === 'buyer' ? buyerItems : affiliateItems);
-  const roleLabel = isUserAdmin ? 'ADMIN MASTER' : (role === 'buyer' ? 'STUDENT' : 'PARTNER');
-  const marketUrl = isUserAdmin ? "/dashboard/admin/products" : (role === 'buyer' ? "/dashboard/buyer/products" : "/dashboard/affiliate/products");
   const profileUrl = isUserAdmin ? "/dashboard/admin/design" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate/profile");
+  const marketUrl = isUserAdmin ? "/dashboard/admin/products" : (role === 'buyer' ? "/dashboard/buyer/products" : "/dashboard/affiliate/products");
 
   return (
     <div className="min-h-screen bg-[#EAEDED] flex flex-col">
-      {/* AMAZON MASTER HEADER */}
       <header className="sticky top-0 z-[100] w-full flex flex-col shadow-md">
-        
-        {/* ROW 1: DARK BAR (#131921) */}
         <div className="bg-[#131921] h-[60px] md:h-[72px] flex items-center px-4 gap-4">
-          
           <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="flex items-center p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white shrink-0">
             <div className="relative h-8 w-24 md:h-10 md:w-32">
               {displayLogoUrl ? (
@@ -220,7 +210,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
              </div>
           </div>
 
-          {/* Amazon Search Bar */}
           <div className="flex-1 flex h-10 md:h-11 items-center mx-4 group">
             <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden ring-offset-0 focus-within:ring-[3px] focus-within:ring-[#FF9900] transition-shadow">
               <button className="hidden md:flex items-center px-4 bg-[#F3F3F3] text-[#555] text-[12px] border-r border-[#CDCDCD] hover:bg-[#DADADA] font-bold uppercase">
@@ -278,48 +267,27 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
             <Link href={marketUrl} className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
                <div className="relative">
                  <ShoppingCart className="h-9 w-9 text-white" />
-                 <span className="absolute top-[-2px] left-[55%] -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">
-                   {(affiliateProfile?.currentBalance > 0) ? '1' : '0'}
-                 </span>
+                 <span className="absolute top-[-2px] left-[55%] -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">0</span>
                </div>
                <span className="text-white font-black text-[14px] mb-1.5 hidden sm:inline ml-1">Market</span>
             </Link>
           </div>
         </div>
 
-        {/* ROW 2: NAV BAR (#232F3E) */}
         <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar">
-          <button 
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="flex items-center gap-1.5 p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-3"
-          >
+          <button onClick={() => setIsMobileMenuOpen(true)} className="flex items-center gap-1.5 p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-white font-black text-[14px] whitespace-nowrap mr-3">
             <Menu className="h-5 w-5" /> Todo
           </button>
-
           <nav className="flex items-center h-full gap-4">
              {menuItems.slice(0, 8).map((item) => (
-               <Link 
-                key={item.url} 
-                href={item.url}
-                className={cn(
-                  "px-3 h-full flex items-center rounded-sm hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all",
-                  pathname === item.url ? "font-black" : "font-medium"
-                )}
-               >
+               <Link key={item.url} href={item.url} className={cn("px-3 h-full flex items-center rounded-sm hover:outline hover:outline-1 hover:outline-white text-white text-[14px] whitespace-nowrap transition-all", pathname === item.url ? "font-black" : "font-medium")}>
                  {item.title}
                </Link>
              ))}
           </nav>
-          
-          <div className="ml-auto hidden lg:flex items-center gap-5">
-             <span className="text-white font-black text-[14px] uppercase italic tracking-tighter opacity-90">
-               Sync Academy: <span className="text-[#FF9900]">Estrategia de Élite</span>
-             </span>
-          </div>
         </div>
       </header>
 
-      {/* SIDE DRAWER (MENU TODO) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
            <div className="absolute inset-0 bg-black/80" onClick={() => setIsMobileMenuOpen(false)} />
@@ -333,22 +301,13 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
                  <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Navegar por Sync</h4>
                  <div className="flex flex-col gap-2">
                     {menuItems.map((item) => (
-                      <Link 
-                        key={item.url} 
-                        href={item.url} 
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={cn(
-                          "flex items-center justify-between py-3 border-b border-slate-50 hover:bg-slate-50 px-2 rounded-sm transition-colors",
-                          pathname === item.url ? "bg-slate-50 border-primary" : ""
-                        )}
-                      >
+                      <Link key={item.url} href={item.url} onClick={() => setIsMobileMenuOpen(false)} className={cn("flex items-center justify-between py-3 border-b border-slate-50 hover:bg-slate-50 px-2 rounded-sm transition-colors", pathname === item.url ? "bg-slate-50 border-primary" : "")}>
                         <div className="flex items-center gap-3">
                           {item.icon && <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />}
                           <span className={cn("text-[14px] font-medium", pathname === item.url ? "font-black text-slate-900" : "text-[#111]")}>{item.title}</span>
                         </div>
                       </Link>
                     ))}
-                    <button onClick={handleLogout} className="text-left py-3 text-red-600 font-bold mt-4 border-t px-2 hover:bg-red-50 rounded-sm transition-colors">Cerrar Sesión</button>
                  </div>
               </ScrollArea>
            </div>
@@ -362,36 +321,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       </main>
 
       <footer className="bg-[#131A22] text-white pt-10 pb-10 border-t-8 border-[#232F3E]">
-         <div className="max-w-5xl mx-auto px-8 grid grid-cols-2 md:grid-cols-4 gap-10 mb-10">
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase text-[#FF9900]">Conócenos</h4>
-               <ul className="space-y-2 text-[13px] text-[#CCC]">
-                  <li><Link href="#" className="hover:underline">Quiénes Somos</Link></li>
-                  <li><Link href="#" className="hover:underline">Licencia Platinum</Link></li>
-               </ul>
-            </div>
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase text-[#FF9900]">Gana Dinero</h4>
-               <ul className="space-y-2 text-[13px] text-[#CCC]">
-                  <li><Link href="/auth/register" className="hover:underline">Vender en Sync</Link></li>
-                  <li><Link href="#" className="hover:underline">Afiliados</Link></li>
-               </ul>
-            </div>
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase text-[#FF9900]">Pagos</h4>
-               <ul className="space-y-2 text-[13px] text-[#CCC]">
-                  <li><Link href="#" className="hover:underline">Transferencia NI</Link></li>
-                  <li><Link href="#" className="hover:underline">Efectivo</Link></li>
-               </ul>
-            </div>
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase text-[#FF9900]">Soporte</h4>
-               <ul className="space-y-2 text-[13px] text-[#CCC]">
-                  <li><Link href="/dashboard/affiliate/support" className="hover:underline">Centro de Ayuda</Link></li>
-                  <li><Link href="#" className="hover:underline">Garantía</Link></li>
-               </ul>
-            </div>
-         </div>
          <div className="text-center py-10 border-t border-white/5 space-y-4">
             <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
             <p className="text-[11px] text-[#888]">© 2024 Sync Connect Nicaragua. Una infraestructura de Sync Academy.</p>
