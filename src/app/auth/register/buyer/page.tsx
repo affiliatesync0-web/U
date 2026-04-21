@@ -88,8 +88,6 @@ function BuyerRegisterContent() {
 
   return (
     <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12 px-4">
-      
-      {/* LOGO */}
       <div className="mb-4">
         <Link href="/">
           <div className="relative h-12 w-32 md:h-14 md:w-36">
@@ -122,7 +120,6 @@ function BuyerRegisterContent() {
               value={formData.firstName} 
               onChange={e => setFormData({...formData, firstName: e.target.value})} 
               required 
-              placeholder="Nombre"
               className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" 
             />
           </div>
@@ -133,7 +130,6 @@ function BuyerRegisterContent() {
               value={formData.lastName} 
               onChange={e => setFormData({...formData, lastName: e.target.value})} 
               required 
-              placeholder="Apellido"
               className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" 
             />
           </div>
@@ -152,7 +148,6 @@ function BuyerRegisterContent() {
                 </SelectContent>
               </Select>
               <Input 
-                placeholder="Número de móvil" 
                 value={formData.phone} 
                 onChange={e => setFormData({...formData, phone: e.target.value})} 
                 required 
@@ -210,7 +205,6 @@ function BuyerRegisterContent() {
         </div>
       </Card>
 
-      {/* FOOTER */}
       <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
         <div className="flex justify-center gap-8">
           <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>

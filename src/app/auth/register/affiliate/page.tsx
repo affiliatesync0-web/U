@@ -165,8 +165,6 @@ function AffiliateRegisterContent() {
 
   return (
     <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12 px-4">
-      
-      {/* LOGO */}
       <div className="mb-4">
         <Link href="/">
           <div className="relative h-12 w-32 md:h-14 md:w-36">
@@ -176,7 +174,7 @@ function AffiliateRegisterContent() {
       </div>
 
       <Card className="w-full max-w-[450px] border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] bg-white p-6 md:p-8">
-        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Crear cuenta de Embajador</h1>
+        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight text-left">Registro de Embajador</h1>
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start animate-in fade-in">
@@ -224,7 +222,7 @@ function AffiliateRegisterContent() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-l-none px-2 py-1 text-[13px] font-medium" placeholder="Número de móvil" />
+                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-l-none px-2 py-1 text-[13px] font-medium" />
               </div>
             </div>
 
@@ -294,11 +292,11 @@ function AffiliateRegisterContent() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label className="text-[13px] font-bold text-[#111]">¿Cómo planeas promocionar los productos?</Label>
-                <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[13px] font-medium" placeholder="Ej: Redes sociales, publicidad..." />
+                <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[12px] font-medium" />
               </div>
               <div className="space-y-1">
                 <Label className="text-[13px] font-bold text-[#111]">¿Cuál es tu experiencia en ventas?</Label>
-                <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[13px] font-medium" />
+                <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[12px] font-medium" />
               </div>
             </div>
             <Button type="submit" className="amazon-btn-primary w-full h-10" disabled={loading || !capturedSelfie || !capturedID}>

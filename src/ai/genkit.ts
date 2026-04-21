@@ -4,8 +4,9 @@ import {openAI} from 'genkitx-openai';
 
 /**
  * Configuración maestra de Genkit compatible con v1.x.
- * Se habilitan los plugins de Google AI (Gemini) y OpenAI (GPT).
- * Se utiliza Gemini 1.5 Flash como motor predeterminado por su velocidad y eficiencia.
+ * Se utilizan las variables de entorno estándar para las claves de API:
+ * - GOOGLE_GENAI_API_KEY (para Gemini)
+ * - OPENAI_API_KEY (para GPT-4o)
  */
 export const ai = genkit({
   plugins: [

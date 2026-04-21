@@ -108,7 +108,6 @@ export default function AffiliateDashboard() {
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-12">
-        {/* HEADER PERFIL PROFESIONAL */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
           <div className="flex items-center gap-6">
             <div className="relative group">
@@ -155,7 +154,6 @@ export default function AffiliateDashboard() {
           </Card>
         </div>
 
-        {/* MÉTRICAS IMPACTANTES */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { title: "Comisiones Pendientes", value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5", sub: "Por liquidar" },
@@ -183,7 +181,6 @@ export default function AffiliateDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-           {/* TABLA DE VENTAS PREMIUM */}
            <div className="lg:col-span-8 space-y-8">
               <Card className="premium-card overflow-hidden">
                 <CardHeader className="px-10 py-10 border-b border-slate-50 flex flex-row items-center justify-between">
@@ -246,7 +243,6 @@ export default function AffiliateDashboard() {
               </Card>
            </div>
 
-           {/* ACCIONES DE IMPACTO (DERECHA) */}
            <div className="lg:col-span-4 space-y-10">
               <Card className="premium-card bg-slate-950 text-white p-10 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-8 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000"><LinkIcon className="h-32 w-32 text-primary" /></div>
@@ -294,8 +290,8 @@ export default function AffiliateDashboard() {
                     <h4 className="text-lg font-black text-slate-900 uppercase italic leading-none tracking-tight">Sync Lab AI</h4>
                  </div>
                  <p className="text-slate-500 font-medium text-sm leading-relaxed">¿Sin ideas para cerrar? Usa nuestro copiloto de IA para redactar ganchos que duplican las ventas.</p>
-                 <Button onClick={() => router.push('/dashboard/affiliate/sales-copilot')} variant="outline" className="h-14 rounded-2xl border-primary text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
-                    ABRIR COPILOTO IA
+                 <Button onClick={() => router.push('/dashboard/affiliate/sales-lab')} variant="outline" className="h-14 rounded-2xl border-primary text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
+                    ABRIR LABORATORIO
                  </Button>
               </Card>
            </div>
