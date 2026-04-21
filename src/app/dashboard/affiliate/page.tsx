@@ -15,8 +15,7 @@ import {
   BadgeCheck,
   ArrowUpRight,
   Zap,
-  ShieldCheck,
-  ChevronRight
+  ShieldCheck
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -100,7 +99,7 @@ export default function AffiliateDashboard() {
   const salesQuery = useMemoFirebase(() => (db && user ? query(collection(db, 'sales'), where('affiliateId', '==', user.uid)) : null), [db, user]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
-  if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="animate-spin text-primary" /></div>
+  if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px] bg-white"><Loader2 className="animate-spin text-[#FF9900]" /></div>
 
   const totalEarnedApproved = (sales || [])
     .filter(s => s.status === 'Completed')
@@ -115,7 +114,7 @@ export default function AffiliateDashboard() {
               <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
               <Avatar className="h-24 w-24 border-[6px] border-white dark:border-slate-900 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
                 <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} />
-                <AvatarFallback className="bg-slate-900 text-white text-3xl font-black">{profile?.firstName?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-primary text-white text-3xl font-black">{profile?.firstName?.charAt(0)}</AvatarFallback>
               </Avatar>
               <button 
                 onClick={() => setIsEditingPhoto(true)} 

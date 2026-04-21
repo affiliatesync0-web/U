@@ -146,10 +146,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   if (!mounted || isUserLoading || isVerifyingRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#131921]">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
           <div className="h-16 w-16 border-4 border-[#FF9900]/10 border-t-[#FF9900] rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase text-white tracking-[0.4em]">Sincronizando...</p>
+          <p className="text-[10px] font-black uppercase text-[#111] tracking-[0.4em]">Sincronizando...</p>
         </div>
       </div>
     )

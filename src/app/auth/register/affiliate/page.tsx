@@ -54,7 +54,7 @@ function AffiliateRegisterContent() {
         lastName: existingUser.displayName?.split(' ').slice(1).join(' ') || ''
       }));
     }
-  }, [existingUser]);
+  }, [existingUser, formData.email]);
 
   useEffect(() => {
     if (step === 'id_capture' || step === 'selfie') {
@@ -158,7 +158,7 @@ function AffiliateRegisterContent() {
     <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12 px-4">
       <div className="mb-4">
         <Link href="/">
-          <div className="relative h-12 w-32 md:h-14 md:w-36">
+          <div className="relative h-12 w-32 md:h-14 md:w-36 flex items-center justify-center">
              <span className="text-[#111] font-black text-2xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
           </div>
         </Link>
@@ -204,12 +204,12 @@ function AffiliateRegisterContent() {
               <Label className="text-[13px] font-bold text-[#111]">Número de móvil</Label>
               <div className="flex gap-0 items-stretch">
                 <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                  <SelectTrigger className="w-[100px] h-8 border-[#888c8c] border-r-0 focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-white text-[13px] font-bold flex shrink-0">
+                  <SelectTrigger className="w-[85px] h-8 border-[#888c8c] border-r-0 focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-[#F3F3F3] text-[13px] font-bold flex shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {COUNTRY_CODES.map(c => (
-                      <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                      <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -242,7 +242,7 @@ function AffiliateRegisterContent() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Cédula de Identidad">Cédula de Identidad (NI)</SelectItem>
+                  <SelectItem value="Cédula de Identidad">Cédula de Identidad</SelectItem>
                   <SelectItem value="Pasaporte">Pasaporte</SelectItem>
                   <SelectItem value="Residencia">Cédula de Residencia</SelectItem>
                 </SelectContent>
@@ -308,7 +308,7 @@ function AffiliateRegisterContent() {
 
 export default function AffiliateRegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#FF9900] h-12 w-12" /></div>}>
       <AffiliateRegisterContent />
     </Suspense>
   )

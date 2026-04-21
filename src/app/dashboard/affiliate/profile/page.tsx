@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Landmark, Loader2, User, Smartphone, Mail, ShieldCheck, Banknote } from 'lucide-react'
+import { Landmark, Loader2, User, Mail, ShieldCheck, Banknote } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase'
@@ -37,7 +36,6 @@ export default function AffiliateProfilePage() {
 
   useEffect(() => {
     if (profile) {
-      // Intentar extraer el código de país si existe
       let code = '+505';
       let num = profile.whatsappNumber || '';
       
@@ -105,7 +103,6 @@ export default function AffiliateProfilePage() {
 
         <form onSubmit={handleUpdateProfile} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Información Personal */}
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white ring-1 ring-slate-100">
               <CardHeader className="bg-slate-50/50 rounded-t-[2.5rem] p-8">
                 <CardTitle className="text-xl flex items-center gap-3">
@@ -142,12 +139,12 @@ export default function AffiliateProfilePage() {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp de Contacto</Label>
                   <div className="flex gap-0 items-stretch">
                     <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                      <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-white text-[13px] font-bold flex shrink-0">
+                      <SelectTrigger className="w-[85px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-[#F3F3F3] text-[13px] font-bold flex shrink-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {COUNTRY_CODES.map(c => (
-                          <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                          <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -162,7 +159,6 @@ export default function AffiliateProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Información Bancaria */}
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white ring-1 ring-slate-100">
               <CardHeader className="bg-primary/5 rounded-t-[2.5rem] p-8">
                 <CardTitle className="text-xl flex items-center gap-3 text-primary">
