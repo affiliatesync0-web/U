@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -6,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, Sparkles, Globe, ExternalLink, Copy, Check, Trash2, Rocket, Layout, FileText } from 'lucide-react'
+import { Loader2, Sparkles, Globe, ExternalLink, Copy, Check, Trash2, Rocket, Layout, FileText, BrainCircuit } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, query, where } from 'firebase/firestore'
@@ -44,7 +45,7 @@ export default function SiteBuilderPage() {
       const content = await generateWebsiteContent({
         productName: product.name,
         description: product.description || '',
-        affiliateName: user.displayName || 'Socio Platinum'
+        affiliateName: user.displayName || 'Embajador Sync'
       });
 
       await addDocumentNonBlocking(collection(db, 'user_sites'), {
@@ -57,13 +58,13 @@ export default function SiteBuilderPage() {
         published: true
       });
 
-      toast({ title: "¡Sitio Web Creado!", description: "La IA ha terminado el diseño y ya está publicado." });
+      toast({ title: "¡Sitio Web Creado!", description: "GPT-4o ha terminado el diseño persuasivo." });
     } catch (error) {
       console.error("AI Generation Error:", error);
       toast({ 
         variant: "destructive", 
         title: "Error en la IA", 
-        description: "No pudimos conectar con el motor de Gemini. Revisa tu GEMINI_API_KEY e intenta de nuevo." 
+        description: "Hubo un problema al conectar con el cerebro de GPT-4o." 
       });
     } finally {
       setGenerating(false);
@@ -91,11 +92,11 @@ export default function SiteBuilderPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary fill-primary" />
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Sync Web Engine</span>
+              <BrainCircuit className="h-5 w-5 text-primary" />
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Powered by GPT-4o</span>
             </div>
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">AI <span className="text-primary">Site Builder</span></h1>
-            <p className="text-slate-500 font-medium">Crea páginas de venta profesionales para tus productos en segundos.</p>
+            <p className="text-slate-500 font-medium">Genera landing pages de alta conversión automáticamente.</p>
           </div>
         </div>
 
@@ -108,7 +109,7 @@ export default function SiteBuilderPage() {
             </CardHeader>
             <CardContent className="p-10 space-y-8">
               <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Producto Objetivo</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Producto a Promocionar</Label>
                 <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                   <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-2xl text-white font-bold">
                     <SelectValue placeholder="Elegir del catálogo..." />
@@ -124,10 +125,10 @@ export default function SiteBuilderPage() {
               <div className="p-6 bg-primary/10 rounded-[2rem] border border-primary/20 space-y-3">
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase">Poder de Gemini 1.5</span>
+                  <span className="text-[10px] font-black uppercase">Copywriting de Élite</span>
                 </div>
                 <p className="text-xs text-slate-300 font-medium leading-relaxed italic">
-                  "Generaré el copy perfecto, secciones de beneficios y llamados a la acción optimizados para cerrar ventas."
+                  "Analizaré la ficha técnica y crearé una estructura de venta ganadora en segundos."
                 </p>
               </div>
 
@@ -137,9 +138,9 @@ export default function SiteBuilderPage() {
                 className="w-full h-18 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02]"
               >
                 {generating ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> CONSTRUYENDO SITIO...</>
+                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> GPT-4o REDACTANDO...</>
                 ) : (
-                  <><Layout className="mr-2 h-5 w-5" /> GENERAR CON IA</>
+                  <><Layout className="mr-2 h-5 w-5" /> CONSTRUIR MI PÁGINA</>
                 )}
               </Button>
             </CardContent>
@@ -155,7 +156,7 @@ export default function SiteBuilderPage() {
             ) : !userSites || userSites.length === 0 ? (
               <div className="text-center py-32 bg-white/50 rounded-[4rem] border-2 border-dashed border-slate-200">
                 <Globe className="h-16 w-16 mx-auto mb-4 text-slate-200" />
-                <p className="text-sm font-black text-slate-400 uppercase">Aún no tienes sitios creados.</p>
+                <p className="text-sm font-black text-slate-400 uppercase">Selecciona un producto arriba para comenzar.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
