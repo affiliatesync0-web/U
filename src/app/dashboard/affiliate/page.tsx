@@ -15,7 +15,8 @@ import {
   BadgeCheck,
   ArrowUpRight,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -289,7 +290,7 @@ export default function AffiliateDashboard() {
                     <div className="h-12 w-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl -rotate-6"><Zap className="h-6 w-6" /></div>
                     <h4 className="text-lg font-black text-slate-900 uppercase italic leading-none tracking-tight">Sync Lab AI</h4>
                  </div>
-                 <p className="text-slate-500 font-medium text-sm leading-relaxed">¿Sin ideas para cerrar? Usa nuestro copiloto de IA para redactar ganchos que duplican las ventas.</p>
+                 <p className="text-slate-500 font-medium text-sm leading-relaxed">¿Sin ideas para cerrar? Usa nuestro laboratorio de estrategias para redactar ganchos que duplican las ventas.</p>
                  <Button onClick={() => router.push('/dashboard/affiliate/sales-lab')} variant="outline" className="h-14 rounded-2xl border-primary text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
                     ABRIR LABORATORIO
                  </Button>

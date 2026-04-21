@@ -1,4 +1,3 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
@@ -52,21 +51,6 @@ export default function AdminAffiliateContactsPage() {
     });
   };
 
-  const handleInternalContact = (affId: string) => {
-    addDocumentNonBlocking(collection(db, 'notifications'), {
-      userId: affId,
-      title: '💬 Mensaje Directo Admin',
-      message: 'Revisa el canal de soporte para un nuevo comunicado del administrador.',
-      type: 'system',
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      actionUrl: '/dashboard/affiliate/support'
-    });
-
-    toast({ title: "Contacto Notificado" });
-    router.push('/dashboard/admin/support');
-  };
-
   return (
     <DashboardShell role="admin">
       <div className="space-y-10">
@@ -79,7 +63,7 @@ export default function AdminAffiliateContactsPage() {
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Directorio Interno</span>
             </div>
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">{t.affiliateContacts}</h1>
-            <p className="text-slate-500 font-medium">Comunícate con tus socios de forma 100% privada dentro de Sync Academy.</p>
+            <p className="text-slate-500 font-medium">Visualiza la lista de contactos de tus socios afiliados.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
@@ -111,7 +95,7 @@ export default function AdminAffiliateContactsPage() {
                     <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-100">
                       <TableHead className="px-10 h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">{t.firstName} {t.lastName}</TableHead>
                       <TableHead className="h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Cuenta de Usuario</TableHead>
-                      <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Acciones en Plataforma</TableHead>
+                      <TableHead className="px-10 text-right h-20 uppercase text-[10px] font-black text-slate-400 tracking-widest">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -133,9 +117,6 @@ export default function AdminAffiliateContactsPage() {
                         </TableCell>
                         <TableCell className="px-10 text-right">
                           <div className="flex justify-end gap-3">
-                            <Button variant="outline" className="h-12 px-5 rounded-2xl border-primary/20 text-primary hover:bg-primary/5 gap-2 font-black text-[10px] uppercase" onClick={() => handleInternalContact(aff.id)}>
-                              <MessageCircle className="h-4 w-4" /> Mensaje Directo
-                            </Button>
                             <Button variant="ghost" className="h-12 px-5 rounded-2xl font-black text-[10px] uppercase tracking-widest" onClick={() => handleCopyEmail(aff.email)}>
                               {copiedEmail === aff.email ? "Copiado" : "Copiar Email"}
                             </Button>

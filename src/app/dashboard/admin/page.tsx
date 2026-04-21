@@ -43,39 +43,11 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [resetting, setResetting] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<string>('default');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
-    }
   }, []);
-
-  useEffect(() => {
-    if (mounted && db && user) {
-      const now = new Date().toISOString();
-      const qComm = query(collection(db, 'community_messages'), limit(1));
-      
-      const unsubscribeComm = onSnapshot(qComm, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const msg = change.doc.data();
-            if (msg.userName !== "ADMINISTRADOR" && msg.createdAt > now) {
-              toast({ 
-                title: `💬 Comunidad: ${msg.userName}`, 
-                description: msg.content,
-                action: <Button variant="outline" size="sm" className="h-8 rounded-lg font-black text-[10px] uppercase" onClick={() => router.push('/dashboard/admin/support')}>VER</Button>
-              });
-            }
-          }
-        });
-      });
-
-      return () => unsubscribeComm();
-    }
-  }, [mounted, db, user, toast, router]);
 
   const salesQuery = useMemoFirebase(() => (!db || isAuthLoading || !user) ? null : collection(db, 'sales'), [db, user, isAuthLoading]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
@@ -125,12 +97,6 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-slate-500 font-medium text-lg">Métricas clave de rendimiento y control del ecosistema.</p>
           </div>
-          
-          <div className="flex items-center gap-3">
-             <Button variant="outline" className="h-14 px-8 rounded-2xl border-slate-200 text-slate-600 font-black text-[11px] uppercase tracking-widest gap-2 bg-white shadow-xl hover:bg-slate-50 transition-all">
-                <BarChart3 className="h-4 w-4" /> REPORTE DETALLADO
-             </Button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -162,10 +128,6 @@ export default function AdminDashboard() {
                 <div>
                   <CardTitle className="text-2xl font-headline font-black text-slate-900 uppercase">Tráfico Comercial</CardTitle>
                   <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Sincronización semanal de ventas</p>
-                </div>
-                <div className="flex gap-2">
-                   <div className="h-3 w-3 rounded-full bg-primary" />
-                   <div className="h-3 w-3 rounded-full bg-blue-500" />
                 </div>
               </div>
             </CardHeader>
@@ -201,59 +163,6 @@ export default function AdminDashboard() {
                   AUDITAR SISTEMA
                 </Button>
               </div>
-            </Card>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="h-1 w-16 bg-primary rounded-full" />
-            <h2 className="text-2xl font-headline font-black text-slate-900 uppercase">Zona de Mantenimiento Maestro</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="premium-card bg-amber-50 border border-amber-100 p-10 flex flex-col items-center justify-between gap-10 group">
-              <div className="flex items-center gap-6 w-full">
-                <div className="h-20 w-20 bg-amber-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl shrink-0 -rotate-6 transition-transform group-hover:rotate-0">
-                  <RefreshCcw className="h-10 w-10" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-headline font-black text-amber-900 uppercase tracking-tight">Reiniciar Transacciones</h3>
-                  <p className="text-amber-700 font-medium text-sm mt-1 leading-relaxed">Borra el historial de ventas y limpia los registros de comprobantes bancarios.</p>
-                </div>
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full h-18 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl bg-amber-900 hover:bg-amber-800" disabled={resetting}>
-                    {resetting ? <Loader2 className="animate-spin" /> : <AlertTriangle className="mr-2 h-5 w-5" />} REINICIAR VENTAS
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-[3.5rem] p-12 border-none shadow-2xl">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 leading-tight">¿CONFIRMAR REINICIO TOTAL?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-slate-500 font-bold mt-6 leading-relaxed">Esta acción borrará todas las transacciones del servidor de forma permanente. No se podrán recuperar los vouchers de pago.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="mt-10 gap-4">
-                    <AlertDialogCancel className="h-16 rounded-[1.5rem] font-black text-slate-400 border-slate-100 uppercase text-[10px]">CANCELAR</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => {}} className="h-16 rounded-[1.5rem] bg-destructive text-white font-black uppercase text-[10px] shadow-2xl shadow-red-200">SÍ, BORRAR HISTORIAL</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </Card>
-
-            <Card className="premium-card bg-red-100 border border-red-200 p-10 flex flex-col items-center justify-between gap-10 group">
-              <div className="flex items-center gap-6 w-full">
-                <div className="h-20 w-20 bg-red-600 text-white rounded-[2rem] flex items-center justify-center shadow-2xl shrink-0 rotate-6 transition-transform group-hover:rotate-0">
-                  <Users className="h-10 w-10" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-headline font-black text-red-900 uppercase tracking-tight">Depuración de Red</h3>
-                  <p className="text-red-700 font-medium text-sm mt-1 leading-relaxed">Elimina todos los perfiles de socios Platinum y libera sus accesos.</p>
-                </div>
-              </div>
-              <Button variant="destructive" className="w-full h-18 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl bg-red-600 hover:bg-red-700" disabled={resetting}>
-                {resetting ? <Loader2 className="animate-spin" /> : <Trash2 className="mr-2 h-5 w-5" />} BORRAR DIRECTORIO DE SOCIOS
-              </Button>
             </Card>
           </div>
         </div>

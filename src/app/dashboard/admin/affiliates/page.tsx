@@ -12,7 +12,6 @@ import {
   Lock, 
   Unlock, 
   KeyRound, 
-  MessageCircle, 
   ShieldCheck, 
   User, 
   FileText, 
@@ -342,9 +341,6 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-               <Button onClick={() => router.push('/dashboard/admin/support')} className="h-14 px-6 rounded-2xl bg-[#075E54] hover:bg-[#054c44] text-white font-black text-[10px] uppercase tracking-widest shadow-xl">
-                 <MessageCircle className="mr-2 h-5 w-5" /> ESCRIBIR MENSAJE
-               </Button>
                <Button onClick={handleToggleBlock} variant="outline" className={cn("h-14 px-6 rounded-2xl border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5", affiliate.status === 'Blocked' ? "bg-green-600 border-none" : "bg-red-600/20")}>
                  {affiliate.status === 'Blocked' ? <><Unlock className="mr-2 h-5 w-5" /> DESBLOQUEAR</> : <><Lock className="mr-2 h-5 w-5" /> BLOQUEAR ACCESO</>}
                </Button>

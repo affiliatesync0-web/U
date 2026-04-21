@@ -131,7 +131,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     if (!auth) return;
     try {
       await signOut(auth);
-      // Redirigir al login interno en lugar de la página externa
       window.location.href = '/auth/login';
     } catch (error) {
       console.error("Logout error:", error);
@@ -162,9 +161,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: t.overview, url: "/dashboard/admin", icon: LayoutDashboard },
-    { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: Inbox },
     { title: "Academia Admin", url: "/dashboard/admin/academy", icon: GraduationCap },
-    { title: "AI Site Builder", url: "/dashboard/admin/site-builder", icon: Globe },
     { title: "Productos", url: "/dashboard/admin/products", icon: Package },
     { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
@@ -176,7 +173,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: "Mi Buzón", url: "/dashboard/affiliate/support", icon: Mail },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },

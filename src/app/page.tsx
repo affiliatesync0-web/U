@@ -19,7 +19,8 @@ import {
   ChevronDown,
   UserCircle,
   X,
-  GraduationCap as GradIcon
+  GraduationCap as GradIcon,
+  Package
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
@@ -39,6 +40,9 @@ export default function Home() {
 
   const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
   const { data: configs, isLoading: isConfigLoading } = useCollection(configQuery);
+
+  const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
+  const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
   const getOverride = (id: string) => configs?.find(c => c.id === id);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
@@ -101,11 +105,6 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href="/auth/login" className="hidden md:flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left">
-            <span className="text-white text-[12px] leading-tight">Devoluciones</span>
-            <span className="text-white font-black text-[14px] leading-tight">y Pedidos</span>
-          </Link>
-
           <Link href="/auth/register" className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
             <div className="relative">
               <ShoppingCart className="h-9 w-9 text-white" />
@@ -126,49 +125,11 @@ export default function Home() {
         </button>
         <div className="flex items-center h-full gap-4 text-white text-[14px] font-medium whitespace-nowrap">
           <Link href="/auth/register" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Vender</Link>
-          <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Servicios</Link>
           <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Sync Academy</Link>
           <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Lo más vendido</Link>
-          <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Lo nuevo</Link>
           <Link href="#" className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white">Promociones</Link>
         </div>
-        <div className="ml-auto hidden xl:block">
-          <span className="text-white font-black text-[14px] uppercase italic tracking-tighter">
-            Venganza <span className="font-normal text-[#CCCCCC]">- Ve ahora</span>
-          </span>
-        </div>
       </nav>
-
-      {/* MOBILE DRAWER */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[200] flex animate-in fade-in duration-300">
-           <div className="absolute inset-0 bg-black/80" onClick={() => setIsMenuOpen(false)} />
-           <div className="relative w-[300px] md:w-[365px] bg-white h-full flex flex-col animate-in slide-in-from-left duration-300">
-              <div className="bg-[#232F3E] p-5 flex items-center gap-4 text-white">
-                 <UserCircle className="h-8 w-8" />
-                 <span className="text-xl font-black tracking-tight">Hola, {user ? user.displayName?.split(' ')[0] : 'identifícate'}</span>
-                 <button onClick={() => setIsMenuOpen(false)} className="ml-auto"><X className="h-6 w-6" /></button>
-              </div>
-              <ScrollArea className="flex-1 p-6">
-                 <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Tendencias</h4>
-                 <div className="flex flex-col gap-2 mb-8">
-                    <Link href="#" onClick={() => setIsMenuOpen(false)} className="py-3 border-b border-slate-50 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Lo más vendido</Link>
-                    <Link href="#" onClick={() => setIsMenuOpen(false)} className="py-3 border-b border-slate-50 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Novedades</Link>
-                    <Link href="#" onClick={() => setIsMenuOpen(false)} className="py-3 border-b border-slate-50 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Productos del momento</Link>
-                 </div>
-                 
-                 <h4 className="text-lg font-black mb-4 text-[#111] uppercase tracking-tighter">Configuración</h4>
-                 <div className="flex flex-col gap-2">
-                    <Link href="/auth/login" onClick={() => setIsMenuOpen(false)} className="py-3 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Mi Cuenta</Link>
-                    <Link href="/dashboard/affiliate/support" onClick={() => setIsMenuOpen(false)} className="py-3 text-[14px] text-[#111] font-medium hover:bg-slate-50 px-2">Servicio al Cliente</Link>
-                    {!user && (
-                      <Link href="/auth/login" onClick={() => setIsMenuOpen(false)} className="py-3 text-[14px] text-[#FF9900] font-black border-t mt-4 px-2">Iniciar Sesión</Link>
-                    )}
-                 </div>
-              </ScrollArea>
-           </div>
-        </div>
-      )}
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1">
@@ -189,19 +150,7 @@ export default function Home() {
           <div className="absolute top-10 md:top-20 left-10 md:left-20 z-30 max-w-xl space-y-4 hidden md:block">
              <div className="bg-white/90 backdrop-blur p-10 rounded-none shadow-2xl border-t-8 border-orange-500">
                 <h1 className="text-4xl font-black text-slate-900 leading-tight uppercase tracking-tighter">Lunes de <span className="text-primary">negocios</span></h1>
-                <p className="text-xl font-bold text-slate-600 mt-2">Prepara tu negocio para el calor con herramientas digitales.</p>
-                <div className="flex gap-10 mt-8">
-                   <div>
-                     <p className="text-[10px] font-black text-slate-400 uppercase">Hasta</p>
-                     <p className="text-3xl font-black text-slate-900">20% +</p>
-                     <p className="text-[10px] font-bold text-slate-500">en productos de formación</p>
-                   </div>
-                   <div className="border-l pl-10">
-                     <p className="text-[10px] font-black text-slate-400 uppercase">Hasta</p>
-                     <p className="text-3xl font-black text-slate-900">$2,000</p>
-                     <p className="text-[10px] font-bold text-slate-500">en tu primera compra</p>
-                   </div>
-                </div>
+                <p className="text-xl font-bold text-slate-600 mt-2">Prepara tu negocio con las mejores herramientas digitales reales.</p>
                 <Button asChild className="amazon-btn-primary w-full h-12 mt-10 rounded-md">
                    <Link href="/auth/register">Crea tu cuenta gratis</Link>
                 </Button>
@@ -209,73 +158,33 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CARDS GRID */}
+        {/* CARDS GRID (SOLO PRODUCTOS REALES) */}
         <section className="container mx-auto px-4 -mt-20 md:-mt-64 relative z-40 pb-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* CARD 1 */}
-            <div className="amazon-card">
-              <h3 className="text-xl font-black text-slate-900 leading-tight">Ofertas en tendencia</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className="aspect-square relative bg-slate-50 p-4">
-                     <Image src="https://picsum.photos/seed/p1/200/200" alt="p1" fill className="object-contain p-2" unoptimized />
-                     <Badge className="absolute bottom-1 left-1 bg-[#CC0C39] text-white border-none text-[10px] px-1 py-0 rounded-none">-53% Promoción</Badge>
+          {productsLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
+          ) : !products || products.length === 0 ? (
+            <div className="amazon-card p-20 text-center bg-white/80 backdrop-blur rounded-md">
+               <Package className="h-16 w-16 mx-auto text-slate-300 mb-4" />
+               <h3 className="text-xl font-black text-slate-900 uppercase">Sin productos destacados</h3>
+               <p className="text-slate-500 mt-2">Próximamente verás aquí las mejores ofertas cargadas por administración.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {products.slice(0, 8).map((product) => (
+                <div key={product.id} className="amazon-card group">
+                  <h3 className="text-lg font-black text-slate-900 leading-tight line-clamp-2 min-h-[3rem] uppercase">{product.name}</h3>
+                  <div className="aspect-square relative bg-slate-50 p-4 overflow-hidden mb-4">
+                     <Image src={product.imageUrl || "https://picsum.photos/seed/p/300/300"} alt={product.name} fill className="object-contain p-2 group-hover:scale-105 transition-transform" unoptimized />
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="aspect-square relative bg-slate-50 p-4">
-                     <Image src="https://picsum.photos/seed/p2/200/200" alt="p2" fill className="object-contain p-2" unoptimized />
-                     <Badge className="absolute bottom-1 left-1 bg-[#CC0C39] text-white border-none text-[10px] px-1 py-0 rounded-none">-16% Promoción</Badge>
+                  <div className="space-y-1">
+                    <p className="text-[13px] text-slate-500 font-bold uppercase">{product.category}</p>
+                    <p className="text-xl font-black text-[#B12704]">${product.price?.toFixed(2)}</p>
                   </div>
+                  <Link href={`/checkout/${product.id}`} className="text-[#007185] hover:text-[#C45500] hover:underline text-[13px] font-medium mt-2">Comprar ahora</Link>
                 </div>
-                <div className="aspect-square relative bg-slate-50 p-4">
-                   <Image src="https://picsum.photos/seed/p3/200/200" alt="p3" fill className="object-contain p-2" unoptimized />
-                </div>
-                <div className="aspect-square relative bg-slate-50 p-4">
-                   <Image src="https://picsum.photos/seed/p4/200/200" alt="p4" fill className="object-contain p-2" unoptimized />
-                </div>
-              </div>
-              <Link href="/auth/login" className="text-[#007185] hover:text-[#C45500] hover:underline text-[13px] font-medium mt-2">Ver todo en ofertas</Link>
+              ))}
             </div>
-
-            {/* CARD 2 */}
-            <div className="amazon-card">
-              <h3 className="text-xl font-black text-slate-900 leading-tight">El Lujo de ser Prime</h3>
-              <div className="flex-1 relative aspect-square md:aspect-auto md:h-full bg-blue-600 p-8 flex flex-col justify-center text-white text-center gap-6 overflow-hidden group">
-                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-1000"><Star className="h-32 w-32" /></div>
-                 <h4 className="text-2xl font-black leading-tight">Hasta 15% adicional con bancos participantes</h4>
-                 <div className="space-y-2 pt-4 border-t border-white/20">
-                    <p className="text-2xl font-black tracking-widest italic">BANPRO</p>
-                    <p className="text-2xl font-black tracking-widest italic">LAFISE</p>
-                 </div>
-              </div>
-              <Link href="/auth/register" className="text-[#007185] hover:text-[#C45500] hover:underline text-[13px] font-medium mt-2">Conoce los beneficios</Link>
-            </div>
-
-            {/* CARD 3 */}
-            <div className="amazon-card">
-              <h3 className="text-xl font-black text-slate-900 leading-tight">Todo lo que necesitas en Sync Academy</h3>
-              <div className="flex-1 relative aspect-square overflow-hidden bg-slate-50 flex items-center justify-center p-6">
-                 <div className="h-48 w-48 rounded-full border-[10px] border-primary flex items-center justify-center p-8 bg-white shadow-xl relative overflow-hidden group">
-                    <GradIcon className="h-20 w-20 text-slate-900 group-hover:rotate-12 transition-transform" />
-                    <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
-                 </div>
-              </div>
-              <Link href="/auth/login" className="text-[#007185] hover:text-[#C45500] hover:underline text-[13px] font-medium mt-2">Explorar cursos</Link>
-            </div>
-
-            {/* CARD 4 */}
-            <div className="amazon-card">
-              <h3 className="text-xl font-black text-slate-900 leading-tight">Hasta 50% y 12 MSI en herramientas PRO</h3>
-              <div className="flex-1 relative aspect-square overflow-hidden bg-[#FCD7E5] group">
-                 <Image src="https://picsum.photos/seed/doll/400/400" alt="promo" fill className="object-contain p-8 group-hover:scale-110 transition-transform duration-1000" unoptimized />
-              </div>
-              <p className="text-[12px] text-slate-500 font-bold uppercase mt-2">Software & Hardware</p>
-              <Link href="/auth/login" className="text-[#007185] hover:text-[#C45500] hover:underline text-[13px] font-medium mt-2">Comprar ahora</Link>
-            </div>
-
-          </div>
+          )}
         </section>
       </main>
 
@@ -285,11 +194,10 @@ export default function Home() {
             Inicio de la página
          </button>
 
-         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 max-w-5xl py-10">
+         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12 max-w-4xl py-10">
             <div className="space-y-4">
                <h4 className="font-black text-sm uppercase">Conócenos</h4>
                <ul className="space-y-2 text-[13px] text-[#DDD]">
-                  <li><Link href="#" className="hover:underline">Trabajar en Sync</Link></li>
                   <li><Link href="#" className="hover:underline">Acerca de Sync Connect</Link></li>
                   <li><Link href="#" className="hover:underline">Sostenibilidad</Link></li>
                </ul>
@@ -299,38 +207,22 @@ export default function Home() {
                <ul className="space-y-2 text-[13px] text-[#DDD]">
                   <li><Link href="/auth/register" className="hover:underline">Vender en Sync</Link></li>
                   <li><Link href="#" className="hover:underline">Programa de Afiliados</Link></li>
-                  <li><Link href="#" className="hover:underline">Anuncia tus productos</Link></li>
                </ul>
             </div>
             <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase">Métodos de pago</h4>
+               <h4 className="font-black text-sm uppercase">Ayuda</h4>
                <ul className="space-y-2 text-[13px] text-[#DDD]">
-                  <li><Link href="#" className="hover:underline">Tarjeta de crédito</Link></li>
-                  <li><Link href="#" className="hover:underline">Depósito bancario local</Link></li>
-                  <li><Link href="#" className="hover:underline">Pago contra entrega</Link></li>
-               </ul>
-            </div>
-            <div className="space-y-4">
-               <h4 className="font-black text-sm uppercase">Podemos ayudarte</h4>
-               <ul className="space-y-2 text-[13px] text-[#DDD]">
-                  <li><Link href="#" className="hover:underline">Gestionar mi cuenta</Link></li>
+                  <li><Link href="/auth/login" className="hover:underline">Gestionar mi cuenta</Link></li>
                   <li><Link href="#" className="hover:underline">Tus pedidos</Link></li>
-                  <li><Link href="#" className="hover:underline">Ayuda</Link></li>
                </ul>
             </div>
          </div>
 
          <div className="w-full border-t border-white/10 py-10 flex flex-col items-center gap-6">
-            <div className="h-10 w-24 relative opacity-80 grayscale brightness-200">
-               {displayLogoUrl ? (
-                 <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
-               ) : (
-                 <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-               )}
-            </div>
+            <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
             <p className="text-[12px] text-[#AAA] text-center max-w-lg px-4">
                © 2024 Sync Connect Nicaragua. Todos los derechos reservados. <br/>
-               Inspirado en la excelencia logística y comercial de Amazon.
+               Solo productos 100% verificados por administración.
             </p>
          </div>
       </footer>
