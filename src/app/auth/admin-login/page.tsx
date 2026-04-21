@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
-      <Link href="https://syncacademy.systeme.io/sync-connect" className="mb-10 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
+      <Link href="/" className="mb-10 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
         <span>Salir de Administración</span>
       </Link>

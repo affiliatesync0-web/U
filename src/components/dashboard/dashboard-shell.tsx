@@ -129,8 +129,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const handleLogout = async () => {
     if (!auth) return;
-    await signOut(auth);
-    window.location.href = 'https://syncacademy.systeme.io/sync-connect';
+    try {
+      await signOut(auth);
+      // Redirigir al login interno en lugar de la página externa
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = '/auth/login';
+    }
   }
 
   const getDisplayName = () => {
