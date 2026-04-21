@@ -215,9 +215,9 @@ function AffiliateRegisterContent() {
             
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Número de móvil (WhatsApp)</Label>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 items-stretch">
                 <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                  <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 bg-[#f0f2f2] text-[13px] font-bold">
+                  <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 bg-white text-[13px] font-bold flex shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -226,19 +226,19 @@ function AffiliateRegisterContent() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px]" placeholder="88888888" />
+                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" placeholder="88888888" />
               </div>
             </div>
 
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Correo electrónico</Label>
-              <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px]" />
+              <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
             </div>
             
             {!existingUser && (
               <div className="space-y-1">
                 <Label className="text-[13px] font-bold text-[#111]">Crear una contraseña</Label>
-                <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required placeholder="Al menos 6 caracteres" className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px]" />
+                <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required placeholder="Al menos 6 caracteres" className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
               </div>
             )}
 
@@ -251,7 +251,7 @@ function AffiliateRegisterContent() {
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Documento de Identidad</Label>
               <Select value={kycData.idType} onValueChange={(v) => setKycData({...kycData, idType: v})}>
-                <SelectTrigger className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] bg-white text-[13px]">
+                <SelectTrigger className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] bg-white text-[13px] font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -263,7 +263,7 @@ function AffiliateRegisterContent() {
             </div>
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Número de Documento</Label>
-              <Input value={kycData.idNumber} onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px]" />
+              <Input value={kycData.idNumber} onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
             </div>
             <Button onClick={() => setStep('id_capture')} className="amazon-btn-primary w-full h-8">Siguiente: Validar Identidad</Button>
             <Button variant="ghost" onClick={() => setStep('info')} className="w-full text-[12px] text-[#0066c0] hover:underline">Volver</Button>
@@ -296,11 +296,11 @@ function AffiliateRegisterContent() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label className="text-[13px] font-bold text-[#111]">¿Cómo planeas promocionar los productos?</Label>
-                <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[13px]" placeholder="Ej: Redes sociales, publicidad..." />
+                <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[13px] font-medium" placeholder="Ej: Redes sociales, publicidad..." />
               </div>
               <div className="space-y-1">
                 <Label className="text-[13px] font-bold text-[#111]">¿Cuál es tu experiencia en ventas?</Label>
-                <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[13px]" />
+                <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] min-h-[80px] text-[13px] font-medium" />
               </div>
             </div>
             <Button type="submit" className="amazon-btn-primary w-full h-10" disabled={loading || !capturedSelfie || !capturedID}>

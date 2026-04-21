@@ -139,9 +139,9 @@ export default function AffiliateProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp de Contacto</Label>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 items-stretch">
                     <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                      <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 bg-[#f0f2f2] text-[13px] font-bold">
+                      <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 bg-white text-[13px] font-bold flex shrink-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -176,7 +176,7 @@ export default function AffiliateProfilePage() {
                     value={formData.bankId} 
                     onValueChange={v => setFormData({...formData, bankId: v})}
                   >
-                    <SelectTrigger className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px] bg-white">
+                    <SelectTrigger className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px] bg-white font-medium">
                       <SelectValue placeholder="Selecciona un banco" />
                     </SelectTrigger>
                     <SelectContent>
@@ -194,7 +194,7 @@ export default function AffiliateProfilePage() {
                       placeholder="Ej: 1234567890"
                       value={formData.bankAccountNumber} 
                       onChange={e => setFormData({...formData, bankAccountNumber: e.target.value})}
-                      className="pl-10 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px] font-mono"
+                      className="pl-10 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px] font-mono font-medium"
                     />
                   </div>
                 </div>
