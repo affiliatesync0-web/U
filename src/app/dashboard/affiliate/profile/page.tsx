@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -13,7 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase'
 import { doc } from 'firebase/firestore'
-import { NICA_BANKS } from '@/lib/constants'
+import { NICA_BANKS, COUNTRY_CODES } from '@/lib/constants'
 
 export default function AffiliateProfilePage() {
   const { t } = useLanguage()
@@ -28,6 +27,7 @@ export default function AffiliateProfilePage() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    countryCode: '+505',
     whatsappNumber: '',
     bankId: '',
     bankAccountNumber: '',
@@ -36,10 +36,21 @@ export default function AffiliateProfilePage() {
 
   useEffect(() => {
     if (profile) {
+      // Intentar extraer el código de país si existe
+      let code = '+505';
+      let num = profile.whatsappNumber || '';
+      
+      const foundCode = COUNTRY_CODES.find(c => num.startsWith(c.code.replace('+', '')));
+      if (foundCode) {
+        code = foundCode.code;
+        num = num.replace(foundCode.code.replace('+', ''), '');
+      }
+
       setFormData({
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
-        whatsappNumber: profile.whatsappNumber || '',
+        countryCode: code,
+        whatsappNumber: num,
         bankId: profile.bankId || '',
         bankAccountNumber: profile.bankAccountNumber || '',
         bankAccountHolderName: profile.bankAccountHolderName || ''
@@ -55,6 +66,7 @@ export default function AffiliateProfilePage() {
     try {
       updateDocumentNonBlocking(profileRef, {
         ...formData,
+        whatsappNumber: (formData.countryCode + formData.whatsappNumber).replace(/\D/g, ''),
         updatedAt: new Date().toISOString()
       })
       toast({
@@ -127,13 +139,22 @@ export default function AffiliateProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp de Contacto</Label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <div className="flex gap-2">
+                    <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
+                      <SelectTrigger className="w-[100px] h-12 rounded-xl border-none ring-1 ring-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRY_CODES.map(c => (
+                          <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input 
-                      placeholder="50588888888"
+                      placeholder="88888888"
                       value={formData.whatsappNumber} 
                       onChange={e => setFormData({...formData, whatsappNumber: e.target.value})}
-                      className="pl-10 rounded-xl h-12"
+                      className="rounded-xl h-12 flex-1"
                     />
                   </div>
                 </div>

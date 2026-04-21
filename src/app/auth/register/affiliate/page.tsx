@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense, useRef, useEffect } from 'react'
@@ -20,6 +19,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageToggle } from '@/components/language-toggle'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from '@/lib/utils'
+import { COUNTRY_CODES } from '@/lib/constants'
 
 type Step = 'info' | 'kyc' | 'id_capture' | 'selfie' | 'exam'
 
@@ -43,6 +43,7 @@ function AffiliateRegisterContent() {
     firstName: '',
     lastName: '',
     email: '',
+    countryCode: '+505',
     phone: '',
     password: ''
   })
@@ -53,7 +54,7 @@ function AffiliateRegisterContent() {
       setFormData(prev => ({
         ...prev,
         email: existingUser.email || '',
-        phone: existingUser.phoneNumber || '',
+        phone: existingUser.phoneNumber?.replace(/\D/g, '').slice(-8) || '',
         firstName: existingUser.displayName?.split(' ')[0] || '',
         lastName: existingUser.displayName?.split(' ').slice(1).join(' ') || ''
       }));
@@ -135,7 +136,7 @@ function AffiliateRegisterContent() {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: cleanEmail,
-        whatsappNumber: formData.phone.replace(/\D/g, ''),
+        whatsappNumber: (formData.countryCode + formData.phone).replace(/\D/g, ''),
         photoUrl: capturedSelfie,
         idPhotoUrl: capturedID,
         registeredAt: new Date().toISOString(),
@@ -208,7 +209,19 @@ function AffiliateRegisterContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">WhatsApp</Label>
-                  <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="h-14 rounded-2xl font-bold" />
+                  <div className="flex gap-2">
+                    <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
+                      <SelectTrigger className="w-[120px] h-14 rounded-2xl font-bold border-none ring-1 ring-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRY_CODES.map(c => (
+                          <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input placeholder="88888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="h-14 rounded-2xl font-bold flex-1" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Email</Label>
