@@ -5,18 +5,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, Target, ArrowLeft, ShieldCheck, AlertCircle, FileCheck, Camera, CheckCircle2, RefreshCw, Scan, UserCheck } from 'lucide-react'
+import { Loader2, ArrowLeft, AlertCircle, RefreshCw, Scan, Camera, Triangle, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useUser } from '@/firebase'
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { sendEmail } from '@/lib/email'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { LanguageToggle } from '@/components/language-toggle'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from '@/lib/utils'
 import { COUNTRY_CODES } from '@/lib/constants'
@@ -28,11 +27,11 @@ function AffiliateRegisterContent() {
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
-  const { user: existingUser, isUserLoading } = useUser();
+  const { user: existingUser } = useUser();
   
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<Step>('info')
-  const [errorDetail, setErrorDetail] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
   const [capturedID, setCapturedID] = useState<string | null>(null)
@@ -48,7 +47,6 @@ function AffiliateRegisterContent() {
     password: ''
   })
 
-  // Sincronizar datos si el usuario ya inició sesión con Google/SMS
   useEffect(() => {
     if (existingUser && !formData.email) {
       setFormData(prev => ({
@@ -117,7 +115,7 @@ function AffiliateRegisterContent() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setErrorDetail(null);
+    setErrorMsg(null);
 
     const cleanEmail = formData.email.toLowerCase().trim();
     const cleanPass = formData.password.trim();
@@ -125,7 +123,6 @@ function AffiliateRegisterContent() {
     try {
       let uid = existingUser?.uid;
 
-      // Si no hay usuario autenticado (Google/SMS), creamos uno con Email/Password
       if (!uid) {
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
         uid = userCredential.user.uid;
@@ -152,7 +149,6 @@ function AffiliateRegisterContent() {
         text: `Nuevo embajador registrado.\nEmail: ${formData.email}\nID: ${kycData.idNumber}`
       }).catch(() => {});
 
-      // Forzar cierre de sesión para que el admin lo apruebe antes de que entre
       await signOut(auth);
       toast({ title: "Registro Completado", description: "Tu perfil está en revisión. Te avisaremos pronto." });
       router.push('/auth/login');
@@ -161,243 +157,167 @@ function AffiliateRegisterContent() {
       console.error("Register Error:", err);
       let msg = "Error al crear perfil.";
       if (err.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
-      setErrorDetail(err.code || "Fallo técnico");
-      toast({ variant: "destructive", title: "Error", description: msg });
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4 transition-all duration-500">
-      <div className="fixed top-6 right-6 flex items-center gap-2">
-        <ThemeToggle />
-        <LanguageToggle />
+    <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12 px-4">
+      
+      {/* LOGO */}
+      <div className="mb-4">
+        <Link href="/">
+          <div className="relative h-12 w-32 md:h-14 md:w-36">
+            <span className="text-[#111] font-black text-2xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
+          </div>
+        </Link>
       </div>
 
-      <Link href="/auth/register" className="mb-10 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-black uppercase text-[10px] tracking-widest group">
-        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-        <span>Volver a selección</span>
-      </Link>
+      <Card className="w-full max-w-[450px] border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] bg-white p-6 md:p-8">
+        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Inscripción de Embajador</h1>
 
-      <div className="w-full max-w-2xl">
-        {step === 'info' && (
-          <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in fade-in slide-in-from-bottom-4">
-            <div className="space-y-8">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                  <Target className="h-8 w-8" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">Inscripción de <span className="text-primary">Embajador</span></h2>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">
-                    Iniciando configuración de acceso
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={(e) => { e.preventDefault(); setStep('kyc'); }} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Nombre</Label>
-                    <Input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="h-14 rounded-2xl font-bold" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Apellido</Label>
-                    <Input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="h-14 rounded-2xl font-bold" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">WhatsApp</Label>
-                  <div className="flex gap-2">
-                    <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                      <SelectTrigger className="w-[120px] h-14 rounded-2xl font-bold border border-input bg-background shadow-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COUNTRY_CODES.map(c => (
-                          <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input placeholder="88888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="h-14 rounded-2xl font-bold flex-1" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Email</Label>
-                  <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-14 rounded-2xl font-bold opacity-80" />
-                </div>
-                
-                {!existingUser && (
-                  <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Contraseña</Label>
-                    <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required className="h-14 rounded-2xl font-bold" />
-                  </div>
-                )}
-
-                <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20">
-                  CONTINUAR REGISTRO
-                </Button>
-              </form>
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start">
+            <Triangle className="h-4 w-4 text-[#c40000] fill-[#c40000] mt-1 shrink-0" />
+            <div className="space-y-1">
+              <h4 className="text-[13px] font-bold text-[#c40000]">Hubo un problema</h4>
+              <p className="text-[12px] text-[#111]">{errorMsg}</p>
             </div>
-          </Card>
+          </div>
+        )}
+
+        <div className="mb-6 flex gap-2">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <div key={s} className={cn("h-1 flex-1 rounded-full", 
+              (s === 1 && step === 'info') || 
+              (s === 2 && step === 'kyc') || 
+              (s === 3 && step === 'id_capture') || 
+              (s === 4 && step === 'selfie') || 
+              (s === 5 && step === 'exam') ? "bg-[#FF9900]" : "bg-slate-100")} 
+            />
+          ))}
+        </div>
+
+        {step === 'info' && (
+          <form onSubmit={(e) => { e.preventDefault(); setStep('kyc'); }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-[13px] font-bold text-[#111]">Nombre</Label>
+                <Input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="amazon-input-h8" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[13px] font-bold text-[#111]">Apellido</Label>
+                <Input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="amazon-input-h8" />
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-[13px] font-bold text-[#111]">Número de móvil (WhatsApp)</Label>
+              <div className="flex gap-1">
+                <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
+                  <SelectTrigger className="w-[85px] h-8 border-[#888c8c] rounded-[3px] px-2 py-1 text-[13px] font-bold bg-[#f0f2f2]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_CODES.map(c => (
+                      <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] rounded-[3px] px-2 py-1" placeholder="88888888" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[13px] font-bold text-[#111]">Correo electrónico</Label>
+              <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-8 border-[#888c8c] rounded-[3px] px-2 py-1" />
+            </div>
+            
+            {!existingUser && (
+              <div className="space-y-1">
+                <Label className="text-[13px] font-bold text-[#111]">Crear una contraseña</Label>
+                <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required placeholder="Al menos 6 caracteres" className="h-8 border-[#888c8c] rounded-[3px] px-2 py-1" />
+              </div>
+            )}
+
+            <Button type="submit" className="amazon-btn-primary w-full h-8 mt-4">Continuar</Button>
+          </form>
         )}
 
         {step === 'kyc' && (
-          <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in fade-in slide-in-from-right-4">
-            <div className="space-y-8">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="h-16 w-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
-                  <FileCheck className="h-8 w-8" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">Validación <span className="text-blue-600">de Identidad</span></h2>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">Requerido para el desembolso de comisiones</p>
-                </div>
-              </div>
-
-              <form onSubmit={(e) => { e.preventDefault(); setStep('id_capture'); }} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Documento de Identidad</Label>
-                    <Select value={kycData.idType} onValueChange={(v) => setKycData({...kycData, idType: v})}>
-                      <SelectTrigger className="h-14 rounded-2xl font-bold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cédula de Identidad">Cédula de Identidad (NI)</SelectItem>
-                        <SelectItem value="Pasaporte">Pasaporte</SelectItem>
-                        <SelectItem value="Residencia">Cédula de Residencia</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Número de Documento</Label>
-                    <Input 
-                      placeholder="Ej: 001-000000-0000A" 
-                      value={kycData.idNumber} 
-                      onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} 
-                      required 
-                      className="h-14 rounded-2xl font-bold uppercase" 
-                    />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full h-18 rounded-[1.5rem] bg-blue-600 text-white font-black text-lg shadow-xl shadow-blue-200">
-                  ESCANEAR DOCUMENTO
-                </Button>
-                <Button variant="ghost" className="w-full text-[10px] font-black uppercase" onClick={() => setStep('info')}>Volver</Button>
-              </form>
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <Label className="text-[13px] font-bold text-[#111]">Documento de Identidad</Label>
+              <Select value={kycData.idType} onValueChange={(v) => setKycData({...kycData, idType: v})}>
+                <SelectTrigger className="h-8 border-[#888c8c] rounded-[3px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cédula de Identidad">Cédula de Identidad (NI)</SelectItem>
+                  <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                  <SelectItem value="Residencia">Cédula de Residencia</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </Card>
+            <div className="space-y-1">
+              <Label className="text-[13px] font-bold text-[#111]">Número de Documento</Label>
+              <Input value={kycData.idNumber} onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} required className="h-8 border-[#888c8c] rounded-[3px]" />
+            </div>
+            <Button onClick={() => setStep('id_capture')} className="amazon-btn-primary w-full h-8">Siguiente: Validar Identidad</Button>
+            <Button variant="ghost" onClick={() => setStep('info')} className="w-full text-[12px] text-[#0066c0] hover:underline">Volver</Button>
+          </div>
         )}
 
         {(step === 'id_capture' || step === 'selfie') && (
-          <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in fade-in zoom-in-95">
-            <div className="space-y-8">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center shadow-inner", 
-                  step === 'id_capture' ? "bg-purple-50 text-purple-600" : "bg-orange-50 text-orange-600")}>
-                  {step === 'id_capture' ? <Scan className="h-8 w-8" /> : <Camera className="h-8 w-8" />}
-                </div>
-                <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">
-                    {step === 'id_capture' ? 'Captura de ' : 'Escaneo '}
-                    <span className={step === 'id_capture' ? 'text-purple-600' : 'text-orange-600'}>
-                      {step === 'id_capture' ? 'Documento' : 'Facial'}
-                    </span>
-                  </h2>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">
-                    {step === 'id_capture' ? 'Muestra el frente de tu documento al lente' : 'Coloca tu rostro en el centro del marco'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className={cn(
-                  "relative aspect-video mx-auto overflow-hidden bg-slate-900 ring-8 ring-slate-100 shadow-2xl border-4 border-white transition-all duration-700",
-                  step === 'id_capture' ? "rounded-[2rem]" : "rounded-full aspect-square max-w-[320px]"
-                )}>
-                  <video 
-                    ref={videoRef} 
-                    className={cn("w-full h-full object-cover", (step === 'id_capture' ? capturedID : capturedSelfie) ? "hidden" : "block")} 
-                    autoPlay 
-                    muted 
-                    playsInline
-                  />
-                  {(step === 'id_capture' ? capturedID : capturedSelfie) && (
-                    <img src={step === 'id_capture' ? capturedID! : capturedSelfie!} alt="Captura" className="w-full h-full object-cover animate-in fade-in duration-500" />
-                  )}
-                  
-                  {!(step === 'id_capture' ? capturedID : capturedSelfie) && (
-                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                      <div className={cn("border-2 border-dashed border-white/30 animate-pulse", 
-                        step === 'id_capture' ? "w-4/5 h-3/5 rounded-xl" : "w-4/5 h-4/5 rounded-full"
-                      )} />
-                    </div>
-                  )}
-                </div>
-
-                {hasCameraPermission === false && (
-                  <Alert variant="destructive" className="rounded-2xl">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle className="text-[10px] font-black uppercase">Permiso de Cámara Requerido</AlertTitle>
-                    <AlertDescription className="text-[11px] font-medium">Por favor habilita la cámara en los ajustes del navegador.</AlertDescription>
-                  </Alert>
-                )}
-
-                {!(step === 'id_capture' ? capturedID : capturedSelfie) ? (
-                  <Button 
-                    onClick={() => capturePhoto(step === 'id_capture')} 
-                    disabled={!hasCameraPermission}
-                    className="w-full h-18 rounded-[1.5rem] bg-slate-900 text-white font-black text-lg shadow-xl shadow-slate-200"
-                  >
-                    TOMAR FOTOGRAFÍA
-                  </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <Button variant="outline" onClick={() => step === 'id_capture' ? setCapturedID(null) : setCapturedSelfie(null)} className="h-14 rounded-2xl font-black text-[10px] uppercase gap-2">
-                        <RefreshCw className="h-4 w-4" /> REPETIR
-                      </Button>
-                      <Button 
-                        onClick={() => setStep(step === 'id_capture' ? 'selfie' : 'exam')} 
-                        className="h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase shadow-lg shadow-primary/20"
-                      >
-                        CONTINUAR
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
+          <div className="space-y-6">
+            <h3 className="text-[16px] font-bold text-[#111]">{step === 'id_capture' ? 'Captura tu documento' : 'Captura tu rostro'}</h3>
+            <div className="relative aspect-video bg-slate-900 rounded-md overflow-hidden border border-[#ddd]">
+               <video ref={videoRef} className={cn("w-full h-full object-cover", (step === 'id_capture' ? capturedID : capturedSelfie) ? "hidden" : "block")} autoPlay muted playsInline />
+               {(step === 'id_capture' ? capturedID : capturedSelfie) && (
+                 <img src={step === 'id_capture' ? capturedID! : capturedSelfie!} alt="Captura" className="w-full h-full object-cover" />
+               )}
             </div>
-          </Card>
+
+            {!(step === 'id_capture' ? capturedID : capturedSelfie) ? (
+              <Button onClick={() => capturePhoto(step === 'id_capture')} disabled={!hasCameraPermission} className="amazon-btn-primary w-full h-10">Tomar Foto</Button>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => step === 'id_capture' ? setCapturedID(null) : setCapturedSelfie(null)} className="h-8 border-[#ddd] text-[11px] font-bold">REPETIR</Button>
+                <Button onClick={() => setStep(step === 'id_capture' ? 'selfie' : 'exam')} className="amazon-btn-primary h-8">CONTINUAR</Button>
+              </div>
+            )}
+          </div>
         )}
 
         {step === 'exam' && (
-          <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in fade-in slide-in-from-right-4">
-            <div className="space-y-8">
-              <div className="flex items-center justify-between border-b pb-6">
-                <h2 className="text-2xl font-headline font-black uppercase italic text-primary">Evaluación <span className="text-foreground">Comercial</span></h2>
-                <Button variant="ghost" size="sm" onClick={() => setStep('selfie')} className="text-[10px] font-black uppercase">Volver</Button>
+          <form onSubmit={handleRegister} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label className="text-[13px] font-bold text-[#111]">¿Cómo planeas promocionar los productos?</Label>
+                <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] min-h-[80px]" placeholder="Ej: Redes sociales, publicidad..." />
               </div>
-              <form onSubmit={handleRegister} className="space-y-8">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cómo planeas promocionar los productos?</Label>
-                  <Textarea required value={examData.q1} onChange={e => setExamData({...examData, q1: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 p-5 text-[16px]" placeholder="Ej: Publicidad en TikTok, Reels..." />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-black uppercase text-muted-foreground">¿Cuál es tu experiencia en ventas?</Label>
-                  <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="rounded-2xl min-h-[100px] bg-muted/30 p-5 text-[16px]" placeholder="Dinos qué has vendido antes..." />
-                </div>
-                <Button type="submit" className="w-full h-18 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20" disabled={loading || !capturedSelfie || !capturedID}>
-                  {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "FINALIZAR REGISTRO"}
-                </Button>
-              </form>
+              <div className="space-y-1">
+                <Label className="text-[13px] font-bold text-[#111]">¿Cuál es tu experiencia en ventas?</Label>
+                <Textarea required value={examData.q2} onChange={e => setExamData({...examData, q2: e.target.value})} className="border-[#888c8c] focus:border-[#e77600] min-h-[80px]" />
+              </div>
             </div>
-          </Card>
+            <Button type="submit" className="amazon-btn-primary w-full h-10" disabled={loading || !capturedSelfie || !capturedID}>
+              {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "FINALIZAR REGISTRO"}
+            </Button>
+          </form>
         )}
-      </div>
+      </Card>
+
+      <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
+        <div className="flex justify-center gap-8">
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
+          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Ayuda</Link>
+        </div>
+        <p className="text-[11px] text-[#555]">© 2024, SyncConnect.com, Inc. o sus afiliados</p>
+      </footer>
     </div>
   )
 }
