@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -33,7 +32,7 @@ export default function SiteBuilderPage() {
 
   const handleGenerate = async () => {
     if (!selectedProductId || !user) {
-      toast({ variant: "destructive", title: "Selección requerida", description: "Elige un producto para que la IA trabaje." });
+      toast({ variant: "destructive", title: "Selección requerida", description: "Elige un producto para que Gemini trabaje." });
       return;
     }
 
@@ -42,6 +41,7 @@ export default function SiteBuilderPage() {
 
     setGenerating(true);
     try {
+      // Ahora este flujo utiliza Gemini 1.5 Flash configurado en genkit.ts
       const content = await generateWebsiteContent({
         productName: product.name,
         description: product.description || '',
@@ -58,13 +58,13 @@ export default function SiteBuilderPage() {
         published: true
       });
 
-      toast({ title: "¡Sitio Web Creado!", description: "GPT-4o ha terminado el diseño persuasivo." });
+      toast({ title: "¡Sitio Web Creado!", description: "Gemini ha terminado el diseño persuasivo." });
     } catch (error) {
       console.error("AI Generation Error:", error);
       toast({ 
         variant: "destructive", 
         title: "Error en la IA", 
-        description: "Hubo un problema al conectar con el cerebro de GPT-4o." 
+        description: "Hubo un problema al conectar con el cerebro de Gemini." 
       });
     } finally {
       setGenerating(false);
@@ -93,10 +93,10 @@ export default function SiteBuilderPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <BrainCircuit className="h-5 w-5 text-primary" />
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Powered by GPT-4o</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Powered by Gemini 1.5</span>
             </div>
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">AI <span className="text-primary">Site Builder</span></h1>
-            <p className="text-slate-500 font-medium">Genera landing pages de alta conversión automáticamente.</p>
+            <p className="text-slate-500 font-medium">Genera landing pages de alta conversión automáticamente para cualquier producto del catálogo.</p>
           </div>
         </div>
 
@@ -109,10 +109,10 @@ export default function SiteBuilderPage() {
             </CardHeader>
             <CardContent className="p-10 space-y-8">
               <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Producto a Promocionar</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Producto a Publicitar</Label>
                 <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                   <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-2xl text-white font-bold">
-                    <SelectValue placeholder="Elegir del catálogo..." />
+                    <SelectValue placeholder="Elegir producto del catálogo..." />
                   </SelectTrigger>
                   <SelectContent>
                     {products?.map(p => (
@@ -125,10 +125,10 @@ export default function SiteBuilderPage() {
               <div className="p-6 bg-primary/10 rounded-[2rem] border border-primary/20 space-y-3">
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase">Copywriting de Élite</span>
+                  <span className="text-[10px] font-black uppercase">Copywriting Gemini</span>
                 </div>
                 <p className="text-xs text-slate-300 font-medium leading-relaxed italic">
-                  "Analizaré la ficha técnica y crearé una estructura de venta ganadora en segundos."
+                  "Analizaré la ficha técnica del producto seleccionado y crearé una estructura de venta ganadora en segundos."
                 </p>
               </div>
 
@@ -138,7 +138,7 @@ export default function SiteBuilderPage() {
                 className="w-full h-18 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02]"
               >
                 {generating ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> GPT-4o REDACTANDO...</>
+                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> GEMINI REDACTANDO...</>
                 ) : (
                   <><Layout className="mr-2 h-5 w-5" /> CONSTRUIR MI PÁGINA</>
                 )}

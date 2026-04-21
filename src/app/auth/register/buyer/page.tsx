@@ -142,7 +142,7 @@ function BuyerRegisterContent() {
             <Label className="text-[13px] font-bold text-[#111]">Número de móvil</Label>
             <div className="flex gap-0 items-stretch">
               <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-white text-[13px] font-bold flex shrink-0">
+                <SelectTrigger className="w-[100px] h-8 border-[#888c8c] border-r-0 focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-white text-[13px] font-bold flex shrink-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

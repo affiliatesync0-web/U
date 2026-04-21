@@ -1,11 +1,7 @@
 'use server';
 /**
- * @fileOverview Generador de landing pages impulsado por OpenAI (GPT-4o).
+ * @fileOverview Generador de landing pages impulsado por Gemini 1.5 Flash.
  * Crea estructuras de venta persuasivas basadas en los detalles técnicos de un producto.
- * 
- * - generateWebsiteContent - Función principal que invoca el flujo de IA.
- * - GenerateWebsiteInput - Interfaz de entrada (Producto, descripción, afiliado).
- * - GenerateWebsiteOutput - Estructura de la página generada (Hero, secciones, footer).
  */
 
 import {ai} from '@/ai/genkit';
@@ -71,6 +67,7 @@ const generateWebsiteFlow = ai.defineFlow(
     outputSchema: GenerateWebsiteOutputSchema,
   },
   async input => {
+    // Usamos explícitamente el motor de Gemini para este flujo
     const {output} = await websitePrompt(input);
     return output!;
   }
