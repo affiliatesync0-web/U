@@ -138,7 +138,7 @@ function BuyerRegisterContent() {
               <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">WhatsApp</Label>
               <div className="flex gap-2">
                 <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                  <SelectTrigger className="w-[120px] h-14 rounded-2xl font-bold border-none ring-1 ring-slate-200">
+                  <SelectTrigger className="w-[120px] h-14 rounded-2xl font-bold border border-input bg-background shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

@@ -141,7 +141,7 @@ export default function AffiliateProfilePage() {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp de Contacto</Label>
                   <div className="flex gap-2">
                     <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                      <SelectTrigger className="w-[100px] h-12 rounded-xl border-none ring-1 ring-slate-200">
+                      <SelectTrigger className="w-[100px] h-12 rounded-xl border border-input bg-background shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -154,7 +154,7 @@ export default function AffiliateProfilePage() {
                       placeholder="88888888"
                       value={formData.whatsappNumber} 
                       onChange={e => setFormData({...formData, whatsappNumber: e.target.value})}
-                      className="rounded-xl h-12 flex-1"
+                      className="rounded-xl h-12 flex-1 font-bold"
                     />
                   </div>
                 </div>
