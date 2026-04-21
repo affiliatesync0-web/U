@@ -23,20 +23,27 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
-  let iconUrl = getGoogleDriveDirectLink(defaultLogo?.imageUrl || "");
+  
+  // Imagen de respaldo para asegurar que NUNCA salga la bola negra de Next.js
+  let iconUrl = "https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api";
   
   try {
     const logoSnap = await getDoc(doc(firestore, 'site_config', 'site-logo'));
     if (logoSnap.exists() && logoSnap.data().imageUrl) {
       iconUrl = getGoogleDriveDirectLink(logoSnap.data().imageUrl);
+    } else if (defaultLogo?.imageUrl) {
+      iconUrl = getGoogleDriveDirectLink(defaultLogo.imageUrl);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error("Error cargando metadatos de marca:", e);
+  }
 
   return {
     title: 'Sync Connect | Plataforma Elite de Nicaragua',
     description: 'Sistema profesional de gestión comercial y logística local de alto rendimiento.',
+    metadataBase: new URL('https://syncconnect.ni'),
     icons: {
-      icon: [{ url: iconUrl }],
+      icon: iconUrl,
       shortcut: iconUrl,
       apple: iconUrl,
     },
@@ -50,6 +57,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        {/* Forzamos el favicon aquí también para máxima prioridad */}
+        <link rel="icon" href="https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api" />
+      </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
         <FirebaseClientProvider>
           <ThemeProvider>

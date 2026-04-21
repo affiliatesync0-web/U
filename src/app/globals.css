@@ -58,14 +58,17 @@
   }
 }
 
-/* Eliminación de rastros visuales de Next.js (Bolita negra) */
+/* ELIMINACIÓN DE RASTROS VISUALES EXTERNOS */
 .animate-spin, svg.animate-spin {
   @apply text-primary !important;
   stroke: hsl(var(--primary)) !important;
 }
 
-.animate-spin circle {
-  stroke: hsl(var(--primary)) !important;
+/* Ocultar indicadores de desarrollo automáticos */
+[data-nextjs-toast], 
+[data-nextjs-dialog-overlay],
+#nextjs-portal {
+  display: none !important;
 }
 
 /* Unificación Amazon inputs */

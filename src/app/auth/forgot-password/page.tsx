@@ -4,15 +4,18 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Lock, Mail, Loader2, Send } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { adminGenerateResetLink } from '@/lib/auth-actions'
 import { sendPasswordResetEmailCustom } from '@/lib/email'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/firebase'
+import { sendPasswordResetEmail } from 'firebase/auth'
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast()
+  const auth = useAuth()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -27,19 +30,20 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      // 1. Generar enlace seguro
+      // 1. Intentar generar enlace premium mediante Admin SDK
       const result = await adminGenerateResetLink(cleanEmail);
       
       if (!result.success) {
-        if (result.error === 'USUARIO_NO_EXISTE') {
-          toast({ variant: "destructive", title: "Cuenta no encontrada" });
-        } else {
-          throw new Error(result.error);
-        }
+        // FALLBACK: Si no hay permisos administrativos o claves configuradas, usamos el método estándar
+        console.warn("Usando fallback de recuperación estándar:", result.error);
+        await sendPasswordResetEmail(auth, cleanEmail);
+        toast({ title: "🔑 Enlace Enviado", description: "Revisa tu Gmail. Hemos enviado las instrucciones de acceso." });
+        setEmail('');
+        setLoading(false);
         return;
       }
 
-      // 2. Enviar el correo con origen dinámico para que funcione en localhost y producción
+      // 2. Enviar el correo con plantilla premium si el paso 1 fue exitoso
       const resetOrigin = window.location.origin;
       const emailRes = await sendPasswordResetEmailCustom({
         to: cleanEmail,
@@ -48,22 +52,25 @@ export default function ForgotPasswordPage() {
       });
 
       if (emailRes.success) {
-        toast({ title: "🔑 Enlace Enviado", description: "Revisa tu Gmail. El botón te llevará al cambio de clave." });
+        toast({ title: "🔑 Enlace Premium Enviado", description: "Revisa tu Gmail. El botón dorado te llevará al cambio de clave." });
         setEmail('');
       } else {
-        throw new Error(emailRes.error);
+        // Si el envío premium falla, intentamos el estándar como último recurso
+        await sendPasswordResetEmail(auth, cleanEmail);
+        toast({ title: "🔑 Enlace Enviado", description: "Se ha enviado un enlace de recuperación estándar." });
       }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Fallo en el servidor", description: "No pudimos enviar el correo." });
+      console.error("Forgot Password Error:", error);
+      toast({ variant: "destructive", title: "Error de Conexión", description: "Asegúrate de estar conectado a internet e intenta de nuevo." });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12">
-      <Link href="/auth/login" className="mb-6 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest">
-        <ArrowLeft className="h-4 w-4" />
+    <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12 px-4">
+      <Link href="/auth/login" className="mb-6 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest group">
+        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
         <span>Volver al login</span>
       </Link>
 
@@ -86,12 +93,16 @@ export default function ForgotPasswordPage() {
                 className="amazon-input h-8" 
               />
             </div>
-            <Button type="submit" className="amazon-btn-primary w-full h-8" disabled={loading}>
+            <Button type="submit" className="amazon-btn-primary w-full h-8 flex items-center justify-center gap-2" disabled={loading}>
               {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Continuar"}
             </Button>
           </form>
         </CardContent>
       </Card>
+      
+      <footer className="mt-auto pt-10 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+        Seguridad de Acceso • Sync Connect Nicaragua
+      </footer>
     </div>
   )
 }

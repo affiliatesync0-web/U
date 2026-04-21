@@ -1,4 +1,3 @@
-
 # Sync Connect - Plataforma de Afiliados Elite
 
 Esta es la infraestructura tecnológica de **Sync Connect**, una plataforma optimizada para el mercado de Nicaragua con un diseño premium y funcionalidades de alto rendimiento.
