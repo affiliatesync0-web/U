@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: 'Sync Connect | Plataforma Elite de Nicaragua',
-    description: 'Sistema profesional de gestión comercial y logística local.',
+    description: 'Sistema profesional de gestión comercial y logística local de alto rendimiento.',
     icons: {
       icon: [{ url: iconUrl }],
       shortcut: iconUrl,
@@ -50,7 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="font-body antialiased bg-background text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
+      <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
         <FirebaseClientProvider>
           <ThemeProvider>
             <LanguageProvider>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -13,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS, PRODUCT_TYPES } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Link as LinkIcon, Edit3, AlertCircle, Save, X, Package, Truck } from 'lucide-react'
+import { Plus, Trash2, Search, Loader2, Landmark, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, PlayCircle, Link as LinkIcon, Edit3, AlertCircle, Save, X, Package, Truck, CreditCard } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -22,6 +21,7 @@ import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from '@/components/ui/badge'
 
 interface VideoItem {
   id: string;
@@ -40,11 +40,11 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [imageProgress, setImageProgress] = useState<number | null>(null)
   const [storageError, setStorageError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
   
   const productsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -97,60 +97,39 @@ export default function AdminProductsPage() {
     }
   }, [editingId, products]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, imageUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setImageProgress(0);
     setStorageError(null);
-    setUploadProgress(0);
 
     try {
       const { storage } = initializeFirebase();
-      const storageRef = ref(storage, `product_videos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-      const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
+      const storageRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on('state_changed', 
-        (snapshot) => setUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100), 
-        (error: any) => {
-          setStorageError("Fallo al subir video. Revisa permisos en consola.");
-          setUploadProgress(null);
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setImageProgress(progress);
+        }, 
+        (error) => {
+          console.error("Upload error:", error);
+          setStorageError("Fallo al subir imagen. Verifica las reglas de Storage.");
+          setImageProgress(null);
         }, 
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setNewVideo(prev => ({ ...prev, url: downloadURL }));
-          setUploadProgress(null);
-          toast({ title: "¡Video Cargado!" });
+          setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
+          setImageProgress(null);
+          toast({ title: "Imagen Cargada ✓" });
         }
       );
-    } catch (e) {
+    } catch (err) {
       setStorageError("Error de inicialización de Storage");
-      setUploadProgress(null);
+      setImageProgress(null);
     }
-  };
-
-  const handleAddVideo = () => {
-    if (!newVideo.title || !newVideo.url) {
-      toast({ variant: "destructive", title: "Faltan datos", description: "Pon un título y sube/pega el video." });
-      return;
-    }
-    setVideos([...videos, { 
-      id: Math.random().toString(36).substr(2, 9),
-      title: newVideo.title,
-      url: newVideo.url,
-      type: newVideo.type,
-      isLocal: newVideo.useLocalFile
-    }]);
-    setNewVideo({ title: '', url: '', type: 'content', useLocalFile: false });
   };
 
   const handleAIHelp = async () => {
@@ -204,6 +183,7 @@ export default function AdminProductsPage() {
     setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '' });
     setVideos([]);
     setStorageError(null);
+    setImageProgress(null);
   }
 
   const handleDelete = (id: string) => {
@@ -224,7 +204,7 @@ export default function AdminProductsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Catálogo de <span className="text-primary">Productos</span></h1>
-            <p className="text-slate-500 font-medium mt-2">Gestiona productos digitales y físicos con pagos por link o contra entrega.</p>
+            <p className="text-slate-500 font-medium mt-2">Gestiona productos digitales y físicos con carga directa de archivos.</p>
           </div>
           <div className="flex gap-4">
              <div className="relative w-full md:w-64">
@@ -232,7 +212,7 @@ export default function AdminProductsPage() {
                 <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-10 h-12 rounded-xl bg-white border-none shadow-sm" />
              </div>
              <Button onClick={() => setIsAdding(true)} size="lg" className="h-12 px-6 bg-primary hover:bg-primary/90 rounded-xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest gap-2">
-              <Plus className="h-5 w-5" /> NUEVO
+              <Plus className="h-5 w-5" /> NUEVO PRODUCTO
             </Button>
           </div>
         </div>
@@ -247,7 +227,7 @@ export default function AdminProductsPage() {
                 <div>
                   <DialogTitle className="text-xl md:text-3xl font-headline font-black">{editingId ? 'Editar Producto' : 'Cargar Producto'}</DialogTitle>
                   <DialogDescription className="text-slate-400 font-bold uppercase text-[8px] md:text-[10px] tracking-widest mt-1">
-                    {formData.type === 'Digital' ? 'ENTREGA DIGITAL VÍA EMAIL/PLATAFORMA' : 'ENTREGA FÍSICA PAGO CONTRA ENTREGA'}
+                    CENTRO DE DISTRIBUCIÓN SYNC CONNECT
                   </DialogDescription>
                 </div>
               </div>
@@ -259,6 +239,14 @@ export default function AdminProductsPage() {
             <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 pb-32">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-7 space-y-8">
+                  {storageError && (
+                    <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100">
+                      <AlertCircle className="h-5 w-5" />
+                      <AlertTitle className="font-black uppercase text-xs">Error de Servidor</AlertTitle>
+                      <AlertDescription className="text-xs font-bold mt-2">{storageError}</AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Tipo de Producto</Label>
@@ -300,65 +288,59 @@ export default function AdminProductsPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Miniatura</Label>
+                    <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Miniatura del Producto</Label>
                     <div className="relative h-48 md:h-64 rounded-[2.5rem] bg-slate-50 border-4 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
-                      {formData.imageUrl ? (
+                      {imageProgress !== null ? (
+                        <div className="flex flex-col items-center gap-4">
+                           <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                           <p className="text-[10px] font-black uppercase text-slate-500">Subiendo: {Math.round(imageProgress)}%</p>
+                           <Progress value={imageProgress} className="w-32 h-1.5" />
+                        </div>
+                      ) : formData.imageUrl ? (
                         <img src={formData.imageUrl} className="h-full w-full object-cover" alt="preview" />
                       ) : (
                         <ImageIcon className="h-12 w-12 text-slate-200" />
                       )}
-                      <Button variant="secondary" size="sm" className="absolute bottom-4 right-4 shadow-2xl rounded-xl font-black text-[10px] uppercase h-10" onClick={() => fileInputRef.current?.click()}>CAMBIAR</Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="absolute bottom-4 right-4 shadow-2xl rounded-xl font-black text-[10px] uppercase h-10 gap-2" 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={imageProgress !== null}
+                      >
+                        <Upload className="h-3.5 w-3.5" /> {formData.imageUrl ? 'CAMBIAR' : 'SUBIR IMAGEN'}
+                      </Button>
                     </div>
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                   </div>
 
                   <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white space-y-6">
                     <div className="flex items-center gap-3">
                       <Sparkles className="h-5 w-5 text-primary" />
-                      <h3 className="text-sm font-headline font-black uppercase">Descripción IA</h3>
+                      <h3 className="text-sm font-headline font-black uppercase">Copywriting IA</h3>
                     </div>
                     <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="Características clave..." className="bg-white/5 border-none h-12 text-white" />
                     <Button onClick={handleAIHelp} variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary hover:text-white font-black text-[10px] uppercase" disabled={generating}>
                       {generating ? "ESCRIBIENDO..." : "REDACTAR CON IA"}
                     </Button>
-                    <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[150px] rounded-2xl bg-white/5 border-none p-6" placeholder="Oferta irresistible..." />
+                    <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[150px] rounded-2xl bg-white/5 border-none p-6 text-sm leading-relaxed" placeholder="Oferta irresistible..." />
                   </div>
                 </div>
 
                 <div className="lg:col-span-5 space-y-10">
-                  {formData.type === 'Digital' && (
-                    <div className="p-8 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-6">
-                      <div className="flex items-center gap-3">
-                        <Video className="h-5 w-5 text-primary" />
-                        <h3 className="text-xs font-black text-primary uppercase">Contenido Digital (Videos/PDF)</h3>
-                      </div>
-                      <div className="space-y-4">
-                        <Input value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} placeholder="Título de la clase..." className="h-12 bg-white" />
-                        <Input value={newVideo.url} onChange={e => setNewVideo({...newVideo, url: e.target.value})} placeholder="Link del video o archivo..." className="h-12 bg-white" />
-                        <Button onClick={handleAddVideo} className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase">AÑADIR RECURSO</Button>
-                      </div>
-                      <div className="space-y-2">
-                        {videos.map((v, i) => (
-                          <div key={v.id} className="flex items-center justify-between p-3 bg-white border rounded-xl shadow-sm">
-                            <span className="text-[10px] font-black text-slate-700 truncate">{i+1}. {v.title}</span>
-                            <Button size="icon" variant="ghost" className="h-6 w-6 text-red-400" onClick={() => setVideos(videos.filter(vi => vi.id !== v.id))}><Trash2 className="h-3 w-3" /></Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   <div className="p-8 bg-slate-50 rounded-[2.5rem] border space-y-6">
                     <div className="flex items-center gap-3">
                       {formData.type === 'Digital' ? <CreditCard className="h-5 w-5 text-slate-400" /> : <Truck className="h-5 w-5 text-slate-400" />}
-                      <h3 className="text-xs font-black text-slate-800 uppercase">Configuración de Pago</h3>
+                      <h3 className="text-xs font-black text-slate-800 uppercase">Configuración de Logística</h3>
                     </div>
                     
                     {formData.type === 'Físico' ? (
-                      <Alert className="bg-green-50 border-green-200 rounded-2xl">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase text-green-900">Pago Contra Entrega Activo</AlertTitle>
-                        <AlertDescription className="text-[11px] font-medium text-green-700">El cliente recibirá su pedido y pagará en efectivo al repartidor. Ideal para envíos locales en Nicaragua.</AlertDescription>
+                      <Alert className="bg-blue-50 border-blue-200 rounded-2xl p-6">
+                        <Truck className="h-5 w-5 text-blue-600" />
+                        <AlertTitle className="text-[10px] font-black uppercase text-blue-900 ml-2">Modo: Pago Contra Entrega</AlertTitle>
+                        <AlertDescription className="text-[11px] font-medium text-blue-700 leading-relaxed mt-2">
+                          El cliente verá el estado <strong>"PENDIENTE DE LLEGAR"</strong> en su panel. Deberás coordinar el envío local en Nicaragua y cobrar en efectivo al entregar.
+                        </AlertDescription>
                       </Alert>
                     ) : (
                       <div className="space-y-4">
@@ -384,8 +366,8 @@ export default function AdminProductsPage() {
 
             <div className="p-4 md:p-8 border-t bg-white/90 backdrop-blur-md flex flex-col md:flex-row gap-3 absolute bottom-0 left-0 right-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
               <Button variant="ghost" onClick={closeDialog} className="order-2 md:order-1 flex-1 h-14 md:h-16 rounded-2xl font-black text-[10px] md:text-xs uppercase text-slate-400">CANCELAR</Button>
-              <Button className="order-1 md:order-2 flex-[2] h-14 md:h-16 rounded-2xl bg-slate-900 text-white font-black text-[10px] md:text-xs uppercase shadow-2xl" onClick={handleSave}>
-                <Save className="h-5 w-5 text-primary" /> {editingId ? 'ACTUALIZAR' : 'PUBLICAR'}
+              <Button className="order-1 md:order-2 flex-[2] h-14 md:h-16 rounded-2xl bg-slate-900 text-white font-black text-[10px] md:text-xs uppercase shadow-2xl gap-2" onClick={handleSave} disabled={imageProgress !== null}>
+                <Save className="h-5 w-5 text-primary" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICAR PRODUCTO'}
               </Button>
             </div>
           </DialogContent>
@@ -413,7 +395,11 @@ export default function AdminProductsPage() {
                         <TableCell className="px-6 md:px-10">
                           <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-slate-100 overflow-hidden shrink-0 border">
-                              {p.imageUrl && <img src={p.imageUrl} className="h-full w-full object-cover" alt="thumb" />}
+                              {p.imageUrl ? (
+                                <img src={p.imageUrl} className="h-full w-full object-cover" alt="thumb" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center bg-slate-50 text-slate-300"><ImageIcon className="h-4 w-4" /></div>
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="font-black text-slate-800 uppercase text-xs truncate max-w-[200px]">{p.name}</p>
