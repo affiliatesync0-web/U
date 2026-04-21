@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -54,7 +53,7 @@ export default function AdminBuyersPage() {
   const handleDeleteBuyer = (buyerId: string) => {
     const buyerRef = doc(db, 'buyers', buyerId);
     deleteDocumentNonBlocking(buyerRef);
-    toast({ title: "Comprador eliminado", description: "El registro ha sido borrado permanentemente." });
+    toast({ title: "Registro eliminado", description: "El cliente ha sido borrado permanentemente." });
   };
 
   if (!mounted) return null;
@@ -71,7 +70,7 @@ export default function AdminBuyersPage() {
               <span className="text-[10px] font-black text-green-600 uppercase tracking-[0.3em]">Gestión de Clientes</span>
             </div>
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Base de <span className="text-primary">Compradores</span></h1>
-            <p className="text-slate-500 font-medium">Visualiza y gestiona a todos los alumnos y clientes de la red.</p>
+            <p className="text-slate-500 font-medium">Visualiza y gestiona a todos los clientes de la red.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
@@ -101,7 +100,7 @@ export default function AdminBuyersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 h-20 hover:bg-slate-50/50">
-                        <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Cliente / Alumno</TableHead>
+                        <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Cliente / Comprador</TableHead>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Correo Electrónico</TableHead>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Fecha Registro</TableHead>
                         <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
@@ -141,7 +140,7 @@ export default function AdminBuyersPage() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle className="text-2xl md:text-3xl font-headline font-black text-slate-900 tracking-tight">¿Eliminar Comprador?</AlertDialogTitle>
                                     <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
-                                      Esta acción eliminará permanentemente al cliente. Perderá el acceso a sus cursos adquiridos.
+                                      Esta acción eliminará permanentemente al cliente de la base de datos.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="mt-8 gap-3 flex-col sm:flex-row">
@@ -203,7 +202,7 @@ export default function AdminBuyersPage() {
                       <AlertDialogContent className="rounded-[2rem] w-[90vw] p-8">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-xl font-black uppercase">¿Confirmar borrado?</AlertDialogTitle>
-                          <AlertDialogDescription className="text-xs font-medium">Se perderán todos los accesos del cliente.</AlertDialogDescription>
+                          <AlertDialogDescription className="text-xs font-medium">Se perderán todos los datos del cliente.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="mt-6 flex-col gap-2">
                           <AlertDialogCancel className="h-12 rounded-xl">Cerrar</AlertDialogCancel>

@@ -58,7 +58,7 @@ export default function BuyerDashboard() {
               Mis Pedidos
             </Badge>
             <h1 className="text-4xl md:text-6xl font-headline font-black text-slate-900 tracking-tighter leading-none uppercase italic">
-              {t.welcomeBack}, <span className="text-primary">{profile?.firstName || 'Campeón'}</span>
+              {t.welcomeBack}, <span className="text-primary">{profile?.firstName || 'Comprador'}</span>
             </h1>
             <p className="text-slate-500 font-medium text-lg">Monitorea tus pedidos digitales y rastrea tus paquetes físicos.</p>
           </div>

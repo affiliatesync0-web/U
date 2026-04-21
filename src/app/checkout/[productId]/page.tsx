@@ -149,12 +149,12 @@ function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           <div className="lg:col-span-8 space-y-6">
-            {/* DIRECCIÓN DE ENVÍO (SOLO FÍSICOS) */}
+            {/* DIRECCIÓN DE ENVÍO O DATOS DE CLIENTE */}
             <Card className="premium-card">
               <CardHeader className="border-b bg-slate-50/50">
                 <CardTitle className="text-lg font-black flex items-center gap-3">
                   <span className="h-6 w-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">1</span>
-                  {isPhysical ? 'Dirección de envío' : 'Datos del Alumno'}
+                  {isPhysical ? 'Dirección de envío' : 'Datos del Cliente'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">

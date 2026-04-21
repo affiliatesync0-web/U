@@ -1,10 +1,9 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Loader2, ShoppingBag, Landmark, Eye, CheckCircle2, Phone, User, Calendar } from 'lucide-react'
+import { Search, Loader2, ShoppingBag, Landmark, Eye, CheckCircle2, Phone, User, Calendar, MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
   Table,
@@ -65,7 +64,7 @@ export default function AdminSalesPage() {
 
     toast({ 
       title: "Pago Validado Correctamente", 
-      description: "Acceso habilitado para el alumno y comisión sumada al socio." 
+      description: "Acceso habilitado para el cliente y comisión sumada al socio." 
     });
   };
 
@@ -79,7 +78,7 @@ export default function AdminSalesPage() {
               <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Auditoría de Transacciones</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-headline font-bold text-slate-900 tracking-tight leading-none uppercase italic">Registro de <span className="text-primary">Ventas</span></h1>
-            <p className="text-sm md:text-base text-slate-500 font-medium mt-2">Valida los depósitos bancarios para habilitar accesos y pagar comisiones.</p>
+            <p className="text-sm md:text-base text-slate-500 font-medium mt-2">Valida los depósitos bancarios para habilitar entregas y pagar comisiones.</p>
           </div>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -113,7 +112,7 @@ export default function AdminSalesPage() {
                       <TableRow className="bg-slate-50/50 h-20">
                         <TableHead className="px-8 h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Comprobante (Voucher)</TableHead>
                         <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Fecha</TableHead>
-                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Producto Digital</TableHead>
+                        <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Producto</TableHead>
                         <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Comprador</TableHead>
                         <TableHead className="h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Estatus</TableHead>
                         <TableHead className="px-8 text-right h-20 uppercase text-[10px] font-black tracking-widest text-slate-400">Acción Maestra</TableHead>
@@ -129,7 +128,7 @@ export default function AdminSalesPage() {
                             {sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}
                           </TableCell>
                           <TableCell>
-                            <div className="font-black text-slate-800 text-xs uppercase truncate max-w-[150px]">{sale.productName || 'Curso Academy'}</div>
+                            <div className="font-black text-slate-800 text-xs uppercase truncate max-w-[150px]">{sale.productName || 'Producto Sync'}</div>
                           </TableCell>
                           <TableCell>
                             <div className="text-[11px] font-black text-slate-700 uppercase">{sale.buyerName}</div>
@@ -231,7 +230,7 @@ function SaleDetailsDialog({ sale, isMobile }: { sale: any, isMobile?: boolean }
                <User className="h-5 w-5 text-slate-400" />
              </div>
              <div className="min-w-0 flex-1">
-               <p className="text-[9px] font-black text-slate-400 uppercase">Alumno / Comprador</p>
+               <p className="text-[9px] font-black text-slate-400 uppercase">Comprador / Cliente</p>
                <p className="text-xs font-black text-slate-800 uppercase truncate">{sale.buyerName}</p>
              </div>
           </div>
@@ -257,5 +256,3 @@ function SaleDetailsDialog({ sale, isMobile }: { sale: any, isMobile?: boolean }
     </Dialog>
   )
 }
-
-import { MessageCircle } from 'lucide-react'
