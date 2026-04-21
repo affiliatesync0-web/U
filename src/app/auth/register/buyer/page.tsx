@@ -162,7 +162,7 @@ function BuyerRegisterContent() {
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[13px] font-bold text-[#111]">Correo electrónico</Label>
+            <Label className="text-[13px] font-bold text-[#111]">Dirección de e-mail</Label>
             <Input 
               type="email" 
               value={formData.email} 
@@ -203,7 +203,7 @@ function BuyerRegisterContent() {
           </p>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-[#eee] space-y-4">
+        <div className="mt-6 pt-6 border-t border-[#eee] space-y-4 text-center">
            <p className="text-[13px] text-[#111]">
             ¿Ya tienes una cuenta? <Link href="/auth/login" className="text-[#0066c0] hover:underline hover:text-[#c45500] font-medium">Iniciar sesión <ChevronRight className="inline h-3 w-3" /></Link>
           </p>

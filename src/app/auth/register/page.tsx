@@ -58,7 +58,7 @@ function RegisterSelectionContent() {
                 <Target className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-[14px] font-bold text-[#111]">Quiero vender</h3>
+                <h3 className="text-[14px] font-bold text-[#111]">Quiero ser Embajador</h3>
                 <p className="text-[11px] text-[#555]">Generar comisiones reales</p>
               </div>
             </div>
@@ -66,7 +66,7 @@ function RegisterSelectionContent() {
           </Link>
         </div>
 
-        <div className="pt-6 border-t border-[#eee]">
+        <div className="pt-6 border-t border-[#eee] text-center">
           <p className="text-[12px] text-[#111]">
             ¿Ya tienes una cuenta? <Link href="/auth/login" className="text-[#0066c0] hover:text-[#c45500] hover:underline font-bold">Iniciar sesión <ChevronRight className="inline h-3 w-3" /></Link>
           </p>

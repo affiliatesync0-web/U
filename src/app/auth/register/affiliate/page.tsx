@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense, useRef, useEffect } from 'react'
@@ -177,7 +176,7 @@ function AffiliateRegisterContent() {
       </div>
 
       <Card className="w-full max-w-[450px] border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] bg-white p-6 md:p-8">
-        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Inscripción de Embajador</h1>
+        <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Crear cuenta de Embajador</h1>
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start">
@@ -203,19 +202,17 @@ function AffiliateRegisterContent() {
 
         {step === 'info' && (
           <form onSubmit={(e) => { e.preventDefault(); setStep('kyc'); }} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-[13px] font-bold text-[#111]">Nombre</Label>
-                <Input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[13px] font-bold text-[#111]">Apellido</Label>
-                <Input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
-              </div>
+            <div className="space-y-1">
+              <Label className="text-[13px] font-bold text-[#111]">Tu nombre</Label>
+              <Input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[13px] font-bold text-[#111]">Apellido</Label>
+              <Input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
             </div>
             
             <div className="space-y-1">
-              <Label className="text-[13px] font-bold text-[#111]">Número de móvil (WhatsApp)</Label>
+              <Label className="text-[13px] font-bold text-[#111]">Número de móvil</Label>
               <div className="flex gap-0 items-stretch">
                 <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
                   <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-white text-[13px] font-bold flex shrink-0">
@@ -227,18 +224,18 @@ function AffiliateRegisterContent() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-l-none px-2 py-1 text-[13px] font-medium" placeholder="88888888" />
+                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-l-none px-2 py-1 text-[13px] font-medium" placeholder="Número de móvil" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[13px] font-bold text-[#111]">Correo electrónico</Label>
+              <Label className="text-[13px] font-bold text-[#111]">Dirección de e-mail</Label>
               <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
             </div>
             
             {!existingUser && (
               <div className="space-y-1">
-                <Label className="text-[13px] font-bold text-[#111]">Crear una contraseña</Label>
+                <Label className="text-[13px] font-bold text-[#111]">Contraseña</Label>
                 <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required placeholder="Al menos 6 caracteres" className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
               </div>
             )}
@@ -285,7 +282,7 @@ function AffiliateRegisterContent() {
               <Button onClick={() => capturePhoto(step === 'id_capture')} disabled={!hasCameraPermission} className="amazon-btn-primary w-full h-10">Tomar Foto</Button>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={() => step === 'id_capture' ? setCapturedID(null) : setCapturedSelfie(null)} className="h-8 border-[#ddd] text-[11px] font-bold">REPETIR</Button>
+                <Button variant="outline" onClick={() => step === 'id_capture' ? setCapturedID(null) : setCapturedSelfie(null)} className="h-8 border-[#ddd] text-[11px] font-bold rounded-[3px]">REPETIR</Button>
                 <Button onClick={() => setStep(step === 'id_capture' ? 'selfie' : 'exam')} className="amazon-btn-primary h-8">CONTINUAR</Button>
               </div>
             )}
@@ -309,6 +306,12 @@ function AffiliateRegisterContent() {
             </Button>
           </form>
         )}
+        
+        <div className="mt-6 pt-6 border-t border-[#eee] text-center">
+           <p className="text-[13px] text-[#111]">
+            ¿Ya tienes una cuenta? <Link href="/auth/login" className="text-[#0066c0] hover:underline hover:text-[#c45500] font-medium">Iniciar sesión <ChevronRight className="inline h-3 w-3" /></Link>
+          </p>
+        </div>
       </Card>
 
       <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
