@@ -4,7 +4,7 @@ import {openAI} from 'genkitx-openai';
 
 /**
  * Configuración maestra de Genkit compatible con v1.x.
- * Se utilizan las variables de entorno estándar para las claves de API:
+ * Los plugins se inicializan utilizando las variables de entorno estándar:
  * - GOOGLE_GENAI_API_KEY (para Gemini)
  * - OPENAI_API_KEY (para GPT-4o)
  */
