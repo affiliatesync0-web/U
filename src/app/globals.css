@@ -58,12 +58,17 @@
   }
 }
 
-/* Sync Connect Global Branding Overrides */
-.animate-spin {
+/* Eliminación de rastros visuales de Next.js (Bolita negra) */
+.animate-spin, svg.animate-spin {
   @apply text-primary !important;
+  stroke: hsl(var(--primary)) !important;
 }
 
-/* Unificación Amazon inputs simétricos */
+.animate-spin circle {
+  stroke: hsl(var(--primary)) !important;
+}
+
+/* Unificación Amazon inputs */
 .amazon-input {
   @apply h-10 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-3 py-1 text-[13px] font-medium transition-all;
 }
@@ -72,21 +77,11 @@
   @apply bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-black font-normal py-2 px-4 rounded-[3px] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] active:scale-[0.98] transition-all;
 }
 
-/* Estabilización de loading corporativo */
-.loading-overlay {
-  @apply fixed inset-0 bg-white/80 backdrop-blur-sm z-[9999] flex items-center justify-center;
-}
-
-/* Reemplazo de bolitas negras de Next.js por color Sync Gold */
-svg.animate-spin, .animate-spin circle {
-  @apply stroke-primary !important;
-}
-
 .premium-card {
   @apply bg-white shadow-xl rounded-[3rem] border-none ring-1 ring-slate-100 overflow-hidden;
 }
 
-/* Hide scrollbars for clean Look */
+/* Hide scrollbars */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
