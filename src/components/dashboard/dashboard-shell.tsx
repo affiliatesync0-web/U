@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -178,7 +179,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "AI Site Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
-    { title: "Copiloto IA", url: "/dashboard/affiliate/sales-copilot", icon: Sparkles },
     { title: t.registerSale, url: "/dashboard/affiliate/register-sale", icon: BadgeDollarSign },
     { title: t.myCustomers, url: "/dashboard/affiliate/buyers", icon: Users2 },
     { title: "Billetera", url: "/dashboard/affiliate/profile", icon: UserCircle },

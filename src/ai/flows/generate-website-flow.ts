@@ -1,7 +1,11 @@
 'use server';
 /**
- * @fileOverview Un generador de landing pages impulsado por Inteligencia Artificial (GPT/Gemini).
+ * @fileOverview Generador de landing pages impulsado por OpenAI (GPT-4o).
  * Crea estructuras de venta persuasivas basadas en los detalles técnicos de un producto.
+ * 
+ * - generateWebsiteContent - Función principal que invoca el flujo de IA.
+ * - GenerateWebsiteInput - Interfaz de entrada (Producto, descripción, afiliado).
+ * - GenerateWebsiteOutput - Estructura de la página generada (Hero, secciones, footer).
  */
 
 import {ai} from '@/ai/genkit';
@@ -38,26 +42,26 @@ const websitePrompt = ai.definePrompt({
   name: 'generateWebsitePrompt',
   input: {schema: GenerateWebsiteInputSchema},
   output: {schema: GenerateWebsiteOutputSchema},
-  prompt: `Eres un experto en Copywriting, Neuromarketing y Psicología de Ventas. Tu misión es utilizar tu "motor GPT" para crear el contenido de una Landing Page ganadora.
+  prompt: `Eres un experto en Copywriting, Neuromarketing y Psicología de Ventas de clase mundial. Tu misión es crear el contenido de una Landing Page ganadora utilizando el motor GPT-4o.
 
 PRODUCTO: {{{productName}}}
 CONTEXTO TÉCNICO: {{{description}}}
 EMBAJADOR: {{{affiliateName}}}
 
-ESTRUCTURA REQUERIDA:
+ESTRUCTURA REQUERIDA (Usa el modelo AIDA: Atención, Interés, Deseo, Acción):
 1. Headline (H1): Usa la fórmula "Beneficio + Tiempo" o "Deseo + Curiosidad". Evita frases genéricas.
 2. Subheadline (H2): Debe responder a "¿Qué gano yo?" de forma emocional.
 3. Secciones:
-   - Beneficios Irresistibles: No hables de características, habla de resultados.
-   - ¿Para quién es esto?: Identifica el "dolor" del cliente ideal.
-   - El Factor Sync: Por qué este producto es diferente a la competencia.
+   - Beneficios Irresistibles: No hables de características, habla de resultados y transformaciones.
+   - ¿Para quién es esto?: Identifica el "dolor" del cliente ideal y cómo este producto lo soluciona.
+   - El Factor Sync: Por qué este producto es la elección inteligente frente a la competencia.
 
 INSTRUCCIONES DE TONO:
-- Español Latino neutro.
-- Directo, sin rellenos.
-- Enfocado 100% en la CONVERSIÓN.
+- Español Latino persuasivo y profesional.
+- Directo, eliminando palabras de relleno.
+- Enfocado 100% en la CONVERSIÓN de ventas.
 
-IMPORTANTE: Los textos deben ser listos para publicar. No uses placeholders.`,
+IMPORTANTE: Los textos deben estar listos para publicar. No uses corchetes ni placeholders.`,
 });
 
 const generateWebsiteFlow = ai.defineFlow(
@@ -67,6 +71,7 @@ const generateWebsiteFlow = ai.defineFlow(
     outputSchema: GenerateWebsiteOutputSchema,
   },
   async input => {
+    // El flujo utiliza el modelo configurado por defecto (openai/gpt-4o)
     const {output} = await websitePrompt(input);
     return output!;
   }
