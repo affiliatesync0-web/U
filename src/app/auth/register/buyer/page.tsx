@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense } from 'react'
@@ -193,7 +192,7 @@ function BuyerRegisterContent() {
 
           <Button 
             type="submit"
-            className="w-full bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-[#111] font-normal text-[13px] h-8 rounded-[3px] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] transition-all mt-4" 
+            className="amazon-btn-primary w-full h-8 mt-4" 
             disabled={loading}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crea tu cuenta de Sync"}
@@ -204,7 +203,7 @@ function BuyerRegisterContent() {
           </p>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-[#eee] space-y-4 text-center">
+        <div className="mt-6 pt-6 border-t border-[#eee] text-center">
            <p className="text-[13px] text-[#111]">
             ¿Ya tienes una cuenta? <Link href="/auth/login" className="text-[#0066c0] hover:underline hover:text-[#c45500] font-medium">Iniciar sesión <ChevronRight className="inline h-3 w-3" /></Link>
           </p>

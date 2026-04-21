@@ -179,7 +179,7 @@ function AffiliateRegisterContent() {
         <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Crear cuenta de Embajador</h1>
 
         {errorMsg && (
-          <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start">
+          <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start animate-in fade-in">
             <Triangle className="h-4 w-4 text-[#c40000] fill-[#c40000] mt-1 shrink-0" />
             <div className="space-y-1">
               <h4 className="text-[13px] font-bold text-[#c40000]">Hubo un problema</h4>
