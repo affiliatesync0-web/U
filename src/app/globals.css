@@ -72,9 +72,14 @@
   @apply bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-black font-normal py-2 px-4 rounded-[3px] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] active:scale-[0.98] transition-all;
 }
 
-/* Estabilización de loading (No más bolita negra) */
+/* Estabilización de loading corporativo */
 .loading-overlay {
   @apply fixed inset-0 bg-white/80 backdrop-blur-sm z-[9999] flex items-center justify-center;
+}
+
+/* Reemplazo de bolitas negras de Next.js por color Sync Gold */
+svg.animate-spin, .animate-spin circle {
+  @apply stroke-primary !important;
 }
 
 .premium-card {

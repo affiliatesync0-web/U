@@ -104,27 +104,43 @@ export async function sendEmail({ to, subject, text, html, title }: { to: string
 }
 
 /**
- * Envía el correo de recuperación de contraseña.
+ * Envía el correo de recuperación de contraseña con diseño premium y botón funcional.
  */
 export async function sendPasswordResetEmailCustom({ to, oobCode }: { to: string, oobCode: string }) {
   const resetLink = `https://affiliatesync.vercel.app/auth/reset-password?oobCode=${oobCode}`;
   
   const content = `
-    <p>Has solicitado restablecer tu contraseña en la plataforma Sync Connect. Si no fuiste tú, puedes ignorar este mensaje de seguridad.</p>
-    <div style="text-align: center; margin: 40px 0;">
-      <a href="${resetLink}" style="display: inline-block; background-color: #ff9900; color: #000000; padding: 20px 40px; border-radius: 16px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; box-shadow: 0 10px 30px rgba(255,153,0,0.3);">
-        Establecer Nueva Contraseña
-      </a>
+    <div style="margin-bottom: 30px;">
+      <p style="font-size: 16px; color: #475569; margin-bottom: 25px;">
+        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect Nicaragua</strong>. 
+        Para garantizar la seguridad de tu perfil, hemos generado un enlace de un solo uso.
+      </p>
+      
+      <div style="text-align: center; margin: 45px 0;">
+        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #ff9900 0%, #f3a847 100%); color: #000000; padding: 22px 45px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 15px; text-transform: uppercase; box-shadow: 0 15px 35px rgba(255,153,0,0.3); border: 1px solid rgba(0,0,0,0.05);">
+          Establecer Nueva Contraseña
+        </a>
+      </div>
+
+      <p style="font-size: 14px; color: #64748b; background-color: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #ff9900;">
+        <strong>Nota de Seguridad:</strong> Este botón es válido por 60 minutos. Si no has solicitado este cambio, por favor ignora este correo de inmediato.
+      </p>
     </div>
-    <p style="font-size: 12px; color: #94a3b8; font-weight: 500;">Este enlace expirará en 1 hora por razones de seguridad.</p>
+    
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+      <p style="font-size: 11px; color: #94a3b8; text-align: center; line-height: 1.5;">
+        Si el botón de arriba no funciona, copia y pega este enlace en tu navegador:<br>
+        <span style="color: #3b82f6; word-break: break-all;">${resetLink}</span>
+      </p>
+    </div>
   `;
 
   return await sendEmail({
     to,
-    subject: '🔑 Recuperación de Acceso - Sync Connect',
-    text: `Restablece tu clave aquí: ${resetLink}`,
-    html: getEmailWrapper(content, "Recuperar Contraseña"),
-    title: "Seguridad de Cuenta"
+    subject: '🔐 Acción Requerida: Restablecer Contraseña',
+    text: `Usa este enlace para cambiar tu contraseña: ${resetLink}`,
+    html: getEmailWrapper(content, "Recuperación de Acceso"),
+    title: "Seguridad Sync Connect"
   });
 }
 
