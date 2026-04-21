@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -139,9 +140,9 @@ export default function AffiliateProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp de Contacto</Label>
-                  <div className="flex gap-1.5 items-stretch">
+                  <div className="flex gap-0 items-stretch">
                     <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                      <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 bg-white text-[13px] font-bold flex shrink-0">
+                      <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-white text-[13px] font-bold flex shrink-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -154,7 +155,7 @@ export default function AffiliateProfilePage() {
                       placeholder="88888888"
                       value={formData.whatsappNumber} 
                       onChange={e => setFormData({...formData, whatsappNumber: e.target.value})}
-                      className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium"
+                      className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-l-none px-2 py-1 text-[13px] font-medium"
                     />
                   </div>
                 </div>
