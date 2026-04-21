@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generador de landing pages impulsado por OpenAI (GPT-4o).
