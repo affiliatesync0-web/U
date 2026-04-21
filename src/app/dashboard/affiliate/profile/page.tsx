@@ -119,7 +119,7 @@ export default function AffiliateProfilePage() {
                     <Input 
                       value={formData.firstName} 
                       onChange={e => setFormData({...formData, firstName: e.target.value})}
-                      className="rounded-xl h-12"
+                      className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium"
                     />
                   </div>
                   <div className="space-y-2">
@@ -127,7 +127,7 @@ export default function AffiliateProfilePage() {
                     <Input 
                       value={formData.lastName} 
                       onChange={e => setFormData({...formData, lastName: e.target.value})}
-                      className="rounded-xl h-12"
+                      className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium"
                     />
                   </div>
                 </div>
@@ -139,9 +139,9 @@ export default function AffiliateProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp de Contacto</Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                      <SelectTrigger className="w-[100px] h-12 rounded-xl border border-input bg-background shadow-sm">
+                      <SelectTrigger className="w-[100px] h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 bg-[#f0f2f2] text-[13px] font-bold">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -154,7 +154,7 @@ export default function AffiliateProfilePage() {
                       placeholder="88888888"
                       value={formData.whatsappNumber} 
                       onChange={e => setFormData({...formData, whatsappNumber: e.target.value})}
-                      className="rounded-xl h-12 flex-1 font-bold"
+                      className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium"
                     />
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function AffiliateProfilePage() {
                     value={formData.bankId} 
                     onValueChange={v => setFormData({...formData, bankId: v})}
                   >
-                    <SelectTrigger className="h-12 rounded-xl">
+                    <SelectTrigger className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px] bg-white">
                       <SelectValue placeholder="Selecciona un banco" />
                     </SelectTrigger>
                     <SelectContent>
@@ -194,7 +194,7 @@ export default function AffiliateProfilePage() {
                       placeholder="Ej: 1234567890"
                       value={formData.bankAccountNumber} 
                       onChange={e => setFormData({...formData, bankAccountNumber: e.target.value})}
-                      className="pl-10 rounded-xl h-12 font-mono"
+                      className="pl-10 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] text-[13px] font-mono"
                     />
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export default function AffiliateProfilePage() {
                     placeholder="Tal cual aparece en tu cuenta"
                     value={formData.bankAccountHolderName} 
                     onChange={e => setFormData({...formData, bankAccountHolderName: e.target.value})}
-                    className="rounded-xl h-12"
+                    className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium"
                   />
                 </div>
               </CardContent>
@@ -224,7 +224,7 @@ export default function AffiliateProfilePage() {
             <Button 
               type="submit" 
               disabled={loading}
-              className="h-14 px-10 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+              className="amazon-btn-primary h-10 px-8 rounded-md"
             >
               {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : "Guardar Cambios"}
             </Button>
