@@ -94,14 +94,14 @@ export default function AdminAffiliatesPage() {
               <ShieldCheck className="h-4 w-4 text-primary" />
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Validación de Red de Mercadeo</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Panel de <span className="text-primary">Socios</span></h1>
+            <h1 className="text-3xl md:text-4xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Gestión de <span className="text-primary">Afiliados Platinum</span></h1>
             <p className="text-slate-500 font-medium text-sm md:text-base">Revisa identidades biométricas, gestiona pagos y seguridad.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
             <Input 
               className="pl-14 h-14 md:h-16 rounded-2xl md:rounded-[1.5rem] border-none bg-white shadow-xl text-[16px] font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
-              placeholder="Buscar socio..." 
+              placeholder="Buscar afiliado..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -113,8 +113,8 @@ export default function AdminAffiliatesPage() {
         ) : filteredAffiliates.length === 0 ? (
           <Card className="border-dashed border-4 flex flex-col items-center justify-center p-20 md:p-32 text-center bg-white/50 rounded-[3rem] md:rounded-[4rem] border-slate-100">
             <User className="h-16 w-16 md:h-20 md:w-20 text-slate-200 mb-8" />
-            <h3 className="text-xl md:text-2xl font-black text-slate-400 mb-2">Sin socios registrados</h3>
-            <p className="text-slate-400 max-w-sm font-bold text-xs md:text-sm leading-relaxed">Tu red de afiliados aparecerá aquí conforme se registren.</p>
+            <h3 className="text-xl md:text-2xl font-black text-slate-400 mb-2">Sin afiliados registrados</h3>
+            <p className="text-slate-400 max-w-sm font-bold text-xs md:text-sm leading-relaxed">Tu red de embajadores aparecerá aquí conforme se registren.</p>
           </Card>
         ) : (
           <div className="space-y-4">
@@ -124,7 +124,7 @@ export default function AdminAffiliatesPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 h-20 hover:bg-slate-50/50">
-                        <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Perfil del Afiliado</TableHead>
+                        <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Perfil del Embajador</TableHead>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Estatus</TableHead>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Saldo Disponible</TableHead>
                         <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Gestión Maestra</TableHead>
@@ -232,7 +232,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
         subject: `✅ Cuenta Activada - Sync Connect`,
         text: `¡Hola ${affiliate.firstName}! Tu solicitud ha sido aprobada con éxito tras la validación biométrica. Ya puedes acceder a tu panel de afiliados.`
       });
-      toast({ title: "Socio Activado", description: "Identidad confirmada y notificación enviada." });
+      toast({ title: "Afiliado Activado", description: "Identidad confirmada y notificación enviada." });
     } catch (e) {
       toast({ variant: "destructive", title: "Error en activación" });
     } finally {
@@ -244,7 +244,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
     const newStatus = affiliate.status === 'Blocked' ? 'Active' : 'Blocked';
     await updateDocumentNonBlocking(doc(db, 'affiliates', affiliate.id), { status: newStatus });
     toast({ 
-      title: newStatus === 'Blocked' ? "Socio Bloqueado" : "Socio Desbloqueado",
+      title: newStatus === 'Blocked' ? "Acceso Bloqueado" : "Acceso Restaurado",
       variant: newStatus === 'Blocked' ? "destructive" : "default"
     });
   };
@@ -291,7 +291,6 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
   const handleDeleteAffiliate = async () => {
     setIsProcessing(true);
     try {
-      // 1. Eliminar de Firebase Authentication primero
       const authRes = await adminDeleteUser(affiliate.id);
       
       if (!authRes.success) {
@@ -300,10 +299,9 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
         return;
       }
 
-      // 2. Si se eliminó de Auth (o no existía), eliminar de Firestore
       await deleteDocumentNonBlocking(doc(db, 'affiliates', affiliate.id));
       
-      toast({ title: "Socio Eliminado", description: "El registro y el acceso han sido borrados definitivamente." });
+      toast({ title: "Afiliado Eliminado", description: "El registro y el acceso han sido borrados definitivamente." });
       setOpen(false);
     } catch (error: any) {
       console.error("Delete Error:", error);
@@ -321,7 +319,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
           isMobile ? "h-12 w-12 p-0" : "h-12 px-6 text-[10px] gap-2"
         )}>
           <Settings2 className={cn(isMobile ? "h-5 w-5 text-primary" : "h-4 w-4 text-primary")} /> 
-          {!isMobile && "GESTIONAR SOCIO"}
+          {!isMobile && "GESTIONAR PERFIL"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl w-full h-[100dvh] md:h-[90vh] md:rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white flex flex-col">
@@ -339,7 +337,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                 <h2 className="text-3xl md:text-4xl font-headline font-black text-white leading-tight uppercase italic">{affiliate.firstName} <span className="text-primary">{affiliate.lastName}</span></h2>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={affiliate.status} />
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline">UID: {affiliate.id?.substring(0, 10)}</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline">ID: {affiliate.id?.substring(0, 10)}</span>
                 </div>
               </div>
             </div>
@@ -348,7 +346,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                  <MessageCircle className="mr-2 h-5 w-5" /> ESCRIBIR MENSAJE
                </Button>
                <Button onClick={handleToggleBlock} variant="outline" className={cn("h-14 px-6 rounded-2xl border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5", affiliate.status === 'Blocked' ? "bg-green-600 border-none" : "bg-red-600/20")}>
-                 {affiliate.status === 'Blocked' ? <><Unlock className="mr-2 h-5 w-5" /> DESBLOQUEAR</> : <><Lock className="mr-2 h-5 w-5" /> BLOQUEAR SOCIO</>}
+                 {affiliate.status === 'Blocked' ? <><Unlock className="mr-2 h-5 w-5" /> DESBLOQUEAR</> : <><Lock className="mr-2 h-5 w-5" /> BLOQUEAR ACCESO</>}
                </Button>
             </div>
           </div>
@@ -452,12 +450,6 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                       <p className="text-[11px] font-bold text-slate-400 uppercase mt-2 italic">Titular: {affiliate.bankAccountHolderName || `${affiliate.firstName} ${affiliate.lastName}`}</p>
                     </div>
                   </div>
-                  <Alert className="bg-blue-50 border-blue-100 rounded-[2rem] p-6">
-                    <ShieldCheck className="h-5 w-5 text-blue-600" />
-                    <AlertDescription className="text-[11px] font-bold text-blue-700 leading-relaxed uppercase">
-                      Al procesar el pago, el sistema enviará un Gmail automático al socio.
-                    </AlertDescription>
-                  </Alert>
                 </div>
               </div>
             </TabsContent>
@@ -485,7 +477,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" className="w-full h-14 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-red-100">
-                            <Trash2 className="h-4 w-4" /> ELIMINAR SOCIO DEFINITIVAMENTE
+                            <Trash2 className="h-4 w-4" /> ELIMINAR CUENTA DEFINITIVAMENTE
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
@@ -495,7 +487,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
                               Esta acción es irreversible y realizará lo siguiente:
                               <ul className="list-disc pl-5 mt-3 space-y-2 text-xs">
                                 <li>Borrará el perfil y datos bancarios de Firestore.</li>
-                                <li><strong>Eliminará la cuenta de usuario de Google/Firebase Auth</strong> (el socio ya no podrá iniciar sesión).</li>
+                                <li><strong>Eliminará la cuenta de usuario de Google/Firebase Auth</strong> (el usuario ya no podrá iniciar sesión).</li>
                                 <li>Se perderán todos los registros de saldo y KYC.</li>
                               </ul>
                             </AlertDialogDescription>
@@ -524,7 +516,7 @@ function PartnerControlCenter({ affiliate, isMobile }: { affiliate: any, isMobil
           ) : (
             <div className="flex items-center gap-3 text-green-600 bg-green-50 px-6 py-3 rounded-2xl border border-green-100">
               <CheckCircle2 className="h-5 w-5" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Socio Verificado</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Afiliado Verificado</span>
             </div>
           )}
           <Button variant="ghost" onClick={() => setOpen(false)} className="h-16 px-10 rounded-2xl font-black text-xs uppercase text-slate-400">SALIR DEL EXPEDIENTE</Button>

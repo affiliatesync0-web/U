@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense, useRef, useEffect } from 'react'
@@ -188,7 +187,7 @@ function AffiliateRegisterContent() {
                   <Target className="h-8 w-8" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-headline font-black uppercase italic">Perfil de <span className="text-primary">Socio</span></h2>
+                  <h2 className="text-3xl font-headline font-black uppercase italic">Registro de <span className="text-primary">Afiliado Platinum</span></h2>
                   <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-2">
                     {existingUser ? 'Vinculando tu cuenta social' : 'Crea tu cuenta de acceso'}
                   </p>
@@ -365,7 +364,7 @@ function AffiliateRegisterContent() {
           <Card className="border-none shadow-2xl rounded-[3.5rem] p-10 md:p-14 bg-card animate-in fade-in slide-in-from-right-4">
             <div className="space-y-8">
               <div className="flex items-center justify-between border-b pb-6">
-                <h2 className="text-2xl font-headline font-black uppercase italic text-primary">Examen <span className="text-foreground">Comercial</span></h2>
+                <h2 className="text-2xl font-headline font-black uppercase italic text-primary">Evaluación <span className="text-foreground">Comercial</span></h2>
                 <Button variant="ghost" size="sm" onClick={() => setStep('selfie')} className="text-[10px] font-black uppercase">Volver</Button>
               </div>
               <form onSubmit={handleRegister} className="space-y-8">
