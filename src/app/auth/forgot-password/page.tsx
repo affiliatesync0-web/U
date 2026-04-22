@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Loader2, MailCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, MailCheck, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { adminGenerateResetLink } from '@/lib/auth-actions'
@@ -72,8 +72,11 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen bg-[#131921] flex flex-col justify-center items-center p-4">
         <Card className="w-full max-w-md shadow-2xl border-none rounded-[4rem] overflow-hidden bg-white p-2">
           <div className="bg-slate-50/50 rounded-[3.5rem] p-10 md:p-14 text-center space-y-8">
-            <div className="h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl animate-bounce">
-              <MailCheck className="h-12 w-12" />
+            <div className="relative mx-auto h-24 w-24">
+              <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full animate-pulse" />
+              <div className="relative h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center shadow-2xl animate-bounce">
+                <MailCheck className="h-12 w-12" />
+              </div>
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-black text-slate-900 uppercase italic">¡Revisa tu Gmail!</h2>
@@ -81,9 +84,14 @@ export default function ForgotPasswordPage() {
                 Hemos enviado un <b>Enlace de Acceso</b> a tu correo. Haz clic en el botón del mensaje para restaurar tu contraseña.
               </p>
             </div>
-            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs tracking-widest shadow-xl">
-              <Link href="/auth/login">VOLVER AL LOGIN</Link>
-            </Button>
+            <div className="pt-4 flex flex-col gap-3">
+              <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
+                <Link href="/auth/login">VOLVER AL LOGIN</Link>
+              </Button>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center justify-center gap-2">
+                <ShieldCheck className="h-3 w-3 text-green-500" /> Protección Sync Active
+              </p>
+            </div>
           </div>
         </Card>
       </div>

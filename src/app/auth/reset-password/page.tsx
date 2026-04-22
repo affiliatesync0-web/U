@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldAlert, ArrowRight, Lock, Key } from 'lucide-react'
+import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldAlert, ArrowRight, Lock, Key, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
 function ResetPasswordForm() {
@@ -27,7 +27,6 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  // Autodetectar código si viene en la URL tras clic en el Gmail
   useEffect(() => {
     const oobCode = searchParams.get('oobCode');
     if (oobCode) {
@@ -70,16 +69,17 @@ function ResetPasswordForm() {
       await confirmPasswordReset(auth, code.trim(), password);
       setSuccess(true);
       toast({
-        title: "¡Acceso Restaurado!",
-        description: "Tu contraseña ha sido actualizada con éxito."
+        title: "¡Contraseña Actualizada!",
+        description: "Tu acceso ha sido restaurado. Redirigiendo al login..."
       });
+      // Redirección automática tras 3 segundos para que el usuario vea el mensaje de éxito
       setTimeout(() => router.push('/auth/login'), 3000);
     } catch (error: any) {
       console.error("Error resetting password:", error);
       toast({
         variant: "destructive",
         title: "Error al actualizar",
-        description: "Sesión expirada. Solicita un nuevo enlace."
+        description: "Sesión expirada o error de red. Intenta de nuevo."
       });
     } finally {
       setLoading(false);
@@ -88,17 +88,20 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-        <div className="text-center space-y-8 py-4 animate-in fade-in zoom-in-95 duration-500">
-            <div className="h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl ring-8 ring-green-50/50">
-                <CheckCircle className="h-12 w-12" />
+        <div className="text-center space-y-8 py-4 animate-in fade-in zoom-in-95 duration-700">
+            <div className="relative mx-auto h-24 w-24">
+              <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full animate-pulse" />
+              <div className="relative h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center shadow-2xl ring-8 ring-green-50/50">
+                  <ShieldCheck className="h-12 w-12" />
+              </div>
             </div>
             <div className="space-y-2">
-                <h3 className="text-3xl font-headline font-black text-slate-900 uppercase italic tracking-tight">¡Éxito Total!</h3>
+                <h3 className="text-3xl font-headline font-black text-slate-900 uppercase italic tracking-tight">¡Misión Cumplida!</h3>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                  Tu contraseña ha sido actualizada. Entrando al portal...
+                  Tu nueva contraseña ha sido guardada.<br/><b>Redirigiendo al inicio de sesión...</b>
                 </p>
             </div>
-            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-2xl">
+            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-transform">
               <Link href="/auth/login">INICIAR SESIÓN AHORA</Link>
             </Button>
       </div>
@@ -111,8 +114,8 @@ function ResetPasswordForm() {
         <div className="h-20 w-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
           <ShieldAlert className="h-10 w-10" />
         </div>
-        <h3 className="text-xl font-black text-slate-900 uppercase">Enlace Expirado</h3>
-        <p className="text-sm text-slate-500">Por seguridad, los enlaces de recuperación solo funcionan una vez y por tiempo limitado.</p>
+        <h3 className="text-xl font-black text-slate-900 uppercase">Enlace No Válido</h3>
+        <p className="text-sm text-slate-500">Este enlace de recuperación ya ha sido utilizado o ha caducado por motivos de seguridad.</p>
         <Button asChild variant="outline" className="w-full h-14 rounded-xl font-black text-[10px] uppercase border-slate-200">
           <Link href="/auth/forgot-password">SOLICITAR OTRO ENLACE</Link>
         </Button>
@@ -126,13 +129,13 @@ function ResetPasswordForm() {
       {!isValidCode ? (
         <div className="py-20 flex flex-col items-center justify-center text-center gap-4">
            <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Validando Identidad Digital...</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Validando Acceso Seguro...</p>
         </div>
       ) : (
         <form onSubmit={handleResetPassword} className="space-y-6 text-left">
           <div className="flex items-center gap-3 p-4 bg-green-50 rounded-2xl border border-green-100 mb-6">
-             <CheckCircle className="h-4 w-4 text-green-600" />
-             <span className="text-[10px] font-black text-green-700 uppercase">IDENTIDAD VERIFICADA ✓</span>
+             <ShieldCheck className="h-4 w-4 text-green-600" />
+             <span className="text-[10px] font-black text-green-700 uppercase">IDENTIDAD VALIDADA ✓</span>
           </div>
 
           <div className="space-y-2">
@@ -173,14 +176,14 @@ function ResetPasswordForm() {
             disabled={loading}
           >
             {loading ? <Loader2 className="animate-spin h-6 w-6" /> : (
-                <>ACTUALIZAR CONTRASEÑA <ArrowRight className="ml-2 h-4 w-4" /></>
+                <>RESTAURAR ACCESO <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></>
             )}
           </Button>
         </form>
       )}
       
       <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mt-6">
-        Por seguridad, los enlaces son de un solo uso y expiran cada 15 minutos.
+        Por seguridad, una vez cambiada la contraseña deberás iniciar sesión con tus nuevas credenciales.
       </p>
     </div>
   )
