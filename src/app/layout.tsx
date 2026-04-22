@@ -20,7 +20,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// NUEVA URL DEL LOGO OFICIAL (Flama Sync Connect)
+// URL DEL LOGO OFICIAL (Flama Sync Connect)
 const OFFICIAL_SYNC_ICON = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740011502446?alt=media";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,18 +36,21 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error("Error cargando metadatos de marca:", e);
   }
 
+  // Añadimos un timestamp para evitar cache del navegador
+  const iconWithCacheBuster = `${dynamicIcon}&v=${Date.now()}`;
+
   return {
     title: 'Sync Connect | Tecnología Elite de Nicaragua',
     description: 'Sistema propietario de gestión comercial y logística local de alto rendimiento. Sync Connect Core Engine.',
     metadataBase: new URL('https://syncconnect.ni'),
     icons: {
       icon: [
-        { url: dynamicIcon, type: 'image/png' },
+        { url: iconWithCacheBuster, type: 'image/png' },
       ],
       apple: [
-        { url: dynamicIcon, sizes: '180x180', type: 'image/png' },
+        { url: iconWithCacheBuster, sizes: '180x180', type: 'image/png' },
       ],
-      shortcut: [dynamicIcon],
+      shortcut: [iconWithCacheBuster],
     },
     applicationName: 'Sync Connect Core Engine',
   };
@@ -61,7 +64,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - USANDO NUEVO LOGO SYNC CONNECT */}
+        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - FORZANDO LOGO SYNC CONNECT */}
         <link rel="icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
         <link rel="shortcut icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
         <link rel="apple-touch-icon" type="image/png" href={OFFICIAL_SYNC_ICON} />

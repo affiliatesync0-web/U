@@ -29,24 +29,6 @@
       "description": "Icono/Imagen: Soporte VIP (Sección características)",
       "imageUrl": "https://picsum.photos/seed/support/400/400",
       "imageHint": "client success"
-    },
-    {
-      "id": "product-social",
-      "description": "Imagen para Servicios de Redes Sociales",
-      "imageUrl": "https://picsum.photos/seed/social_media_pro/400/300",
-      "imageHint": "content creator"
-    },
-    {
-      "id": "product-seo",
-      "description": "Imagen para Cursos de SEO",
-      "imageUrl": "https://picsum.photos/seed/seo_mastery/400/300",
-      "imageHint": "search ranking"
-    },
-    {
-      "id": "product-ads",
-      "description": "Imagen para Estrategias de Ads",
-      "imageUrl": "https://picsum.photos/seed/advertising_focus/400/300",
-      "imageHint": "paid ads"
     }
   ]
 }
