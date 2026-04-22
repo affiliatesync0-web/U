@@ -85,7 +85,7 @@ export async function sendPasswordResetEmailCustom({ to, link }: { to: string, l
   const content = `
     <div style="margin-bottom: 30px; text-align: center;">
       <p style="font-size: 16px; color: #475569; margin-bottom: 35px; text-align: left;">
-        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Para continuar y establecer tu nueva contraseña, haz clic en el botón de abajo:
+        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Para continuar y establecer tu nueva contraseña de forma segura, haz clic en el botón de abajo:
       </p>
       
       <div style="margin: 40px 0;">
@@ -95,14 +95,14 @@ export async function sendPasswordResetEmailCustom({ to, link }: { to: string, l
       </div>
 
       <p style="font-size: 13px; color: #94a3b8; margin-top: 40px; text-align: left;">
-        Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:
+        Si el botón no funciona, copia y pega el siguiente enlace en tu navegador. Recuerda que este enlace es privado y ocurre exclusivamente dentro de nuestra plataforma:
       </p>
       <p style="font-size: 11px; color: #0f172a; word-break: break-all; background: #f8fafc; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #f1f5f9;">
         ${link}
       </p>
 
       <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: left;">
-        Este enlace es personal y expirará pronto por motivos de seguridad. Si no has solicitado este cambio, puedes ignorar este correo de forma segura.
+        Este enlace expirará pronto por motivos de seguridad. Si no has solicitado este cambio, puedes ignorar este correo de forma segura.
       </p>
     </div>
   `;

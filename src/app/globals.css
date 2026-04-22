@@ -58,7 +58,7 @@
   }
 }
 
-/* ELIMINACIÓN DE RASTROS VISUALES EXTERNOS (PURGA TOTAL) */
+/* ELIMINACIÓN DE RASTROS VISUALES EXTERNOS (PURGA TOTAL NEXT.JS) */
 .animate-spin, svg.animate-spin {
   @apply text-primary !important;
   stroke: hsl(var(--primary)) !important;

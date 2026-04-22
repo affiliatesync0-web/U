@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      // 1. Intentar generar enlace mediante Admin SDK para obtener el enlace premium
+      // 1. Intentar generar enlace mediante Admin SDK para obtener el enlace premium INTERNO
       const result = await adminGenerateResetLink(cleanEmail);
       
       if (!result.success) {
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      // 2. Enviar el correo con ENLACE premium
+      // 2. Enviar el correo con ENLACE premium que apunta a nuestra propia página
       const emailRes = await sendPasswordResetEmailCustom({
         to: cleanEmail,
         link: result.link as string
@@ -55,6 +55,7 @@ export default function ForgotPasswordPage() {
         toast({ title: "🛡️ Enlace Enviado", description: "Revisa tu Gmail y haz clic en el botón de recuperación." });
         setSuccess(true);
       } else {
+        // Segundo fallback por error de Nodemailer
         await sendPasswordResetEmail(auth, cleanEmail);
         toast({ title: "🔑 Enlace Enviado", description: "Se ha enviado un enlace de recuperación estándar." });
         setSuccess(true);
@@ -81,7 +82,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-2">
               <h2 className="text-3xl font-black text-slate-900 uppercase italic">¡Revisa tu Gmail!</h2>
               <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                Hemos enviado un <b>Enlace de Acceso</b> a tu correo. Haz clic en el botón del mensaje para restaurar tu contraseña.
+                Hemos enviado un <b>Enlace de Acceso</b> a tu correo. Haz clic en el botón del mensaje para restaurar tu contraseña dentro de nuestra plataforma.
               </p>
             </div>
             <div className="pt-4 flex flex-col gap-3">
@@ -110,7 +111,7 @@ export default function ForgotPasswordPage() {
         
         <CardContent className="p-0 space-y-4">
           <p className="text-[13px] text-[#111] leading-relaxed">
-            Escribe tu correo asociado a tu cuenta de Sync. Recibirás un <b>Enlace Premium</b> para validar tu identidad y cambiar tu clave.
+            Escribe tu correo asociado a tu cuenta de Sync. Recibirás un <b>Enlace Premium</b> para validar tu identidad y cambiar tu clave de forma interna.
           </p>
 
           <form onSubmit={handleResetRequest} className="space-y-4">
