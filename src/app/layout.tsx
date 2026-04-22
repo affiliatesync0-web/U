@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// URL ESTABLE DEL LOGO OFICIAL (Favicon Propietario)
+// URL ESTABLE DEL LOGO OFICIAL (Identidad Sync Connect)
 const OFFICIAL_SYNC_ICON = "https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api";
 
 export async function generateMetadata(): Promise<Metadata> {
