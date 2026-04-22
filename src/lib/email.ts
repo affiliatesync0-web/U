@@ -81,34 +81,38 @@ export async function sendEmail({ to, subject, text, html, title }: { to: string
   }
 }
 
-export async function sendPasswordResetEmailCustom({ to, oobCode }: { to: string, oobCode: string }) {
+export async function sendPasswordResetEmailCustom({ to, link }: { to: string, link: string }) {
   const content = `
-    <div style="margin-bottom: 30px;">
-      <p style="font-size: 16px; color: #475569; margin-bottom: 25px;">
-        Has solicitado restablecer el acceso a tu cuenta. Utiliza el siguiente <strong>Código de Seguridad</strong> para desbloquear tu perfil en la pantalla de Sync Connect:
+    <div style="margin-bottom: 30px; text-align: center;">
+      <p style="font-size: 16px; color: #475569; margin-bottom: 35px; text-align: left;">
+        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Para continuar y establecer tu nueva contraseña, haz clic en el botón de abajo:
       </p>
       
-      <div style="background-color: #131921; padding: 40px; border-radius: 24px; text-align: center; margin: 30px 0; border: 1px solid #ff9900;">
-        <p style="color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px;">CÓDIGO DE VERIFICACIÓN</p>
-        <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 900; color: #ff9900; letter-spacing: 6px; display: block; word-break: break-all;">${oobCode}</span>
+      <div style="margin: 40px 0;">
+        <a href="${link}" style="background: linear-gradient(135deg, #ff9900 0%, #e68a00 100%); color: #ffffff; padding: 22px 40px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 153, 0, 0.3);">
+          Establecer Nueva Contraseña
+        </a>
       </div>
 
-      <p style="font-size: 14px; color: #64748b; margin-top: 30px; text-align: center;">
-        Copia este código e ingrésalo manualmente en el portal para establecer tu nueva contraseña.
+      <p style="font-size: 13px; color: #94a3b8; margin-top: 40px; text-align: left;">
+        Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:
+      </p>
+      <p style="font-size: 11px; color: #0f172a; word-break: break-all; background: #f8fafc; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #f1f5f9;">
+        ${link}
       </p>
 
-      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-        Este código es de un solo uso y expirará pronto por motivos de seguridad. Si no has solicitado este cambio, ignora este mensaje.
+      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: left;">
+        Este enlace es personal y expirará pronto por motivos de seguridad. Si no has solicitado este cambio, puedes ignorar este correo de forma segura.
       </p>
     </div>
   `;
 
   return await sendEmail({
     to,
-    subject: '🔐 Código de Seguridad: Sync Connect',
-    text: `Tu código de seguridad Sync es: ${oobCode}.`,
-    html: getEmailWrapper(content, "Verificación de Identidad"),
-    title: "Acceso Seguro"
+    subject: '🔐 Recuperación de Acceso: Sync Connect',
+    text: `Usa este enlace para cambiar tu contraseña: ${link}`,
+    html: getEmailWrapper(content, "Restaurar Contraseña"),
+    title: "Seguridad de Cuenta"
   });
 }
 

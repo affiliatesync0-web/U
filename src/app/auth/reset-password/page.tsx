@@ -9,9 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Loader2, KeyRound, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldCheck, AlertCircle, ShieldAlert, ArrowRight, Lock, Key } from 'lucide-react'
+import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldAlert, ArrowRight, Lock, Key } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -28,26 +27,26 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  // Autodetectar código si viene en la URL (aunque priorizamos el manual)
+  // Autodetectar código si viene en la URL tras clic en el Gmail
   useEffect(() => {
     const oobCode = searchParams.get('oobCode');
-    if (oobCode && !code) {
+    if (oobCode) {
       setCode(oobCode)
       handleVerifyCode(oobCode)
     }
   }, [searchParams])
 
   const handleVerifyCode = async (codeToVerify: string) => {
-    if (!codeToVerify || codeToVerify.length < 5) return;
+    if (!codeToVerify) return;
     setIsVerifying(true);
     try {
       await verifyPasswordResetCode(auth, codeToVerify.trim());
       setIsValidCode(true);
-      toast({ title: "Código Validado", description: "Identidad confirmada. Define tu nueva clave." });
+      toast({ title: "Identidad Confirmada", description: "Define tu nueva clave de acceso." });
     } catch (error) {
       console.error("Invalid reset code:", error);
       setIsValidCode(false);
-      toast({ variant: "destructive", title: "Código Inválido", description: "El código no es correcto o ya expiró." });
+      toast({ variant: "destructive", title: "Enlace Inválido", description: "Este enlace ya expiró o es incorrecto." });
     } finally {
       setIsVerifying(false);
     }
@@ -80,7 +79,7 @@ function ResetPasswordForm() {
       toast({
         variant: "destructive",
         title: "Error al actualizar",
-        description: "Sesión expirada. Solicita un nuevo código."
+        description: "Sesión expirada. Solicita un nuevo enlace."
       });
     } finally {
       setLoading(false);
@@ -106,36 +105,28 @@ function ResetPasswordForm() {
     )
   }
 
+  if (isValidCode === false) {
+    return (
+      <div className="text-center space-y-6">
+        <div className="h-20 w-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+          <ShieldAlert className="h-10 w-10" />
+        </div>
+        <h3 className="text-xl font-black text-slate-900 uppercase">Enlace Expirado</h3>
+        <p className="text-sm text-slate-500">Por seguridad, los enlaces de recuperación solo funcionan una vez y por tiempo limitado.</p>
+        <Button asChild variant="outline" className="w-full h-14 rounded-xl font-black text-[10px] uppercase border-slate-200">
+          <Link href="/auth/forgot-password">SOLICITAR OTRO ENLACE</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {!isValidCode ? (
-        <div className="space-y-6">
-          <div className="space-y-2 text-left">
-            <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 ml-1">Ingresa el Código del Gmail</Label>
-            <div className="relative">
-              <Key className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
-              <Input 
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="Pega tu código aquí..."
-                className="h-18 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 pl-14 pr-6 font-mono font-black text-center text-xl tracking-[4px] text-primary"
-              />
-            </div>
-          </div>
-          <Button 
-            onClick={() => handleVerifyCode(code)}
-            disabled={isVerifying || code.length < 5}
-            className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs shadow-xl transition-all hover:bg-slate-800"
-          >
-            {isVerifying ? <Loader2 className="animate-spin h-6 w-6" /> : "VERIFICAR CÓDIGO MAESTRO"}
-          </Button>
-          <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100 flex items-start gap-4">
-             <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-             <p className="text-[10px] text-amber-800 font-bold uppercase tracking-tight leading-relaxed">
-               El código fue enviado a tu bandeja de entrada o Spam. Los códigos son sensibles a mayúsculas.
-             </p>
-          </div>
+        <div className="py-20 flex flex-col items-center justify-center text-center gap-4">
+           <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Validando Identidad Digital...</p>
         </div>
       ) : (
         <form onSubmit={handleResetPassword} className="space-y-6 text-left">
@@ -189,7 +180,7 @@ function ResetPasswordForm() {
       )}
       
       <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mt-6">
-        Por seguridad, los códigos son de un solo uso y expiran cada 15 minutos.
+        Por seguridad, los enlaces son de un solo uso y expiran cada 15 minutos.
       </p>
     </div>
   )
@@ -217,7 +208,7 @@ export default function ResetPasswordPage() {
                     <CardTitle className="text-4xl font-headline font-black text-slate-900 tracking-tighter leading-none italic uppercase">
                         Sync <span className="text-[#ff9900]">Security</span>
                     </CardTitle>
-                    <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Verificación de Código</p>
+                    <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Restauración de Acceso</p>
                 </div>
             </CardHeader>
             <CardContent className="p-0">

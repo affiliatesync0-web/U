@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Loader2, MailCheck, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, MailCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { adminGenerateResetLink } from '@/lib/auth-actions'
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      // 1. Intentar generar enlace mediante Admin SDK para obtener el código (oobCode)
+      // 1. Intentar generar enlace mediante Admin SDK para obtener el enlace premium
       const result = await adminGenerateResetLink(cleanEmail);
       
       if (!result.success) {
@@ -45,17 +45,15 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      // 2. Enviar el correo con CÓDIGO premium
+      // 2. Enviar el correo con ENLACE premium
       const emailRes = await sendPasswordResetEmailCustom({
         to: cleanEmail,
-        oobCode: result.oobCode as string
+        link: result.link as string
       });
 
       if (emailRes.success) {
-        toast({ title: "🛡️ Código Enviado", description: "Revisa tu Gmail e ingresa el código de seguridad." });
+        toast({ title: "🛡️ Enlace Enviado", description: "Revisa tu Gmail y haz clic en el botón de recuperación." });
         setSuccess(true);
-        // Redirigir automáticamente después de 3 segundos
-        setTimeout(() => router.push('/auth/reset-password'), 3000);
       } else {
         await sendPasswordResetEmail(auth, cleanEmail);
         toast({ title: "🔑 Enlace Enviado", description: "Se ha enviado un enlace de recuperación estándar." });
@@ -80,11 +78,11 @@ export default function ForgotPasswordPage() {
             <div className="space-y-2">
               <h2 className="text-3xl font-black text-slate-900 uppercase italic">¡Revisa tu Gmail!</h2>
               <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                Hemos enviado un <b>Código de Seguridad</b> a tu correo. Pégalo en la siguiente pantalla para restaurar tu acceso.
+                Hemos enviado un <b>Enlace de Acceso</b> a tu correo. Haz clic en el botón del mensaje para restaurar tu contraseña.
               </p>
             </div>
             <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs tracking-widest shadow-xl">
-              <Link href="/auth/reset-password">INGRESAR CÓDIGO DE SEGURIDAD</Link>
+              <Link href="/auth/login">VOLVER AL LOGIN</Link>
             </Button>
           </div>
         </Card>
@@ -104,7 +102,7 @@ export default function ForgotPasswordPage() {
         
         <CardContent className="p-0 space-y-4">
           <p className="text-[13px] text-[#111] leading-relaxed">
-            Escribe tu correo asociado. Recibirás un <b>Código de Seguridad</b> premium para validar tu identidad y cambiar tu clave.
+            Escribe tu correo asociado a tu cuenta de Sync. Recibirás un <b>Enlace Premium</b> para validar tu identidad y cambiar tu clave.
           </p>
 
           <form onSubmit={handleResetRequest} className="space-y-4">
@@ -119,7 +117,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
             <Button type="submit" className="amazon-btn-primary w-full h-10 flex items-center justify-center gap-2" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Enviar Código"}
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Enviar Enlace"}
             </Button>
           </form>
         </CardContent>

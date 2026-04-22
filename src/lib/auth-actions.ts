@@ -28,6 +28,7 @@ export async function adminResetUserPassword(email: string, newPassword: string)
 
 /**
  * Genera un enlace de restablecimiento de contraseña para un usuario.
+ * Se personaliza para que apunte directamente a nuestra página de reset-password.
  */
 export async function adminGenerateResetLink(email: string) {
   if (!adminAuth) {
@@ -35,16 +36,21 @@ export async function adminGenerateResetLink(email: string) {
   }
   try {
     const cleanEmail = email.toLowerCase().trim();
-    // Generar el enlace oficial de Firebase
-    const link = await adminAuth.generatePasswordResetLink(cleanEmail);
+    // 1. Generar el enlace oficial de Firebase
+    const firebaseLink = await adminAuth.generatePasswordResetLink(cleanEmail);
     
-    // Extraer el oobCode del enlace generado por Firebase
-    const url = new URL(link);
+    // 2. Extraer el oobCode
+    const url = new URL(firebaseLink);
     const oobCode = url.searchParams.get('oobCode');
     
     if (!oobCode) throw new Error("No se pudo generar el código de seguridad.");
     
-    return { success: true, oobCode };
+    // 3. Construir nuestro link personalizado que apunta a nuestra propia UI
+    // En producción esto debería usar la URL real, en dev usamos localhost
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+    const customLink = `${baseUrl}/auth/reset-password?oobCode=${oobCode}`;
+    
+    return { success: true, link: customLink, oobCode };
   } catch (error: any) {
     console.error('ERROR GENERATING LINK:', error);
     return { success: false, error: error.code === 'auth/user-not-found' ? 'USUARIO_NO_EXISTE' : error.message };
@@ -68,7 +74,6 @@ export async function adminDeleteUser(uid: string) {
     return { success: true };
   } catch (error: any) {
     console.error('ERROR EN ACCIÓN DELETE_USER:', error);
-    // Si el usuario no existe en Auth, lo consideramos un éxito para permitir limpiar Firestore
     if (error.code === 'auth/user-not-found') {
       return { success: true };
     }
