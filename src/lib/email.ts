@@ -88,22 +88,30 @@ export async function sendPasswordResetEmailCustom({ to, oobCode, origin }: { to
   const content = `
     <div style="margin-bottom: 30px;">
       <p style="font-size: 16px; color: #475569; margin-bottom: 25px;">
-        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. 
+        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Utiliza el siguiente código de seguridad para continuar:
       </p>
+      
+      <div style="background-color: #f1f5f9; padding: 30px; border-radius: 20px; text-align: center; margin: 30px 0; border: 2px dashed #cbd5e1;">
+        <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 900; color: #0f172a; letter-spacing: 4px;">${oobCode.substring(0, 12)}</span>
+      </div>
+
       <div style="text-align: center; margin: 45px 0;">
         <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #ff9900 0%, #f3a847 100%); color: #000000; padding: 22px 45px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 15px; text-transform: uppercase; box-shadow: 0 15px 35px rgba(255,153,0,0.3);">
-          Establecer Nueva Contraseña
+          Ingresar Código Automáticamente
         </a>
       </div>
-      <p style="font-size: 11px; color: #94a3b8; text-align: center;">Si el botón no funciona, copia este enlace: <br/> ${resetLink}</p>
+      
+      <p style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
+        Si no has solicitado este cambio, puedes ignorar este mensaje de forma segura. El código expirará en unos minutos por tu seguridad.
+      </p>
     </div>
   `;
 
   return await sendEmail({
     to,
-    subject: '🔐 Acción Requerida: Restablecer Contraseña',
-    text: `Restablece tu contraseña aquí: ${resetLink}`,
-    html: getEmailWrapper(content, "Seguridad de Usuario"),
+    subject: '🔐 Código de Seguridad: Restablecer Contraseña',
+    text: `Tu código de seguridad es: ${oobCode}. O usa este enlace: ${resetLink}`,
+    html: getEmailWrapper(content, "Seguridad de Cuenta"),
     title: "Acceso Sync Connect"
   });
 }
