@@ -35,7 +35,6 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error("Error cargando metadatos de marca:", e);
   }
 
-  // Generamos un timestamp para forzar al navegador a limpiar el cache del favicon
   const cacheBuster = Date.now();
   const iconWithCacheBuster = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}refresh=${cacheBuster}`;
 
@@ -61,19 +60,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Versión estática con cache buster para inyección directa
-  const staticIcon = `${OFFICIAL_SYNC_ICON}&v=${Date.now()}`;
+  // INYECCIÓN MANUAL FORZADA CON CACHE BUSTER ESTÁTICO
+  const manualIcon = `${OFFICIAL_SYNC_ICON}&v=manual-override-${Date.now()}`;
 
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - INYECCIÓN DIRECTA DE ALTA PRIORIDAD */}
-        <link rel="icon" type="image/png" href={staticIcon} />
-        <link rel="shortcut icon" type="image/png" href={staticIcon} />
-        <link rel="apple-touch-icon" type="image/png" href={staticIcon} />
-        <link rel="mask-icon" href={staticIcon} color="#ff9900" />
+        {/* BLOQUEO MANUAL ABSOLUTO - PRIORIDAD MÁXIMA EN EL DOM */}
+        <link rel="icon" type="image/png" href={manualIcon} />
+        <link rel="shortcut icon" type="image/png" href={manualIcon} />
+        <link rel="apple-touch-icon" type="image/png" href={manualIcon} />
+        <meta name="msapplication-TileImage" content={manualIcon} />
         <meta name="theme-color" content="#131921" />
-        <meta name="msapplication-TileImage" content={staticIcon} />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
         <FirebaseClientProvider>

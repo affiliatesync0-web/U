@@ -76,6 +76,8 @@ nextjs-portal,
 #nextjs-error-overlay,
 #__next-build-watcher,
 [data-turbopack-indicator],
+[data-next-indicator],
+[id^="__next"],
 portal {
   display: none !important;
   visibility: hidden !important;
