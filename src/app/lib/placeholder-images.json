@@ -4,7 +4,7 @@
     {
       "id": "site-logo",
       "description": "Logo oficial de Sync Connect (Icono lateral y navegación)",
-      "imageUrl": "https://drive.google.com/thumbnail?id=13xOWikydykURKtXVB2cpQQdgkVe6I888&sz=w1000",
+      "imageUrl": "https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api",
       "imageHint": "sync logo"
     },
     {
@@ -16,19 +16,19 @@
     {
       "id": "feature-1",
       "description": "Icono/Imagen: Mercado Global (Sección características)",
-      "imageUrl": "",
+      "imageUrl": "https://picsum.photos/seed/global/400/400",
       "imageHint": "world network"
     },
     {
       "id": "feature-2",
       "description": "Icono/Imagen: Analíticas Reales (Sección características)",
-      "imageUrl": "",
+      "imageUrl": "https://picsum.photos/seed/stats/400/400",
       "imageHint": "growth statistics"
     },
     {
       "id": "feature-3",
       "description": "Icono/Imagen: Soporte VIP (Sección características)",
-      "imageUrl": "",
+      "imageUrl": "https://picsum.photos/seed/support/400/400",
       "imageHint": "client success"
     },
     {

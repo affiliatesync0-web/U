@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
@@ -24,8 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   
-  // Icono oficial de Sync Connect para la pestaña del navegador
-  let iconUrl = "https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api";
+  // Icono oficial de Sync Connect para la pestaña del navegador (URL Estable)
+  let iconUrl = "https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api";
   
   try {
     const logoSnap = await getDoc(doc(firestore, 'site_config', 'site-logo'));
@@ -75,8 +76,8 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         {/* Forzamos el favicon mediante link directo para eliminar la bola negra externa */}
-        <link rel="icon" type="image/png" href="https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api" />
-        <link rel="apple-touch-icon" href="https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api" />
+        <link rel="icon" type="image/png" href="https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api" />
+        <link rel="apple-touch-icon" href="https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api" />
         <meta name="theme-color" content="#131921" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
