@@ -28,7 +28,7 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  // Detectar código en la URL si existe
+  // Detectar código en la URL si existe (enlace directo)
   useEffect(() => {
     const oobCode = searchParams.get('oobCode');
     if (oobCode) {
@@ -41,7 +41,7 @@ function ResetPasswordForm() {
     if (!codeToVerify) return;
     setIsVerifying(true);
     try {
-      await verifyPasswordResetCode(auth, codeToVerify);
+      await verifyPasswordResetCode(auth, codeToVerify.trim());
       setIsValidCode(true);
       toast({ title: "Código Validado", description: "Ahora puedes establecer tu nueva contraseña." });
     } catch (error) {
@@ -68,7 +68,7 @@ function ResetPasswordForm() {
 
     setLoading(true);
     try {
-      await confirmPasswordReset(auth, code, password);
+      await confirmPasswordReset(auth, code.trim(), password);
       setSuccess(true);
       toast({
         title: "¡Acceso Restaurado!",
@@ -99,7 +99,7 @@ function ResetPasswordForm() {
                   Tu contraseña ha sido actualizada. Serás redirigido al portal en unos segundos.
                 </p>
             </div>
-            <Button asChild className="w-full h-18 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-2xl">
+            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-2xl">
               <Link href="/auth/login">INICIAR SESIÓN AHORA</Link>
             </Button>
       </div>
@@ -116,14 +116,14 @@ function ResetPasswordForm() {
             <Input 
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Ingresa el código del Gmail"
-              className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 px-6 font-mono font-black text-lg text-center tracking-[0.2em]"
+              placeholder="Pega el código del Gmail aquí..."
+              className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 px-6 font-mono font-bold text-center text-sm"
             />
           </div>
           <Button 
             onClick={() => handleVerifyCode(code)}
             disabled={isVerifying || code.length < 5}
-            className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black uppercase text-xs shadow-xl transition-all"
+            className="w-full h-16 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs shadow-xl transition-all hover:bg-slate-800"
           >
             {isVerifying ? <Loader2 className="animate-spin h-5 w-5" /> : "VERIFICAR CÓDIGO"}
           </Button>
@@ -175,7 +175,7 @@ function ResetPasswordForm() {
 
           <Button 
             type="submit"
-            className="w-full h-18 rounded-[2rem] bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95 group"
+            className="w-full h-18 rounded-[2rem] bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95 group"
             disabled={loading}
           >
             {loading ? <Loader2 className="animate-spin h-6 w-6" /> : (
@@ -194,7 +194,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
+    <div className="min-h-screen bg-[#131921] flex flex-col justify-center items-center p-4">
       <div className="mb-10">
         <Link href="/auth/login" className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors font-black uppercase text-[10px] tracking-widest group">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
@@ -206,19 +206,19 @@ export default function ResetPasswordPage() {
         <div className="bg-slate-50/30 rounded-[3.5rem] p-10 md:p-14 text-center">
             <CardHeader className="p-0 mb-10 space-y-6">
                 <div className="flex justify-center">
-                    <div className="h-24 w-24 rounded-[2.5rem] bg-slate-900 flex items-center justify-center text-primary shadow-2xl rotate-6 border-4 border-slate-800">
+                    <div className="h-24 w-24 rounded-[2.5rem] bg-[#131921] flex items-center justify-center text-[#ff9900] shadow-2xl rotate-6 border-4 border-slate-800">
                         <Lock className="h-10 w-10" />
                     </div>
                 </div>
                 <div className="space-y-2">
                     <CardTitle className="text-4xl font-headline font-black text-slate-900 tracking-tighter leading-none italic uppercase">
-                        Sync <span className="text-primary">Security</span>
+                        Sync <span className="text-[#ff9900]">Security</span>
                     </CardTitle>
                     <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Verificación de Código</p>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
-                <Suspense fallback={<div className="py-20 flex justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" /></div>}>
+                <Suspense fallback={<div className="py-20 flex justify-center"><Loader2 className="h-12 w-12 animate-spin text-[#ff9900] opacity-20" /></div>}>
                     <ResetPasswordForm />
                 </Suspense>
             </CardContent>

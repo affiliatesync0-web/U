@@ -82,37 +82,40 @@ export async function sendEmail({ to, subject, text, html, title }: { to: string
 }
 
 export async function sendPasswordResetEmailCustom({ to, oobCode, origin }: { to: string, oobCode: string, origin?: string }) {
-  const baseUrl = origin || 'https://affiliatesync.vercel.app';
+  const baseUrl = origin || 'https://syncconnect.ni';
   const resetLink = `${baseUrl}/auth/reset-password?oobCode=${oobCode}`;
   
   const content = `
     <div style="margin-bottom: 30px;">
       <p style="font-size: 16px; color: #475569; margin-bottom: 25px;">
-        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Utiliza el siguiente código de seguridad para continuar:
+        Has solicitado restablecer el acceso a tu cuenta. Utiliza el siguiente <strong>Código de Seguridad</strong> para desbloquear tu perfil:
       </p>
       
-      <div style="background-color: #f1f5f9; padding: 30px; border-radius: 20px; text-align: center; margin: 30px 0; border: 2px dashed #cbd5e1;">
-        <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 900; color: #0f172a; letter-spacing: 4px;">${oobCode.substring(0, 12)}</span>
+      <div style="background-color: #131921; padding: 40px; border-radius: 24px; text-align: center; margin: 30px 0; border: 1px solid #ff9900;">
+        <p style="color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px;">CÓDIGO DE VERIFICACIÓN</p>
+        <span style="font-family: 'Courier New', Courier, monospace; font-size: 28px; font-weight: 900; color: #ff9900; letter-spacing: 4px; display: block; word-break: break-all;">${oobCode}</span>
       </div>
 
-      <div style="text-align: center; margin: 45px 0;">
-        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #ff9900 0%, #f3a847 100%); color: #000000; padding: 22px 45px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 15px; text-transform: uppercase; box-shadow: 0 15px 35px rgba(255,153,0,0.3);">
-          Ingresar Código Automáticamente
-        </a>
-      </div>
+      <p style="font-size: 14px; color: #64748b; margin-top: 30px; text-align: center;">
+        Ingresa este código en la pantalla de <strong>Sync Connect</strong> para establecer tu nueva contraseña.
+      </p>
       
-      <p style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
-        Si no has solicitado este cambio, puedes ignorar este mensaje de forma segura. El código expirará en unos minutos por tu seguridad.
+      <div style="text-align: center; margin-top: 40px;">
+        <a href="${resetLink}" style="font-size: 12px; color: #ff9900; text-decoration: underline; font-weight: bold;">También puedes hacer clic aquí para ingresar automáticamente</a>
+      </div>
+
+      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; pt: 20px;">
+        Este código es de un solo uso y expirará pronto. Si no has solicitado este cambio, ignora este mensaje.
       </p>
     </div>
   `;
 
   return await sendEmail({
     to,
-    subject: '🔐 Código de Seguridad: Restablecer Contraseña',
-    text: `Tu código de seguridad es: ${oobCode}. O usa este enlace: ${resetLink}`,
-    html: getEmailWrapper(content, "Seguridad de Cuenta"),
-    title: "Acceso Sync Connect"
+    subject: '🔐 Código de Seguridad: Sync Connect',
+    text: `Tu código de seguridad Sync es: ${oobCode}.`,
+    html: getEmailWrapper(content, "Verificación de Identidad"),
+    title: "Acceso Seguro"
   });
 }
 
