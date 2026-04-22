@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// URL ESTABLE DEL LOGO OFICIAL
+// URL ESTABLE DEL LOGO OFICIAL (Favicon Propietario)
 const OFFICIAL_SYNC_ICON = "https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -62,10 +62,10 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO */}
-        <link rel="icon" href={OFFICIAL_SYNC_ICON} />
-        <link rel="shortcut icon" href={OFFICIAL_SYNC_ICON} />
-        <link rel="apple-touch-icon" href={OFFICIAL_SYNC_ICON} />
+        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - FORZANDO IDENTIDAD SYNC CONNECT */}
+        <link rel="icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
+        <link rel="shortcut icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
+        <link rel="apple-touch-icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
         <meta name="theme-color" content="#131921" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
