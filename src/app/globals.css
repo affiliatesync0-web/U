@@ -64,11 +64,16 @@
   stroke: hsl(var(--primary)) !important;
 }
 
-/* Ocultar indicadores de desarrollo automáticos */
+/* BLOQUEO DE INDICADORES DE DESARROLLO (NEXT.JS BRANDING) */
 [data-nextjs-toast], 
 [data-nextjs-dialog-overlay],
-#nextjs-portal {
+[data-nextjs-portal],
+#nextjs-portal,
+.nextjs-toast-errors-parent {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Unificación Amazon inputs */
