@@ -8,7 +8,6 @@ import { ThemeProvider } from '@/components/theme-context';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
-import placeholderData from '@/app/lib/placeholder-images.json';
 
 export const revalidate = 0;
 
@@ -36,8 +35,9 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error("Error cargando metadatos de marca:", e);
   }
 
-  // Cache buster para forzar actualización inmediata en navegadores
-  const iconWithCacheBuster = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}v=2`;
+  // Generamos un timestamp para forzar al navegador a limpiar el cache del favicon
+  const cacheBuster = Date.now();
+  const iconWithCacheBuster = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}refresh=${cacheBuster}`;
 
   return {
     title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -61,17 +61,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Versión estática para el head directo
-  const staticIcon = `${OFFICIAL_SYNC_ICON}&v=2`;
+  // Versión estática con cache buster para inyección directa
+  const staticIcon = `${OFFICIAL_SYNC_ICON}&v=${Date.now()}`;
 
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - FORZANDO LOGO SYNC CONNECT CON CACHE BUSTER */}
+        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - INYECCIÓN DIRECTA DE ALTA PRIORIDAD */}
         <link rel="icon" type="image/png" href={staticIcon} />
         <link rel="shortcut icon" type="image/png" href={staticIcon} />
         <link rel="apple-touch-icon" type="image/png" href={staticIcon} />
+        <link rel="mask-icon" href={staticIcon} color="#ff9900" />
         <meta name="theme-color" content="#131921" />
+        <meta name="msapplication-TileImage" content={staticIcon} />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
         <FirebaseClientProvider>

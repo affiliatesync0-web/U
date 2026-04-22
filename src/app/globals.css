@@ -73,6 +73,9 @@ nextjs-portal,
 [data-nextjs-announcer],
 #next-route-announcer,
 .__next-error-overlay-root,
+#nextjs-error-overlay,
+#__next-build-watcher,
+[data-turbopack-indicator],
 portal {
   display: none !important;
   visibility: hidden !important;
