@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldAlert, ArrowRight, Lock, Key, ShieldCheck } from 'lucide-react'
+import { Loader2, ArrowLeft, Eye, EyeOff, ShieldAlert, ArrowRight, Lock, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
 function ResetPasswordForm() {
@@ -72,8 +72,11 @@ function ResetPasswordForm() {
         title: "¡Contraseña Actualizada!",
         description: "Tu acceso ha sido restaurado. Redirigiendo al login..."
       });
-      // Redirección automática tras 3 segundos para que el usuario vea el mensaje de éxito
-      setTimeout(() => router.push('/auth/login'), 3000);
+      
+      // REDIRECCIÓN AUTOMÁTICA AL LOGIN EN 3 SEGUNDOS
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 3000);
     } catch (error: any) {
       console.error("Error resetting password:", error);
       toast({
@@ -142,7 +145,7 @@ function ResetPasswordForm() {
             <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 ml-1">Nueva Contraseña</Label>
             <div className="relative">
               <Input 
-                type={showPassword ? "text" : "password"} 
+                type="password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
@@ -183,7 +186,7 @@ function ResetPasswordForm() {
       )}
       
       <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mt-6">
-        Por seguridad, una vez cambiada la contraseña deberás iniciar sesión con tus nuevas credenciales.
+        Por seguridad, una vez cambiada la contraseña serás redirigido automáticamente al inicio de sesión.
       </p>
     </div>
   )
@@ -211,7 +214,7 @@ export default function ResetPasswordPage() {
                     <CardTitle className="text-4xl font-headline font-black text-slate-900 tracking-tighter leading-none italic uppercase">
                         Sync <span className="text-[#ff9900]">Security</span>
                     </CardTitle>
-                    <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Restauración de Acceso</p>
+                    <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Protección de Cuenta</p>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -223,7 +226,7 @@ export default function ResetPasswordPage() {
       </Card>
       
       <footer className="mt-12 text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] text-center">
-        Encrypted Access • Sync Connect Nicaragua
+        Sync Connect Proprietary Technology
       </footer>
     </div>
   )

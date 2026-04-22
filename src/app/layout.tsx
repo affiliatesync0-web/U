@@ -38,15 +38,15 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: 'Sync Connect | Plataforma Elite de Nicaragua',
-    description: 'Sistema profesional de gestión comercial y logística local de alto rendimiento.',
+    title: 'Sync Connect | Tecnología Elite de Nicaragua',
+    description: 'Sistema propietario de gestión comercial y logística local de alto rendimiento. Sync Connect Core Engine.',
     metadataBase: new URL('https://syncconnect.ni'),
     icons: {
       icon: iconUrl,
       shortcut: iconUrl,
       apple: iconUrl,
     },
-    applicationName: 'Sync Connect Engine',
+    applicationName: 'Sync Connect Core Engine',
     appleWebApp: {
       title: 'Sync Connect',
       statusBarStyle: 'default',
@@ -63,7 +63,6 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* Forzamos el favicon oficial para eliminar rastros de frameworks externos */}
         <link rel="icon" href="https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
