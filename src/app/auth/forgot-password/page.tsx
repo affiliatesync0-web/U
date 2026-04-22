@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Loader2, ShieldCheck, MailCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, MailCheck, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { adminGenerateResetLink } from '@/lib/auth-actions'
@@ -33,11 +33,11 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      // 1. Intentar generar enlace premium mediante Admin SDK
+      // 1. Intentar generar enlace mediante Admin SDK para obtener el código (oobCode)
       const result = await adminGenerateResetLink(cleanEmail);
       
       if (!result.success) {
-        // FALLBACK: Si no hay permisos administrativos o claves configuradas, usamos el método estándar
+        // FALLBACK: Si no hay permisos administrativos, usamos el método estándar
         console.warn("Usando fallback de recuperación estándar:", result.error);
         await sendPasswordResetEmail(auth, cleanEmail);
         toast({ title: "🔑 Enlace Enviado", description: "Revisa tu Gmail. Hemos enviado las instrucciones de acceso." });
@@ -45,18 +45,16 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      // 2. Enviar el correo con código premium si el paso 1 fue exitoso
-      const resetOrigin = window.location.origin;
+      // 2. Enviar el correo con CÓDIGO premium
       const emailRes = await sendPasswordResetEmailCustom({
         to: cleanEmail,
-        oobCode: result.oobCode as string,
-        origin: resetOrigin
+        oobCode: result.oobCode as string
       });
 
       if (emailRes.success) {
-        toast({ title: "🛡️ Código Enviado", description: "Revisa tu Gmail. Ingresa el código recibido para continuar." });
+        toast({ title: "🛡️ Código Enviado", description: "Revisa tu Gmail e ingresa el código de seguridad." });
         setSuccess(true);
-        // Redirigir automáticamente a la página de ingreso de código después de un momento
+        // Redirigir automáticamente después de 3 segundos
         setTimeout(() => router.push('/auth/reset-password'), 3000);
       } else {
         await sendPasswordResetEmail(auth, cleanEmail);
@@ -73,7 +71,7 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
+      <div className="min-h-screen bg-[#131921] flex flex-col justify-center items-center p-4">
         <Card className="w-full max-w-md shadow-2xl border-none rounded-[4rem] overflow-hidden bg-white p-2">
           <div className="bg-slate-50/50 rounded-[3.5rem] p-10 md:p-14 text-center space-y-8">
             <div className="h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl animate-bounce">
@@ -82,11 +80,11 @@ export default function ForgotPasswordPage() {
             <div className="space-y-2">
               <h2 className="text-3xl font-black text-slate-900 uppercase italic">¡Revisa tu Gmail!</h2>
               <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                Hemos enviado un <b>Código de Seguridad</b> a tu correo. Por favor, ingrésalo en la siguiente pantalla para restablecer tu acceso.
+                Hemos enviado un <b>Código de Seguridad</b> a tu correo. Pégalo en la siguiente pantalla para restaurar tu acceso.
               </p>
             </div>
-            <Button asChild className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black uppercase text-xs tracking-widest shadow-xl">
-              <Link href="/auth/reset-password">CONTINUAR AL INGRESO DE CÓDIGO</Link>
+            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs tracking-widest shadow-xl">
+              <Link href="/auth/reset-password">INGRESAR CÓDIGO DE SEGURIDAD</Link>
             </Button>
           </div>
         </Card>
@@ -106,7 +104,7 @@ export default function ForgotPasswordPage() {
         
         <CardContent className="p-0 space-y-4">
           <p className="text-[13px] text-[#111] leading-relaxed">
-            Escribe el correo electrónico asociado a tu cuenta de Sync. Recibirás un <b>Código de Seguridad</b> premium para cambiar tu clave.
+            Escribe tu correo asociado. Recibirás un <b>Código de Seguridad</b> premium para validar tu identidad y cambiar tu clave.
           </p>
 
           <form onSubmit={handleResetRequest} className="space-y-4">
@@ -117,11 +115,11 @@ export default function ForgotPasswordPage() {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 required 
-                className="amazon-input h-8" 
+                className="amazon-input h-10" 
               />
             </div>
-            <Button type="submit" className="amazon-btn-primary w-full h-8 flex items-center justify-center gap-2" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Continuar"}
+            <Button type="submit" className="amazon-btn-primary w-full h-10 flex items-center justify-center gap-2" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Enviar Código"}
             </Button>
           </form>
         </CardContent>

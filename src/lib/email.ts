@@ -81,31 +81,24 @@ export async function sendEmail({ to, subject, text, html, title }: { to: string
   }
 }
 
-export async function sendPasswordResetEmailCustom({ to, oobCode, origin }: { to: string, oobCode: string, origin?: string }) {
-  const baseUrl = origin || 'https://syncconnect.ni';
-  const resetLink = `${baseUrl}/auth/reset-password?oobCode=${oobCode}`;
-  
+export async function sendPasswordResetEmailCustom({ to, oobCode }: { to: string, oobCode: string }) {
   const content = `
     <div style="margin-bottom: 30px;">
       <p style="font-size: 16px; color: #475569; margin-bottom: 25px;">
-        Has solicitado restablecer el acceso a tu cuenta. Utiliza el siguiente <strong>Código de Seguridad</strong> para desbloquear tu perfil:
+        Has solicitado restablecer el acceso a tu cuenta. Utiliza el siguiente <strong>Código de Seguridad</strong> para desbloquear tu perfil en la pantalla de Sync Connect:
       </p>
       
       <div style="background-color: #131921; padding: 40px; border-radius: 24px; text-align: center; margin: 30px 0; border: 1px solid #ff9900;">
         <p style="color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px;">CÓDIGO DE VERIFICACIÓN</p>
-        <span style="font-family: 'Courier New', Courier, monospace; font-size: 28px; font-weight: 900; color: #ff9900; letter-spacing: 4px; display: block; word-break: break-all;">${oobCode}</span>
+        <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 900; color: #ff9900; letter-spacing: 6px; display: block; word-break: break-all;">${oobCode}</span>
       </div>
 
       <p style="font-size: 14px; color: #64748b; margin-top: 30px; text-align: center;">
-        Ingresa este código en la pantalla de <strong>Sync Connect</strong> para establecer tu nueva contraseña.
+        Copia este código e ingrésalo manualmente en el portal para establecer tu nueva contraseña.
       </p>
-      
-      <div style="text-align: center; margin-top: 40px;">
-        <a href="${resetLink}" style="font-size: 12px; color: #ff9900; text-decoration: underline; font-weight: bold;">También puedes hacer clic aquí para ingresar automáticamente</a>
-      </div>
 
-      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; pt: 20px;">
-        Este código es de un solo uso y expirará pronto. Si no has solicitado este cambio, ignora este mensaje.
+      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+        Este código es de un solo uso y expirará pronto por motivos de seguridad. Si no has solicitado este cambio, ignora este mensaje.
       </p>
     </div>
   `;

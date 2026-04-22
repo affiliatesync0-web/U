@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Sparkles, Globe, ExternalLink, Copy, Check, Trash2, Rocket, Layout, FileText, BrainCircuit } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
-import { collection, query, where } from 'firebase/firestore'
+import { collection, query, where, doc } from 'firebase/firestore'
 import { generateWebsiteContent } from '@/ai/flows/generate-website-flow'
 import Link from 'next/link'
 
@@ -27,8 +26,6 @@ export default function AdminSiteBuilderPage() {
 
   const sitesQuery = useMemoFirebase(() => {
     if (!db) return null;
-    // El administrador puede ver todos los sitios o solo los suyos. 
-    // Para simplificar, mostramos todos los sitios generados por el sistema.
     return query(collection(db, 'user_sites'));
   }, [db]);
   const { data: userSites, isLoading: loadingSites } = useCollection(sitesQuery);
@@ -204,4 +201,3 @@ export default function AdminSiteBuilderPage() {
     </DashboardShell>
   )
 }
-import { doc } from 'firebase/firestore'

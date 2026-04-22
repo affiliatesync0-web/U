@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Loader2, KeyRound, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldCheck, AlertCircle, ShieldAlert, ArrowRight, Lock } from 'lucide-react'
+import { Loader2, KeyRound, ArrowLeft, Eye, EyeOff, CheckCircle, ShieldCheck, AlertCircle, ShieldAlert, ArrowRight, Lock, Key } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -28,26 +28,26 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  // Detectar código en la URL si existe (enlace directo)
+  // Autodetectar código si viene en la URL (aunque priorizamos el manual)
   useEffect(() => {
     const oobCode = searchParams.get('oobCode');
-    if (oobCode) {
+    if (oobCode && !code) {
       setCode(oobCode)
       handleVerifyCode(oobCode)
     }
   }, [searchParams])
 
   const handleVerifyCode = async (codeToVerify: string) => {
-    if (!codeToVerify) return;
+    if (!codeToVerify || codeToVerify.length < 5) return;
     setIsVerifying(true);
     try {
       await verifyPasswordResetCode(auth, codeToVerify.trim());
       setIsValidCode(true);
-      toast({ title: "Código Validado", description: "Ahora puedes establecer tu nueva contraseña." });
+      toast({ title: "Código Validado", description: "Identidad confirmada. Define tu nueva clave." });
     } catch (error) {
       console.error("Invalid reset code:", error);
       setIsValidCode(false);
-      toast({ variant: "destructive", title: "Código Inválido", description: "El código ingresado no es correcto o ha expirado." });
+      toast({ variant: "destructive", title: "Código Inválido", description: "El código no es correcto o ya expiró." });
     } finally {
       setIsVerifying(false);
     }
@@ -72,7 +72,7 @@ function ResetPasswordForm() {
       setSuccess(true);
       toast({
         title: "¡Acceso Restaurado!",
-        description: "Tu nueva contraseña ha sido establecida con éxito."
+        description: "Tu contraseña ha sido actualizada con éxito."
       });
       setTimeout(() => router.push('/auth/login'), 3000);
     } catch (error: any) {
@@ -80,7 +80,7 @@ function ResetPasswordForm() {
       toast({
         variant: "destructive",
         title: "Error al actualizar",
-        description: "El tiempo de sesión para este código ha expirado."
+        description: "Sesión expirada. Solicita un nuevo código."
       });
     } finally {
       setLoading(false);
@@ -96,7 +96,7 @@ function ResetPasswordForm() {
             <div className="space-y-2">
                 <h3 className="text-3xl font-headline font-black text-slate-900 uppercase italic tracking-tight">¡Éxito Total!</h3>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                  Tu contraseña ha sido actualizada. Serás redirigido al portal en unos segundos.
+                  Tu contraseña ha sido actualizada. Entrando al portal...
                 </p>
             </div>
             <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-2xl">
@@ -112,25 +112,28 @@ function ResetPasswordForm() {
       {!isValidCode ? (
         <div className="space-y-6">
           <div className="space-y-2 text-left">
-            <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 ml-1">Ingresa el Código de Seguridad</Label>
-            <Input 
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Pega el código del Gmail aquí..."
-              className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 px-6 font-mono font-bold text-center text-sm"
-            />
+            <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 ml-1">Ingresa el Código del Gmail</Label>
+            <div className="relative">
+              <Key className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
+              <Input 
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Pega tu código aquí..."
+                className="h-18 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 pl-14 pr-6 font-mono font-black text-center text-xl tracking-[4px] text-primary"
+              />
+            </div>
           </div>
           <Button 
             onClick={() => handleVerifyCode(code)}
             disabled={isVerifying || code.length < 5}
-            className="w-full h-16 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs shadow-xl transition-all hover:bg-slate-800"
+            className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black uppercase text-xs shadow-xl transition-all hover:bg-slate-800"
           >
-            {isVerifying ? <Loader2 className="animate-spin h-5 w-5" /> : "VERIFICAR CÓDIGO"}
+            {isVerifying ? <Loader2 className="animate-spin h-6 w-6" /> : "VERIFICAR CÓDIGO MAESTRO"}
           </Button>
-          <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
+          <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100 flex items-start gap-4">
              <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
              <p className="text-[10px] text-amber-800 font-bold uppercase tracking-tight leading-relaxed">
-               El código fue enviado a tu correo. Revisa en tu bandeja de entrada o en la carpeta de Spam.
+               El código fue enviado a tu bandeja de entrada o Spam. Los códigos son sensibles a mayúsculas.
              </p>
           </div>
         </div>
@@ -138,7 +141,7 @@ function ResetPasswordForm() {
         <form onSubmit={handleResetPassword} className="space-y-6 text-left">
           <div className="flex items-center gap-3 p-4 bg-green-50 rounded-2xl border border-green-100 mb-6">
              <CheckCircle className="h-4 w-4 text-green-600" />
-             <span className="text-[10px] font-black text-green-700 uppercase">CÓDIGO VERIFICADO ✓</span>
+             <span className="text-[10px] font-black text-green-700 uppercase">IDENTIDAD VERIFICADA ✓</span>
           </div>
 
           <div className="space-y-2">
@@ -186,7 +189,7 @@ function ResetPasswordForm() {
       )}
       
       <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mt-6">
-        Por seguridad, los códigos son de un solo uso.
+        Por seguridad, los códigos son de un solo uso y expiran cada 15 minutos.
       </p>
     </div>
   )
