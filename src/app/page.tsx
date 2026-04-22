@@ -141,7 +141,7 @@ export default function Home() {
                        alt={product.name} 
                        fill 
                        className="object-contain p-2 hover:scale-105 transition-transform" 
-                       unoptimized={product.imageUrl?.startsWith('data:')}
+                       unoptimized
                      />
                   </div>
                   <div className="mt-auto space-y-3">

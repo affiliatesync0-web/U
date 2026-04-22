@@ -1,4 +1,3 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
@@ -88,7 +87,7 @@ export default function AffiliateProductsPage() {
                     alt={product.name} 
                     fill 
                     className="object-cover group-hover:scale-110 transition-transform duration-1000" 
-                    unoptimized={product.imageUrl?.startsWith('data:')}
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
                   <div className="absolute top-6 left-6 flex gap-2">

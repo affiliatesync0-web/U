@@ -1,4 +1,3 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
@@ -71,7 +70,7 @@ export default function BuyerProductsPage() {
                     alt={product.name} 
                     fill 
                     className="object-cover group-hover:scale-110 transition-transform duration-1000" 
-                    unoptimized={product.imageUrl?.startsWith('data:')}
+                    unoptimized
                   />
                   <div className="absolute top-6 right-6">
                     <Badge className="bg-white/95 text-primary font-black px-5 py-2 rounded-2xl shadow-2xl border-none text-[9px] tracking-widest uppercase">
