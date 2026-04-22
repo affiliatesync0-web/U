@@ -20,8 +20,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// URL ESTABLE DEL LOGO OFICIAL (Identidad Sync Connect)
-const OFFICIAL_SYNC_ICON = "https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api";
+// NUEVA URL DEL LOGO OFICIAL (Flama Sync Connect)
+const OFFICIAL_SYNC_ICON = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740011502446?alt=media";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();
@@ -61,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - FORZANDO IDENTIDAD SYNC CONNECT */}
+        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - USANDO NUEVO LOGO SYNC CONNECT */}
         <link rel="icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
         <link rel="shortcut icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
         <link rel="apple-touch-icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
