@@ -29,6 +29,7 @@ export async function adminResetUserPassword(email: string, newPassword: string)
 /**
  * Genera un enlace de restablecimiento de contraseña para un usuario.
  * Se personaliza para que apunte directamente a nuestra página de reset-password.
+ * Esto evita el uso de páginas externas de Firebase.
  */
 export async function adminGenerateResetLink(email: string) {
   if (!adminAuth) {
@@ -36,18 +37,20 @@ export async function adminGenerateResetLink(email: string) {
   }
   try {
     const cleanEmail = email.toLowerCase().trim();
-    // 1. Generar el enlace oficial de Firebase
+    // 1. Generar el enlace oficial de Firebase para obtener el oobCode
     const firebaseLink = await adminAuth.generatePasswordResetLink(cleanEmail);
     
-    // 2. Extraer el oobCode
+    // 2. Extraer el oobCode del link de Firebase
     const url = new URL(firebaseLink);
     const oobCode = url.searchParams.get('oobCode');
     
     if (!oobCode) throw new Error("No se pudo generar el código de seguridad.");
     
-    // 3. Construir nuestro link personalizado que apunta a nuestra propia UI
-    // En producción esto debería usar la URL real, en dev usamos localhost
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+    // 3. Construir nuestro link personalizado que apunta a nuestra propia página de seguridad
+    // Detectar entorno para redirección local o producción
+    const isDev = process.env.NODE_ENV === 'development';
+    const baseUrl = isDev ? 'http://localhost:9002' : 'https://syncconnect.ni'; // Ajustar a dominio real
+    
     const customLink = `${baseUrl}/auth/reset-password?oobCode=${oobCode}`;
     
     return { success: true, link: customLink, oobCode };

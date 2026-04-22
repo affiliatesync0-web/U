@@ -28,6 +28,7 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
+    // Detectar el código oobCode del link interno enviado por email
     const oobCode = searchParams.get('oobCode');
     if (oobCode) {
       setCode(oobCode)
@@ -104,7 +105,7 @@ function ResetPasswordForm() {
                   Tu nueva contraseña ha sido guardada.<br/><b>Redirigiendo al inicio de sesión...</b>
                 </p>
             </div>
-            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-transform">
+            <Button asChild className="w-full h-18 rounded-2xl bg-[#131921] text-white font-black text-xs uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
               <Link href="/auth/login">INICIAR SESIÓN AHORA</Link>
             </Button>
       </div>

@@ -24,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   
+  // Icono por defecto (Sync Connect Gold)
   let iconUrl = "https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api";
   
   try {
@@ -42,9 +43,14 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'Sistema propietario de gestión comercial y logística local de alto rendimiento. Sync Connect Core Engine.',
     metadataBase: new URL('https://syncconnect.ni'),
     icons: {
-      icon: iconUrl,
-      shortcut: iconUrl,
-      apple: iconUrl,
+      icon: [
+        { url: iconUrl },
+        { url: iconUrl, sizes: '32x32', type: 'image/png' },
+        { url: iconUrl, sizes: '16x16', type: 'image/png' },
+      ],
+      apple: [
+        { url: iconUrl, sizes: '180x180', type: 'image/png' },
+      ],
     },
     applicationName: 'Sync Connect Core Engine',
     appleWebApp: {
@@ -63,7 +69,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
+        {/* Forzamos el favicon para eliminar cualquier rastro externo */}
         <link rel="icon" href="https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api" />
+        <link rel="apple-touch-icon" href="https://tse2.mm.bing.net/th?id=OIP.G6TzVdI0o_N-5zF2Gv9D8AHaHa&pid=Api" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
         <FirebaseClientProvider>

@@ -65,19 +65,21 @@
 }
 
 /* BLOQUEO DE INDICADORES DE DESARROLLO DE FRAMEWORKS EXTERNOS */
+/* Esto oculta cualquier rastro de la marca externa en el DOM */
 [data-nextjs-toast], 
 [data-nextjs-dialog-overlay],
 [data-nextjs-portal],
 #nextjs-portal,
 .nextjs-toast-errors-parent,
-[data-nextjs-scroll-focus-boundary] {
+[data-nextjs-scroll-focus-boundary],
+[data-nextjs-static-indicator] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-/* Unificación diseño corporativo */
+/* Unificación diseño corporativo Sync Connect */
 .amazon-input {
   @apply h-10 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-3 py-1 text-[13px] font-medium transition-all;
 }
@@ -90,7 +92,6 @@
   @apply bg-white shadow-xl rounded-[3rem] border-none ring-1 ring-slate-100 overflow-hidden;
 }
 
-/* Ocultar barras de desplazamiento */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
