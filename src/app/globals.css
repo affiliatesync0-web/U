@@ -58,13 +58,10 @@
   }
 }
 
-/* ELIMINACIÓN DE RASTROS VISUALES EXTERNOS (PURGA TOTAL) */
-.animate-spin, svg.animate-spin {
-  @apply text-primary !important;
-  stroke: hsl(var(--primary)) !important;
-}
-
-/* BLOQUEO DE INDICADORES TÉCNICOS EXTERNOS */
+/* 
+ * PURGA TOTAL DE MARCA EXTERNA (NEXT.JS / TURBOPACK / VERCEL)
+ * Bloqueo absoluto de cualquier indicador, bola negra, toast o portal de desarrollo.
+ */
 [data-nextjs-toast], 
 [data-nextjs-dialog-overlay],
 [data-nextjs-portal],
@@ -73,12 +70,25 @@
 [data-nextjs-scroll-focus-boundary],
 [data-nextjs-static-indicator],
 [data-nextjs-indicator],
-.__next-error-overlay-root {
+[data-nextjs-announcer],
+#next-route-announcer,
+.__next-error-overlay-root,
+portal {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
   z-index: -9999 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* ELIMINACIÓN DE RASTROS VISUALES EN CARGA */
+.animate-spin, svg.animate-spin {
+  @apply text-primary !important;
+  stroke: hsl(var(--primary)) !important;
 }
 
 /* Unificación diseño corporativo Sync Connect */
