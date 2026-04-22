@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// URL CONSTANTE DEL LOGO OFICIAL (FONDO TRANSPARENTE / DISEÑO CUADRADO)
+// URL ESTABLE DEL LOGO OFICIAL
 const OFFICIAL_SYNC_ICON = "https://tse4.mm.bing.net/th?id=OIP.u_R4y8O5uF7Bv5_fN9x-fQHaHa&pid=Api";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,8 +44,6 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: [
         { url: dynamicIcon, type: 'image/png' },
-        { url: dynamicIcon, sizes: '32x32', type: 'image/png' },
-        { url: dynamicIcon, sizes: '16x16', type: 'image/png' },
       ],
       apple: [
         { url: dynamicIcon, sizes: '180x180', type: 'image/png' },
@@ -53,15 +51,6 @@ export async function generateMetadata(): Promise<Metadata> {
       shortcut: [dynamicIcon],
     },
     applicationName: 'Sync Connect Core Engine',
-    appleWebApp: {
-      title: 'Sync Connect',
-      statusBarStyle: 'default',
-      capable: true,
-    },
-    other: {
-      'msapplication-TileImage': dynamicIcon,
-      'msapplication-TileColor': '#131921',
-    }
   };
 }
 
@@ -73,7 +62,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO: Forzamos el logo de Sync Connect */}
+        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO */}
         <link rel="icon" href={OFFICIAL_SYNC_ICON} />
         <link rel="shortcut icon" href={OFFICIAL_SYNC_ICON} />
         <link rel="apple-touch-icon" href={OFFICIAL_SYNC_ICON} />
