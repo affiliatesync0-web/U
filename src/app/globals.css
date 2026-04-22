@@ -58,25 +58,27 @@
   }
 }
 
-/* ELIMINACIÓN DE RASTROS VISUALES EXTERNOS (PURGA TOTAL NEXT.JS) */
+/* ELIMINACIÓN DE RASTROS VISUALES EXTERNOS (PURGA TOTAL) */
 .animate-spin, svg.animate-spin {
   @apply text-primary !important;
   stroke: hsl(var(--primary)) !important;
 }
 
-/* BLOQUEO DE INDICADORES DE DESARROLLO DE FRAMEWORKS EXTERNOS */
-/* Esto oculta cualquier rastro de la marca externa en el DOM */
+/* BLOQUEO DE INDICADORES TÉCNICOS EXTERNOS */
 [data-nextjs-toast], 
 [data-nextjs-dialog-overlay],
 [data-nextjs-portal],
 #nextjs-portal,
 .nextjs-toast-errors-parent,
 [data-nextjs-scroll-focus-boundary],
-[data-nextjs-static-indicator] {
+[data-nextjs-static-indicator],
+[data-nextjs-indicator],
+.__next-error-overlay-root {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  z-index: -9999 !important;
 }
 
 /* Unificación diseño corporativo Sync Connect */
