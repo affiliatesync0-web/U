@@ -1,8 +1,9 @@
+
 "use client"
 
 import { useState, Suspense, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, useUser } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,9 +23,18 @@ function CheckoutContent() {
   const { toast } = useToast()
   const { t } = useLanguage()
   const db = useFirestore()
+  const { user, isUserLoading } = useUser()
   
   const productId = params.productId as string
   const affiliateId = searchParams.get('ref') || 'admin'
+
+  // PROTECCIÓN DE COMPRA: Redirigir a login si no hay usuario
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      const currentUrl = window.location.pathname + window.location.search;
+      router.push(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
+    }
+  }, [user, isUserLoading, router]);
 
   const productRef = useMemoFirebase(() => doc(db, 'products', productId), [db, productId])
   const { data: product, isLoading: productLoading } = useDoc(productRef)
@@ -42,6 +52,19 @@ function CheckoutContent() {
     city: '',
     voucherRef: ''
   })
+
+  // Pre-cargar datos del usuario logueado
+  useEffect(() => {
+    if (user && !formData.email) {
+      const names = (user.displayName || '').split(' ');
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+        firstName: names[0] || '',
+        lastName: names.slice(1).join(' ') || ''
+      }));
+    }
+  }, [user, formData.email]);
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,7 +122,6 @@ function CheckoutContent() {
       const salesRef = collection(db, 'sales')
       addDocumentNonBlocking(salesRef, saleData)
 
-      // Enviar email con plantilla premium
       await sendOrderConfirmedEmail({
         to: formData.email,
         name: formData.firstName,
@@ -122,12 +144,17 @@ function CheckoutContent() {
     }
   }
 
-  if (productLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+  if (isUserLoading || productLoading || !user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Sincronizando pasarela de pago...</p>
+      </div>
+    );
   }
 
   if (!product) {
-    return <div className="min-h-screen flex items-center justify-center">Producto no encontrado</div>
+    return <div className="min-h-screen flex items-center justify-center font-black uppercase">Producto no encontrado</div>
   }
 
   const isPhysical = product.type === 'Físico';
@@ -149,7 +176,6 @@ function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           <div className="lg:col-span-8 space-y-6">
-            {/* DIRECCIÓN DE ENVÍO O DATOS DE CLIENTE */}
             <Card className="premium-card">
               <CardHeader className="border-b bg-slate-50/50">
                 <CardTitle className="text-lg font-black flex items-center gap-3">
@@ -167,7 +193,7 @@ function CheckoutContent() {
                  </div>
                  <div className="space-y-1">
                    <Label className="text-[13px] font-bold text-[#111]">E-mail</Label>
-                   <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="amazon-input" required />
+                   <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="amazon-input" required disabled />
                  </div>
                  <div className="space-y-1">
                    <Label className="text-[13px] font-bold text-[#111]">Número de teléfono</Label>
@@ -190,7 +216,6 @@ function CheckoutContent() {
               </CardContent>
             </Card>
 
-            {/* MÉTODO DE PAGO */}
             <Card className="premium-card">
               <CardHeader className="border-b bg-slate-50/50">
                 <CardTitle className="text-lg font-black flex items-center gap-3">
@@ -225,9 +250,9 @@ function CheckoutContent() {
                         <div className="p-6 bg-slate-50 border rounded-lg space-y-4">
                           <h4 className="font-bold text-slate-800 flex items-center gap-2"><Landmark className="h-4 w-4" /> Transferencia Bancaria Local</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div><p className="text-slate-400 font-medium">Banco:</p><p className="font-bold">{product.payoutBankId || product.bankType}</p></div>
-                            <div><p className="text-slate-400 font-medium">Titular:</p><p className="font-bold">{product.payoutBankAccountHolderName || product.bankHolder}</p></div>
-                            <div className="col-span-2"><p className="text-slate-400 font-medium">Nº Cuenta:</p><p className="font-black text-lg font-mono text-primary">{product.payoutBankAccountNumber || product.bankAccount}</p></div>
+                            <div><p className="text-slate-400 font-medium">Banco:</p><p className="font-bold">{product.bankType}</p></div>
+                            <div><p className="text-slate-400 font-medium">Titular:</p><p className="font-bold">{product.bankHolder}</p></div>
+                            <div className="col-span-2"><p className="text-slate-400 font-medium">Nº Cuenta:</p><p className="font-black text-lg font-mono text-primary">{product.bankAccount}</p></div>
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -242,7 +267,6 @@ function CheckoutContent() {
             </Card>
           </div>
 
-          {/* RESUMEN DEL PEDIDO */}
           <div className="lg:col-span-4 space-y-4 sticky top-24">
              <Card className="premium-card p-6 border-2 border-primary/20">
                 <Button 
@@ -291,7 +315,7 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
       <CheckoutContent />
     </Suspense>
   )

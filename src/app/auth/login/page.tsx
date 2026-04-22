@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth, useFirestore, useMemoFirebase, useDoc, useUser } from '@/firebase'
 import { 
@@ -33,11 +34,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
-export default function LoginPage() {
+function LoginContent() {
   const { toast } = useToast()
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, isUserLoading: isGlobalLoading } = useUser()
   
   const [loading, setLoading] = useState(false)
@@ -47,6 +49,8 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  const redirectPath = searchParams.get('redirect')
 
   const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -76,14 +80,14 @@ export default function LoginPage() {
       // 2. VERIFICACIÓN DE AFILIADO
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
-        router.replace('/dashboard/affiliate');
+        router.replace(redirectPath || '/dashboard/affiliate');
         return;
       }
 
       // 3. VERIFICACIÓN DE COMPRADOR EXISTENTE
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
-        router.replace('/dashboard/buyer');
+        router.replace(redirectPath || '/dashboard/buyer');
         return;
       }
 
@@ -98,11 +102,11 @@ export default function LoginPage() {
         status: 'Active'
       }, { merge: true });
 
-      router.replace('/dashboard/buyer');
+      router.replace(redirectPath || '/dashboard/buyer');
 
     } catch (err) {
       console.error("Login Success Error:", err);
-      router.replace('/dashboard/buyer');
+      router.replace(redirectPath || '/dashboard/buyer');
     }
   };
 
@@ -147,8 +151,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white md:bg-[#EAEDED] flex flex-col items-center pt-8 pb-12">
-      
-      {/* AMAZON LOGO */}
       <div className="mb-4">
         <Link href="/">
           <div className="relative h-12 w-32 md:h-14 md:w-36">
@@ -161,9 +163,17 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      {/* LOGIN CARD */}
       <Card className="w-full max-w-[350px] border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] bg-white p-6 md:p-8">
         <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight">Iniciar sesión</h1>
+
+        {redirectPath && (
+          <Alert className="mb-4 bg-amber-50 border-amber-200 rounded-[4px] py-2 px-3">
+             <Info className="h-4 w-4 text-amber-600" />
+             <AlertDescription className="text-[11px] font-bold text-amber-800">
+               Identifícate para completar tu compra de forma segura.
+             </AlertDescription>
+          </Alert>
+        )}
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start animate-in fade-in">
@@ -171,17 +181,6 @@ export default function LoginPage() {
             <div className="space-y-1">
               <h4 className="text-[13px] font-bold text-[#c40000]">Hubo un problema</h4>
               <p className="text-[12px] text-[#111]">{errorMsg}</p>
-            </div>
-          </div>
-        )}
-
-        {authErrorType === 'cancelled' && (
-          <div className="mb-4 p-4 border border-[#e77600] rounded-[4px] bg-[#fffcf5] flex gap-3 items-start">
-            <Info className="h-5 w-5 text-[#e77600] shrink-0 mt-0.5" />
-            <div className="space-y-2">
-              <h4 className="text-[13px] font-bold text-[#111]">Acceso interrumpido</h4>
-              <p className="text-[12px] text-[#111] leading-relaxed">La ventana de Google fue cerrada. Por favor, intenta de nuevo y asegúrate de elegir tu cuenta.</p>
-              <Button onClick={() => setAuthErrorType(null)} variant="outline" className="h-8 text-[11px] font-bold border-[#d5d9d9] bg-white hover:bg-[#f7fafa]">Entendido</Button>
             </div>
           </div>
         )}
@@ -248,7 +247,6 @@ export default function LoginPage() {
         </div>
       </Card>
 
-      {/* NEW ACCOUNT SECTION */}
       <div className="w-full max-w-[350px] mt-6">
         <div className="relative flex items-center justify-center mb-4">
           <div className="absolute inset-0 flex items-center">
@@ -257,11 +255,10 @@ export default function LoginPage() {
           <span className="relative px-2 bg-[#EAEDED] md:bg-[#EAEDED] text-[12px] text-[#767676]">¿Eres nuevo en Sync?</span>
         </div>
         <Button asChild variant="outline" className="w-full border border-[#d5d9d9] bg-white hover:bg-[#f7fafa] text-[#111] font-normal text-[13px] h-8 rounded-[3px] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] transition-all">
-          <Link href="/auth/register">Crea tu cuenta de Sync</Link>
+          <Link href={`/auth/register${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`}>Crea tu cuenta de Sync</Link>
         </Button>
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
         <div className="flex justify-center gap-8">
           <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>
@@ -271,5 +268,13 @@ export default function LoginPage() {
         <p className="text-[11px] text-[#555]">© 2024, SyncConnect.com, Inc. o sus afiliados</p>
       </footer>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#EAEDED]"><Loader2 className="animate-spin text-[#FF9900] h-10 w-10" /></div>}>
+      <LoginContent />
+    </Suspense>
   )
 }
