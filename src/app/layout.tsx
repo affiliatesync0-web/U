@@ -36,8 +36,8 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error("Error cargando metadatos de marca:", e);
   }
 
-  // Añadimos un timestamp para evitar cache del navegador
-  const iconWithCacheBuster = `${dynamicIcon}&v=${Date.now()}`;
+  // Cache buster para forzar actualización inmediata en navegadores
+  const iconWithCacheBuster = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}v=2`;
 
   return {
     title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -61,13 +61,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Versión estática para el head directo
+  const staticIcon = `${OFFICIAL_SYNC_ICON}&v=2`;
+
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - FORZANDO LOGO SYNC CONNECT */}
-        <link rel="icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
-        <link rel="shortcut icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
-        <link rel="apple-touch-icon" type="image/png" href={OFFICIAL_SYNC_ICON} />
+        {/* BLOQUEO ABSOLUTO DE FAVICON EXTERNO - FORZANDO LOGO SYNC CONNECT CON CACHE BUSTER */}
+        <link rel="icon" type="image/png" href={staticIcon} />
+        <link rel="shortcut icon" type="image/png" href={staticIcon} />
+        <link rel="apple-touch-icon" type="image/png" href={staticIcon} />
         <meta name="theme-color" content="#131921" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">

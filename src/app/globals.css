@@ -62,11 +62,11 @@
  * PURGA TOTAL DE MARCA EXTERNA (NEXT.JS / TURBOPACK / VERCEL)
  * Bloqueo absoluto de cualquier indicador, bola negra, toast o portal de desarrollo.
  */
+nextjs-portal,
+#nextjs-portal,
+[data-nextjs-portal],
 [data-nextjs-toast], 
 [data-nextjs-dialog-overlay],
-[data-nextjs-portal],
-#nextjs-portal,
-.nextjs-toast-errors-parent,
 [data-nextjs-scroll-focus-boundary],
 [data-nextjs-static-indicator],
 [data-nextjs-indicator],
