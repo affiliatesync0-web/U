@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,7 +23,12 @@ import {
   ShoppingCart,
   LogOut,
   Terminal,
-  Zap
+  Zap,
+  Settings,
+  ShieldCheck,
+  User as UserIcon,
+  CreditCard,
+  ChevronRight
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -35,8 +41,10 @@ import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -151,44 +159,108 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           <div className="flex items-center gap-1 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left">
-                  <span className="text-white text-[12px]">Hola, {isUserAdmin ? 'Admin' : (user?.displayName?.split(' ')[0] || 'Usuario')}</span>
-                  <div className="flex items-center text-white font-black text-[14px]">Cuenta <ChevronDown className="h-3 w-3 ml-1" /></div>
+                <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left transition-all">
+                  <span className="text-[#CCCCCC] text-[11px] font-bold uppercase tracking-wider">Hola, {isUserAdmin ? 'Admin' : (user?.displayName?.split(' ')[0] || 'Usuario')}</span>
+                  <div className="flex items-center text-white font-black text-[14px]">Mi Cuenta <ChevronDown className="h-3 w-3 ml-1 text-[#CCCCCC]" /></div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-6 bg-white shadow-2xl border-none">
-                <Button className="amazon-btn-primary w-full mb-4" onClick={handleLogout}>Cerrar Sesión</Button>
-                <DropdownMenuSeparator />
-                <div className="flex flex-col gap-3">
-                   {menuItems.slice(0, 3).map(m => (
-                     <Link key={m.url} href={m.url} className="text-[13px] font-bold text-[#444] hover:text-[#C45500] hover:underline">{m.title}</Link>
+              <DropdownMenuContent align="end" className="w-72 p-0 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] border-none rounded-2xl overflow-hidden mt-2">
+                <DropdownMenuLabel className="p-6 bg-slate-50 border-b">
+                   <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white font-black text-lg shadow-lg">
+                        {user?.displayName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-black text-slate-900 truncate">{user?.displayName || 'Usuario Sync'}</span>
+                        <span className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest">{user?.email}</span>
+                      </div>
+                   </div>
+                </DropdownMenuLabel>
+                
+                <div className="p-3">
+                   {menuItems.map((item) => (
+                     <DropdownMenuItem key={item.url} asChild className="p-0 mb-1 focus:bg-transparent">
+                        <Link 
+                          href={item.url} 
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-xl transition-all group",
+                            pathname === item.url ? "bg-primary/5 text-primary" : "text-slate-600 hover:bg-slate-50"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                             <div className={cn(
+                               "h-9 w-9 rounded-lg flex items-center justify-center transition-all",
+                               pathname === item.url ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md"
+                             )}>
+                                <item.icon className="h-4.5 w-4.5" />
+                             </div>
+                             <span className="text-[13px] font-black uppercase tracking-tight">{item.title}</span>
+                          </div>
+                          <ChevronRight className={cn("h-4 w-4 transition-transform group-hover:translate-x-1", pathname === item.url ? "text-primary" : "text-slate-300")} />
+                        </Link>
+                     </DropdownMenuItem>
                    ))}
+                </div>
+
+                <DropdownMenuSeparator className="m-0 bg-slate-100" />
+                
+                <div className="p-4 bg-slate-50/50">
+                  <Button 
+                    className="w-full h-12 rounded-xl bg-slate-900 hover:bg-red-600 text-white font-black text-[11px] uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-2 group" 
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4 text-primary group-hover:text-white transition-colors" /> CERRAR SESIÓN
+                  </Button>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <div className="relative p-2"><ShoppingCart className="h-9 w-9 text-white" /><span className="absolute top-0 right-0 text-[#FF9900] font-black">0</span></div>
+            
+            <div className="relative p-2 hidden sm:block">
+              <ShoppingCart className="h-9 w-9 text-white" />
+              <span className="absolute top-0 right-0 text-[#FF9900] font-black bg-[#131921] px-1 rounded-sm text-xs">0</span>
+            </div>
           </div>
         </div>
 
         <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar">
-          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white font-black text-[14px] flex items-center gap-1 mr-4"><Menu className="h-5 w-5" /> Todo</button>
-          {menuItems.map((item) => (
-            <Link key={item.url} href={item.url} className={cn("px-3 text-white text-[13px] whitespace-nowrap", pathname === item.url ? "font-black underline underline-offset-8" : "font-medium")}>
-              {item.title}
-            </Link>
-          ))}
+          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white font-black text-[14px] flex items-center gap-1 mr-4 shrink-0"><Menu className="h-5 w-5" /> Todo</button>
+          <div className="flex items-center gap-1">
+            {menuItems.map((item) => (
+              <Link key={item.url} href={item.url} className={cn("px-4 py-2 text-white text-[13px] whitespace-nowrap transition-all hover:bg-white/5 rounded-md", pathname === item.url ? "font-black" : "font-medium")}>
+                {item.title}
+              </Link>
+            ))}
+          </div>
         </div>
       </header>
 
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[200] flex">
-           <div className="absolute inset-0 bg-black/80" onClick={() => setIsMobileMenuOpen(false)} />
-           <div className="relative w-[300px] bg-white h-full animate-in slide-in-from-left">
-              <div className="bg-[#232F3E] p-5 flex items-center justify-between text-white font-black uppercase"><span>Sync Menu</span><X onClick={() => setIsMobileMenuOpen(false)} /></div>
-              <ScrollArea className="h-full p-6">
-                 {menuItems.map((item) => (
-                   <Link key={item.url} href={item.url} onClick={() => setIsMobileMenuOpen(false)} className="block py-4 border-b font-black text-slate-800 uppercase text-sm">{item.title}</Link>
-                 ))}
+           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-all" onClick={() => setIsMobileMenuOpen(false)} />
+           <div className="relative w-[300px] bg-white h-full animate-in slide-in-from-left duration-300">
+              <div className="bg-[#232F3E] p-6 flex items-center justify-between text-white shadow-xl">
+                 <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-primary" />
+                    <span className="font-black uppercase tracking-tighter">Sync Navigation</span>
+                 </div>
+                 <button onClick={() => setIsMobileMenuOpen(false)} className="hover:rotate-90 transition-transform"><X className="h-6 w-6" /></button>
+              </div>
+              <ScrollArea className="h-[calc(100vh-80px)] p-6">
+                 <div className="space-y-1">
+                   {menuItems.map((item) => (
+                     <Link 
+                      key={item.url} 
+                      href={item.url} 
+                      onClick={() => setIsMobileMenuOpen(false)} 
+                      className={cn(
+                        "flex items-center gap-4 py-4 px-4 rounded-xl font-black uppercase text-xs transition-all",
+                        pathname === item.url ? "bg-primary/5 text-primary" : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                       <item.icon className="h-5 w-5" /> {item.title}
+                     </Link>
+                   ))}
+                 </div>
               </ScrollArea>
            </div>
         </div>
