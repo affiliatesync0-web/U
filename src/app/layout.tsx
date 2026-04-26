@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 /**
  * Metadatos globales de la aplicación.
- * Se configura el favicon para que apunte directamente al logo de la plataforma.
+ * Se fuerza el uso del logotipo de la flama como favicon oficial.
  */
 export const metadata: Metadata = {
   title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -26,11 +26,10 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://syncconnect.ni'),
   icons: {
     icon: [
-      { url: 'https://img.icons8.com/fluency/96/sync.png?v=7', type: 'image/png' },
-      { url: 'https://img.icons8.com/fluency/96/sync.png?v=7', sizes: '32x32', type: 'image/png' },
+      { url: 'https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=final-1', type: 'image/png' },
     ],
-    shortcut: 'https://img.icons8.com/fluency/96/sync.png?v=7',
-    apple: 'https://img.icons8.com/fluency/96/sync.png?v=7',
+    shortcut: 'https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=final-1',
+    apple: 'https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=final-1',
   },
   applicationName: 'Sync Connect Core Engine',
 };
@@ -40,12 +39,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const faviconUrl = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=final-1";
+
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* Inyección manual de alta prioridad para navegadores y motores de búsqueda */}
-        <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/96/sync.png?v=7" />
-        <link rel="shortcut icon" href="https://img.icons8.com/fluency/96/sync.png?v=7" />
+        {/* INYECCIÓN MANUAL DE ALTA PRIORIDAD - SOBREESCRIBE CUALQUIER ICONO POR DEFECTO */}
+        <link rel="icon" type="image/png" href={faviconUrl} />
+        <link rel="shortcut icon" href={faviconUrl} />
+        <link rel="apple-touch-icon" href={faviconUrl} />
         <meta name="theme-color" content="#131921" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
