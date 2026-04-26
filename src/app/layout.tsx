@@ -35,21 +35,18 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error("Error cargando metadatos de marca:", e);
   }
 
-  const cacheBuster = Date.now();
-  const iconWithCacheBuster = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}refresh=${cacheBuster}`;
+  // Cache buster para forzar al navegador a actualizar el icono
+  const version = "v-manual-3";
+  const iconUrl = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}v=${version}`;
 
   return {
     title: 'Sync Connect | Tecnología Elite de Nicaragua',
     description: 'Sistema propietario de gestión comercial y logística local de alto rendimiento. Sync Connect Core Engine.',
     metadataBase: new URL('https://syncconnect.ni'),
     icons: {
-      icon: [
-        { url: iconWithCacheBuster, type: 'image/png' },
-      ],
-      apple: [
-        { url: iconWithCacheBuster, sizes: '180x180', type: 'image/png' },
-      ],
-      shortcut: [iconWithCacheBuster],
+      icon: [{ url: iconUrl, type: 'image/png' }],
+      shortcut: [iconUrl],
+      apple: [{ url: iconUrl, sizes: '180x180', type: 'image/png' }],
     },
     applicationName: 'Sync Connect Core Engine',
   };
@@ -60,13 +57,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // INYECCIÓN MANUAL FORZADA CON CACHE BUSTER ESTÁTICO
-  const manualIcon = `${OFFICIAL_SYNC_ICON}&v=manual-override-${Date.now()}`;
+  // Inyección manual con máxima prioridad en el DOM
+  const manualIcon = `${OFFICIAL_SYNC_ICON}&v=force-override-3`;
 
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* BLOQUEO MANUAL ABSOLUTO - PRIORIDAD MÁXIMA EN EL DOM */}
+        {/* BLOQUEO MANUAL ABSOLUTO - PRIORIDAD MÁXIMA */}
         <link rel="icon" type="image/png" href={manualIcon} />
         <link rel="shortcut icon" type="image/png" href={manualIcon} />
         <link rel="apple-touch-icon" type="image/png" href={manualIcon} />

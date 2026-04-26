@@ -59,8 +59,8 @@
 }
 
 /* 
- * PURGA TOTAL DE MARCA EXTERNA (NEXT.JS / TURBOPACK / VERCEL)
- * Bloqueo absoluto de cualquier indicador, bola negra, toast o portal de desarrollo.
+ * PURGA TOTAL DE MARCA EXTERNA Y DESARROLLO
+ * Bloqueo absoluto de favicon por defecto, portal de errores e indicadores técnicos.
  */
 nextjs-portal,
 #nextjs-portal,
@@ -78,6 +78,7 @@ nextjs-portal,
 [data-turbopack-indicator],
 [data-next-indicator],
 [id^="__next"],
+.nextjs-indicator-base,
 portal {
   display: none !important;
   visibility: hidden !important;
