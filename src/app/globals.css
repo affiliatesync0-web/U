@@ -59,8 +59,8 @@
 }
 
 /* 
- * PURGA TOTAL DE MARCA EXTERNA Y DESARROLLO
- * Bloqueo absoluto de favicon por defecto, portal de errores e indicadores técnicos.
+ * PURGA TOTAL DE MARCA EXTERNA Y INDICADORES TÉCNICOS
+ * Bloqueo absoluto de favicon por defecto y portal de errores.
  */
 nextjs-portal,
 #nextjs-portal,
@@ -116,6 +116,6 @@ portal {
   display: none;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;
+  -ms-style-overflow: none;
   scrollbar-width: none;
 }
