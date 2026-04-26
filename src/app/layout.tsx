@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 /**
  * Metadatos globales de la aplicación.
- * Se configura el favicon para que apunte directamente al archivo .ico en la carpeta pública.
+ * Se configura el favicon para que apunte directamente al logo de la plataforma.
  */
 export const metadata: Metadata = {
   title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -26,11 +26,11 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://syncconnect.ni'),
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.ico', type: 'image/x-icon' }
+      { url: 'https://img.icons8.com/fluency/96/sync.png?v=7', type: 'image/png' },
+      { url: 'https://img.icons8.com/fluency/96/sync.png?v=7', sizes: '32x32', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    shortcut: 'https://img.icons8.com/fluency/96/sync.png?v=7',
+    apple: 'https://img.icons8.com/fluency/96/sync.png?v=7',
   },
   applicationName: 'Sync Connect Core Engine',
 };
@@ -43,9 +43,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* Referencia manual de alta prioridad para navegadores antiguos y consistencia visual */}
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        {/* Inyección manual de alta prioridad para navegadores y motores de búsqueda */}
+        <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/96/sync.png?v=7" />
+        <link rel="shortcut icon" href="https://img.icons8.com/fluency/96/sync.png?v=7" />
         <meta name="theme-color" content="#131921" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">

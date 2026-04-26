@@ -79,6 +79,8 @@ nextjs-portal,
 [data-next-indicator],
 [id^="__next"],
 .nextjs-indicator-base,
+[class*="Feedback"],
+[id*="feedback"],
 portal {
   display: none !important;
   visibility: hidden !important;
