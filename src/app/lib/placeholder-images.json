@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "site-logo",
-      "description": "Logo oficial de Sync Connect (Icono lateral y navegación)",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740011502446?alt=media",
-      "imageHint": "sync logo"
+      "description": "Logo oficial de Sync Connect (Icono de conectividad premium)",
+      "imageUrl": "https://img.icons8.com/fluency/96/sync.png",
+      "imageHint": "sync connectivity icon"
     },
     {
       "id": "hero-marketing",

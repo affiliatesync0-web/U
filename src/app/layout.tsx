@@ -19,8 +19,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// URL DEL LOGO OFICIAL (Flama Sync Connect)
-const OFFICIAL_SYNC_ICON = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740011502446?alt=media";
+// NUEVA URL DEL LOGO OFICIAL (Versión Refinada para Favicon)
+const OFFICIAL_SYNC_ICON = "https://img.icons8.com/fluency/96/sync.png";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { firestore } = initializeFirebase();
@@ -36,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   // Cache buster para forzar al navegador a actualizar el icono
-  const version = "v-manual-3";
+  const version = "v-final-premium-1";
   const iconUrl = `${dynamicIcon}${dynamicIcon.includes('?') ? '&' : '?'}v=${version}`;
 
   return {
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // Inyección manual con máxima prioridad en el DOM
-  const manualIcon = `${OFFICIAL_SYNC_ICON}&v=force-override-3`;
+  const manualIcon = `${OFFICIAL_SYNC_ICON}?v=refresh-manual-final-1`;
 
   return (
     <html lang="es" suppressHydrationWarning>
