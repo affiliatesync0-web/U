@@ -18,9 +18,9 @@ export const viewport: Viewport = {
 
 /**
  * URL oficial del logotipo de la flama para el favicon.
- * Se añade un parámetro de versión único para forzar al navegador a actualizar el icono de la pestaña.
+ * Se utiliza un parámetro de versión "Ultra Force" para obligar al navegador a refrescar la imagen.
  */
-const FAVICON_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=sync-final-v10";
+const FAVICON_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=sync-ultra-force-v20";
 
 export const metadata: Metadata = {
   title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -28,10 +28,14 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://syncconnect.ni'),
   icons: {
     icon: [
+      { url: FAVICON_URL, href: FAVICON_URL, rel: 'icon', type: 'image/png' },
+    ],
+    shortcut: [
       { url: FAVICON_URL, href: FAVICON_URL },
     ],
-    shortcut: FAVICON_URL,
-    apple: FAVICON_URL,
+    apple: [
+      { url: FAVICON_URL, href: FAVICON_URL },
+    ],
   },
   applicationName: 'Sync Connect Core Engine',
 };
@@ -44,8 +48,8 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* INYECCIÓN MANUAL DE MÁXIMA PRIORIDAD PARA SOBREESCRIBIR CUALQUIER CACHÉ DEL NAVEGADOR */}
-        <link rel="icon" href={FAVICON_URL} sizes="any" />
+        {/* INYECCIÓN MANUAL DE ALTA PRIORIDAD EN EL HEAD REAL */}
+        <link rel="icon" type="image/png" href={FAVICON_URL} />
         <link rel="shortcut icon" href={FAVICON_URL} />
         <link rel="apple-touch-icon" href={FAVICON_URL} />
         <meta name="theme-color" content="#131921" />

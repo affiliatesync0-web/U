@@ -60,7 +60,7 @@
 
 /* 
  * PURGA TOTAL DE MARCA EXTERNA Y INDICADORES TÉCNICOS
- * Bloqueo absoluto de favicon por defecto y portal de errores.
+ * Bloqueo absoluto del indicador de desarrollo (bola negra) y portales de Next.js.
  */
 nextjs-portal,
 #nextjs-portal,
@@ -81,6 +81,7 @@ nextjs-portal,
 .nextjs-indicator-base,
 [class*="Feedback"],
 [id*="feedback"],
+[class*="indicator"],
 portal {
   display: none !important;
   visibility: hidden !important;
