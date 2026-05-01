@@ -17,11 +17,11 @@ export const viewport: Viewport = {
 };
 
 /** 
- * CAMBIO MANUAL DE FAVICON:
- * Modifica la URL de abajo por la de tu nueva imagen.
- * El parámetro ?v=... al final ayuda a que el navegador refresque la imagen si ya la tenía en caché.
+ * CONFIGURACIÓN MANUAL DEL FAVICON:
+ * Se ha insertado el link directo solicitado. 
+ * El parámetro &v=sync_manual ayuda a forzar la actualización en el navegador.
  */
-const FAVICON_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=manual-sync-105";
+const FAVICON_URL = "https://scontent.fmga4-1.fna.fbcdn.net/v/t39.30808-6/666660077_122243300624253134_2093271733727861427_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=F1dEO0QGZq0Q7kNvwGU2lud&_nc_oc=AdoONEUitz3ItQ57a9wwS9h2v_ITSAuom5IOgKRog8U2RLE9eUBLbWxXdPGLPw9wT5M&_nc_zt=23&_nc_ht=scontent.fmga4-1.fna&_nc_gid=d-ZAMTuwDdRhfKDyit3fag&_nc_ss=7b289&oh=00_Af5quuYFfzIp66oolHNWOA1d-3PaBFViD3nt2qiOa1Rfxg&oe=69FA0EA1&v=sync_manual";
 
 export const metadata: Metadata = {
   title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://syncconnect.ni'),
   icons: {
     icon: [
-      { url: FAVICON_URL, href: FAVICON_URL, rel: 'icon', type: 'image/png' },
+      { url: FAVICON_URL, href: FAVICON_URL, rel: 'icon', type: 'image/jpeg' },
     ],
     shortcut: [
       { url: FAVICON_URL, href: FAVICON_URL },
@@ -50,7 +50,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         {/* INYECCIÓN MANUAL DE ALTA PRIORIDAD */}
-        <link rel="icon" type="image/png" href={FAVICON_URL} />
+        <link rel="icon" type="image/jpeg" href={FAVICON_URL} />
         <link rel="shortcut icon" href={FAVICON_URL} />
         <link rel="apple-touch-icon" href={FAVICON_URL} />
         <meta name="theme-color" content="#131921" />
