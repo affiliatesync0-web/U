@@ -21,7 +21,7 @@ export const viewport: Viewport = {
  * Modifica la URL de abajo por la de tu nueva imagen.
  * El parámetro ?v=... al final ayuda a que el navegador refresque la imagen si ya la tenía en caché.
  */
-const FAVICON_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=manual-sync-102";
+const FAVICON_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=manual-sync-105";
 
 export const metadata: Metadata = {
   title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -50,7 +50,6 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         {/* INYECCIÓN MANUAL DE ALTA PRIORIDAD */}
-        {/* Cambia la URL en el atributo href de abajo si quieres hacerlo directamente en el HTML */}
         <link rel="icon" type="image/png" href={FAVICON_URL} />
         <link rel="shortcut icon" href={FAVICON_URL} />
         <link rel="apple-touch-icon" href={FAVICON_URL} />
