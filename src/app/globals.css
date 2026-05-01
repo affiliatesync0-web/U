@@ -59,14 +59,18 @@
 }
 
 /* 
- * BLOQUEO DE INDICADORES TÉCNICOS
- * Oculta overlays de error y elementos de desarrollo para una interfaz limpia.
+ * BLOQUEO TOTAL DE INDICADORES TÉCNICOS (ELIMINA LA BOLITA NEGRA)
  */
 [data-nextjs-portal],
 [data-nextjs-toast],
 .__next-error-overlay-root,
-#nextjs-error-overlay {
+#nextjs-error-overlay,
+[data-turbopack-pounce],
+nextjs-portal {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
 
 .animate-spin, svg.animate-spin {

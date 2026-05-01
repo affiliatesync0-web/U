@@ -4,6 +4,7 @@ import {Toaster} from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/language-context';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/theme-context';
+import { FloatingContact } from '@/components/floating-contact';
 
 export const revalidate = 0;
 
@@ -41,7 +42,6 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* INYECCIÓN MANUAL PARA SOBREESCRIBIR CUALQUIER ICONO POR DEFECTO */}
         <link rel="icon" href={FAVICON_URL} />
         <link rel="shortcut icon" href={FAVICON_URL} />
         <link rel="apple-touch-icon" href={FAVICON_URL} />
@@ -52,6 +52,7 @@ export default function RootLayout({
           <ThemeProvider>
             <LanguageProvider>
               {children}
+              <FloatingContact />
               <Toaster />
             </LanguageProvider>
           </ThemeProvider>
