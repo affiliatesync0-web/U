@@ -16,11 +16,10 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-/**
- * URL del nuevo logotipo oficial para el favicon.
- * Se incrementa la versión para forzar el refresco en navegadores con caché persistente.
- */
-const NEW_LOGO_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2&v=sync-new-era-v1";
+// URL del logotipo oficial de la marca (Flama dorada Sync)
+const NEW_LOGO_URL = "https://firebasestorage.googleapis.com/v0/b/studio-9886993662-50a10.firebasestorage.app/o/site_assets%2Fsite-logo_1740683076891?alt=media&token=866c1b35-86f7-49f3-8f0a-f0f1b2b8e3a2";
+// Añadimos una versión para forzar el refresco de caché en cada despliegue
+const FAVICON_URL = `${NEW_LOGO_URL}&v=final-sync-v100`;
 
 export const metadata: Metadata = {
   title: 'Sync Connect | Tecnología Elite de Nicaragua',
@@ -28,13 +27,13 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://syncconnect.ni'),
   icons: {
     icon: [
-      { url: NEW_LOGO_URL, href: NEW_LOGO_URL, rel: 'icon', type: 'image/png' },
+      { url: FAVICON_URL, href: FAVICON_URL, rel: 'icon', type: 'image/png' },
     ],
     shortcut: [
-      { url: NEW_LOGO_URL, href: NEW_LOGO_URL },
+      { url: FAVICON_URL, href: FAVICON_URL },
     ],
     apple: [
-      { url: NEW_LOGO_URL, href: NEW_LOGO_URL },
+      { url: FAVICON_URL, href: FAVICON_URL },
     ],
   },
   applicationName: 'Sync Connect Core Engine',
@@ -48,10 +47,10 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* INYECCIÓN MANUAL DE ALTA PRIORIDAD PARA EL FAVICON */}
-        <link rel="icon" type="image/png" href={NEW_LOGO_URL} />
-        <link rel="shortcut icon" href={NEW_LOGO_URL} />
-        <link rel="apple-touch-icon" href={NEW_LOGO_URL} />
+        {/* Inyección manual de alta prioridad para sobreescribir cualquier favicon residual del sistema */}
+        <link rel="icon" type="image/png" href={FAVICON_URL} />
+        <link rel="shortcut icon" href={FAVICON_URL} />
+        <link rel="apple-touch-icon" href={FAVICON_URL} />
         <meta name="theme-color" content="#131921" />
       </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-primary/20">
