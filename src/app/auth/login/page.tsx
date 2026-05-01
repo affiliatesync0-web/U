@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, Suspense } from 'react'
@@ -200,7 +199,7 @@ function LoginContent() {
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <Label className="text-[13px] font-bold text-[#111]">Contraseña</Label>
-              <Link href="/auth/forgot-password" size="sm" className="text-[12px] text-[#0066c0] hover:text-[#c45500] hover:underline">¿Olvidaste tu contraseña?</Link>
+              <Link href="/auth/forgot-password" className="text-[12px] text-[#0066c0] hover:text-[#c45500] hover:underline">¿Olvidaste tu contraseña?</Link>
             </div>
             <div className="relative">
               <Input 
