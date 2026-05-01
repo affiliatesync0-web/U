@@ -3,7 +3,6 @@ import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/language-context';
 import { FirebaseClientProvider } from '@/firebase';
-import { FloatingContact } from '@/components/floating-contact';
 import { ThemeProvider } from '@/components/theme-context';
 
 export const revalidate = 0;
@@ -53,7 +52,6 @@ export default function RootLayout({
           <ThemeProvider>
             <LanguageProvider>
               {children}
-              <FloatingContact />
               <Toaster />
             </LanguageProvider>
           </ThemeProvider>
