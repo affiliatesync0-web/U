@@ -5,7 +5,14 @@ export const translations = {
     registerSale: "Register Transaction",
     myCustomers: "My Network",
     bankName: "Local Bank",
-    // ... rest of translations
+    addLesson: "Add Lesson",
+    affiliateContacts: "Affiliate Directory",
+    firstName: "First Name",
+    lastName: "Last Name",
+    buyers: "Customers",
+    customerList: "Your referred customers list",
+    registerBuyer: "Register Manual Prospect",
+    voucherReference: "Voucher Reference Number",
   },
   es: {
     welcomeBack: "Bienvenido de nuevo",
@@ -13,6 +20,15 @@ export const translations = {
     registerSale: "Registrar Venta",
     myCustomers: "Mis Clientes",
     bankName: "Banco Local",
-    // ... rest of translations
+    addLesson: "Agregar Lección",
+    affiliateContacts: "Directorio de Afiliados",
+    firstName: "Nombre",
+    lastName: "Apellido",
+    buyers: "Clientes",
+    customerList: "Lista de clientes referidos",
+    registerBuyer: "Registrar Prospecto Manual",
+    voucherReference: "Nº de Referencia del Voucher",
   }
 };
+
+export type Language = 'en' | 'es';
