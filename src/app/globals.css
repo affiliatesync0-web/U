@@ -59,46 +59,18 @@
 }
 
 /* 
- * BLOQUEO ABSOLUTO DE INDICADORES DE DESARROLLO Y ERRORES
- * Esta sección elimina cualquier portal, toast o indicador inyectado por Next.js/Turbopack.
+ * BLOQUEO DE INDICADORES TÉCNICOS
+ * Oculta overlays de error y elementos de desarrollo para una interfaz limpia.
  */
-nextjs-portal,
-#nextjs-portal,
 [data-nextjs-portal],
-[data-nextjs-toast], 
-[data-nextjs-dialog-overlay],
-[data-nextjs-scroll-focus-boundary],
-[data-nextjs-static-indicator],
-[data-nextjs-indicator],
-[data-nextjs-announcer],
-#next-route-announcer,
+[data-nextjs-toast],
 .__next-error-overlay-root,
-#nextjs-error-overlay,
-#__next-build-watcher,
-[data-turbopack-indicator],
-[data-next-indicator],
-[id^="__next"],
-.nextjs-indicator-base,
-[class*="Feedback"],
-[id*="feedback"],
-[class*="indicator"],
-[class*="error-overlay"],
-portal {
+#nextjs-error-overlay {
   display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  z-index: -9999 !important;
-  width: 0 !important;
-  height: 0 !important;
-  position: absolute !important;
-  left: -9999px !important;
 }
 
-/* UNIFICACIÓN DISEÑO CORPORATIVO */
 .animate-spin, svg.animate-spin {
   @apply text-primary !important;
-  stroke: hsl(var(--primary)) !important;
 }
 
 .amazon-input {

@@ -1,27 +1,27 @@
-
 import * as admin from 'firebase-admin';
 
 /**
- * Inicialización segura del SDK de Administración de Firebase.
- * Se encarga de verificar que las credenciales existan y tengan el formato correcto.
+ * Inicialización ultra-segura del SDK de Administración de Firebase.
+ * Optimizada para Vercel: Maneja credenciales faltantes durante el build
+ * y limpia correctamente la clave privada.
  */
 
 const rawKey = process.env.FIREBASE_PRIVATE_KEY;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const projectId = process.env.FIREBASE_PROJECT_ID || "studio-9886993662-50a10";
 
-// Limpiar la clave privada para asegurar que los saltos de línea sean correctos
+// Limpiar la clave privada para asegurar que los saltos de línea (\n) se procesen correctamente en Vercel
 const privateKey = rawKey ? rawKey.replace(/\\n/g, '\n') : undefined;
 
 // Verificar si la credencial parece ser un certificado válido de Google
 const hasValidCredentials = !!(privateKey && clientEmail && privateKey.includes('BEGIN PRIVATE KEY'));
 
 function getAdminApp() {
+  // Evitar inicializaciones duplicadas en entornos de serverless
   if (admin.apps.length > 0) return admin.apps[0];
 
   try {
     if (hasValidCredentials) {
-      console.log("Iniciando Firebase Admin con certificado explícito...");
       return admin.initializeApp({
         credential: admin.credential.cert({
           projectId,
@@ -30,18 +30,21 @@ function getAdminApp() {
         } as admin.ServiceAccount),
       });
     } else {
-      // Intento de inicialización por defecto (Solo funciona si hay credenciales de Google Cloud en el entorno)
-      console.warn("ADMIN_INIT: No hay credenciales explícitas válidas. Usando inicialización por defecto.");
-      return admin.initializeApp();
+      // Durante el 'next build' en Vercel, las variables de entorno pueden no estar presentes.
+      // Retornamos null silenciosamente en lugar de romper el build.
+      if (process.env.NODE_ENV === 'production') {
+        console.warn("ADMIN_INIT_WARNING: Credenciales no detectadas. El build continuará pero las funciones Admin fallarán en runtime si no se configuran.");
+      }
+      return null;
     }
   } catch (error) {
-    console.error("ADMIN_INIT_ERROR: No se pudo inicializar Firebase Admin.", error);
+    console.error("ADMIN_INIT_ERROR:", error);
     return null;
   }
 }
 
 const adminApp = getAdminApp();
 
-// Exportamos las instancias solo si la app se inicializó correctamente
+// Exportamos las instancias con chequeo de nulidad para evitar crashes en el build
 export const adminAuth = adminApp ? admin.auth(adminApp) : null;
 export const adminDb = adminApp ? admin.firestore(adminApp) : null;
