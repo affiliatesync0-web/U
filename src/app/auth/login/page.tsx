@@ -9,9 +9,7 @@ import {
   Loader2, 
   Eye,
   EyeOff,
-  ShieldAlert,
   Info,
-  ChevronRight,
   Triangle
 } from 'lucide-react'
 import Link from 'next/link'
@@ -29,7 +27,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
@@ -44,7 +42,6 @@ function LoginContent() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [authErrorType, setAuthErrorType] = useState<'domain' | 'method' | 'generic' | 'cancelled' | null>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -56,7 +53,6 @@ function LoginContent() {
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
 
-  // DETECCIÓN MAESTRA EN CARGA INICIAL
   useEffect(() => {
     if (user && !isGlobalLoading) {
       const cleanEmail = user.email?.toLowerCase().trim();
@@ -69,28 +65,24 @@ function LoginContent() {
   const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName?: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
-    // 1. VERIFICACIÓN MAESTRA (ADMIN)
     if (cleanEmail === ADMIN_EMAIL) {
       window.location.href = '/dashboard/admin';
       return;
     }
 
     try {
-      // 2. VERIFICACIÓN DE AFILIADO
       const affSnap = await getDoc(doc(db, 'affiliates', uid));
       if (affSnap.exists()) {
         router.replace(redirectPath || '/dashboard/affiliate');
         return;
       }
 
-      // 3. VERIFICACIÓN DE COMPRADOR EXISTENTE
       const buyerSnap = await getDoc(doc(db, 'buyers', uid));
       if (buyerSnap.exists()) {
         router.replace(redirectPath || '/dashboard/buyer');
         return;
       }
 
-      // 4. CREAR PERFIL DE COMPRADOR SI ES NUEVO (Y NO ES ADMIN)
       const names = (displayName || 'Usuario Sync').split(' ');
       await setDoc(doc(db, 'buyers', uid), {
         id: uid,
@@ -111,7 +103,6 @@ function LoginContent() {
 
   const handleGoogleLogin = async () => {
     if (!auth) return;
-    setAuthErrorType(null);
     setErrorMsg(null);
     setLoading(true);
     
@@ -127,9 +118,7 @@ function LoginContent() {
     } catch (error: any) {
       console.error("Google Login Error:", error.code);
       setLoading(false);
-      if (error.code === 'auth/unauthorized-domain') setAuthErrorType('domain');
-      else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') setAuthErrorType('cancelled');
-      else setErrorMsg("No se pudo conectar con Google.");
+      setErrorMsg("No se pudo conectar con Google.");
     }
   };
 
@@ -264,7 +253,7 @@ function LoginContent() {
           <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
           <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Ayuda</Link>
         </div>
-        <p className="text-[11px] text-[#555]">© 2024, SyncConnect.com, Inc. o sus afiliados</p>
+        <p className="text-[11px] text-[#555]">© 2024, Sync Connect o sus afiliados</p>
       </footer>
     </div>
   )
