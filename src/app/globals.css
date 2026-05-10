@@ -68,7 +68,8 @@
 [data-turbopack-pounce],
 nextjs-portal,
 div[id^="__next-build-watcher"],
-div[id^="nextjs-dev-overlay"] {
+div[id^="nextjs-dev-overlay"],
+.nextjs-toast-errors-parent {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
