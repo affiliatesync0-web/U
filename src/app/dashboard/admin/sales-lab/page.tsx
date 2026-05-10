@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
-import { collection } from 'firebase/firestore'
+import { collection, doc } from 'firebase/firestore'
 
 export default function AdminSalesLabPage() {
   const { toast } = useToast()
@@ -58,7 +58,8 @@ export default function AdminSalesLabPage() {
   }
 
   const handleDelete = (id: string) => {
-    deleteDocumentNonBlocking(collection(db, 'sales_lab'), id)
+    // CORRECCIÓN: Usar doc() para crear la referencia correcta al documento antes de eliminar
+    deleteDocumentNonBlocking(doc(db, 'sales_lab', id))
     toast({ title: "Recurso eliminado" })
   }
 
