@@ -30,7 +30,7 @@ import {
   deleteDocumentNonBlocking,
   updateDocumentNonBlocking
 } from '@/firebase'
-import { collection, query, doc, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, doc, where } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -63,15 +63,11 @@ export default function AffiliateInboxPage() {
   const [editingMsgId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
   const [mounted, setMounted] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
 
   const scrollRefPriv = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
-    }
   }, []);
 
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
@@ -173,11 +169,6 @@ export default function AffiliateInboxPage() {
                 </div>
               </div>
             </div>
-            {notifPermission !== 'granted' && (
-              <Button onClick={() => Notification.requestPermission()} variant="outline" className="hidden sm:flex border-white/20 text-white font-black text-[9px] uppercase px-4 h-10 rounded-full hover:bg-white/10">
-                <Bell className="mr-2 h-3.5 w-3.5" /> Alertas
-              </Button>
-            )}
           </CardHeader>
 
           <CardContent className="flex-1 p-0 overflow-hidden relative flex flex-col z-10">

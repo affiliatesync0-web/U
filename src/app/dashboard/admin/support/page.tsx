@@ -18,7 +18,6 @@ import {
   Check,
   MoreVertical,
   Bell,
-  Mail,
   Inbox,
   User,
   ShieldCheck
@@ -32,7 +31,7 @@ import {
   deleteDocumentNonBlocking, 
   updateDocumentNonBlocking 
 } from '@/firebase'
-import { collection, query, where, onSnapshot, doc } from 'firebase/firestore'
+import { collection, query, where, doc } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -68,16 +67,12 @@ export default function AdminInboxPage() {
   
   const [editingMsgId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
   const [mounted, setMounted] = useState(false);
 
   const scrollRefPriv = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
-    }
   }, []);
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db])
@@ -161,15 +156,9 @@ export default function AdminInboxPage() {
                <ShieldCheck className="h-3 w-3" /> Comunicaciones 100% Privadas
             </p>
           </div>
-          {notifPermission !== 'granted' && (
-            <Button onClick={() => Notification.requestPermission()} variant="outline" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 text-[9px] font-black uppercase shadow-sm">
-              <Bell className="mr-2 h-3 w-3" /> Activar Alertas de Escritorio
-            </Button>
-          )}
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
-          {/* SIDEBAR DE CONTACTOS (ESTILO MAIL) */}
           <Card className={cn(
             "w-full md:w-[350px] shrink-0 border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden flex flex-col ring-1 ring-slate-100",
             mobileShowChat ? "hidden md:flex" : "flex"
@@ -234,7 +223,6 @@ export default function AdminInboxPage() {
             </CardContent>
           </Card>
 
-          {/* ÁREA DE CONVERSACIÓN (DERECHA) */}
           <Card className={cn(
             "flex-1 border-none shadow-2xl rounded-[3.5rem] bg-[#E5DDD5] overflow-hidden flex flex-col relative ring-1 ring-slate-100",
             !mobileShowChat ? "hidden md:flex" : "flex"
@@ -244,7 +232,7 @@ export default function AdminInboxPage() {
             {!selectedAffiliate ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-white/50 backdrop-blur-md relative z-10">
                 <div className="h-24 w-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary shadow-inner mb-8">
-                  <Mail className="h-10 w-10" />
+                  <Inbox className="h-10 w-10" />
                 </div>
                 <h3 className="text-2xl font-headline font-black text-slate-500 uppercase italic">Selecciona un Socio</h3>
                 <p className="text-sm text-slate-400 font-medium max-w-xs mt-4">Haz clic en un afiliado de la lista para gestionar su soporte privado.</p>
