@@ -22,9 +22,18 @@ export const metadata: Metadata = {
   title: 'Sync Connect',
   description: 'Infraestructura tecnológica elite Sync Connect.',
   icons: {
-    icon: FAVICON_URL,
-    shortcut: FAVICON_URL,
-    apple: FAVICON_URL,
+    icon: [
+      {
+        url: FAVICON_URL,
+        href: FAVICON_URL,
+      }
+    ],
+    apple: [
+      {
+        url: FAVICON_URL,
+        href: FAVICON_URL,
+      }
+    ],
   },
 };
 
@@ -35,9 +44,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href={FAVICON_URL} sizes="any" />
-      </head>
       <body className="font-body antialiased bg-[#EAEDED] text-foreground selection:bg-primary/20">
         <FirebaseClientProvider>
           <ThemeProvider>

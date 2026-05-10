@@ -32,6 +32,7 @@
   body { @apply bg-[#EAEDED] text-foreground font-body overflow-x-hidden; }
 }
 
+/* ELIMINACIÓN DE INDICADORES TÉCNICOS (BOLITA NEGRA / OVERLAYS) */
 [data-nextjs-portal],
 [data-nextjs-toast],
 .__next-error-overlay-root,
@@ -39,7 +40,8 @@
 [data-turbopack-pounce],
 nextjs-portal,
 div[id^="__next-build-watcher"],
-div[id^="nextjs-dev-overlay"] {
+div[id^="nextjs-dev-overlay"],
+button[aria-label="Show shortcut hint"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
