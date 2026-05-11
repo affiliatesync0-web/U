@@ -57,7 +57,7 @@ export default function AdminSalesLabPage() {
   }
 
   const handleDelete = (id: string) => {
-    // CORRECCIÓN: Pasar la referencia del documento usando doc() para evitar error de argumentos en Vercel
+    if (!db) return;
     deleteDocumentNonBlocking(doc(db, 'sales_lab', id))
     toast({ title: "Recurso eliminado" })
   }
