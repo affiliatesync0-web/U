@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { 
   MessageSquare, 
   Send, 
@@ -91,7 +90,7 @@ export default function SalesCopilotPage() {
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setInput('')
     setIsAiLoading(true)
-    setMobileShowChat(true) // Cambiar a vista de chat en móviles al enviar mensaje
+    setMobileShowChat(true)
 
     try {
       const response = await processAssistantMessage({
@@ -144,7 +143,6 @@ export default function SalesCopilotPage() {
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-120px)] flex flex-col gap-4">
         
-        {/* Barra de Cabecera Responsiva */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -175,7 +173,6 @@ export default function SalesCopilotPage() {
 
         <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
           
-          {/* PANEL 1: Prospectos */}
           <div className={cn("lg:w-[280px] flex-col shrink-0 overflow-hidden lg:flex", mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
@@ -211,7 +208,7 @@ export default function SalesCopilotPage() {
                           key={buyer.id} 
                           onClick={() => {
                             setSelectedBuyer(buyer);
-                            setMobileShowChat(true); // Mostrar chat al seleccionar prospecto
+                            setMobileShowChat(true);
                             handleSendMessage(undefined, `Analiza a ${buyer.firstName}. ¿Qué script puedo usar para cerrarlo hoy mismo?`);
                           }}
                           className={cn(
@@ -242,7 +239,6 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL 2: IA Chat (Centro) */}
           <div className={cn("flex-1 flex-col h-full overflow-hidden lg:flex", !mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
@@ -358,7 +354,6 @@ export default function SalesCopilotPage() {
             </Card>
           </div>
 
-          {/* PANEL 3: Navegador (Derecha) */}
           {showRightPanel && (
             <div className="lg:flex-[1.6] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-8 duration-700">
               <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
@@ -429,7 +424,7 @@ export default function SalesCopilotPage() {
                   
                   <div className="absolute top-0 left-0 right-0 p-3 bg-amber-50/95 backdrop-blur-md border-b border-amber-100 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                      <ShieldCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                       <p className="text-[8px] text-amber-800 font-bold leading-tight uppercase tracking-widest">
                         Navegador Inmersivo: Usa "Abrir Externo" si el contenido no carga.
                       </p>

@@ -1,9 +1,8 @@
-
 "use client"
 
 import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
