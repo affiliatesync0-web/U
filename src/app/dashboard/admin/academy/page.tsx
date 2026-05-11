@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from 'react'
@@ -125,6 +124,7 @@ export default function AdminAcademyPage() {
   }
 
   const handleDelete = (id: string) => {
+    // CORRECCIÓN: Pasar la referencia del documento usando doc() para evitar error de argumentos
     deleteDocumentNonBlocking(doc(db, 'academy_lessons', id));
     toast({ title: "Lección eliminada" });
   }
@@ -139,7 +139,7 @@ export default function AdminAcademyPage() {
           </div>
           
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
-            <Plus className="mr-2 h-5 w-5" /> {t.addLesson.toUpperCase()}
+            <Plus className="mr-2 h-5 w-5" /> {(t.addLesson || "Add Lesson").toUpperCase()}
           </Button>
         </div>
 
@@ -151,7 +151,7 @@ export default function AdminAcademyPage() {
                   <GraduationCap className="h-6 w-6" />
                 </div>
                 <div>
-                  <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
+                  <DialogTitle className="text-3xl font-headline font-black">{(t.addLesson || "Add Lesson")}</DialogTitle>
                   <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] mt-1">Sube archivos locales o usa links externos</DialogDescription>
                 </div>
               </div>

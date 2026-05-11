@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -54,11 +53,11 @@ export default function AdminSalesLabPage() {
 
     toast({ title: "Recurso Publicado", description: "Tus afiliados ya pueden ver este nuevo material." })
     setIsAdding(false)
-    setFormData({ title: '', content: '', type: activeTab === 'hooks' ? 'hook' : (activeTab === 'scripts' ? 'script' : 'strategy'), category: '' })
+    setFormData({ title: '', content: '', type: activeTab === 'hooks' ? 'hook' : (activeTab === 'scripts' ? 'script' : 'strategy'), category: 'Reels / TikTok' })
   }
 
   const handleDelete = (id: string) => {
-    // CORRECCIÓN: Usar doc() para crear la referencia correcta al documento antes de eliminar
+    // CORRECCIÓN: Pasar la referencia del documento usando doc() para evitar error de argumentos
     deleteDocumentNonBlocking(doc(db, 'sales_lab', id))
     toast({ title: "Recurso eliminado" })
   }
