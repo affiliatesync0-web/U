@@ -27,7 +27,8 @@ import {
   Flame,
   Target,
   FileText,
-  GraduationCap
+  GraduationCap,
+  ShieldCheck
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
