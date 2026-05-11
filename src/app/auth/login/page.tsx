@@ -116,7 +116,6 @@ function LoginContent() {
         await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       }
     } catch (error: any) {
-      console.error("Google Login Error:", error.code);
       setLoading(false);
       setErrorMsg("No se pudo conectar con Google.");
     }
@@ -188,7 +187,7 @@ function LoginContent() {
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <Label className="text-[13px] font-bold text-[#111]">Contraseña</Label>
-              <Link href="/auth/forgot-password" className="text-[12px] text-[#0066c0] hover:text-[#c45500] hover:underline">¿Olvidaste tu contraseña?</Link>
+              <Link href="/auth/forgot-password" style={{fontSize: '12px'}} className="text-[#0066c0] hover:text-[#c45500] hover:underline">¿Olvidaste tu contraseña?</Link>
             </div>
             <div className="relative">
               <Input 
@@ -213,7 +212,7 @@ function LoginContent() {
           </Button>
 
           <p className="text-[12px] text-[#111] leading-snug">
-            Al continuar, aceptas las <Link href="#" className="text-[#0066c0] hover:underline hover:text-[#c45500]">Condiciones de uso</Link> y el <Link href="#" className="text-[#0066c0] hover:underline hover:text-[#c45500]">Aviso de privacidad</Link> de Sync Connect.
+            Al continuar, aceptas las Condiciones de uso de Sync Connect.
           </p>
         </form>
 
@@ -246,15 +245,6 @@ function LoginContent() {
           <Link href={`/auth/register${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`}>Crea tu cuenta de Sync</Link>
         </Button>
       </div>
-
-      <footer className="mt-12 w-full max-w-xl text-center space-y-4 border-t border-[#eee] pt-8 bg-gradient-to-b from-[#eee] to-transparent bg-[length:100%_1px] bg-no-repeat">
-        <div className="flex justify-center gap-8">
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Condiciones de uso</Link>
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Aviso de privacidad</Link>
-          <Link href="#" className="text-[11px] text-[#0066c0] hover:text-[#c45500] hover:underline">Ayuda</Link>
-        </div>
-        <p className="text-[11px] text-[#555]">© 2024, Sync Connect o sus afiliados</p>
-      </footer>
     </div>
   )
 }

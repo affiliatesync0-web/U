@@ -32,20 +32,22 @@
   body { @apply bg-[#EAEDED] text-foreground font-body overflow-x-hidden; }
 }
 
-/* ELIMINACIÓN DE INDICADORES TÉCNICOS (BOLITA NEGRA / OVERLAYS) */
+/* BLOQUEO TOTAL DE INDICADORES DE DESARROLLO (BOLITA NEGRA / OVERLAYS) */
+nextjs-portal,
 [data-nextjs-portal],
 [data-nextjs-toast],
 .__next-error-overlay-root,
 #nextjs-error-overlay,
 [data-turbopack-pounce],
-nextjs-portal,
 div[id^="__next-build-watcher"],
 div[id^="nextjs-dev-overlay"],
-button[aria-label="Show shortcut hint"] {
+button[aria-label="Show shortcut hint"],
+div[class*="nextjs-static-indicator"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  z-index: -1 !important;
 }
 
 .amazon-input {

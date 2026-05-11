@@ -20,20 +20,10 @@ const FAVICON_URL = "https://scontent.fmga4-1.fna.fbcdn.net/v/t39.30808-6/666660
 
 export const metadata: Metadata = {
   title: 'Sync Connect',
-  description: 'Infraestructura tecnológica elite Sync Connect.',
+  description: 'Tecnología elite para gestión comercial.',
   icons: {
-    icon: [
-      {
-        url: FAVICON_URL,
-        href: FAVICON_URL,
-      }
-    ],
-    apple: [
-      {
-        url: FAVICON_URL,
-        href: FAVICON_URL,
-      }
-    ],
+    icon: FAVICON_URL,
+    apple: FAVICON_URL,
   },
 };
 
