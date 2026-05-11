@@ -21,9 +21,7 @@ import {
   Check,
   ExternalLink,
   Zap,
-  BadgeDollarSign,
-  MonitorSmartphone,
-  ShieldAlert,
+  ArrowLeft,
   PanelRightClose,
   PanelRightOpen,
   Globe,
@@ -58,6 +56,7 @@ export default function SalesCopilotPage() {
   const [searchBuyer, setSearchBuyer] = useState('')
   const [copiedIndex, setCopiedId] = useState<number | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const [activeTool, setActiveTool] = useState<'whatsapp' | 'google' | 'course'>('whatsapp');
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   
@@ -92,6 +91,7 @@ export default function SalesCopilotPage() {
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setInput('')
     setIsAiLoading(true)
+    setMobileShowChat(true) // Cambiar a vista de chat en móviles al enviar mensaje
 
     try {
       const response = await processAssistantMessage({
@@ -175,7 +175,7 @@ export default function SalesCopilotPage() {
 
         <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
           
-          {/* PANEL 1: Prospectos (Visible en Laptop, Togleable en Mobile) */}
+          {/* PANEL 1: Prospectos */}
           <div className={cn("lg:w-[280px] flex-col shrink-0 overflow-hidden lg:flex", mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
@@ -211,6 +211,7 @@ export default function SalesCopilotPage() {
                           key={buyer.id} 
                           onClick={() => {
                             setSelectedBuyer(buyer);
+                            setMobileShowChat(true); // Mostrar chat al seleccionar prospecto
                             handleSendMessage(undefined, `Analiza a ${buyer.firstName}. ¿Qué script puedo usar para cerrarlo hoy mismo?`);
                           }}
                           className={cn(
@@ -242,11 +243,19 @@ export default function SalesCopilotPage() {
           </div>
 
           {/* PANEL 2: IA Chat (Centro) */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <div className={cn("flex-1 flex-col h-full overflow-hidden lg:flex", !mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="lg:hidden text-white hover:bg-white/10"
+                      onClick={() => setMobileShowChat(false)}
+                    >
+                      <ArrowLeft className="h-6 w-6" />
+                    </Button>
                     <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3">
                       <Bot className="h-6 w-6" />
                     </div>
