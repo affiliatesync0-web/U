@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 export default function AffiliateProductsPage() {
   const { t } = useLanguage();
