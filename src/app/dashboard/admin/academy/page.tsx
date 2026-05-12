@@ -39,13 +39,12 @@ export default function AdminAcademyPage() {
     useLocalFile: true
   })
 
-  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleVideoFileChange = async (videoFile: File) => {
+    if (!videoFile) return;
     setStorageError(null);
     setUploadProgress(0);
 
-    if (!file.type.startsWith('video/')) {
+    if (!videoFile.type.startsWith('video/')) {
       toast({ variant: "destructive", title: "Formato no válido", description: "Selecciona un archivo de video." });
       setUploadProgress(null);
       return;
@@ -53,8 +52,8 @@ export default function AdminAcademyPage() {
 
     try {
       const { storage } = initializeFirebase();
-      const storageRef = ref(storage, `academy/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const storageRef = ref(storage, `academy/${Date.now()}_${videoFile.name.replace(/\s+/g, '_')}`);
+      const uploadTask = uploadBytesResumable(storageRef, videoFile);
 
       uploadTask.on('state_changed', 
         (snapshot) => {
@@ -116,7 +115,7 @@ export default function AdminAcademyPage() {
           </div>
           
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
-            <Plus className="mr-2 h-5 w-5" /> {(t.addLesson || "Agregar Lección").toUpperCase()}
+            <Plus className="mr-2 h-5 w-5" /> {t.addLesson.toUpperCase()}
           </Button>
         </div>
 
@@ -127,7 +126,7 @@ export default function AdminAcademyPage() {
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
                   <GraduationCap className="h-6 w-6" />
                 </div>
-                <DialogTitle className="text-3xl font-headline font-black">{(t.addLesson || "Agregar Lección")}</DialogTitle>
+                <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
               </div>
             </div>
             
@@ -152,16 +151,16 @@ export default function AdminAcademyPage() {
 
               <div className="space-y-4">
                 <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl border">
-                  <Button variant="ghost" className={cn("flex-1 rounded-xl text-[10px] font-black", formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: true})}>ARCHIVO LOCAL</Button>
-                  <Button variant="ghost" className={cn("flex-1 rounded-xl text-[10px] font-black", !formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: false})}>LINK EXTERNO</Button>
+                  <button className={cn("flex-1 h-10 rounded-xl text-[10px] font-black transition-all", formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: true})}>ARCHIVO LOCAL</button>
+                  <button className={cn("flex-1 h-10 rounded-xl text-[10px] font-black transition-all", !formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: false})}>LINK EXTERNO</button>
                 </div>
 
                 {formData.useLocalFile ? (
                   <div className="space-y-4">
-                    <Button variant="outline" className="w-full h-40 border-dashed border-4 rounded-[2.5rem]" onClick={() => videoInputRef.current?.click()} disabled={uploadProgress !== null}>
-                      {uploadProgress !== null ? <Loader2 className="animate-spin" /> : (formData.videoUrl ? <CheckCircle2 className="text-green-500" /> : <Upload />)}
-                    </Button>
-                    <input type="file" ref={videoInputRef} onChange={handleVideoFileChange} accept="video/*" className="hidden" />
+                    <button className="w-full h-40 border-dashed border-4 rounded-[2.5rem] flex items-center justify-center hover:bg-slate-50 transition-all" onClick={() => videoInputRef.current?.click()} disabled={uploadProgress !== null}>
+                      {uploadProgress !== null ? <Loader2 className="animate-spin text-primary" /> : (formData.videoUrl ? <CheckCircle2 className="text-green-500 h-10 w-10" /> : <Upload className="text-slate-300 h-10 w-10" />)}
+                    </button>
+                    <input type="file" ref={videoInputRef} onChange={(e) => e.target.files && handleVideoFileChange(e.target.files[0])} accept="video/*" className="hidden" />
                     {uploadProgress !== null && <Progress value={uploadProgress} className="h-2" />}
                   </div>
                 ) : (
@@ -191,7 +190,7 @@ export default function AdminAcademyPage() {
                 <CardContent className="p-8 space-y-4">
                   <div className="flex justify-between items-start gap-4">
                     <h3 className="font-black text-lg text-slate-800 uppercase leading-tight">{lesson.title}</h3>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-red-400" onClick={() => handleDelete(lesson.id)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-red-400 hover:text-red-600" onClick={() => handleDelete(lesson.id)}>
                       <Trash2 className="h-5 w-5" />
                     </Button>
                   </div>

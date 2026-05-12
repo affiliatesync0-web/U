@@ -157,14 +157,16 @@ export default function SalesCopilotPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
+            <button 
               onClick={() => setShowRightPanel(!showRightPanel)} 
-              variant={showRightPanel ? "default" : "outline"}
-              className="h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-lg shadow-primary/10"
+              className={cn(
+                "h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg",
+                showRightPanel ? "bg-slate-900 text-white" : "bg-white text-slate-900 border"
+              )}
             >
               {showRightPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
               <span className="hidden sm:inline">{showRightPanel ? "Cerrar Navegador" : "Abrir Navegador"}</span>
-            </Button>
+            </button>
             <div className="h-10 px-5 bg-slate-900 rounded-xl flex items-center gap-3 text-white shadow-xl">
               <Smartphone className="h-4 w-4 text-primary" />
               <span className="text-[10px] font-black uppercase tracking-widest">+{profile?.whatsappNumber || 'Sin Vincular'}</span>
@@ -358,10 +360,7 @@ export default function SalesCopilotPage() {
           {showRightPanel && (
             <div className="lg:flex-[1.6] flex flex-col h-full overflow-hidden animate-in slide-in-from-right-8 duration-700">
               <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
-                <CardHeader className={cn(
-                  "p-5 shrink-0 flex flex-col gap-4 transition-colors duration-500",
-                  activeTool === 'whatsapp' ? "bg-[#25D366]" : (activeTool === 'course' ? "bg-primary" : "bg-blue-600")
-                )}>
+                <CardHeader className="p-5 shrink-0 bg-slate-900 border-b border-white/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-white">
                       <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
@@ -381,37 +380,34 @@ export default function SalesCopilotPage() {
                     </Button>
                   </div>
 
-                  <div className="flex gap-2 bg-black/10 p-1.5 rounded-2xl">
-                    <Button 
+                  <div className="flex gap-2 bg-black/10 p-1.5 rounded-2xl mt-4">
+                    <button 
                       onClick={() => setActiveTool('whatsapp')}
-                      variant="ghost" 
                       className={cn(
                         "flex-1 h-10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
                         activeTool === 'whatsapp' ? "bg-white text-green-600 shadow-xl" : "text-white/60 hover:text-white"
                       )}
                     >
                       WhatsApp
-                    </Button>
-                    <Button 
+                    </button>
+                    <button 
                       onClick={() => setActiveTool('course')}
-                      variant="ghost" 
                       className={cn(
                         "flex-1 h-10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
                         activeTool === 'course' ? "bg-white text-primary shadow-xl" : "text-white/60 hover:text-white"
                       )}
                     >
                       Curso Sync
-                    </Button>
-                    <Button 
+                    </button>
+                    <button 
                       onClick={() => setActiveTool('google')}
-                      variant="ghost" 
                       className={cn(
                         "flex-1 h-10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
                         activeTool === 'google' ? "bg-white text-blue-600 shadow-xl" : "text-white/60 hover:text-white"
                       )}
                     >
                       Google
-                    </Button>
+                    </button>
                   </div>
                 </CardHeader>
                 

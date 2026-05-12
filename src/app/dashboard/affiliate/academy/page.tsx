@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect } from 'react'
@@ -17,11 +16,8 @@ export default function AffiliateAcademyPage() {
   const academyUrl = "https://syncacademy.systeme.io/es/login?redirectUrl=https%3A%2F%2Fsyncacademy.systeme.io%2Fschool%2Fcourse%2Fsyncacademy";
 
   useEffect(() => {
-    // Redirección automática al cargar la página si el usuario llega aquí
-    const timer = setTimeout(() => {
-      window.open(academyUrl, '_blank');
-    }, 2000);
-    return () => clearTimeout(timer);
+    // Redirección inmediata al cargar la página
+    window.location.href = academyUrl;
   }, []);
 
   return (
@@ -43,7 +39,7 @@ export default function AffiliateAcademyPage() {
             <div className="space-y-2">
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">Accediendo a la Plataforma</h3>
               <p className="text-slate-500 font-medium leading-relaxed">
-                Estamos preparándolo todo para tu sesión de entrenamiento. Serás redirigido automáticamente a la academia externa en 2 segundos.
+                Estamos preparándolo todo para tu sesión de entrenamiento. Serás redirigido directamente a la academia externa.
               </p>
             </div>
 
@@ -52,14 +48,14 @@ export default function AffiliateAcademyPage() {
                 asChild 
                 className="h-20 px-10 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-lg uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105"
               >
-                <a href={academyUrl} target="_blank" rel="noopener noreferrer">
+                <a href={academyUrl}>
                   ENTRAR AHORA <ArrowRight className="ml-3 h-6 w-6" />
                 </a>
               </Button>
               
               <div className="flex items-center justify-center gap-3 py-4 opacity-50">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Redirigiendo...</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Abriendo conexión...</span>
               </div>
             </div>
 
