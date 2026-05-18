@@ -5,13 +5,13 @@ import { useState, Suspense, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, useUser } from '@/firebase'
 import { doc, collection } from 'firebase/firestore'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, ShieldCheck, ShoppingBag, ChevronLeft, Phone, MessageCircle, CreditCard, Landmark, FileText, Truck, MapPin } from 'lucide-react'
+import { Loader2, Truck, CreditCard, Landmark, FileText } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { sendOrderConfirmedEmail } from '@/lib/email'
@@ -28,7 +28,6 @@ function CheckoutContent() {
   const productId = params.productId as string
   const affiliateId = searchParams.get('ref') || 'admin'
 
-  // PROTECCIÓN DE COMPRA: Redirigir a login si no hay usuario
   useEffect(() => {
     if (!isUserLoading && !user) {
       const currentUrl = window.location.pathname + window.location.search;
@@ -38,9 +37,6 @@ function CheckoutContent() {
 
   const productRef = useMemoFirebase(() => doc(db, 'products', productId), [db, productId])
   const { data: product, isLoading: productLoading } = useDoc(productRef)
-
-  const affiliateRef = useMemoFirebase(() => affiliateId !== 'admin' ? doc(db, 'affiliates', affiliateId) : null, [db, affiliateId])
-  const { data: affiliateData } = useDoc(affiliateRef)
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -53,7 +49,6 @@ function CheckoutContent() {
     voucherRef: ''
   })
 
-  // Pre-cargar datos del usuario logueado
   useEffect(() => {
     if (user && !formData.email) {
       const names = (user.displayName || '').split(' ');
@@ -74,17 +69,12 @@ function CheckoutContent() {
       return
     }
 
-    if (product?.type === 'Físico' && !formData.address) {
-      toast({ variant: "destructive", title: "Dirección Requerida", description: "Dinos dónde entregar tu pedido." })
-      return
-    }
-
     setLoading(true)
 
     try {
       const buyerId = formData.email.toLowerCase().trim()
-      
       const buyerRef = doc(db, 'buyers', buyerId)
+      
       setDocumentNonBlocking(buyerRef, {
         id: buyerId,
         firstName: formData.firstName,
@@ -108,8 +98,6 @@ function CheckoutContent() {
         productType: product?.type || 'Digital',
         buyerId: buyerId,
         buyerName: `${formData.firstName} ${formData.lastName}`,
-        buyerPhone: formData.phone.trim(),
-        deliveryAddress: formData.address || 'N/A',
         saleDate: new Date().toISOString(),
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
@@ -119,8 +107,7 @@ function CheckoutContent() {
         voucherReference: formData.voucherRef.trim() || (product?.type === 'Físico' ? 'CASH_ON_DELIVERY' : 'LINK_DIRECTO')
       }
 
-      const salesRef = collection(db, 'sales')
-      addDocumentNonBlocking(salesRef, saleData)
+      addDocumentNonBlocking(collection(db, 'sales'), saleData)
 
       await sendOrderConfirmedEmail({
         to: formData.email,
@@ -129,17 +116,16 @@ function CheckoutContent() {
         isPhysical: product?.type === 'Físico'
       }).catch(err => console.error("Error enviando email compra:", err));
 
-      toast({ title: "Pedido Registrado", description: product?.type === 'Físico' ? "Te contactaremos para la entrega." : "Tu solicitud está en proceso." })
-
       if (product?.paymentLink && product?.type !== 'Físico') {
+        toast({ title: "Redirigiendo...", description: "Abriendo pasarela de pago segura." })
         window.location.href = product.paymentLink;
       } else {
+        toast({ title: "Pedido Registrado", description: product?.type === 'Físico' ? "Te contactaremos para la entrega." : "Tu solicitud está en proceso." })
         router.push('/dashboard/buyer');
       }
 
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No pudimos procesar la solicitud." })
-    } finally {
       setLoading(false)
     }
   }
@@ -153,16 +139,11 @@ function CheckoutContent() {
     );
   }
 
-  if (!product) {
-    return <div className="min-h-screen flex items-center justify-center font-black uppercase">Producto no encontrado</div>
-  }
-
-  const isPhysical = product.type === 'Físico';
+  const isPhysical = product?.type === 'Físico';
 
   return (
-    <div className="min-h-screen bg-[#EAEDED] py-8 px-4 relative">
+    <div className="min-h-screen bg-[#EAEDED] py-8 px-4">
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
-        
         <div className="flex items-center gap-4">
            <Link href="/" className="hover:outline hover:outline-1 hover:outline-slate-300 p-2 rounded-sm transition-all">
              <div className="relative h-8 w-24">
@@ -173,8 +154,7 @@ function CheckoutContent() {
            <h1 className="text-2xl font-normal text-slate-800">Finalizar pedido</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+        <form onSubmit={handlePurchase} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-6">
             <Card className="premium-card">
               <CardHeader className="border-b bg-slate-50/50">
@@ -193,23 +173,17 @@ function CheckoutContent() {
                  </div>
                  <div className="space-y-1">
                    <Label className="text-[13px] font-bold text-[#111]">E-mail</Label>
-                   <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="amazon-input" required disabled />
+                   <Input type="email" value={formData.email} className="amazon-input" required disabled />
                  </div>
                  <div className="space-y-1">
                    <Label className="text-[13px] font-bold text-[#111]">Número de teléfono</Label>
                    <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="amazon-input" required />
-                   <p className="text-[11px] text-slate-500 italic">Se usará para coordinar la entrega.</p>
                  </div>
-                 
                  {isPhysical && (
                    <>
                     <div className="md:col-span-2 space-y-1">
                       <Label className="text-[13px] font-bold text-[#111]">Dirección exacta</Label>
                       <Input placeholder="Barrio, de la iglesia 2c abajo..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="amazon-input" required />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[13px] font-bold text-[#111]">Ciudad / Departamento</Label>
-                      <Input placeholder="Ej: Managua" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="amazon-input" required />
                     </div>
                    </>
                  )}
@@ -227,38 +201,21 @@ function CheckoutContent() {
                 {isPhysical ? (
                   <div className="flex gap-4 p-6 bg-blue-50 rounded-lg border border-blue-100">
                     <Truck className="h-8 w-8 text-blue-600 shrink-0" />
-                    <div>
-                      <h4 className="font-bold text-blue-900">Pago contra entrega (Efectivo)</h4>
-                      <p className="text-[13px] text-blue-700 leading-relaxed">
-                        Paga al repartidor en efectivo en el momento de recibir tu paquete. 
-                        Nuestros asesores te llamarán al <b>{formData.phone || 'número proporcionado'}</b> para confirmar la hora de llegada.
-                      </p>
-                    </div>
+                    <p className="text-[13px] text-blue-700">Pago contra entrega en efectivo. Te llamaremos para coordinar.</p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {product.paymentLink ? (
+                  <div className="space-y-4">
+                    {product?.paymentLink ? (
                       <div className="flex gap-4 p-6 bg-green-50 rounded-lg border border-green-100">
                         <CreditCard className="h-8 w-8 text-green-600 shrink-0" />
-                        <div>
-                          <h4 className="font-bold text-green-900">Pago Digital Seguro</h4>
-                          <p className="text-[13px] text-green-700">Habilitación inmediata del contenido tras procesar el link de pago.</p>
-                        </div>
+                        <p className="text-[13px] text-green-700">Serás redirigido al enlace de pago oficial tras confirmar tus datos.</p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        <div className="p-6 bg-slate-50 border rounded-lg space-y-4">
-                          <h4 className="font-bold text-slate-800 flex items-center gap-2"><Landmark className="h-4 w-4" /> Transferencia Bancaria Local</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div><p className="text-slate-400 font-medium">Banco:</p><p className="font-bold">{product.bankType}</p></div>
-                            <div><p className="text-slate-400 font-medium">Titular:</p><p className="font-bold">{product.bankHolder}</p></div>
-                            <div className="col-span-2"><p className="text-slate-400 font-medium">Nº Cuenta:</p><p className="font-black text-lg font-mono text-primary">{product.bankAccount}</p></div>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[13px] font-bold text-[#111]">Nº Referencia del Voucher</Label>
-                          <Input value={formData.voucherRef} onChange={e => setFormData({...formData, voucherRef: e.target.value})} className="amazon-input" placeholder="Ingresa los dígitos de tu comprobante" required />
-                        </div>
+                      <div className="p-6 bg-slate-50 border rounded-lg space-y-4">
+                        <h4 className="font-bold text-slate-800 flex items-center gap-2"><Landmark className="h-4 w-4" /> Transferencia Bancaria</h4>
+                        <p className="text-xs">Banco: {product?.bankType}</p>
+                        <p className="text-sm font-black font-mono">{product?.bankAccount}</p>
+                        <Input value={formData.voucherRef} onChange={e => setFormData({...formData, voucherRef: e.target.value})} className="amazon-input" placeholder="Nº Referencia del Voucher" required />
                       </div>
                     )}
                   </div>
@@ -270,44 +227,21 @@ function CheckoutContent() {
           <div className="lg:col-span-4 space-y-4 sticky top-24">
              <Card className="premium-card p-6 border-2 border-primary/20">
                 <Button 
-                  onClick={handlePurchase} 
+                  type="submit" 
                   disabled={loading}
                   className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold h-12 rounded-md shadow-sm border border-[#F2C200] mb-4"
                 >
-                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isPhysical ? 'Confirmar Pedido' : 'Finalizar y Pagar')}
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isPhysical ? 'Confirmar Pedido' : (product?.paymentLink ? 'Pagar Ahora' : 'Finalizar Compra'))}
                 </Button>
-                <p className="text-[11px] text-center text-slate-500 mb-6">Al realizar el pedido, aceptas las condiciones de uso y el aviso de privacidad de Sync Connect.</p>
-                
                 <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-bold text-sm">Resumen del pedido</h3>
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-600">Productos:</span>
-                    <span>${product.price?.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-600">Envío y gestión:</span>
-                    <span>$0.00</span>
-                  </div>
-                  <div className="h-px bg-slate-200" />
                   <div className="flex justify-between text-lg font-black text-[#B12704]">
                     <span>Total del pedido:</span>
-                    <span>${product.price?.toFixed(2)}</span>
+                    <span>${product?.price?.toFixed(2)}</span>
                   </div>
                 </div>
              </Card>
-
-             <Card className="premium-card p-4 bg-slate-50/50">
-               <div className="flex gap-3">
-                 <Image src={product.imageUrl || 'https://picsum.photos/seed/p/100/100'} alt="product" width={60} height={60} className="rounded-md object-cover border" unoptimized />
-                 <div className="min-w-0">
-                   <p className="text-[13px] font-bold text-slate-800 line-clamp-2">{product.name}</p>
-                   <p className="text-[12px] text-slate-500 font-bold mt-1 uppercase tracking-widest">{product.type || 'Digital'}</p>
-                 </div>
-               </div>
-             </Card>
           </div>
-
-        </div>
+        </form>
       </div>
     </div>
   )

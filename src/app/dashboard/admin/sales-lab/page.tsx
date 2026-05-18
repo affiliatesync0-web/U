@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -55,7 +56,6 @@ export default function AdminSalesLabPage() {
   }
 
   const handleDelete = (id: string) => {
-    if (!db) return;
     deleteDocumentNonBlocking(doc(db, 'sales_lab', id))
     toast({ title: "Recurso eliminado" })
   }

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef } from 'react'
@@ -45,7 +46,7 @@ export default function AdminAcademyPage() {
     setUploadProgress(0);
 
     if (!videoFile.type.startsWith('video/')) {
-      toast({ variant: "destructive", title: "Formato no válido", description: "Selecciona un archivo de video." });
+      toast({ variant: "destructive", title: "Formato no válido" });
       setUploadProgress(null);
       return;
     }
@@ -61,7 +62,7 @@ export default function AdminAcademyPage() {
           setUploadProgress(progress);
         }, 
         (error) => {
-          setStorageError("Fallo al subir video. Verifica las reglas de Storage.");
+          setStorageError("Fallo al subir video.");
           setUploadProgress(null);
         }, 
         async () => {
@@ -111,7 +112,6 @@ export default function AdminAcademyPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Academy</span> Manager</h1>
-            <p className="text-slate-500 font-medium">Gestiona tus entrenamientos exclusivos.</p>
           </div>
           
           <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
@@ -121,43 +121,30 @@ export default function AdminAcademyPage() {
 
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] p-0 border-none shadow-2xl bg-white">
-            <div className="bg-slate-900 p-10 text-white sticky top-0 z-10">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <GraduationCap className="h-6 w-6" />
-                </div>
-                <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
-              </div>
+            <div className="bg-slate-900 p-10 text-white">
+              <DialogTitle className="text-3xl font-headline font-black">{t.addLesson}</DialogTitle>
             </div>
             
             <div className="p-10 space-y-8">
-              {storageError && (
-                <Alert variant="destructive" className="rounded-2xl">
-                  <AlertCircle className="h-5 w-5" />
-                  <AlertTitle className="font-black uppercase text-xs">Aviso de Configuración</AlertTitle>
-                  <AlertDescription className="text-xs font-bold mt-2">{storageError}</AlertDescription>
-                </Alert>
-              )}
-
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Título de la Clase</Label>
+                <Label className="text-[10px] font-black text-slate-500 uppercase">Título de la Clase</Label>
                 <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="h-14 rounded-2xl font-bold" />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 uppercase ml-1">Descripción</Label>
-                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="rounded-2xl min-h-[100px]" />
+                <Label className="text-[10px] font-black text-slate-500 uppercase">Descripción</Label>
+                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="rounded-2xl" />
               </div>
 
               <div className="space-y-4">
-                <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl border">
-                  <button className={cn("flex-1 h-10 rounded-xl text-[10px] font-black transition-all", formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: true})}>ARCHIVO LOCAL</button>
-                  <button className={cn("flex-1 h-10 rounded-xl text-[10px] font-black transition-all", !formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: false})}>LINK EXTERNO</button>
+                <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl">
+                  <button className={cn("flex-1 h-10 rounded-xl text-[10px] font-black", formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: true})}>ARCHIVO LOCAL</button>
+                  <button className={cn("flex-1 h-10 rounded-xl text-[10px] font-black", !formData.useLocalFile ? "bg-slate-900 text-white" : "text-slate-400")} onClick={() => setFormData({...formData, useLocalFile: false})}>LINK EXTERNO</button>
                 </div>
 
                 {formData.useLocalFile ? (
                   <div className="space-y-4">
-                    <button className="w-full h-40 border-dashed border-4 rounded-[2.5rem] flex items-center justify-center hover:bg-slate-50 transition-all" onClick={() => videoInputRef.current?.click()} disabled={uploadProgress !== null}>
+                    <button className="w-full h-40 border-dashed border-4 rounded-[2.5rem] flex items-center justify-center" onClick={() => videoInputRef.current?.click()} disabled={uploadProgress !== null}>
                       {uploadProgress !== null ? <Loader2 className="animate-spin text-primary" /> : (formData.videoUrl ? <CheckCircle2 className="text-green-500 h-10 w-10" /> : <Upload className="text-slate-300 h-10 w-10" />)}
                     </button>
                     <input type="file" ref={videoInputRef} onChange={(e) => e.target.files && handleVideoFileChange(e.target.files[0])} accept="video/*" className="hidden" />
@@ -169,10 +156,10 @@ export default function AdminAcademyPage() {
               </div>
             </div>
 
-            <div className="p-10 border-t bg-slate-50 flex gap-4 sticky bottom-0 z-10">
+            <div className="p-10 border-t bg-slate-50 flex gap-4">
               <Button variant="ghost" onClick={() => setIsAdding(false)} className="flex-1 h-16 rounded-2xl font-black">CANCELAR</Button>
               <Button className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black" onClick={handleSave} disabled={uploadProgress !== null || isFinalizing || !formData.videoUrl}>
-                {isFinalizing ? <Loader2 className="animate-spin" /> : "PUBLICAR LECCIÓN"}
+                PUBLICAR LECCIÓN
               </Button>
             </div>
           </DialogContent>
@@ -187,13 +174,11 @@ export default function AdminAcademyPage() {
                 <div className="aspect-video bg-slate-900 relative flex items-center justify-center">
                   <PlayCircle className="h-12 w-12 text-white/20 group-hover:text-primary transition-all" />
                 </div>
-                <CardContent className="p-8 space-y-4">
-                  <div className="flex justify-between items-start gap-4">
-                    <h3 className="font-black text-lg text-slate-800 uppercase leading-tight">{lesson.title}</h3>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-red-400 hover:text-red-600" onClick={() => handleDelete(lesson.id)}>
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  </div>
+                <CardContent className="p-8 flex justify-between items-start gap-4">
+                  <h3 className="font-black text-lg text-slate-800 uppercase">{lesson.title}</h3>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-red-400 hover:text-red-600" onClick={() => handleDelete(lesson.id)}>
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
                 </CardContent>
               </Card>
             ))
