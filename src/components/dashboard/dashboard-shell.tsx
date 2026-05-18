@@ -29,7 +29,9 @@ import {
   CreditCard,
   ChevronRight,
   MessageCircle,
-  MessageSquare
+  MessageSquare,
+  MapPin,
+  UserCheck
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -114,11 +116,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: "Resumen", url: "/dashboard/admin", icon: LayoutDashboard },
+    { title: "Afiliados Platinum", url: "/dashboard/admin/affiliates", icon: Users },
+    { title: "Base Compradores", url: "/dashboard/admin/buyers", icon: UserCheck },
+    { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
     { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: MessageSquare },
-    { title: "Productos", url: "/dashboard/admin/products", icon: Package },
+    { title: "Catálogo Admin", url: "/dashboard/admin/products", icon: Package },
     { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
-    { title: "Ventas", url: "/dashboard/admin/sales", icon: ShoppingBag },
+    { title: "Auditoría Ventas", url: "/dashboard/admin/sales", icon: ShoppingBag },
     { title: "Diseño & Config", url: "/dashboard/admin/design", icon: Palette },
   ]
 
