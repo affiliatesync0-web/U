@@ -205,8 +205,6 @@ function ProductDetailsDialog({ product }: any) {
               </p>
             </div>
           </div>
-          
-          <Button variant="ghost" className="w-full text-[10px] font-black uppercase text-slate-400" onClick={() => window.location.reload()}>SALIR</Button>
         </div>
       </DialogContent>
     </Dialog>
