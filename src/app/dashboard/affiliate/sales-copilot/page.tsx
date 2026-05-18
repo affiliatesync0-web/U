@@ -133,12 +133,6 @@ export default function SalesCopilotPage() {
     window.open(urls[activeTool], '_blank', 'width=1200,height=800');
   };
 
-  const quickActions = [
-    { label: "Objeción Precio", icon: Target, prompt: "Ayúdame con un cliente que dice que el producto está muy caro." },
-    { label: "Bienvenida", icon: Flame, prompt: "Genera un mensaje de bienvenida de alto impacto." },
-    { label: "Urgencia", icon: Zap, prompt: "Crea un script de escasez." }
-  ]
-
   return (
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-120px)] flex flex-col gap-4">

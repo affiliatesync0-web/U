@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, Suspense, useRef, useEffect } from 'react'
@@ -141,8 +142,9 @@ function AffiliateRegisterContent() {
       });
 
       await signOut(auth);
-      toast({ title: "Registro Completado", description: "Tu perfil está en revisión. Te avisaremos pronto." });
-      router.push('/auth/login');
+      toast({ title: "Registro Completado", description: "Paso final: Realiza tu pago de activación." });
+      // Redirección al flujo de pago solicitado
+      router.push('/auth/register/affiliate/payment');
 
     } catch (err: any) {
       console.error("Register Error:", err);
@@ -193,18 +195,18 @@ function AffiliateRegisterContent() {
           <form onSubmit={(e) => { e.preventDefault(); setStep('kyc'); }} className="space-y-4">
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Tu nombre</Label>
-              <Input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
+              <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required className="amazon-input w-full" />
             </div>
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Apellido</Label>
-              <Input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
+              <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required className="amazon-input w-full" />
             </div>
             
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Número de móvil</Label>
               <div className="flex gap-0 items-stretch">
                 <Select value={formData.countryCode} onValueChange={(v) => setFormData({...formData, countryCode: v})}>
-                  <SelectTrigger className="w-[85px] h-8 border-[#888c8c] border-r-0 focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-[#F3F3F3] text-[13px] font-bold flex shrink-0">
+                  <SelectTrigger className="w-[85px] h-10 border-[#888c8c] border-r-0 focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-r-none px-2 bg-[#F3F3F3] text-[13px] font-bold flex shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -213,23 +215,23 @@ function AffiliateRegisterContent() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="flex-1 h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] rounded-l-none px-2 py-1 text-[13px] font-medium" />
+                <input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="amazon-input w-full rounded-l-none" />
               </div>
             </div>
 
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Dirección de e-mail</Label>
-              <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
+              <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!existingUser} className="amazon-input w-full" />
             </div>
             
             {!existingUser && (
               <div className="space-y-1">
                 <Label className="text-[13px] font-bold text-[#111]">Contraseña</Label>
-                <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required placeholder="Al menos 6 caracteres" className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
+                <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required placeholder="Al menos 6 caracteres" className="amazon-input w-full" />
               </div>
             )}
 
-            <Button type="submit" className="amazon-btn-primary w-full h-8 mt-4">Continuar</Button>
+            <Button type="submit" className="amazon-btn-primary w-full h-10 mt-4">Continuar</Button>
           </form>
         )}
 
@@ -238,7 +240,7 @@ function AffiliateRegisterContent() {
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Documento de Identidad</Label>
               <Select value={kycData.idType} onValueChange={(v) => setKycData({...kycData, idType: v})}>
-                <SelectTrigger className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] bg-white text-[13px] font-medium">
+                <SelectTrigger className="h-10 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] bg-white text-[13px] font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,9 +252,9 @@ function AffiliateRegisterContent() {
             </div>
             <div className="space-y-1">
               <Label className="text-[13px] font-bold text-[#111]">Número de Documento</Label>
-              <Input value={kycData.idNumber} onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} required className="h-8 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-2 py-1 text-[13px] font-medium" />
+              <input value={kycData.idNumber} onChange={e => setKycData({...kycData, idNumber: e.target.value.toUpperCase()})} required className="amazon-input w-full" />
             </div>
-            <Button onClick={() => setStep('id_capture')} className="amazon-btn-primary w-full h-8">Siguiente: Validar Identidad</Button>
+            <Button onClick={() => setStep('id_capture')} className="amazon-btn-primary w-full h-10">Siguiente: Validar Identidad</Button>
             <Button variant="ghost" onClick={() => setStep('info')} className="w-full text-[12px] text-[#0066c0] hover:underline">Volver</Button>
           </div>
         )}
@@ -271,8 +273,8 @@ function AffiliateRegisterContent() {
               <Button onClick={() => capturePhoto(step === 'id_capture')} disabled={!hasCameraPermission} className="amazon-btn-primary w-full h-10">Tomar Foto</Button>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={() => step === 'id_capture' ? setCapturedID(null) : setCapturedSelfie(null)} className="h-8 border-[#ddd] text-[11px] font-bold rounded-[3px]">REPETIR</Button>
-                <Button onClick={() => setStep(step === 'id_capture' ? 'selfie' : 'exam')} className="amazon-btn-primary h-8">CONTINUAR</Button>
+                <Button variant="outline" onClick={() => step === 'id_capture' ? setCapturedID(null) : setCapturedSelfie(null)} className="h-10 border-[#ddd] text-[11px] font-bold rounded-[3px]">REPETIR</Button>
+                <Button onClick={() => setStep(step === 'id_capture' ? 'selfie' : 'exam')} className="amazon-btn-primary h-10">CONTINUAR</Button>
               </div>
             )}
           </div>

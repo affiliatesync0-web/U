@@ -27,7 +27,8 @@ import {
   Server,
   Music2,
   Upload,
-  Cloud
+  Cloud,
+  CreditCard
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
@@ -242,53 +243,6 @@ export default function AdminDesignPage() {
                 {savingId === 'smtp' ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : "GUARDAR CONFIGURACIÓN MAESTRA"}
               </Button>
             </form>
-
-            <div className="mt-12 p-10 rounded-[3rem] bg-blue-50/50 border border-blue-100 space-y-8 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-8 opacity-5">
-                 <Zap className="h-48 w-48 text-blue-500" />
-               </div>
-               
-               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                 <div className="flex items-center gap-5">
-                   <div className="h-14 w-14 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 -rotate-3">
-                     <RefreshCw className="h-8 w-8" />
-                   </div>
-                   <div>
-                     <h3 className="text-2xl font-black text-blue-900 tracking-tight">Vincular con Firebase</h3>
-                     <p className="text-xs text-blue-700 font-bold uppercase tracking-widest">Para enviar correos del sistema desde la nube</p>
-                   </div>
-                 </div>
-                 <Button asChild variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest h-14 px-8 rounded-2xl shadow-xl shadow-blue-200">
-                   <a href={firebaseConsoleLink} target="_blank" rel="noopener noreferrer">
-                     <ExternalLink className="h-4 w-4 mr-2" /> ABRIR CONSOLA FIREBASE
-                   </a>
-                 </Button>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-                 {[
-                   { label: "Servidor", value: "smtp.gmail.com" },
-                   { label: "Puerto", value: "465" },
-                   { label: "Usuario", value: settings.smtp_user || 'affiliatesync0@gmail.com' },
-                   { label: "Contraseña", value: settings.smtp_password || 'Ver arriba' },
-                 ].map((field) => (
-                   <div key={field.label} className="p-6 bg-white rounded-[1.5rem] border border-blue-100 shadow-sm flex flex-col justify-between group hover:scale-[1.02] transition-all">
-                     <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-3">{field.label}</p>
-                     <div className="flex items-center justify-between gap-2">
-                       <code className="text-[10px] font-black text-blue-900 truncate">{field.value}</code>
-                       <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8 shrink-0 hover:bg-blue-50 text-blue-500"
-                        onClick={() => copyToClipboard(field.value, field.label)}
-                       >
-                         {copiedField === field.label ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                       </Button>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -315,44 +269,27 @@ export default function AdminDesignPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-2xl rounded-[3rem] bg-slate-900 text-white overflow-hidden">
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-primary/5 border border-primary/10 overflow-hidden">
             <CardHeader className="p-10">
               <div className="flex items-center gap-4 mb-2">
                 <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-xl">
-                  <Star className="h-6 w-6" />
+                  <CreditCard className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-black text-white">Presencia Digital</CardTitle>
+                <CardTitle className="text-2xl font-headline font-black text-slate-900 uppercase">Membresía Afiliados</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-10 space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Facebook className="h-3 w-3" /> Facebook URL</Label>
-                  <Input 
-                    placeholder="https://facebook.com/sync" 
-                    defaultValue={overrides?.find(o => o.id === 'social-facebook')?.value}
-                    onBlur={(e) => handleSaveValue('social-facebook', e.target.value)}
-                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Instagram className="h-3 w-3" /> Instagram URL</Label>
-                  <Input 
-                    placeholder="https://instagram.com/sync" 
-                    defaultValue={overrides?.find(o => o.id === 'social-instagram')?.value}
-                    onBlur={(e) => handleSaveValue('social-instagram', e.target.value)}
-                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400 flex items-center gap-2"><Music2 className="h-3 w-3" /> TikTok URL</Label>
-                  <Input 
-                    placeholder="https://tiktok.com/@sync" 
-                    defaultValue={overrides?.find(o => o.id === 'social-tiktok')?.value}
-                    onBlur={(e) => handleSaveValue('social-tiktok', e.target.value)}
-                    className="h-12 rounded-xl bg-white/5 border-none ring-1 ring-white/10 focus:ring-2 focus:ring-primary transition-all px-4 text-xs font-medium text-white"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-slate-500 ml-1">Link de Pago de Activación</Label>
+                <Input 
+                  placeholder="https://..." 
+                  defaultValue={overrides?.find(o => o.id === 'affiliate-payment-link')?.value}
+                  onBlur={(e) => handleSaveValue('affiliate-payment-link', e.target.value)}
+                  className="h-16 rounded-2xl bg-white border-none ring-1 ring-slate-100 focus:ring-4 focus:ring-primary/10 transition-all px-6 text-sm font-bold"
+                />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 italic">
+                  Este link se le mostrará al afiliado después de registrarse.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -395,7 +332,6 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sincronizar estado local con props si cambian externamente
   useEffect(() => {
     setUrl(defaultUrl);
   }, [defaultUrl]);
@@ -419,7 +355,6 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           setUrl(downloadURL);
           setUploading(false);
-          // Auto-guardar tras subir
           onSave(id, downloadURL, hint);
         }
       );
@@ -465,16 +400,6 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
               </Button>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">URL Directa (Opcional)</Label>
-            <Input 
-              value={url} 
-              onChange={(e) => setUrl(e.target.value)} 
-              placeholder="https://..." 
-              className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 text-xs font-medium"
-            />
           </div>
         </div>
 

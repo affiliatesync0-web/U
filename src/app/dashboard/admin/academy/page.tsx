@@ -17,7 +17,6 @@ import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, d
 import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminAcademyPage() {
   const { toast } = useToast()
@@ -27,7 +26,6 @@ export default function AdminAcademyPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [isFinalizing, setIsFinalizing] = useState(false)
-  const [storageError, setStorageError] = useState<string | null>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   
   const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
@@ -42,14 +40,7 @@ export default function AdminAcademyPage() {
 
   const handleVideoFileChange = async (videoFile: File) => {
     if (!videoFile) return;
-    setStorageError(null);
     setUploadProgress(0);
-
-    if (!videoFile.type.startsWith('video/')) {
-      toast({ variant: "destructive", title: "Formato no válido" });
-      setUploadProgress(null);
-      return;
-    }
 
     try {
       const { storage } = initializeFirebase();
@@ -62,7 +53,7 @@ export default function AdminAcademyPage() {
           setUploadProgress(progress);
         }, 
         (error) => {
-          setStorageError("Fallo al subir video.");
+          toast({ variant: "destructive", title: "Error al subir video" });
           setUploadProgress(null);
         }, 
         async () => {
@@ -73,7 +64,6 @@ export default function AdminAcademyPage() {
         }
       );
     } catch (err) {
-      setStorageError("Error de inicialización de Storage");
       setUploadProgress(null);
     }
   };
