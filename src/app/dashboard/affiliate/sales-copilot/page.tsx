@@ -72,8 +72,6 @@ export default function SalesCopilotPage() {
   
   const { data: buyers, isLoading: buyersLoading } = useCollection(buyersQuery);
 
-  const courseUrl = "https://syncacademy.systeme.io/school/course/syncacademy";
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -248,7 +246,7 @@ export default function SalesCopilotPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 bg-slate-100 relative">
-                  <iframe src="https://web.whatsapp.com/" className="w-full h-full border-none" />
+                  <iframe src="https://web.whatsapp.com/" className="w-full h-full border-none" title="Sync Navigation Tool" />
                   <div className="absolute top-0 left-0 right-0 p-3 bg-amber-50/95 border-b border-amber-100 flex items-center gap-3">
                     <ShieldCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                     <p className="text-[8px] text-amber-800 font-bold uppercase tracking-widest">Conexión Segura Sync</p>

@@ -55,8 +55,10 @@ export default function AdminSalesLabPage() {
   }
 
   const handleDelete = (id: string) => {
-    deleteDocumentNonBlocking(doc(db, 'sales_lab', id))
-    toast({ title: "Recurso eliminado" })
+    if(confirm("¿Seguro que quieres eliminar este recurso?")) {
+      deleteDocumentNonBlocking(doc(db, 'sales_lab', id))
+      toast({ title: "Recurso eliminado" })
+    }
   }
 
   return (

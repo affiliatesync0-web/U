@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from 'react'
@@ -92,8 +91,10 @@ export default function AdminAcademyPage() {
   }
 
   const handleDelete = (id: string) => {
-    deleteDocumentNonBlocking(doc(db, 'academy_lessons', id));
-    toast({ title: "Lección eliminada" });
+    if(confirm("¿Seguro que quieres eliminar esta lección?")) {
+      deleteDocumentNonBlocking(doc(db, 'academy_lessons', id));
+      toast({ title: "Lección eliminada" });
+    }
   }
 
   return (
@@ -104,9 +105,9 @@ export default function AdminAcademyPage() {
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Academy</span> Manager</h1>
           </div>
           
-          <Button onClick={() => setIsAdding(true)} size="lg" className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest">
+          <button onClick={() => setIsAdding(true)} className="h-16 px-8 bg-primary rounded-2xl shadow-xl hover:scale-105 transition-all font-black text-xs uppercase tracking-widest flex items-center">
             <Plus className="mr-2 h-5 w-5" /> {t.addLesson.toUpperCase()}
-          </Button>
+          </button>
         </div>
 
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
