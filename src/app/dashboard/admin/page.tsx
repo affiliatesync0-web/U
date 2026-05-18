@@ -7,19 +7,15 @@ import {
   ShoppingBag, 
   Wallet, 
   Loader2, 
-  TrendingUp, 
-  RefreshCcw, 
-  AlertTriangle, 
   Bell, 
-  MessageSquare, 
   Users, 
   Trash2, 
-  UserMinus,
   ShieldCheck,
   Zap,
   ArrowUpRight,
   Target,
-  BarChart3
+  RefreshCcw,
+  AlertTriangle
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -28,21 +24,30 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase'
-import { collection, doc, getDocs, query, onSnapshot, limit } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
+import { collection } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { useRouter } from 'next/navigation'
+import { nuclearResetSystem } from '@/lib/auth-actions'
 import { Badge } from '@/components/ui/badge'
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
-  const [resetting, setResetting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -50,13 +55,30 @@ export default function AdminDashboard() {
   }, []);
 
   const salesQuery = useMemoFirebase(() => (!db || isAuthLoading || !user) ? null : collection(db, 'sales'), [db, user, isAuthLoading]);
-  const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
+  const { data: sales } = useCollection(salesQuery);
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
   const { data: affiliates } = useCollection(affiliatesQuery);
 
   const buyersQuery = useMemoFirebase(() => collection(db, 'buyers'), [db]);
   const { data: buyers } = useCollection(buyersQuery);
+
+  const handleResetSystem = async () => {
+    setIsResetting(true);
+    try {
+      const res = await nuclearResetSystem();
+      if (res.success) {
+        toast({ title: "SISTEMA LIMPIEZA TOTAL", description: "Todos los registros y usuarios han sido eliminados correctamente." });
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        toast({ variant: "destructive", title: "Fallo en Reinicio", description: res.error });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error Crítico", description: "Fallo de conexión." });
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   if (!mounted) return null;
 
@@ -97,6 +119,32 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-slate-500 font-medium text-lg">Métricas clave de rendimiento y control del ecosistema.</p>
           </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-2xl">
+                <Trash2 className="h-5 w-5" /> REINICIAR TODO EL SISTEMA
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+              <AlertDialogHeader>
+                <div className="h-16 w-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <AlertTriangle className="h-8 w-8" />
+                </div>
+                <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 text-center uppercase tracking-tight">¿Confirmar Limpieza Total?</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed text-center mt-4">
+                  Esta acción eliminará a <strong>TODOS</strong> los afiliados, compradores, ventas, mensajes y registros de la base de datos.<br/><br/>
+                  <span className="text-red-600">Este proceso es irreversible.</span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-10 gap-4">
+                <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetSystem} disabled={isResetting} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl">
+                  {isResetting ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : "SÍ, ELIMINAR TODO EL SISTEMA"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

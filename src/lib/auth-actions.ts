@@ -1,6 +1,54 @@
 'use server';
 
-import { adminAuth } from './firebase-admin';
+import { adminAuth, adminDb } from './firebase-admin';
+
+const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
+
+/**
+ * nuclearResetSystem - ELIMINA TODO EL CONTENIDO DEL SISTEMA
+ * Borra Firestore y Auth, excepto la cuenta administrativa principal.
+ */
+export async function nuclearResetSystem() {
+  if (!adminAuth || !adminDb) {
+    return { success: false, error: 'Admin SDK not initialized.' };
+  }
+
+  try {
+    // 1. Limpiar colecciones de Firestore
+    const collections = ['affiliates', 'buyers', 'sales', 'notifications', 'private_messages', 'user_sites', 'app_releases', 'sales_lab'];
+    
+    for (const colName of collections) {
+      const snapshot = await adminDb.collection(colName).get();
+      const batch = adminDb.batch();
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      console.log(`Firestore: Colección ${colName} vaciada.`);
+    }
+
+    // 2. Limpiar usuarios de Firebase Auth (excepto Admin)
+    let nextPageToken;
+    do {
+      const listUsersResult = await adminAuth.listUsers(1000, nextPageToken);
+      const uidsToDelete = listUsersResult.users
+        .filter(user => user.email?.toLowerCase().trim() !== ADMIN_EMAIL)
+        .map(user => user.uid);
+      
+      if (uidsToDelete.length > 0) {
+        await adminAuth.deleteUsers(uidsToDelete);
+        console.log(`Auth: ${uidsToDelete.length} usuarios eliminados.`);
+      }
+      
+      nextPageToken = listUsersResult.pageToken;
+    } while (nextPageToken);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('NUCLEAR RESET ERROR:', error);
+    return { success: false, error: error.message || 'Fallo desconocido.' };
+  }
+}
 
 /**
  * Acción de servidor para cambiar la contraseña de un usuario de forma automática.
@@ -29,7 +77,6 @@ export async function adminResetUserPassword(email: string, newPassword: string)
 /**
  * Genera un enlace de restablecimiento de contraseña para un usuario.
  * Se personaliza para que apunte directamente a nuestra página de reset-password.
- * Esto evita el uso de páginas externas de Firebase.
  */
 export async function adminGenerateResetLink(email: string) {
   if (!adminAuth) {
@@ -37,22 +84,14 @@ export async function adminGenerateResetLink(email: string) {
   }
   try {
     const cleanEmail = email.toLowerCase().trim();
-    // 1. Generar el enlace oficial de Firebase para obtener el oobCode
     const firebaseLink = await adminAuth.generatePasswordResetLink(cleanEmail);
-    
-    // 2. Extraer el oobCode del link de Firebase
     const url = new URL(firebaseLink);
     const oobCode = url.searchParams.get('oobCode');
-    
     if (!oobCode) throw new Error("No se pudo generar el código de seguridad.");
     
-    // 3. Construir nuestro link personalizado que apunta a nuestra propia página de seguridad
-    // Detectar entorno para redirección local o producción
     const isDev = process.env.NODE_ENV === 'development';
-    const baseUrl = isDev ? 'http://localhost:9002' : 'https://syncconnect.ni'; // Ajustar a dominio real
-    
+    const baseUrl = isDev ? 'http://localhost:9002' : 'https://syncconnect.ni'; 
     const customLink = `${baseUrl}/auth/reset-password?oobCode=${oobCode}`;
-    
     return { success: true, link: customLink, oobCode };
   } catch (error: any) {
     console.error('ERROR GENERATING LINK:', error);
@@ -70,16 +109,11 @@ export async function adminDeleteUser(uid: string) {
       error: 'ERROR DE SERVIDOR: El sistema no tiene permisos administrativos activos.' 
     };
   }
-
   try {
     await adminAuth.deleteUser(uid);
-    console.log(`Usuario eliminado de Auth: ${uid}`);
     return { success: true };
   } catch (error: any) {
-    console.error('ERROR EN ACCIÓN DELETE_USER:', error);
-    if (error.code === 'auth/user-not-found') {
-      return { success: true };
-    }
-    return { success: false, error: error.message || 'No se pudo eliminar el acceso del usuario.' };
+    if (error.code === 'auth/user-not-found') return { success: true };
+    return { success: false, error: error.message || 'No se pudo eliminar el acceso.' };
   }
 }
