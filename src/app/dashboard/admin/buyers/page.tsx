@@ -22,7 +22,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNo
 import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { sendNewPasswordAdmin } from '@/lib/email'
-import { adminResetUserPassword } from '@/lib/auth-actions'
+import { adminResetUserPassword, adminDeleteUser } from '@/lib/auth-actions'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -32,6 +32,7 @@ export default function AdminBuyersPage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -50,10 +51,27 @@ export default function AdminBuyersPage() {
     b.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteBuyer = (buyerId: string) => {
-    const buyerRef = doc(db, 'buyers', buyerId);
-    deleteDocumentNonBlocking(buyerRef);
-    toast({ title: "Registro eliminado", description: "El cliente ha sido borrado permanentemente." });
+  const handleDeleteBuyer = async (buyerId: string) => {
+    setIsProcessing(true);
+    try {
+      // 1. Eliminar de Auth
+      const authRes = await adminDeleteUser(buyerId);
+      if (!authRes.success) {
+        toast({ variant: "destructive", title: "Error en Servidor", description: authRes.error });
+        setIsProcessing(false);
+        return;
+      }
+
+      // 2. Eliminar de Firestore
+      const buyerRef = doc(db, 'buyers', buyerId);
+      deleteDocumentNonBlocking(buyerRef);
+      
+      toast({ title: "Cliente Eliminado", description: "El registro y el acceso han sido borrados permanentemente." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error al eliminar", description: error.message });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!mounted) return null;
@@ -93,7 +111,6 @@ export default function AdminBuyersPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* VISTA DESKTOP */}
             <Card className="hidden lg:block border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -140,13 +157,13 @@ export default function AdminBuyersPage() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle className="text-2xl md:text-3xl font-headline font-black text-slate-900 tracking-tight">¿Eliminar Comprador?</AlertDialogTitle>
                                     <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed mt-4">
-                                      Esta acción eliminará permanentemente al cliente de la base de datos.
+                                      Esta acción eliminará permanentemente al cliente de la base de datos y su cuenta de acceso.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="mt-8 gap-3 flex-col sm:flex-row">
                                     <AlertDialogCancel className="h-14 rounded-2xl font-black border-slate-100">CANCELAR</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl">
-                                      BORRAR DEFINITIVAMENTE
+                                    <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} disabled={isProcessing} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl">
+                                      {isProcessing ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : "BORRAR DEFINITIVAMENTE"}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -161,7 +178,6 @@ export default function AdminBuyersPage() {
               </CardContent>
             </Card>
 
-            {/* VISTA MÓVIL */}
             <div className="grid grid-cols-1 gap-4 lg:hidden">
               {filteredBuyers.map((buyer) => (
                 <Card key={buyer.id} className="border-none shadow-xl rounded-[2.5rem] bg-white p-6 space-y-6 ring-1 ring-slate-100">
@@ -179,10 +195,6 @@ export default function AdminBuyersPage() {
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black text-slate-400 uppercase">WhatsApp:</span>
-                      <span className="text-[11px] font-bold text-slate-700">{buyer.whatsappNumber || 'N/A'}</span>
-                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[9px] font-black text-slate-400 uppercase">Registrado:</span>
                       <span className="text-[11px] font-bold text-slate-700">{buyer.registeredAt ? new Date(buyer.registeredAt).toLocaleDateString() : 'N/A'}</span>
@@ -202,11 +214,11 @@ export default function AdminBuyersPage() {
                       <AlertDialogContent className="rounded-[2rem] w-[90vw] p-8">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-xl font-black uppercase">¿Confirmar borrado?</AlertDialogTitle>
-                          <AlertDialogDescription className="text-xs font-medium">Se perderán todos los datos del cliente.</AlertDialogDescription>
+                          <AlertDialogDescription className="text-xs font-medium">Se perderán todos los datos del cliente y su acceso.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="mt-6 flex-col gap-2">
                           <AlertDialogCancel className="h-12 rounded-xl">Cerrar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} className="h-12 rounded-xl bg-destructive">Eliminar</AlertDialogAction>
+                          <AlertDialogAction onClick={() => handleDeleteBuyer(buyer.id)} disabled={isProcessing} className="h-12 rounded-xl bg-destructive">Eliminar</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>

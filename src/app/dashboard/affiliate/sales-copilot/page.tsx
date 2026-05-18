@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -54,10 +53,8 @@ export default function SalesCopilotPage() {
   const [input, setInput] = useState('')
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [searchBuyer, setSearchBuyer] = useState('')
-  const [copiedIndex, setCopiedId] = useState<number | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [mobileShowChat, setMobileShowChat] = useState(false);
-  const [activeTool, setActiveTool] = useState<'whatsapp' | 'google' | 'course'>('whatsapp');
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -117,20 +114,8 @@ export default function SalesCopilotPage() {
     }
   }
 
-  const handleCopyScript = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(index);
-    setTimeout(() => setCopiedId(null), 2000);
-    toast({ title: "Script Copiado" });
-  };
-
   const openExternalTool = () => {
-    const urls = {
-      whatsapp: 'https://web.whatsapp.com/',
-      google: 'https://www.google.com/',
-      course: courseUrl
-    };
-    window.open(urls[activeTool], '_blank', 'width=1200,height=800');
+    window.open("https://web.whatsapp.com/", '_blank', 'width=1200,height=800');
   };
 
   return (
