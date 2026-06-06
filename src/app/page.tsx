@@ -11,13 +11,12 @@ import {
   Loader2,
   ChevronDown,
   Package,
-  ChevronLeft,
-  ChevronRight
+  MessageCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
 import { useFirestore, useMemoFirebase, useCollection, useUser } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { getGoogleDriveDirectLink } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import placeholderData from '@/app/lib/placeholder-images.json';
@@ -26,7 +25,6 @@ export default function Home() {
   const { t } = useLanguage();
   const db = useFirestore();
   const { user } = useUser();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
   const { data: configs } = useCollection(configQuery);
@@ -37,6 +35,16 @@ export default function Home() {
   const getOverride = (id: string) => configs?.find(c => c.id === id);
   const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
   const displayLogoUrl = getGoogleDriveDirectLink(getOverride('site-logo')?.imageUrl || defaultLogo?.imageUrl || "");
+  
+  const whatsappConfig = getOverride('site-whatsapp');
+  const supportPhone = whatsappConfig?.value || "";
+
+  const handleBuyWhatsApp = (productName: string, productCode: string) => {
+    if (!supportPhone) return "#";
+    const cleanPhone = supportPhone.replace(/\D/g, '');
+    const message = encodeURIComponent(`Hola Sync Connect, estoy interesado en el producto: ${productName} (Código: ${productCode}). ¿Cómo puedo realizar el pago?`);
+    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-[#EAEDED]">
@@ -106,7 +114,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* CONTENIDO DINÁMICO (SÓLO PRODUCTOS REALES) */}
+      {/* CONTENIDO DINÁMICO */}
       <main className="flex-1 pb-20">
         <div className="relative h-[250px] md:h-[450px] w-full bg-slate-900 overflow-hidden">
            <Image src="https://picsum.photos/seed/sync_main/1500/600" alt="Banner" fill className="object-cover opacity-40" priority unoptimized />
@@ -116,7 +124,7 @@ export default function Home() {
                  <h1 className="text-4xl md:text-6xl font-black text-white leading-tight uppercase italic tracking-tighter">
                    Elite <span className="text-primary">Marketplace</span>
                  </h1>
-                 <p className="text-lg text-slate-200 font-bold uppercase tracking-widest">Productos verificados con logística en Nicaragua.</p>
+                 <p className="text-lg text-slate-200 font-bold uppercase tracking-widest">Venta directa por WhatsApp con soporte real.</p>
               </div>
            </div>
         </div>
@@ -128,7 +136,7 @@ export default function Home() {
             <div className="bg-white p-20 text-center rounded-sm border shadow-sm">
                <Package className="h-16 w-16 mx-auto text-slate-200 mb-4" />
                <h3 className="text-xl font-black text-slate-900 uppercase italic">Esperando lanzamiento de catálogo</h3>
-               <p className="text-slate-500 mt-2">Próximamente aparecerán aquí los productos oficiales del administrador.</p>
+               <p className="text-slate-500 mt-2">Próximamente aparecerán aquí los productos oficiales.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -147,11 +155,14 @@ export default function Home() {
                   <div className="mt-auto space-y-3">
                     <div className="flex items-center justify-between">
                        <p className="text-2xl font-black text-[#B12704]">${product.price?.toFixed(2)}</p>
-                       {product.type === 'Físico' && (
-                         <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded">CONTRA ENTREGA</span>
-                       )}
+                       <span className="text-[9px] font-black bg-green-50 text-green-600 px-2 py-1 rounded">STOCK ACTIVO</span>
                     </div>
-                    <Link href={`/checkout/${product.id}`} className="block w-full text-center amazon-btn-primary py-2 text-[13px] font-bold">Comprar ahora</Link>
+                    <button 
+                      onClick={() => handleBuyWhatsApp(product.name, product.code)}
+                      className="w-full flex items-center justify-center gap-2 bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-black font-bold py-3 rounded-md shadow-sm transition-all active:scale-95"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Comprar por WhatsApp
+                    </button>
                   </div>
                 </div>
               ))}

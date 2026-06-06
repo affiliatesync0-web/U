@@ -4,7 +4,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Loader2, Info, Flame, Link as LinkIcon, Check, CreditCard, Landmark, Truck, Package } from 'lucide-react'
+import { Search, Loader2, Info, Flame, Link as LinkIcon, Check, MessageCircle, Package, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
@@ -42,8 +42,14 @@ export default function AffiliateProductsPage() {
     setTimeout(() => setCopiedId(null), 2000);
     toast({
       title: "¡Link de Venta Copiado!",
-      description: "Tu cliente verá directamente el método de pago configurado.",
+      description: "Tus clientes pueden registrar sus datos antes de pagar.",
     });
+  };
+
+  const handleShareWhatsApp = (productName: string, productCode: string) => {
+    const link = `${window.location.origin}/checkout/${productCode}?ref=${user?.uid}`;
+    const message = encodeURIComponent(`¡Hola! Mira esta oportunidad increíble: ${productName}. Puedes ver más detalles y adquirirlo aquí: ${link}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
   };
 
   return (
@@ -55,10 +61,10 @@ export default function AffiliateProductsPage() {
               <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                 <Flame className="h-6 w-6" />
               </div>
-              <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Mercado de Divulgación</span>
+              <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Herramientas de Venta</span>
             </div>
-            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Vende <span className="text-primary">Digital & Físico</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Promociona cursos digitales o productos físicos con entrega local en Nicaragua.</p>
+            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight">Estrategia de <span className="text-primary">Cierre Directo</span></h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Vende por WhatsApp o comparte tu link personalizado para ganar comisiones.</p>
           </div>
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
@@ -90,10 +96,9 @@ export default function AffiliateProductsPage() {
                     className="object-cover group-hover:scale-110 transition-transform duration-1000" 
                     unoptimized
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
                   <div className="absolute top-6 left-6 flex gap-2">
-                    <Badge className={cn("border-none text-white font-black px-4 py-1 rounded-xl text-[9px] uppercase tracking-widest shadow-xl", product.type === 'Físico' ? 'bg-blue-600' : 'bg-primary')}>
-                      {product.type === 'Físico' ? 'CONTRA ENTREGA' : (product.paymentLink ? 'PAGO DIGITAL' : 'TRANSFERENCIA')}
+                    <Badge className="bg-primary text-white border-none font-black px-4 py-1 rounded-xl text-[9px] uppercase tracking-widest shadow-xl">
+                      VENTA POR WHATSAPP
                     </Badge>
                   </div>
                   <div className="absolute bottom-8 left-8 right-8 text-white">
@@ -110,23 +115,25 @@ export default function AffiliateProductsPage() {
                       <p className="font-black text-2xl text-slate-900">${product.price?.toFixed(2)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[9px] text-green-600 font-black uppercase">Ganancia</p>
+                      <p className="text-[9px] text-green-600 font-black uppercase">Tu Ganancia</p>
                       <p className="font-black text-2xl text-green-600">{product.commissionRate}%</p>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <Button 
-                      onClick={() => handleCopyLink(product.id)}
-                      className="w-full h-16 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3"
+                      onClick={() => handleShareWhatsApp(product.name, product.code)}
+                      className="w-full h-16 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs uppercase tracking-widest shadow-xl gap-3 transition-all active:scale-95"
                     >
-                      {copiedId === product.id ? <Check className="h-5 w-5" /> : <LinkIcon className="h-5 w-5" />}
-                      COPIAR LINK DE VENTA
+                      <MessageCircle className="h-6 w-6 fill-current" /> COMPARTIR EN WHATSAPP
                     </Button>
-                    <Button asChild variant="outline" className="w-full h-14 rounded-2xl font-black text-[10px] uppercase border-slate-200">
-                      <Link href={`/checkout/${product.id}?ref=${user?.uid}`} target="_blank">
-                        VISTA PREVIA COMPRADOR
-                      </Link>
+                    <Button 
+                      onClick={() => handleCopyLink(product.id)}
+                      variant="outline"
+                      className="w-full h-14 rounded-2xl font-black text-[10px] uppercase border-slate-200 gap-2"
+                    >
+                      {copiedId === product.id ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+                      COPIAR LINK DE REGISTRO
                     </Button>
                     <ProductDetailsDialog product={product} />
                   </div>
@@ -141,65 +148,31 @@ export default function AffiliateProductsPage() {
 }
 
 function ProductDetailsDialog({ product }: any) {
-  const isPhysical = product.type === 'Físico';
-
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" className="w-full text-slate-400 font-black text-[9px] uppercase tracking-widest h-10 hover:text-primary">
-          <Info className="mr-2 h-4 w-4" /> FICHA TÉCNICA
+          <Info className="mr-2 h-4 w-4" /> INFO PARA CIERRE
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-xl rounded-[3.5rem] p-10 overflow-hidden border-none shadow-2xl bg-white">
         <div className="space-y-8">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Logística de <span className="text-primary">Cierre</span></DialogTitle>
+            <DialogTitle className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Estrategia de <span className="text-primary">Venta</span></DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
             <div className="p-6 rounded-[2rem] bg-slate-50 border space-y-4">
               <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-                {isPhysical ? <Truck className="h-4 w-4" /> : (product.paymentLink ? <CreditCard className="h-4 w-4" /> : <Landmark className="h-4 w-4" />)}
-                Método de Entrega & Pago
+                <ShieldCheck className="h-4 w-4" /> Guía de Pago Directo
               </h4>
-              
-              {isPhysical ? (
-                <div className="bg-white p-6 rounded-xl border border-blue-100 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase">Tipo:</span>
-                    <span className="text-xs font-black uppercase text-blue-600">PRODUCTO FÍSICO</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase">Pago:</span>
-                    <span className="text-xs font-black">CONTRA ENTREGA</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-medium italic mt-2">El cliente paga en efectivo al recibir el paquete.</p>
-                </div>
-              ) : (
-                <>
-                  {product.paymentLink ? (
-                    <div className="bg-white p-4 rounded-xl border border-primary/10 flex items-center justify-between gap-4">
-                      <code className="text-[10px] text-slate-500 truncate flex-1">{product.paymentLink}</code>
-                      <Badge className="bg-blue-100 text-blue-600 text-[8px] font-black">LINK DIGITAL</Badge>
-                    </div>
-                  ) : (
-                    <div className="bg-white p-6 rounded-xl border border-amber-100 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Banco:</span>
-                        <span className="text-xs font-black uppercase">{product.payoutBankId || product.bankType}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Cuenta:</span>
-                        <span className="text-xs font-black font-mono">{product.payoutBankAccountNumber || product.bankAccount}</span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+              <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                Este producto se vende cerrando el chat en WhatsApp. Puedes usar el link de registro para capturar los datos del cliente antes de que realice el depósito bancario oficial.
+              </p>
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Características Técnicas</h4>
               <p className="text-sm font-medium text-slate-600 leading-relaxed italic border-l-4 border-primary/20 pl-4">
                 "{product.description || 'Sin descripción disponible.'}"
               </p>
