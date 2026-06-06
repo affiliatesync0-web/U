@@ -14,6 +14,9 @@ export const translations = {
     customerList: "Your referred customers list",
     registerBuyer: "Register Manual Prospect",
     voucherReference: "Voucher Reference Number",
+    myOrders: "My Orders",
+    exploreMarketplace: "Explore Marketplace",
+    registerTransaction: "Register Transaction",
   },
   es: {
     welcomeBack: "Bienvenido de nuevo",
@@ -30,6 +33,9 @@ export const translations = {
     customerList: "Lista de clientes referidos",
     registerBuyer: "Registrar Prospecto Manual",
     voucherReference: "Nº de Referencia del Voucher",
+    myOrders: "Mis Pedidos",
+    exploreMarketplace: "Explorar Marketplace",
+    registerTransaction: "Registrar Transacción",
   }
 };
 

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, Suspense, useRef, useEffect } from 'react'
@@ -9,12 +8,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, Triangle, ChevronRight, Camera } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth, useFirestore, useUser } from '@/firebase'
+import { useAuth, useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase'
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, increment } from 'firebase/firestore'
 import { cn } from '@/lib/utils'
 import { COUNTRY_CODES } from '@/lib/constants'
 
@@ -25,7 +24,10 @@ function AffiliateRegisterContent() {
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user: existingUser } = useUser();
+  
+  const referralId = searchParams.get('ref')
   
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<Step>('info')
@@ -137,13 +139,33 @@ function AffiliateRegisterContent() {
         registeredAt: new Date().toISOString(),
         currentBalance: 0,
         status: 'Pending',
+        referredBy: referralId || null,
         kyc: kycData,
         examAnswers: examData
       });
 
+      // Si fue invitado por otro afiliado, otorgar el bono de $1.00
+      if (referralId) {
+        try {
+          updateDocumentNonBlocking(doc(db, 'affiliates', referralId), {
+            currentBalance: increment(1)
+          });
+          
+          await setDoc(doc(db, 'notifications', `${referralId}_referral_${uid}`), {
+            userId: referralId,
+            title: '🎁 Bono de Referido',
+            message: `¡Felicidades! ${formData.firstName} se ha registrado como afiliado con tu link. Has ganado $1.00.`,
+            type: 'sale',
+            createdAt: new Date().toISOString(),
+            isRead: false
+          });
+        } catch (refError) {
+          console.error("Error crediting referral bonus:", refError);
+        }
+      }
+
       await signOut(auth);
       toast({ title: "Registro Completado", description: "Paso final: Realiza tu pago de activación." });
-      // Redirección al flujo de pago solicitado
       router.push('/auth/register/affiliate/payment');
 
     } catch (err: any) {
@@ -168,6 +190,12 @@ function AffiliateRegisterContent() {
 
       <Card className="w-full max-w-[450px] border border-[#ddd] shadow-none md:shadow-sm rounded-[4px] bg-white p-6 md:p-8">
         <h1 className="text-[28px] font-normal text-[#111] mb-5 leading-tight text-left">Registro de Embajador</h1>
+
+        {referralId && (
+          <div className="mb-6 p-3 bg-primary/10 border border-primary/20 rounded-md">
+            <p className="text-[10px] font-black uppercase text-primary tracking-widest text-center">¡Estás invitado a la red Platinum!</p>
+          </div>
+        )}
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-white border border-[#c40000] rounded-[4px] flex gap-3 items-start animate-in fade-in">

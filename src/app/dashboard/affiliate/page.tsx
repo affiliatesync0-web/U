@@ -15,7 +15,8 @@ import {
   BadgeCheck,
   ArrowUpRight,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -49,8 +50,10 @@ export default function AffiliateDashboard() {
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [isMounted, setIsMounted] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [inviteLink, setInviteLink] = useState('');
+  const [copiedBuyer, setCopiedBuyer] = useState(false);
+  const [copiedAffiliate, setCopiedAffiliate] = useState(false);
+  const [inviteBuyerLink, setInviteBuyerLink] = useState('');
+  const [inviteAffiliateLink, setInviteAffiliateLink] = useState('');
   const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied' | 'watching'>('pending');
   const watchIdRef = useRef<number | null>(null);
 
@@ -59,7 +62,8 @@ export default function AffiliateDashboard() {
   useEffect(() => {
     if (isMounted && user?.uid) {
       const origin = window.location.origin;
-      setInviteLink(`${origin}/auth/register/buyer?ref=${user.uid}`);
+      setInviteBuyerLink(`${origin}/auth/register/buyer?ref=${user.uid}`);
+      setInviteAffiliateLink(`${origin}/auth/register/affiliate?ref=${user.uid}`);
       
       const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isRead', '==', false));
       const unsubscribeNotifs = onSnapshot(q, (snapshot) => {
@@ -104,6 +108,13 @@ export default function AffiliateDashboard() {
   const totalEarnedApproved = (sales || [])
     .filter(s => s.status === 'Completed')
     .reduce((acc, s) => acc + (s.commissionEarned || 0), 0);
+
+  const handleCopy = (text: string, setCopied: (v: boolean) => void) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({ title: "Enlace Copiado", description: "¡Listo para compartir!" });
+  };
 
   return (
     <DashboardShell role="affiliate">
@@ -249,36 +260,37 @@ export default function AffiliateDashboard() {
                  <div className="relative z-10 space-y-8">
                     <div className="flex items-center gap-4">
                        <div className="h-14 w-14 bg-primary/20 rounded-[1.25rem] flex items-center justify-center text-primary shadow-2xl">
-                          <LinkIcon className="h-7 w-7" />
+                          <Users className="h-7 w-7" />
                        </div>
                        <div>
-                          <h3 className="text-xl font-headline font-black uppercase italic">{t.inviteLink}</h3>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Cerrador Automático</p>
+                          <h3 className="text-xl font-headline font-black uppercase italic">Invitar Socios</h3>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Gana $1.00 por registro</p>
                        </div>
                     </div>
                     
                     <div className="space-y-4">
-                      <div className="p-5 bg-white/5 rounded-2xl border border-white/10 font-mono text-[10px] text-slate-300 break-all leading-relaxed">
-                        {inviteLink}
+                      <div className="p-4 bg-white/5 rounded-xl border border-white/10 font-mono text-[9px] text-slate-300 break-all leading-relaxed">
+                        {inviteAffiliateLink}
                       </div>
                       <Button 
-                        onClick={() => { 
-                          navigator.clipboard.writeText(inviteLink); 
-                          setCopied(true); 
-                          setTimeout(() => setCopied(false), 2000); 
-                          toast({ title: "Enlace Copiado", description: "¡Listo para compartir!" }); 
-                        }} 
-                        className="w-full h-18 rounded-[1.5rem] bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 gap-3"
+                        onClick={() => handleCopy(inviteAffiliateLink, setCopiedAffiliate)} 
+                        className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl gap-3"
                       >
-                        {copied ? <BadgeCheck className="h-6 w-6" /> : <Copy className="h-6 w-6" />}
-                        {copied ? "COPIADO" : "COPIAR LINK MAESTRO"}
+                        {copiedAffiliate ? <BadgeCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                        {copiedAffiliate ? "COPIADO" : "LINK DE RECLUTAMIENTO"}
                       </Button>
                     </div>
 
-                    <div className="pt-4 border-t border-white/5 space-y-3">
-                       <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-500 tracking-widest">
-                          <ShieldCheck className="h-4 w-4 text-green-500" /> Atribución Directa Garantizada
-                       </div>
+                    <div className="pt-4 border-t border-white/5">
+                       <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-4">Link para Clientes (Ventas)</p>
+                       <Button 
+                        variant="outline"
+                        onClick={() => handleCopy(inviteBuyerLink, setCopiedBuyer)} 
+                        className="w-full h-12 rounded-xl border-white/10 text-white hover:bg-white/5 font-black text-[9px] uppercase tracking-widest gap-2"
+                      >
+                        {copiedBuyer ? <BadgeCheck className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+                        COPIAR LINK DE VENTAS
+                      </Button>
                     </div>
                  </div>
               </Card>
