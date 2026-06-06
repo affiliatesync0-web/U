@@ -13,20 +13,14 @@ import {
   User, 
   Loader2, 
   Sparkles, 
-  Smartphone,
-  Copy,
   Search,
   Users2,
-  Check,
   ExternalLink,
   Zap,
   ArrowLeft,
   PanelRightClose,
   PanelRightOpen,
   Globe,
-  Flame,
-  Target,
-  FileText,
   ShieldCheck
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -86,7 +80,6 @@ export default function SalesCopilotPage() {
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setInput('')
     setIsAiLoading(true)
-    setMobileShowChat(true)
 
     try {
       const response = await processAssistantMessage({
@@ -126,10 +119,8 @@ export default function SalesCopilotPage() {
               <Sparkles className="h-6 w-6 fill-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight">Sync <span className="text-primary">Command Center</span></h1>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Bot de Ventas Inteligente Activo
-              </p>
+              <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Command <span className="text-primary">Center</span></h1>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Sincronización de Ventas con IA</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -141,7 +132,7 @@ export default function SalesCopilotPage() {
               )}
             >
               {showRightPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-              <span className="hidden sm:inline">{showRightPanel ? "Cerrar Navegador" : "Abrir Navegador"}</span>
+              <span className="hidden sm:inline">{showRightPanel ? "Cerrar WhatsApp" : "Abrir WhatsApp"}</span>
             </button>
           </div>
         </div>
@@ -173,7 +164,7 @@ export default function SalesCopilotPage() {
                       buyers?.filter(b => b.firstName?.toLowerCase().includes(searchBuyer.toLowerCase())).map((buyer) => (
                         <button 
                           key={buyer.id} 
-                          onClick={() => { setSelectedBuyer(buyer); setMobileShowChat(true); handleSendMessage(undefined, `Estrategia para ${buyer.firstName}`); }}
+                          onClick={() => { setSelectedBuyer(buyer); setMobileShowChat(true); handleSendMessage(undefined, `Estrategia para cerrar a ${buyer.firstName}`); }}
                           className={cn(
                             "w-full text-left p-4 rounded-2xl bg-white border transition-all",
                             selectedBuyer?.id === buyer.id ? "border-primary ring-2 ring-primary/10 shadow-lg" : "border-slate-100"
@@ -195,14 +186,12 @@ export default function SalesCopilotPage() {
           <div className={cn("flex-1 flex-col h-full overflow-hidden lg:flex", !mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" className="lg:hidden text-white" onClick={() => setMobileShowChat(false)}><ArrowLeft className="h-6 w-6" /></Button>
-                    <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3"><Bot className="h-6 w-6" /></div>
-                    <div>
-                      <CardTitle className="text-xl font-headline font-black text-primary uppercase italic">Expert IA</CardTitle>
-                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Asistente de Cierre</p>
-                    </div>
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" size="icon" className="lg:hidden text-white" onClick={() => setMobileShowChat(false)}><ArrowLeft className="h-6 w-6" /></Button>
+                  <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3"><Bot className="h-6 w-6" /></div>
+                  <div>
+                    <CardTitle className="text-xl font-headline font-black text-primary uppercase italic">Expert IA</CardTitle>
+                    <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Asistente de Cierre</p>
                   </div>
                 </div>
               </CardHeader>
@@ -227,7 +216,7 @@ export default function SalesCopilotPage() {
                     onChange={(e) => setInput(e.target.value)}
                     className="h-14 rounded-2xl px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold"
                   />
-                  <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-primary" onClick={() => handleSendMessage()} disabled={isAiLoading}><Send className="h-6 w-6 text-white" /></Button>
+                  <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-primary shadow-xl" onClick={() => handleSendMessage()} disabled={isAiLoading}><Send className="h-6 w-6 text-white" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -249,7 +238,7 @@ export default function SalesCopilotPage() {
                   <iframe src="https://web.whatsapp.com/" className="w-full h-full border-none" title="Sync Navigation Tool" />
                   <div className="absolute top-0 left-0 right-0 p-3 bg-amber-50/95 border-b border-amber-100 flex items-center gap-3">
                     <ShieldCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                    <p className="text-[8px] text-amber-800 font-bold uppercase tracking-widest">Conexión Segura Sync</p>
+                    <p className="text-[8px] text-amber-800 font-bold uppercase tracking-widest leading-none">Conexión Segura Sync Protegida</p>
                   </div>
                 </CardContent>
               </Card>
