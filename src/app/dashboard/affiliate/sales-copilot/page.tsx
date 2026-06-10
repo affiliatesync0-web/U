@@ -10,13 +10,11 @@ import {
   MessageSquare, 
   Send, 
   Bot, 
-  User, 
   Loader2, 
   Sparkles, 
   Search,
   Users2,
   ExternalLink,
-  Zap,
   ArrowLeft,
   PanelRightClose,
   PanelRightOpen,
@@ -113,21 +111,21 @@ export default function SalesCopilotPage() {
     <DashboardShell role="affiliate">
       <div className="h-[calc(100vh-120px)] flex flex-col gap-4">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 shrink-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-              <Sparkles className="h-6 w-6 fill-primary" />
+            <div className="h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-inner">
+              <Sparkles className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Command <span className="text-primary">Center</span></h1>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Sincronización de Ventas con IA</p>
+              <h1 className="text-xl font-headline font-black text-slate-900 tracking-tight leading-none uppercase italic">Command <span className="text-slate-500">Center</span></h1>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Sincronización de Ventas con IA</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setShowRightPanel(!showRightPanel)} 
               className={cn(
-                "h-10 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all",
+                "h-10 px-5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all",
                 showRightPanel ? "bg-slate-900 text-white shadow-lg" : "bg-white text-slate-900 border"
               )}
             >
@@ -139,10 +137,10 @@ export default function SalesCopilotPage() {
 
         <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
           <div className={cn("lg:w-[280px] flex-col shrink-0 overflow-hidden lg:flex", mobileShowChat ? "hidden" : "flex")}>
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
+            <Card className="border-none shadow-xl rounded-2xl bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
                 <h3 className="text-xs font-headline font-black tracking-tight text-white flex items-center gap-2 uppercase">
-                  <Users2 className="h-4 w-4 text-primary" /> Mis Prospectos
+                  <Users2 className="h-4 w-4" /> Mis Prospectos
                 </h3>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
@@ -150,29 +148,29 @@ export default function SalesCopilotPage() {
                     placeholder="Buscar..." 
                     value={searchBuyer}
                     onChange={(e) => setSearchBuyer(e.target.value)}
-                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-10 pl-10 rounded-xl text-[10px] font-bold"
+                    className="bg-white/5 border-none ring-1 ring-white/10 text-white h-10 pl-10 rounded-lg text-[10px] font-bold"
                   />
                 </div>
               </CardHeader>
               
               <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/50">
                 <ScrollArea className="h-full">
-                  <div className="p-4 space-y-3">
+                  <div className="p-4 space-y-2">
                     {buyersLoading ? (
-                      <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary opacity-20" /></div>
+                      <div className="flex justify-center py-10"><Loader2 className="animate-spin text-slate-300 opacity-20" /></div>
                     ) : (
                       buyers?.filter(b => b.firstName?.toLowerCase().includes(searchBuyer.toLowerCase())).map((buyer) => (
                         <button 
                           key={buyer.id} 
                           onClick={() => { setSelectedBuyer(buyer); setMobileShowChat(true); handleSendMessage(undefined, `Estrategia para cerrar a ${buyer.firstName}`); }}
                           className={cn(
-                            "w-full text-left p-4 rounded-2xl bg-white border transition-all",
-                            selectedBuyer?.id === buyer.id ? "border-primary ring-2 ring-primary/10 shadow-lg" : "border-slate-100"
+                            "w-full text-left p-4 rounded-xl bg-white border transition-all",
+                            selectedBuyer?.id === buyer.id ? "border-slate-900 ring-1 ring-slate-900/10 shadow-md" : "border-slate-100 hover:bg-slate-50"
                           )}
                         >
                           <div className="flex items-center gap-4">
-                            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-white font-black text-xs", selectedBuyer?.id === buyer.id ? "bg-primary" : "bg-slate-200")}>{buyer.firstName?.charAt(0)}</div>
-                            <h4 className="text-[11px] font-black text-slate-800 uppercase">{buyer.firstName}</h4>
+                            <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center text-white font-black text-xs", selectedBuyer?.id === buyer.id ? "bg-slate-900" : "bg-slate-200")}>{buyer.firstName?.charAt(0)}</div>
+                            <h4 className="text-[11px] font-black text-slate-800 uppercase truncate">{buyer.firstName}</h4>
                           </div>
                         </button>
                       ))
@@ -184,27 +182,27 @@ export default function SalesCopilotPage() {
           </div>
 
           <div className={cn("flex-1 flex-col h-full overflow-hidden lg:flex", !mobileShowChat ? "hidden" : "flex")}>
-            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
+            <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-2xl flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 shrink-0 border-b border-white/5">
                 <div className="flex items-center gap-4">
                   <Button variant="ghost" size="icon" className="lg:hidden text-white" onClick={() => setMobileShowChat(false)}><ArrowLeft className="h-6 w-6" /></Button>
-                  <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-2xl rotate-3"><Bot className="h-6 w-6" /></div>
+                  <div className="h-12 w-12 rounded-xl bg-slate-800 flex items-center justify-center text-white shadow-2xl border border-white/5"><Bot className="h-6 w-6" /></div>
                   <div>
-                    <CardTitle className="text-xl font-headline font-black text-primary uppercase italic">Expert IA</CardTitle>
+                    <CardTitle className="text-xl font-headline font-black text-white uppercase italic">Expert <span className="text-slate-500">IA</span></CardTitle>
                     <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Asistente de Cierre</p>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="flex-1 overflow-hidden p-0 bg-[#F8FAFC] flex flex-col relative">
+              <CardContent className="flex-1 overflow-hidden p-0 bg-slate-50 flex flex-col relative">
                 <ScrollArea className="flex-1 p-6 relative z-10">
                   <div className="space-y-6">
                     {messages.map((msg, i) => (
                       <div key={i} className={cn("flex items-end gap-4 max-w-[85%]", msg.role === 'user' ? "ml-auto flex-row-reverse" : "")}>
-                        <div className={cn("p-5 rounded-[1.75rem] text-[12px] font-bold shadow-sm", msg.role === 'user' ? "bg-white border" : "bg-slate-900 text-white")}>{msg.content}</div>
+                        <div className={cn("p-5 rounded-2xl text-[12px] font-bold shadow-sm", msg.role === 'user' ? "bg-slate-900 text-white" : "bg-white border text-slate-800")}>{msg.content}</div>
                       </div>
                     ))}
-                    {isAiLoading && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
+                    {isAiLoading && <Loader2 className="h-6 w-6 animate-spin text-slate-400" />}
                     <div ref={scrollRef} />
                   </div>
                 </ScrollArea>
@@ -214,9 +212,9 @@ export default function SalesCopilotPage() {
                     placeholder="Consulta a la IA..." 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="h-14 rounded-2xl px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold"
+                    className="h-14 rounded-xl px-6 bg-slate-50 border-none ring-1 ring-slate-200 flex-1 font-bold"
                   />
-                  <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl bg-primary shadow-xl" onClick={() => handleSendMessage()} disabled={isAiLoading}><Send className="h-6 w-6 text-white" /></Button>
+                  <Button type="submit" size="icon" className="h-14 w-14 rounded-xl bg-slate-900 shadow-xl" onClick={() => handleSendMessage()} disabled={isAiLoading}><Send className="h-6 w-6 text-white" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -224,11 +222,11 @@ export default function SalesCopilotPage() {
 
           {showRightPanel && (
             <div className="lg:flex-[1.6] flex flex-col h-full overflow-hidden">
-              <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem] flex flex-col h-full ring-1 ring-slate-100">
+              <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-2xl flex flex-col h-full ring-1 ring-slate-100">
                 <CardHeader className="p-5 bg-slate-900 border-b border-white/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-white">
-                      <Globe className="h-4 w-4 text-primary" />
+                      <Globe className="h-4 w-4 text-slate-400" />
                       <CardTitle className="text-[11px] font-headline font-black uppercase tracking-[0.2em]">Sync Navigator</CardTitle>
                     </div>
                     <Button size="sm" variant="ghost" onClick={openExternalTool} className="text-white text-[8px] font-black uppercase gap-2"><ExternalLink className="h-3 w-3" /> Abrir Externo</Button>
@@ -236,9 +234,9 @@ export default function SalesCopilotPage() {
                 </CardHeader>
                 <CardContent className="flex-1 p-0 bg-slate-100 relative">
                   <iframe src="https://web.whatsapp.com/" className="w-full h-full border-none" title="Sync Navigation Tool" />
-                  <div className="absolute top-0 left-0 right-0 p-3 bg-amber-50/95 border-b border-amber-100 flex items-center gap-3">
-                    <ShieldCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                    <p className="text-[8px] text-amber-800 font-bold uppercase tracking-widest leading-none">Conexión Segura Sync Protegida</p>
+                  <div className="absolute top-0 left-0 right-0 p-3 bg-slate-900/95 border-b border-white/5 flex items-center gap-3">
+                    <ShieldCheck className="h-3.5 w-3.5 text-white shrink-0" />
+                    <p className="text-[8px] text-white/60 font-bold uppercase tracking-widest leading-none">Conexión Segura Sync Protegida</p>
                   </div>
                 </CardContent>
               </Card>
