@@ -7,52 +7,25 @@ import {
   ShoppingBag, 
   Wallet, 
   Loader2, 
-  Bell, 
   Users, 
-  Trash2, 
-  ShieldCheck,
-  Zap,
-  ArrowUpRight,
   Target,
-  RefreshCcw,
-  AlertTriangle
+  ShieldCheck,
+  TrendingUp,
+  BarChart3,
+  Calendar
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
-import { Button } from '@/components/ui/button'
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from '@/components/ui/alert-dialog'
-import { useToast } from '@/hooks/use-toast'
-import { nuclearResetSystem } from '@/lib/auth-actions'
 import { Badge } from '@/components/ui/badge'
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
-  const { toast } = useToast();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
-  const [isResetting, setIsResetting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const salesQuery = useMemoFirebase(() => (!db || isAuthLoading || !user) ? null : collection(db, 'sales'), [db, user, isAuthLoading]);
   const { data: sales } = useCollection(salesQuery);
@@ -63,106 +36,47 @@ export default function AdminDashboard() {
   const buyersQuery = useMemoFirebase(() => collection(db, 'buyers'), [db]);
   const { data: buyers } = useCollection(buyersQuery);
 
-  const handleResetSystem = async () => {
-    setIsResetting(true);
-    try {
-      const res = await nuclearResetSystem();
-      if (res.success) {
-        toast({ title: "SISTEMA LIMPIEZA TOTAL", description: "Todos los registros y usuarios han sido eliminados correctamente." });
-        setTimeout(() => window.location.reload(), 2000);
-      } else {
-        toast({ variant: "destructive", title: "Fallo en Reinicio", description: res.error });
-      }
-    } catch (e) {
-      toast({ variant: "destructive", title: "Error Crítico", description: "Fallo de conexión." });
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
   if (!mounted) return null;
 
   const totalRevenue = (sales || []).reduce((acc, s) => acc + (s.saleAmount || 0), 0);
 
   const stats = [
-    { title: "Ingresos Globales", value: `$${totalRevenue.toLocaleString()}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5", sub: "+12.5% este mes" },
-    { title: "Ventas Registradas", value: (sales || []).length.toString(), icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50", sub: "Actualizado hoy" },
-    { title: "Socios Platinum", value: (affiliates || []).length.toString(), icon: Users, color: "text-purple-500", bg: "bg-purple-50", sub: "Red en crecimiento" },
-    { title: "Alumnos Activos", value: (buyers || []).length.toString(), icon: Target, color: "text-green-500", bg: "bg-green-50", sub: "Usuarios registrados" },
-  ]
-
-  const chartData = [
-    { name: "Lun", sales: 12 },
-    { name: "Mar", sales: 18 },
-    { name: "Mie", sales: 15 },
-    { name: "Jue", sales: 25 },
-    { name: "Vie", sales: 22 },
-    { name: "Sab", sales: 30 },
-    { name: "Dom", sales: 28 },
+    { title: "Ingresos Totales", value: `$${totalRevenue.toLocaleString()}`, icon: Wallet },
+    { title: "Volumen de Ventas", value: (sales || []).length.toString(), icon: BarChart3 },
+    { title: "Red de Afiliados", value: (affiliates || []).length.toString(), icon: Users },
+    { title: "Cartera de Clientes", value: (buyers || []).length.toString(), icon: Target },
   ]
 
   return (
     <DashboardShell role="admin">
-      <div className="space-y-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-primary/10 text-primary border-none font-black text-[9px] uppercase tracking-widest px-3 py-1">
-                Admin v2.0
-              </Badge>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest">
-                 <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Sincronizado
-              </div>
+      <div className="space-y-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck className="h-4 w-4 text-slate-400" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sistema de Control Central</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-headline font-black text-slate-900 tracking-tighter leading-none uppercase italic">
-              Vista <span className="text-primary">General</span>
-            </h1>
-            <p className="text-slate-500 font-medium text-lg">Métricas clave de rendimiento y control del ecosistema.</p>
+            <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight uppercase">Resumen <span className="text-slate-400">Ejecutivo</span></h1>
+            <p className="text-slate-500 font-medium text-sm">Monitorización de indicadores clave de rendimiento (KPIs).</p>
           </div>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-2xl">
-                <Trash2 className="h-5 w-5" /> REINICIAR TODO EL SISTEMA
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
-              <AlertDialogHeader>
-                <div className="h-16 w-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <AlertTriangle className="h-8 w-8" />
-                </div>
-                <AlertDialogTitle className="text-3xl font-headline font-black text-slate-900 text-center uppercase tracking-tight">¿Confirmar Limpieza Total?</AlertDialogTitle>
-                <AlertDialogDescription className="text-slate-500 font-bold leading-relaxed text-center mt-4">
-                  Esta acción eliminará a <strong>TODOS</strong> los afiliados, compradores, ventas, mensajes y registros de la base de datos.<br/><br/>
-                  <span className="text-red-600">Este proceso es irreversible.</span>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="mt-10 gap-4">
-                <AlertDialogCancel className="h-14 rounded-2xl font-black text-slate-400 border-slate-100">CANCELAR</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetSystem} disabled={isResetting} className="h-14 rounded-2xl bg-destructive text-white font-black shadow-xl">
-                  {isResetting ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : "SÍ, ELIMINAR TODO EL SISTEMA"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Badge variant="outline" className="h-8 px-4 rounded-lg bg-white border-slate-200 font-black text-[10px] uppercase">
+            Sincronización: {new Date().toLocaleTimeString()}
+          </Badge>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
-            <Card key={stat.title} className="premium-card">
+          {stats.map((stat, i) => (
+            <Card key={i} className="premium-card">
               <CardContent className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div className={`h-14 w-14 rounded-[1.25rem] ${stat.bg} ${stat.color} flex items-center justify-center shadow-inner`}>
-                    <stat.icon className="h-7 w-7" />
+                <div className="flex justify-between items-start mb-6">
+                  <div className="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-900">
+                    <stat.icon className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-green-500">
-                    <ArrowUpRight className="h-4 w-4" />
-                  </div>
+                  <TrendingUp className="h-4 w-4 text-green-600 opacity-50" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.title}</p>
-                  <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">{stat.value}</h3>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pt-2">{stat.sub}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.title}</p>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -170,49 +84,36 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Card className="lg:col-span-8 premium-card overflow-hidden">
-            <CardHeader className="px-10 py-10 border-b border-slate-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-headline font-black text-slate-900 uppercase">Tráfico Comercial</CardTitle>
-                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Sincronización semanal de ventas</p>
-                </div>
-              </div>
+          <Card className="lg:col-span-8 premium-card">
+            <CardHeader className="bg-slate-50 border-b p-8">
+              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">Últimas Transacciones</CardTitle>
             </CardHeader>
-            <CardContent className="p-10">
-               <ChartContainer config={{ sales: { label: "Ventas", color: "hsl(var(--primary))" } }} className="min-h-[350px]">
-                  <BarChart data={chartData}>
-                    <CartesianGrid vertical={false} strokeOpacity={0.05} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94a3b8'}} />
-                    <ChartTooltip content={<ChartTooltipContent className="rounded-2xl" />} />
-                    <Bar dataKey="sales" fill="var(--color-sales)" radius={[10, 10, 0, 0]} barSize={40} />
-                  </BarChart>
-               </ChartContainer>
+            <CardContent className="p-0">
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
+                <p className="text-[10px] font-black uppercase tracking-widest">Esperando flujo de datos...</p>
+              </div>
             </CardContent>
           </Card>
 
-          <div className="lg:col-span-4 space-y-8">
-            <Card className="premium-card bg-slate-900 text-white p-10 relative overflow-hidden h-full">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <Zap className="h-64 w-64 text-primary fill-current" />
+          <Card className="lg:col-span-4 premium-card bg-slate-900 text-white">
+            <CardContent className="p-10 space-y-6">
+              <div className="h-12 w-12 bg-white/10 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-white" />
               </div>
-              <div className="space-y-8 relative z-10 flex flex-col justify-between h-full">
-                <div className="space-y-6">
-                  <div className="h-14 w-14 bg-primary/20 rounded-[1.25rem] flex items-center justify-center text-primary shadow-2xl rotate-3">
-                    <Bell className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-headline font-black uppercase tracking-tight italic text-white leading-tight">Estado del <span className="text-primary">Servidor</span></h3>
-                    <p className="text-slate-400 text-sm font-medium leading-relaxed mt-4">Todos los nodos están sincronizados y procesando pagos locales de forma óptima.</p>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-white/10 text-white font-black text-[11px] uppercase tracking-[0.2em] hover:bg-white/5 transition-all shadow-2xl">
-                  AUDITAR SISTEMA
-                </Button>
+              <div className="space-y-2">
+                <h4 className="text-xl font-headline font-black uppercase">Próximos Pagos</h4>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  Las solicitudes de liquidación de comisiones se procesan cada viernes a las 18:00 (GMT-6).
+                </p>
               </div>
-            </Card>
-          </div>
+              <div className="pt-4">
+                 <div className="p-4 bg-white/5 rounded border border-white/10">
+                   <p className="text-[10px] font-black uppercase text-white">Próxima Fecha</p>
+                   <p className="text-lg font-black mt-1">28 Febrero, 2024</p>
+                 </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardShell>

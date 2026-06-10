@@ -4,63 +4,42 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 36 100% 50%;
-    --primary-foreground: 0 0% 100%; 
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 187 100% 26%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 36 100% 50%;
-    --radius: 1rem;
+    --ring: 222 47% 11%;
+    --radius: 0.5rem;
   }
 }
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-[#EAEDED] text-foreground font-body overflow-x-hidden; }
-}
-
-/* BLOQUEO TOTAL DE INDICADORES DE DESARROLLO (BOLITA NEGRA / OVERLAYS) */
-nextjs-portal,
-[data-nextjs-portal],
-[data-nextjs-toast],
-.__next-error-overlay-root,
-#nextjs-error-overlay,
-[data-turbopack-pounce],
-div[id^="__next-build-watcher"],
-div[id^="nextjs-dev-overlay"],
-button[aria-label="Show shortcut hint"],
-div[class*="nextjs-static-indicator"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-}
-
-.amazon-input {
-  @apply h-10 border-[#888c8c] focus:border-[#e77600] focus:ring-[3px] focus:ring-[#e77600]/20 rounded-[3px] px-3 py-1 text-[13px] font-medium transition-all;
-}
-
-.amazon-btn-primary {
-  @apply bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] text-black font-normal py-2 px-4 rounded-[3px] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] active:scale-[0.98] transition-all;
+  body { @apply bg-slate-50 text-foreground font-body overflow-x-hidden; }
 }
 
 .premium-card {
-  @apply bg-white shadow-xl rounded-[3rem] border-none ring-1 ring-slate-100 overflow-hidden;
+  @apply bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden;
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-style-overflow: none; scrollbar-width: none; }
+
+/* Eliminación de indicadores de desarrollo */
+nextjs-portal, [data-nextjs-portal], [data-nextjs-toast], .__next-error-overlay-root, #nextjs-error-overlay, [data-turbopack-pounce], div[id^="__next-build-watcher"], div[id^="nextjs-dev-overlay"] {
+  display: none !important;
+}
