@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,11 @@ import {
   Check,
   Link as LinkIcon,
   Trash2,
-  UserPlus
+  UserPlus,
+  Eye,
+  FileCheck,
+  CreditCard,
+  X
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -27,24 +31,24 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
-import { collection } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase'
+import { collection, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { adminDeleteUser } from '@/lib/auth-actions'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const affiliatesQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return collection(db, 'affiliates');
-  }, [db]);
-
+  const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
 
   const handleCopyRegisterLink = () => {
@@ -53,6 +57,25 @@ export default function AdminAffiliatesPage() {
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
     toast({ title: "Enlace Copiado", description: "Envía este link solo a personas autorizadas." });
+  };
+
+  const handleDeleteAffiliate = async (uid: string) => {
+    if(!confirm("¿ELIMINAR SOCIO DEFINITIVAMENTE? Esta acción borrará su acceso y su perfil.")) return;
+    
+    setIsDeleting(true);
+    try {
+      const res = await adminDeleteUser(uid);
+      if(res.success) {
+        deleteDocumentNonBlocking(doc(db, 'affiliates', uid));
+        toast({ title: "Socio Eliminado", description: "El acceso y el registro han sido removidos." });
+      } else {
+        toast({ variant: "destructive", title: "Error", description: res.error });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error de Servidor" });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const filteredAffiliates = (affiliates || []).filter(aff => 
@@ -103,18 +126,18 @@ export default function AdminAffiliatesPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 h-14">
-                    <TableHead className="px-8 font-black uppercase text-[10px] text-slate-500">Socio</TableHead>
+                    <TableHead className="px-8 font-black uppercase text-[10px] text-slate-500">Socio Platinum</TableHead>
                     <TableHead className="font-black uppercase text-[10px] text-slate-500">Estado</TableHead>
                     <TableHead className="font-black uppercase text-[10px] text-slate-500">Saldo ($)</TableHead>
-                    <TableHead className="px-8 text-right font-black uppercase text-[10px] text-slate-500">Acciones</TableHead>
+                    <TableHead className="px-8 text-right font-black uppercase text-[10px] text-slate-500">Expediente</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAffiliates.map((aff) => (
-                    <TableRow key={aff.id} className="h-16 border-b last:border-0 hover:bg-slate-50/50 transition-colors">
+                    <TableRow key={aff.id} className="h-16 border-b last:border-0 hover:bg-slate-50/50 transition-colors group">
                       <TableCell className="px-8">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center text-[10px] font-black">
+                          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">
                             {aff.firstName?.charAt(0)}
                           </div>
                           <div>
@@ -131,11 +154,20 @@ export default function AdminAffiliatesPage() {
                           {aff.status === 'Active' ? 'VERIFICADO' : 'PENDIENTE'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-black text-xs">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell className="font-black text-xs text-slate-900">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell className="px-8 text-right">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-md">
-                          <Settings2 className="h-4 w-4 text-slate-400" />
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <AffiliateDetailsDialog affiliate={aff} onDelete={() => handleDeleteAffiliate(aff.id)} />
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-lg text-red-300 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeleteAffiliate(aff.id)}
+                            disabled={isDeleting}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -147,4 +179,99 @@ export default function AdminAffiliatesPage() {
       </div>
     </DashboardShell>
   )
+}
+
+function AffiliateDetailsDialog({ affiliate, onDelete }: { affiliate: any, onDelete: () => void }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest gap-2">
+          <Eye className="h-3.5 w-3.5" /> VER EXPEDIENTE
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-0 border-none shadow-2xl bg-white">
+        <div className="bg-slate-900 p-8 text-white flex justify-between items-center">
+          <div className="flex items-center gap-4">
+             <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-xl">
+               <User className="h-6 w-6" />
+             </div>
+             <div>
+               <DialogTitle className="text-xl font-headline font-black uppercase italic tracking-tight">{affiliate.firstName} {affiliate.lastName}</DialogTitle>
+               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">ID Socio: {affiliate.id}</p>
+             </div>
+          </div>
+        </div>
+
+        <div className="p-10 space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-6">
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                 <FileCheck className="h-4 w-4" /> Verificación Biométrica (KYC)
+               </h3>
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-black text-slate-400 uppercase">Selfie / Rostro</p>
+                    <div className="aspect-[4/5] rounded-xl bg-slate-100 overflow-hidden border">
+                       {affiliate.photoUrl ? (
+                         <img src={getGoogleDriveDirectLink(affiliate.photoUrl)} className="w-full h-full object-cover" alt="Selfie" />
+                       ) : <div className="h-full w-full flex items-center justify-center text-slate-300 font-black text-[9px]">SIN FOTO</div>}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-black text-slate-400 uppercase">Documento ID</p>
+                    <div className="aspect-[4/5] rounded-xl bg-slate-100 overflow-hidden border">
+                       {affiliate.idPhotoUrl ? (
+                         <img src={getGoogleDriveDirectLink(affiliate.idPhotoUrl)} className="w-full h-full object-cover" alt="ID Document" />
+                       ) : <div className="h-full w-full flex items-center justify-center text-slate-300 font-black text-[9px]">SIN ID</div>}
+                    </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="space-y-8">
+               <div className="space-y-6">
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                   <CreditCard className="h-4 w-4" /> Datos de Liquidación
+                 </h3>
+                 <div className="p-6 bg-slate-50 rounded-2xl space-y-4 border border-slate-100">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Banco</p>
+                      <p className="text-sm font-black text-slate-900 uppercase">{affiliate.bankId || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Nº de Cuenta</p>
+                      <p className="text-lg font-black text-primary font-mono">{affiliate.bankAccountNumber || 'No registrada'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Titular</p>
+                      <p className="text-xs font-bold text-slate-700 uppercase">{affiliate.bankAccountHolderName || 'N/A'}</p>
+                    </div>
+                 </div>
+               </div>
+
+               <div className="space-y-4">
+                 <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Respuestas del Examen</h3>
+                 <div className="space-y-3">
+                   <div className="p-4 bg-white border rounded-xl">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1">¿Cómo planeas promocionar?</p>
+                      <p className="text-[11px] font-medium text-slate-700">"{affiliate.examAnswers?.q1 || 'N/A'}"</p>
+                   </div>
+                   <div className="p-4 bg-white border rounded-xl">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1">Experiencia en ventas</p>
+                      <p className="text-[11px] font-medium text-slate-700">"{affiliate.examAnswers?.q2 || 'N/A'}"</p>
+                   </div>
+                 </div>
+               </div>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t flex justify-end">
+             <Button variant="ghost" onClick={onDelete} className="h-12 px-8 rounded-xl text-red-500 hover:bg-red-50 font-black text-[10px] uppercase tracking-widest">
+                ELIMINAR SOCIO PERMANENTEMENTE
+             </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

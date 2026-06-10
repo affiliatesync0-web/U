@@ -16,7 +16,9 @@ import {
   ArrowUpRight,
   Zap,
   ShieldCheck,
-  Users
+  Users,
+  Trophy,
+  Award
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -54,9 +56,7 @@ export default function AffiliateDashboard() {
   const [copiedAffiliate, setCopiedAffiliate] = useState(false);
   const [inviteBuyerLink, setInviteBuyerLink] = useState('');
   const [inviteAffiliateLink, setInviteAffiliateLink] = useState('');
-  const [locationStatus, setLocationStatus] = useState<'pending' | 'granted' | 'denied' | 'watching'>('pending');
-  const watchIdRef = useRef<number | null>(null);
-
+  
   useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
@@ -82,32 +82,24 @@ export default function AffiliateDashboard() {
   const affiliateRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile, isLoading: profileLoading } = useDoc(affiliateRef);
 
-  useEffect(() => {
-    if (isMounted && user?.uid && profile && affiliateRef) {
-      if ("geolocation" in navigator) {
-        watchIdRef.current = navigator.geolocation.watchPosition(
-          (position) => {
-            setLocationStatus('watching');
-            updateDocumentNonBlocking(affiliateRef, {
-              lastLocation: { lat: position.coords.latitude, lng: position.coords.longitude, updatedAt: new Date().toISOString() }
-            });
-          },
-          () => setLocationStatus('denied'),
-          { enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
-        );
-      }
-    }
-    return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); };
-  }, [isMounted, user, profile, affiliateRef]);
+  const progressRef = useMemoFirebase(() => (db && user ? doc(db, 'affiliate_progress', user.uid) : null), [db, user]);
+  const { data: progress } = useDoc(progressRef);
+
+  const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
+  const { data: lessons } = useCollection(academyQuery);
 
   const salesQuery = useMemoFirebase(() => (db && user ? query(collection(db, 'sales'), where('affiliateId', '==', user.uid)) : null), [db, user]);
   const { data: sales, isLoading: salesLoading } = useCollection(salesQuery);
 
-  if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px] bg-white"><Loader2 className="animate-spin text-[#FF9900]" /></div>
+  if (!isMounted || isAuthLoading || profileLoading) return <div className="flex items-center justify-center min-h-[400px] bg-white"><Loader2 className="animate-spin text-primary" /></div>
 
   const totalEarnedApproved = (sales || [])
     .filter(s => s.status === 'Completed')
     .reduce((acc, s) => acc + (s.commissionEarned || 0), 0);
+
+  const completedCount = progress?.completedLessonIds?.length || 0;
+  const totalLessons = lessons?.length || 0;
+  const isGraduated = totalLessons > 0 && completedCount >= totalLessons;
 
   const handleCopy = (text: string, setCopied: (v: boolean) => void) => {
     navigator.clipboard.writeText(text);
@@ -122,29 +114,28 @@ export default function AffiliateDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
           <div className="flex items-center gap-6">
             <div className="relative group">
-              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Avatar className="h-24 w-24 border-[6px] border-white dark:border-slate-900 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
+              <Avatar className="h-24 w-24 border-[6px] border-white shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
                 <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} />
                 <AvatarFallback className="bg-primary text-white text-3xl font-black">{profile?.firstName?.charAt(0)}</AvatarFallback>
               </Avatar>
               <button 
                 onClick={() => setIsEditingPhoto(true)} 
-                className="absolute -bottom-1 -right-1 bg-primary text-white p-2.5 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95 border-2 border-white dark:border-slate-900"
+                className="absolute -bottom-1 -right-1 bg-primary text-white p-2.5 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95 border-2 border-white"
               >
                 <Camera className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-2">
-              <h1 className="text-4xl md:text-5xl font-headline font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase italic">
+              <h1 className="text-4xl md:text-5xl font-headline font-black text-slate-900 tracking-tighter leading-none uppercase italic">
                 {t.welcomeBack}, <span className="text-primary">{profile?.firstName}</span>
               </h1>
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className="bg-slate-900 text-white border-none font-black text-[9px] tracking-widest px-3 py-1 uppercase">
-                   Rango: Embajador
+                   Rango: {isGraduated ? 'Socio Certificado' : 'Embajador'}
                 </Badge>
-                {locationStatus === 'watching' && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest">
-                     <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Localizador Activo
+                {isGraduated && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">
+                     <Award className="h-3 w-3" /> Especialista en MKT Digital
                   </div>
                 )}
               </div>
@@ -165,6 +156,24 @@ export default function AffiliateDashboard() {
           </Card>
         </div>
 
+        {isGraduated && (
+          <Card className="bg-slate-950 border-none rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-10 relative overflow-hidden group">
+             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,153,0,0.05),transparent_70%)]" />
+             <div className="h-24 w-24 md:h-32 md:w-32 rounded-[2rem] bg-primary flex items-center justify-center text-white shadow-2xl relative z-10 group-hover:scale-110 transition-transform">
+                <Trophy className="h-12 w-12 md:h-16 md:w-16" />
+             </div>
+             <div className="flex-1 text-center md:text-left relative z-10 space-y-4">
+                <h3 className="text-2xl md:text-4xl font-headline font-black text-white uppercase italic tracking-tight">Título de Graduación Sync</h3>
+                <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-2xl">
+                   ¡Felicidades! Has completado exitosamente la Sync Academy. Tu perfil ahora cuenta con el distintivo de **Especialista Certificado**, lo que genera mayor confianza con tus clientes.
+                </p>
+             </div>
+             <Button variant="outline" className="relative z-10 border-white/10 text-white hover:bg-white/5 h-16 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                VER CERTIFICADO
+             </Button>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { title: "Comisiones Pendientes", value: `$${profile?.currentBalance?.toFixed(2) || '0.00'}`, icon: Wallet, color: "text-primary", bg: "bg-primary/5", sub: "Por liquidar" },
@@ -181,7 +190,7 @@ export default function AffiliateDashboard() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.title}</p>
-                  <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic">{stat.value}</h3>
+                  <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">{stat.value}</h3>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pt-2 flex items-center gap-2">
                      <span className="h-1 w-1 rounded-full bg-slate-200" /> {stat.sub}
                   </p>
@@ -278,18 +287,6 @@ export default function AffiliateDashboard() {
                       >
                         {copiedAffiliate ? <BadgeCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                         {copiedAffiliate ? "COPIADO" : "LINK DE RECLUTAMIENTO"}
-                      </Button>
-                    </div>
-
-                    <div className="pt-4 border-t border-white/5">
-                       <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-4">Link para Clientes (Ventas)</p>
-                       <Button 
-                        variant="outline"
-                        onClick={() => handleCopy(inviteBuyerLink, setCopiedBuyer)} 
-                        className="w-full h-12 rounded-xl border-white/10 text-white hover:bg-white/5 font-black text-[9px] uppercase tracking-widest gap-2"
-                      >
-                        {copiedBuyer ? <BadgeCheck className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
-                        COPIAR LINK DE VENTAS
                       </Button>
                     </div>
                  </div>
