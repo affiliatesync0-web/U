@@ -31,7 +31,8 @@ import {
   MessageCircle,
   MessageSquare,
   MapPin,
-  UserCheck
+  UserCheck,
+  GraduationCap
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -116,6 +117,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const adminItems = [
     { title: "Resumen", url: "/dashboard/admin", icon: LayoutDashboard },
+    { title: "Sync Academy", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: "Afiliados Platinum", url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Base Compradores", url: "/dashboard/admin/buyers", icon: UserCheck },
     { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
@@ -129,6 +131,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
 
   const affiliateItems = [
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
+    { title: "Sync Academy", url: "/dashboard/affiliate/academy", icon: GraduationCap },
     { title: "Buzón Privado", url: "/dashboard/affiliate/support", icon: MessageCircle },
     { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
