@@ -1,21 +1,17 @@
-
 "use client"
 
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Loader2, Info, Link as LinkIcon, Check, Package, ShieldCheck, ShoppingCart, CreditCard } from 'lucide-react'
+import { Search, Loader2, Link as LinkIcon, Check, Package, ShoppingCart, Copy } from 'lucide-react'
 import Image from 'next/image'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection } from 'firebase/firestore'
 import { useLanguage } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 export default function AffiliateProductsPage() {
   const { t } = useLanguage();
@@ -42,8 +38,8 @@ export default function AffiliateProductsPage() {
     setCopiedId(productId);
     setTimeout(() => setCopiedId(null), 2000);
     toast({
-      title: "Link de Pago Copiado",
-      description: "Tus clientes pueden pagar directamente a través de este enlace.",
+      title: "🚀 Link de Afiliado Copiado",
+      description: "Este enlace asegura el rastreo de tu comisión.",
     });
   };
 
@@ -58,14 +54,14 @@ export default function AffiliateProductsPage() {
               </div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">Marketplace Platinum</span>
             </div>
-            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight uppercase">Catálogo de <span className="text-primary">Venta Directa</span></h1>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Comparte tus enlaces de afiliado y genera comisiones automáticas mediante pagos digitales.</p>
+            <h1 className="text-5xl font-headline font-black text-slate-900 leading-tight tracking-tight uppercase">Catálogo de <span className="text-primary">Venta</span></h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">Copia tu enlace de socio y compártelo para ganar comisiones automáticas.</p>
           </div>
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
             <Input 
               className="pl-16 h-18 rounded-2xl border-none bg-white shadow-xl text-md font-bold" 
-              placeholder="Filtrar catálogo..." 
+              placeholder="Buscar producto..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -93,7 +89,7 @@ export default function AffiliateProductsPage() {
                   />
                   <div className="absolute top-6 left-6">
                     <Badge className="bg-slate-900 text-white border-none font-black px-4 py-1.5 rounded-xl text-[8px] uppercase tracking-widest shadow-2xl">
-                      ACTIVO EN RED
+                      LISTO PARA VENDER
                     </Badge>
                   </div>
                 </div>
@@ -106,33 +102,29 @@ export default function AffiliateProductsPage() {
 
                   <div className="flex items-center justify-between p-6 rounded-2xl bg-slate-50 border ring-1 ring-black/5">
                     <div>
-                      <p className="text-[9px] text-slate-400 font-black uppercase">Inversión</p>
+                      <p className="text-[9px] text-slate-400 font-black uppercase">Precio Cliente</p>
                       <p className="font-black text-2xl text-slate-900">${product.price?.toFixed(2)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[9px] text-green-600 font-black uppercase">Comisión</p>
+                      <p className="text-[9px] text-green-600 font-black uppercase">Tu Ganancia</p>
                       <p className="font-black text-2xl text-green-600">%{product.commissionRate}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <Button 
-                      asChild
-                      className="w-full h-16 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-xl gap-3 transition-all active:scale-95"
-                    >
-                      <Link href={`/checkout/${product.id}?ref=${user?.uid}`}>
-                        <CreditCard className="h-5 w-5" /> GESTIONAR VENTA
-                      </Link>
-                    </Button>
-                    <Button 
-                      onClick={() => handleCopyLink(product.id)}
-                      variant="outline"
-                      className="w-full h-14 rounded-xl font-black text-[10px] uppercase border-slate-200 gap-2 hover:bg-slate-50"
-                    >
-                      {copiedId === product.id ? <Check className="h-4 w-4 text-green-600" /> : <LinkIcon className="h-4 w-4" />}
-                      COPIAR LINK DE DIVULGACIÓN
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={() => handleCopyLink(product.id)}
+                    className="w-full h-20 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-sm uppercase tracking-widest shadow-2xl gap-3 transition-all active:scale-95"
+                  >
+                    {copiedId === product.id ? (
+                      <><Check className="h-6 w-6 text-primary" /> COPIADO CON ÉXITO</>
+                    ) : (
+                      <><LinkIcon className="h-6 w-6 text-primary" /> COPIAR LINK DE VENTA</>
+                    )}
+                  </Button>
+                  
+                  <p className="text-[9px] text-center text-slate-400 font-black uppercase tracking-widest leading-relaxed">
+                    Usa este link para asegurar que la comisión<br/> se acredite a tu saldo de socio.
+                  </p>
                 </CardContent>
               </Card>
             ))}
