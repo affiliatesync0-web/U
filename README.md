@@ -17,3 +17,4 @@ Para mantener la integridad de la marca y la seguridad del sistema:
 ---
 © 2024 Sync Connect Nicaragua. Tecnología propietaria de red de mercadeo elite.
 # J
+# B
