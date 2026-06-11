@@ -2,15 +2,19 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@/firebase'
+import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth'
+import { doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Loader2, ArrowLeft, Eye, EyeOff, ShieldAlert, ArrowRight, Lock, ShieldCheck } from 'lucide-react'
+import { Loader2, ArrowLeft, Eye, EyeOff, ShieldAlert, ArrowRight, Lock, ShieldCheck, Zap } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
+import placeholderData from '@/app/lib/placeholder-images.json'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -28,7 +32,6 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    // Detectar el código oobCode del link interno enviado por email
     const oobCode = searchParams.get('oobCode');
     if (oobCode) {
       setCode(oobCode)
@@ -74,7 +77,6 @@ function ResetPasswordForm() {
         description: "Tu acceso ha sido restaurado. Redirigiendo al login..."
       });
       
-      // REDIRECCIÓN AUTOMÁTICA AL LOGIN EN 3 SEGUNDOS
       setTimeout(() => {
         router.push('/auth/login');
       }, 3000);
@@ -94,7 +96,7 @@ function ResetPasswordForm() {
     return (
         <div className="text-center space-y-8 py-4 animate-in fade-in zoom-in-95 duration-700">
             <div className="relative mx-auto h-24 w-24">
-              <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full animate-pulse" />
+              <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full" />
               <div className="relative h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center shadow-2xl ring-8 ring-green-50/50">
                   <ShieldCheck className="h-12 w-12" />
               </div>
@@ -129,7 +131,6 @@ function ResetPasswordForm() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
       {!isValidCode ? (
         <div className="py-20 flex flex-col items-center justify-center text-center gap-4">
            <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
@@ -194,12 +195,30 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  const db = useFirestore()
+  const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
+  const { data: logoOverride } = useDoc(logoConfigRef);
+  const defaultLogo = placeholderData.placeholderImages.find(img => img.id === 'site-logo');
+  const displayLogoUrl = getGoogleDriveDirectLink(logoOverride?.imageUrl || defaultLogo?.imageUrl || "");
+
   return (
     <div className="min-h-screen bg-[#131921] flex flex-col justify-center items-center p-4">
-      <div className="mb-10">
+      <div className="mb-12">
+        <Link href="/auth/login">
+          <div className="relative h-14 w-40 md:h-16 md:w-52 flex items-center justify-center">
+            {displayLogoUrl ? (
+              <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
+            ) : (
+              <span className="text-white font-black text-3xl italic tracking-tighter uppercase">Sync<span className="text-primary">.Connect</span></span>
+            )}
+          </div>
+        </Link>
+      </div>
+
+      <div className="mb-6">
         <Link href="/auth/login" className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors font-black uppercase text-[10px] tracking-widest group">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span>Volver al portal</span>
+            <span>Volver al portal de acceso</span>
         </Link>
       </div>
 
@@ -215,7 +234,7 @@ export default function ResetPasswordPage() {
                     <CardTitle className="text-4xl font-headline font-black text-slate-900 tracking-tighter leading-none italic uppercase">
                         Sync <span className="text-[#ff9900]">Security</span>
                     </CardTitle>
-                    <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Protección de Cuenta</p>
+                    <p className="font-bold text-[9px] uppercase tracking-[0.4em] text-slate-400">Protección de Cuenta Elite</p>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -227,7 +246,7 @@ export default function ResetPasswordPage() {
       </Card>
       
       <footer className="mt-12 text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] text-center">
-        Sync Connect Proprietary Technology
+        Sync Connect Proprietary Technology • Managed Security Environment
       </footer>
     </div>
   )
