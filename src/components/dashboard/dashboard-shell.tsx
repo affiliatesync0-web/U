@@ -18,18 +18,15 @@ import {
   UserCircle,
   Menu,
   X,
-  Search,
   ChevronDown,
   LogOut,
   Terminal,
   Zap,
-  ShieldCheck,
   MapPin,
   UserCheck,
   GraduationCap,
   MessageSquare,
-  MessageCircle,
-  Bell
+  MessageCircle
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -76,7 +73,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   useEffect(() => {
     async function verifyAccess() {
       if (!mounted || isUserLoading) return;
-      if (!user) { window.location.href = '/auth/login'; return; }
+      if (!user) { window.location.href = '/'; return; }
 
       if (isUserAdmin) {
         if (!pathname.startsWith('/dashboard/admin')) { router.push('/dashboard/admin'); }
@@ -84,19 +81,31 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         return;
       }
 
-      if (pathname.startsWith('/dashboard/admin')) { router.push('/dashboard/affiliate'); return; }
+      // Los compradores ya no tienen acceso al dashboard
+      if (role === 'buyer') {
+        await signOut(auth);
+        window.location.href = '/';
+        return;
+      }
 
       try {
         if (db) {
           const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
-          if (role === 'affiliate' && !affSnap.exists() && !isUserAdmin) {
-            router.replace('/dashboard/buyer');
+          if (!affSnap.exists()) {
+            // Si no es admin ni afiliado, lo expulsamos
+            await signOut(auth);
+            window.location.href = '/';
+            return;
           }
         }
-      } catch (err) { console.error(err); } finally { setIsVerifyingRole(false); }
+      } catch (err) { 
+        console.error(err); 
+      } finally { 
+        setIsVerifyingRole(false); 
+      }
     }
     verifyAccess();
-  }, [user, isUserLoading, mounted, pathname, isUserAdmin, router, role, db]);
+  }, [user, isUserLoading, mounted, pathname, isUserAdmin, router, role, db, auth]);
 
   const logoConfigRef = useMemoFirebase(() => db ? doc(db, 'site_config', 'site-logo') : null, [db]);
   const { data: logoOverride } = useDoc(logoConfigRef);
@@ -106,7 +115,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const handleLogout = async () => {
     if (!auth) return;
     await signOut(auth);
-    window.location.href = '/auth/login';
+    window.location.href = '/';
   }
 
   if (!mounted || isUserLoading || isVerifyingRole) {
@@ -137,20 +146,14 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
-  const buyerItems = [
-    { title: "Mis Pedidos", url: "/dashboard/buyer", icon: LayoutDashboard },
-    { title: "Tienda", url: "/dashboard/buyer/products", icon: ShoppingBasket },
-  ]
-
-  const menuItems = isUserAdmin ? adminItems : (role === 'buyer' ? buyerItems : affiliateItems);
+  const menuItems = isUserAdmin ? adminItems : affiliateItems;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* HEADER CORPORATIVO UNIFICADO */}
       <header className="sticky top-0 z-[100] w-full bg-slate-950 text-white border-b border-white/5">
         <div className="h-16 md:h-20 flex items-center px-4 md:px-10 justify-between">
           <div className="flex items-center gap-8">
-            <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="shrink-0">
+            <Link href={isUserAdmin ? "/dashboard/admin" : "/dashboard/affiliate"} className="shrink-0">
               <div className="relative h-8 w-24 md:h-10 md:w-32">
                 {displayLogoUrl ? (
                   <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
@@ -160,7 +163,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               </div>
             </Link>
 
-            {/* NAV DESKTOP - SIN OPCIONES A LOS LADOS, TODO EN EL CENTRO/TOP */}
             <nav className="hidden lg:flex items-center gap-1">
               {menuItems.map((item) => (
                 <Link 
@@ -202,7 +204,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* BOTÓN MÓVIL BURGER */}
             <Button variant="ghost" size="icon" className="lg:hidden text-white" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu className="h-6 w-6" />
             </Button>
@@ -210,7 +211,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </div>
       </header>
 
-      {/* MOBILE MENU - OVERLAY */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[200] flex">
            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
