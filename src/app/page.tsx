@@ -5,14 +5,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { 
   Loader2,
   Lock,
   ShieldCheck,
   ChevronRight,
   LayoutDashboard,
-  Server
+  Server,
+  Zap,
+  Globe
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -69,7 +71,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Verificando Infraestructura...</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Sincronizando Infraestructura...</p>
       </div>
     );
   }
@@ -88,9 +90,6 @@ export default function Home() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" className="text-white/60 hover:text-white font-black text-[10px] uppercase tracking-widest hidden md:flex">
-             <Link href="/auth/login">Soporte Central</Link>
-          </Button>
           <Button asChild className="h-11 px-8 bg-primary text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-2xl shadow-primary/20">
              <Link href="/auth/login">INICIAR SESIÓN</Link>
           </Button>
@@ -112,7 +111,7 @@ export default function Home() {
                    Portal de <span className="text-primary">Acceso</span> Privado
                 </h1>
                 <p className="text-lg md:text-2xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
-                   Bienvenido a la infraestructura tecnológica de <b>Sync Connect Nicaragua</b>. Identifíquese para acceder a su panel de control.
+                   Bienvenido a la infraestructura de <b>Sync Connect Nicaragua</b>. Identifíquese para acceder a su panel de gestión y catálogo exclusivo.
                 </p>
              </div>
 
@@ -134,7 +133,7 @@ export default function Home() {
                       <Lock className="h-7 w-7" />
                    </div>
                    <h3 className="text-xl font-headline font-black uppercase italic mb-2 tracking-tight">Portal Clientes</h3>
-                   <p className="text-sm font-medium text-slate-400 mb-8 leading-relaxed">Acceda a sus productos digitales adquiridos y rastree el estado de sus pedidos físicos.</p>
+                   <p className="text-sm font-medium text-slate-400 mb-8 leading-relaxed">Acceda a sus productos digitales adquiridos y gestione sus pagos de forma segura.</p>
                    <Button asChild className="w-full h-14 rounded-xl bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20">
                       <Link href="/auth/login" className="flex items-center justify-center gap-2">ÁREA DE CLIENTES <ChevronRight className="h-4 w-4" /></Link>
                    </Button>
@@ -148,10 +147,10 @@ export default function Home() {
            <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">© 2024 Sync Connect Nicaragua • Infraestructura Propietaria</p>
            <div className="flex items-center gap-8">
               <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                 <ShieldCheck className="h-3.5 w-3.5" /> Encriptación de Grado Militar
+                 <ShieldCheck className="h-3.5 w-3.5" /> Encriptación AES-256
               </span>
               <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                 <Lock className="h-3.5 w-3.5" /> Firewall Activo
+                 <Lock className="h-3.5 w-3.5" /> Firewall Corporativo
               </span>
            </div>
         </footer>

@@ -22,10 +22,11 @@ import {
   Trophy,
   Award,
   FileDown,
-  Printer,
+  Lock,
   Star,
   Zap,
-  Lock
+  FileText,
+  AlertCircle
 } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase, useUser, setDocumentNonBlocking, useDoc } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
@@ -34,6 +35,8 @@ import { useToast } from '@/hooks/use-toast'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 
 export default function AffiliateAcademyPage() {
   const db = useFirestore()
@@ -50,10 +53,18 @@ export default function AffiliateAcademyPage() {
   const { data: progress } = useDoc(progressRef);
 
   const [activeIndex, setActiveIndex] = useState(0)
+  const [showExam, setShowExam] = useState(false)
+  const [examPassed, setExamPassed] = useState(false)
   
   const sortedLessons = lessons ? [...lessons].sort((a, b) => (a.order || 0) - (b.order || 0)) : []
   const currentLesson = sortedLessons[activeIndex]
   const completedIds = progress?.completedLessonIds || []
+
+  useEffect(() => {
+    if (progress?.examPassed) {
+      setExamPassed(true);
+    }
+  }, [progress]);
 
   const isCompleted = (id: string) => completedIds.includes(id)
 
@@ -63,7 +74,7 @@ export default function AffiliateAcademyPage() {
     let newIds = [...completedIds];
     if (!newIds.includes(lessonId)) {
       newIds.push(lessonId);
-      toast({ title: "¡Lección Completada!", description: "Has avanzado en tu formación." });
+      toast({ title: "Módulo Finalizado", description: "Contenido registrado en tu expediente." });
       
       setDocumentNonBlocking(progressRef, {
         uid: user.uid,
@@ -80,18 +91,15 @@ export default function AffiliateAcademyPage() {
     return url;
   };
 
-  const percent = sortedLessons.length > 0 ? (completedIds.length / sortedLessons.length) * 100 : 0;
-  const isGraduated = percent === 100 && sortedLessons.length > 0;
+  const lessonPercent = sortedLessons.length > 0 ? (completedIds.length / sortedLessons.length) * 100 : 0;
+  const allLessonsDone = lessonPercent === 100 && sortedLessons.length > 0;
+  const isGraduated = examPassed && allLessonsDone;
 
   const handleNext = () => {
     if (activeIndex < sortedLessons.length - 1) {
       setActiveIndex(activeIndex + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (activeIndex > 0) {
-      setActiveIndex(activeIndex - 1);
+    } else if (allLessonsDone && !examPassed) {
+      setShowExam(true);
     }
   };
 
@@ -100,7 +108,7 @@ export default function AffiliateAcademyPage() {
       <DashboardShell role="affiliate">
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cargando Academia Sync...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accediendo a Sync Academy...</p>
         </div>
       </DashboardShell>
     )
@@ -110,159 +118,242 @@ export default function AffiliateAcademyPage() {
     <DashboardShell role="affiliate">
       <div className="max-w-4xl mx-auto space-y-8 pb-20">
         
-        {/* HEADER ESTILO VISION 360 */}
+        {/* HEADER CORPORATIVO */}
         <div className="flex flex-col items-center text-center space-y-6">
-           <div className="h-20 w-20 bg-slate-900 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+           <div className="h-20 w-20 bg-slate-900 rounded-3xl flex items-center justify-center shadow-xl">
              <GraduationCap className="h-10 w-10 text-primary" />
            </div>
            <div>
              <h1 className="text-3xl font-headline font-black text-slate-900 uppercase tracking-tight">SYNC ACADEMY</h1>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-1">Formación para Socios Platinum</p>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-1">Entrenamiento de Alto Rendimiento</p>
            </div>
         </div>
 
-        {/* CONTROLES DE NAVEGACIÓN */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button 
-            variant="outline" 
-            onClick={handlePrev} 
-            disabled={activeIndex === 0}
-            className="h-14 rounded-xl border-slate-200 font-black text-xs uppercase bg-white shadow-sm"
-          >
-            <ChevronLeft className="mr-2 h-5 w-5" /> ANTERIOR
-          </Button>
-          <Button 
-            onClick={handleNext} 
-            disabled={activeIndex === sortedLessons.length - 1}
-            className="h-14 rounded-xl bg-primary text-white font-black text-xs uppercase shadow-lg"
-          >
-            SIGUIENTE <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
-
         {/* BARRA DE PROGRESO */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center px-1">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tu Progreso</span>
-             <span className="text-[10px] font-black text-slate-900 uppercase">{Math.round(percent)}%</span>
-          </div>
-          <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden p-0.5 border border-white shadow-inner">
-             <div 
-               className="h-full bg-black rounded-full transition-all duration-1000 flex items-center justify-center text-[8px] font-black text-white"
-               style={{ width: `${percent}%` }}
-             >
-               {percent > 10 && `${Math.round(percent)}%`}
+        <div className="space-y-3">
+          <div className="flex justify-between items-end">
+             <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado de la formación</p>
+                <h4 className="text-sm font-black text-slate-900 uppercase">
+                  {isGraduated ? '✓ CERTIFICACIÓN OBTENIDA' : (allLessonsDone ? 'PENDIENTE: EXAMEN FINAL' : `MÓDULO ${activeIndex + 1} EN CURSO`)}
+                </h4>
              </div>
+             <span className="text-xs font-black text-primary">{Math.round(lessonPercent)}%</span>
           </div>
+          <Progress value={lessonPercent} className="h-2 bg-slate-200" />
         </div>
 
-        {/* VIDEO Y CONTENIDO */}
-        {currentLesson ? (
-          <div className="space-y-6">
-            <Card className="border-none shadow-2xl rounded-[2rem] overflow-hidden bg-black aspect-video relative ring-1 ring-slate-100">
-               <iframe 
-                  src={getEmbedUrl(currentLesson.videoUrl)} 
-                  className="w-full h-full border-none"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-            </Card>
-
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-               <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic leading-none">{currentLesson.title}</h2>
-               <Button 
-                onClick={() => toggleComplete(currentLesson.id)}
-                className={cn(
-                  "h-10 px-6 rounded-full font-black text-[9px] uppercase tracking-widest",
-                  isCompleted(currentLesson.id) ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                )}
-               >
-                 {isCompleted(currentLesson.id) ? "LECCIÓN TERMINADA ✓" : "MARCAR COMO VISTA"}
-               </Button>
-            </div>
-            
-            <p className="text-sm text-slate-500 font-medium leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              {currentLesson.description}
-            </p>
-          </div>
+        {showExam ? (
+          <AcademyExam 
+            onPass={() => {
+              setExamPassed(true);
+              setShowExam(false);
+              if (progressRef) setDocumentNonBlocking(progressRef, { examPassed: true }, { merge: true });
+            }} 
+            onBack={() => setShowExam(false)}
+          />
         ) : (
-          <div className="text-center py-20 bg-white rounded-3xl border-dashed border-2 border-slate-200">
-             <PlayCircle className="h-12 w-12 text-slate-100 mx-auto mb-4" />
-             <p className="text-[10px] font-black uppercase text-slate-400">Sin contenido disponible</p>
-          </div>
-        )}
+          <>
+            {/* VIDEO Y CONTENIDO */}
+            {currentLesson ? (
+              <div className="space-y-6 animate-in fade-in duration-700">
+                <Card className="border-none shadow-2xl rounded-2xl overflow-hidden bg-black aspect-video relative ring-1 ring-slate-200">
+                   <iframe 
+                      src={getEmbedUrl(currentLesson.videoUrl)} 
+                      className="w-full h-full border-none"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                </Card>
 
-        {/* ACORDEÓN DE MÓDULOS */}
-        <div className="space-y-4 pt-10 border-t">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" /> Contenido del Entrenamiento
-          </h3>
-          
-          <Accordion type="single" collapsible className="space-y-2">
-            {sortedLessons.map((lesson, idx) => (
-              <AccordionItem key={lesson.id} value={lesson.id} className="border-none bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
-                <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className={cn(
-                      "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                      activeIndex === idx ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
-                    )}>
-                      {isCompleted(lesson.id) ? <CheckCircle2 className="h-4 w-4" /> : <span className="font-black text-xs">{idx + 1}</span>}
-                    </div>
-                    <span className={cn(
-                      "text-xs font-black uppercase tracking-tight",
-                      activeIndex === idx ? "text-primary" : "text-slate-600"
-                    )}>{lesson.title}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6 pt-0">
-                  <div className="pl-12 space-y-4">
-                    <p className="text-[11px] text-slate-400 font-medium">{lesson.description?.substring(0, 100)}...</p>
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setActiveIndex(idx)}
-                      className="h-8 px-4 rounded-lg bg-slate-50 text-slate-900 font-black text-[9px] uppercase hover:bg-slate-100"
-                    >
-                      ESTUDIAR AHORA
-                    </Button>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                   <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic leading-none">{currentLesson.title}</h2>
+                   <Button 
+                    onClick={() => toggleComplete(currentLesson.id)}
+                    className={cn(
+                      "h-10 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest",
+                      isCompleted(currentLesson.id) ? "bg-green-600 text-white" : "bg-slate-900 text-white"
+                    )}
+                   >
+                     {isCompleted(currentLesson.id) ? "MÓDULO COMPLETADO ✓" : "MARCAR COMO FINALIZADO"}
+                   </Button>
+                </div>
+                
+                <div className="bg-white p-8 rounded-2xl border ring-1 ring-slate-100 shadow-sm space-y-4">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                     <FileText className="h-3.5 w-3.5" /> Guía de estudio del módulo
+                   </p>
+                   <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                     {currentLesson.description}
+                   </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl border-dashed border-2 border-slate-200">
+                 <PlayCircle className="h-12 w-12 text-slate-100 mx-auto mb-4" />
+                 <p className="text-[10px] font-black uppercase text-slate-400">Aún no hay módulos publicados</p>
+              </div>
+            )}
 
-            {/* CERTIFICADO FINAL */}
-            <div className="bg-slate-50 rounded-2xl p-6 flex items-center justify-between mt-6 group hover:bg-slate-100 transition-colors cursor-pointer border-2 border-dashed border-slate-200">
-               <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "h-10 w-10 rounded-xl flex items-center justify-center",
-                    isGraduated ? "bg-amber-100 text-amber-600 animate-bounce" : "bg-slate-200 text-slate-400"
-                  )}>
-                    <Award className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-tight">Certificado de finalización</h4>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{isGraduated ? 'DISPONIBLE PARA DESCARGA' : 'BLOQUEADO: TERMINA EL CURSO'}</p>
-                  </div>
-               </div>
-               {isGraduated ? (
-                 <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="icon" variant="ghost" className="text-primary hover:bg-white"><FileDown className="h-5 w-5" /></Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-5xl p-0 border-none bg-transparent shadow-none">
-                       <CertificateView profile={profile} />
-                       <div className="mt-8 flex justify-center">
-                          <Button onClick={() => window.print()} className="h-14 px-8 rounded-xl bg-white text-black font-black text-xs uppercase shadow-2xl">IMPRIMIR PDF</Button>
-                       </div>
-                    </DialogContent>
-                 </Dialog>
-               ) : <Lock className="h-4 w-4 text-slate-300" />}
+            {/* CONTROLES DE NAVEGACIÓN */}
+            <div className="grid grid-cols-2 gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setActiveIndex(activeIndex - 1)} 
+                disabled={activeIndex === 0}
+                className="h-14 rounded-xl border-slate-200 font-black text-xs uppercase"
+              >
+                <ChevronLeft className="mr-2 h-5 w-5" /> ANTERIOR
+              </Button>
+              <Button 
+                onClick={handleNext} 
+                className="h-14 rounded-xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl"
+              >
+                {activeIndex === sortedLessons.length - 1 && allLessonsDone && !examPassed ? 'INICIAR EXAMEN FINAL' : 'SIGUIENTE MÓDULO'} <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
             </div>
-          </Accordion>
-        </div>
+
+            {/* LISTA DE MÓDULOS */}
+            <div className="space-y-4 pt-10 border-t">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" /> Temario Oficial Sync
+              </h3>
+              
+              <Accordion type="single" collapsible className="space-y-2">
+                {sortedLessons.map((lesson, idx) => (
+                  <AccordionItem key={lesson.id} value={lesson.id} className="border-none bg-white rounded-xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
+                    <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-4 text-left">
+                        <div className={cn(
+                          "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                          activeIndex === idx ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+                        )}>
+                          {isCompleted(lesson.id) ? <CheckCircle2 className="h-4 w-4" /> : <span className="font-black text-xs">{idx + 1}</span>}
+                        </div>
+                        <span className={cn(
+                          "text-xs font-black uppercase tracking-tight",
+                          activeIndex === idx ? "text-primary" : "text-slate-600"
+                        )}>{lesson.title}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6 pt-0">
+                      <div className="pl-12 space-y-4">
+                        <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{lesson.description?.substring(0, 150)}...</p>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setActiveIndex(idx)}
+                          className="h-8 px-4 rounded-lg bg-slate-50 text-slate-900 font-black text-[9px] uppercase hover:bg-slate-100"
+                        >
+                          ENTRAR A CLASE
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+
+                {/* CERTIFICADO FINAL */}
+                <div className={cn(
+                  "rounded-xl p-6 flex items-center justify-between mt-6 border-2 border-dashed transition-all",
+                  isGraduated ? "bg-slate-900 text-white border-primary border-solid shadow-2xl scale-[1.02]" : "bg-slate-50 text-slate-400 border-slate-200"
+                )}>
+                   <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "h-12 w-12 rounded-xl flex items-center justify-center",
+                        isGraduated ? "bg-primary text-slate-900" : "bg-slate-200 text-slate-400"
+                      )}>
+                        <Award className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-tight">Diploma Profesional</h4>
+                        <p className="text-[9px] font-bold uppercase tracking-widest">{isGraduated ? 'DISPONIBLE PARA DESCARGA' : 'DESBLOQUEAR CON EXAMEN APROBADO'}</p>
+                      </div>
+                   </div>
+                   {isGraduated ? (
+                     <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="icon" variant="ghost" className="text-primary hover:bg-white/10"><FileDown className="h-6 w-6" /></Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-5xl p-0 border-none bg-transparent shadow-none">
+                           <CertificateView profile={profile} />
+                           <div className="mt-8 flex justify-center">
+                              <Button onClick={() => window.print()} className="h-14 px-8 rounded-xl bg-white text-black font-black text-xs uppercase shadow-2xl">GUARDAR COMO PDF</Button>
+                           </div>
+                        </DialogContent>
+                     </Dialog>
+                   ) : <Lock className="h-4 w-4" />}
+                </div>
+              </Accordion>
+            </div>
+          </>
+        )}
       </div>
     </DashboardShell>
   )
+}
+
+function AcademyExam({ onPass, onBack }: { onPass: () => void, onBack: () => void }) {
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [checking, setChecking] = useState(false);
+  const { toast } = useToast();
+
+  const questions = [
+    { id: 1, q: "¿Cuál es el objetivo principal del Marketing Digital Sync?", options: ["Vender productos sin calidad", "Generar conexiones de valor y cierres efectivos", "Spamear redes sociales"], correct: "Generar conexiones de valor y cierres efectivos" },
+    { id: 2, q: "¿Qué elemento es indispensable para validar una comisión?", options: ["Enviar un mensaje de texto", "El número de referencia del voucher bancario", "Tener muchos seguidores"], correct: "El número de referencia del voucher bancario" },
+    { id: 3, q: "¿Cuál es la función del Sync Lab AI?", options: ["Crear imágenes falsas", "Proporcionar ganchos y scripts de venta persuasivos", "Administrar cuentas de banco"], correct: "Proporcionar ganchos y scripts de venta persuasivos" }
+  ];
+
+  const handleSubmit = () => {
+    if (Object.keys(answers).length < questions.length) {
+      toast({ variant: "destructive", title: "Examen Incompleto", description: "Responde todas las preguntas para continuar." });
+      return;
+    }
+
+    setChecking(true);
+    setTimeout(() => {
+      const allCorrect = questions.every(q => answers[q.id] === q.correct);
+      if (allCorrect) {
+        toast({ title: "¡Felicidades!", description: "Has aprobado el examen con 100% de éxito." });
+        onPass();
+      } else {
+        toast({ variant: "destructive", title: "Intento Fallido", description: "Revisa los módulos y vuelve a intentarlo. Debes acertar todas." });
+        setChecking(false);
+      }
+    }, 1500);
+  };
+
+  return (
+    <Card className="border-none shadow-2xl rounded-2xl bg-white overflow-hidden animate-in zoom-in-95 duration-500">
+      <div className="bg-slate-900 p-8 text-white">
+        <div className="flex items-center gap-3 mb-2">
+          <Zap className="h-5 w-5 text-primary" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Validación de Conocimientos</span>
+        </div>
+        <h2 className="text-2xl font-headline font-black uppercase italic">Examen Final de <span className="text-primary">Especialista</span></h2>
+      </div>
+      <CardContent className="p-10 space-y-10">
+        {questions.map((q, idx) => (
+          <div key={q.id} className="space-y-4">
+             <h4 className="text-sm font-black text-slate-900 uppercase leading-relaxed">{idx + 1}. {q.q}</h4>
+             <RadioGroup onValueChange={(v) => setAnswers({...answers, [q.id]: v})} className="grid gap-3">
+                {q.options.map(opt => (
+                  <div key={opt} className="flex items-center space-x-3 p-4 rounded-xl border hover:bg-slate-50 transition-colors cursor-pointer">
+                    <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
+                    <Label htmlFor={`${q.id}-${opt}`} className="text-xs font-medium cursor-pointer flex-1">{opt}</Label>
+                  </div>
+                ))}
+             </RadioGroup>
+          </div>
+        ))}
+
+        <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
+          <Button variant="ghost" onClick={onBack} className="flex-1 h-14 rounded-xl font-black text-[10px] uppercase">VOLVER A LOS MÓDULOS</Button>
+          <Button onClick={handleSubmit} disabled={checking} className="flex-[2] h-14 rounded-xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl">
+            {checking ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR EVALUACIÓN"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function CertificateView({ profile }: { profile: any }) {
@@ -323,7 +414,7 @@ function CertificateView({ profile }: { profile: any }) {
           </div>
 
           <p className="text-xl md:text-2xl font-medium text-slate-400 max-w-4xl mx-auto leading-relaxed mt-10">
-            Habiendo completado el ciclo de formación en marketing estratégico y técnicas de venta digital.
+            Habiendo completado satisfactoriamente el ciclo de formación técnica y la evaluación final de aptitudes comerciales.
           </p>
           
           <div className="inline-block relative group">

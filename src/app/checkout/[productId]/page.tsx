@@ -11,8 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
-import { Loader2, Truck, CreditCard, Landmark, FileText } from 'lucide-react'
-import Image from 'next/image'
+import { Loader2, Truck, CreditCard, Landmark, ShieldCheck, Zap, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { sendOrderConfirmedEmail } from '@/lib/email'
 
@@ -21,7 +20,6 @@ function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { toast } = useToast()
-  const { t } = useLanguage()
   const db = useFirestore()
   const { user, isUserLoading } = useUser()
   
@@ -65,7 +63,7 @@ function CheckoutContent() {
     e.preventDefault()
     
     if (!formData.firstName || !formData.email || !formData.phone) {
-      toast({ variant: "destructive", title: "Datos Incompletos", description: "Por favor llena tus datos de contacto." })
+      toast({ variant: "destructive", title: "Datos Incompletos", description: "Completa los campos obligatorios." })
       return
     }
 
@@ -94,7 +92,7 @@ function CheckoutContent() {
       const saleData = {
         affiliateId: affiliateId,
         productId: productId,
-        productName: product?.name || 'Producto',
+        productName: product?.name || 'Producto Sync',
         productType: product?.type || 'Digital',
         buyerId: buyerId,
         buyerName: `${formData.firstName} ${formData.lastName}`,
@@ -103,8 +101,8 @@ function CheckoutContent() {
         commissionEarned: commissionEarned,
         productPayoutAmount: saleAmount - commissionEarned,
         status: 'Pending',
-        paymentMethod: product?.type === 'Físico' ? 'cod' : (product?.paymentLink ? 'digital_link' : 'transfer'),
-        voucherReference: formData.voucherRef.trim() || (product?.type === 'Físico' ? 'CASH_ON_DELIVERY' : 'LINK_DIRECTO')
+        paymentMethod: product?.paymentLink ? 'Pocket_Digital' : 'Transfer',
+        voucherReference: formData.voucherRef.trim() || 'DIRECT_LINK_PURCHASE'
       }
 
       addDocumentNonBlocking(collection(db, 'sales'), saleData)
@@ -114,132 +112,151 @@ function CheckoutContent() {
         name: formData.firstName,
         product: product?.name || 'Producto Sync',
         isPhysical: product?.type === 'Físico'
-      }).catch(err => console.error("Error enviando email compra:", err));
+      }).catch(err => console.error("Error email checkout:", err));
 
-      if (product?.paymentLink && product?.type !== 'Físico') {
-        toast({ title: "Redirigiendo...", description: "Abriendo pasarela de pago segura." })
+      if (product?.paymentLink) {
+        toast({ title: "Iniciando Pasarela", description: "Redirigiendo a pago seguro." })
         window.location.href = product.paymentLink;
       } else {
-        toast({ title: "Pedido Registrado", description: product?.type === 'Físico' ? "Te contactaremos para la entrega." : "Tu solicitud está en proceso." })
+        toast({ title: "Registro Exitoso", description: "Tu solicitud está siendo procesada." })
         router.push('/dashboard/buyer');
       }
 
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "No pudimos procesar la solicitud." })
+      toast({ variant: "destructive", title: "Error", description: "Fallo al procesar la solicitud." })
       setLoading(false)
     }
   }
 
   if (isUserLoading || productLoading || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Sincronizando pasarela de pago...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse">Sincronizando Pasarela de Pago...</p>
       </div>
     );
   }
 
-  const isPhysical = product?.type === 'Físico';
-
   return (
-    <div className="min-h-screen bg-[#EAEDED] py-8 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-6">
-        <div className="flex items-center gap-4">
-           <Link href="/" className="hover:outline hover:outline-1 hover:outline-slate-300 p-2 rounded-sm transition-all">
-             <div className="relative h-8 w-24">
-                <span className="text-[#111] font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-             </div>
+    <div className="min-h-screen bg-slate-50 py-12 px-6">
+      <div className="max-w-5xl mx-auto space-y-10">
+        <div className="flex items-center justify-between">
+           <Link href="/">
+              <div className="relative h-10 w-32">
+                 <span className="text-slate-900 font-black text-xl italic uppercase tracking-tighter">Sync<span className="text-primary">Connect</span></span>
+              </div>
            </Link>
-           <div className="h-6 w-px bg-slate-300 mx-2" />
-           <h1 className="text-2xl font-normal text-slate-800">Finalizar pedido</h1>
+           <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+              <ShieldCheck className="h-4 w-4 text-green-600" /> Transacción Blindada
+           </div>
         </div>
 
-        <form onSubmit={handlePurchase} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-8 space-y-6">
-            <Card className="premium-card">
-              <CardHeader className="border-b bg-slate-50/50">
-                <CardTitle className="text-lg font-black flex items-center gap-3">
-                  <span className="h-6 w-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">1</span>
-                  {isPhysical ? 'Dirección de envío' : 'Datos del Cliente'}
+        <form onSubmit={handlePurchase} className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          <div className="lg:col-span-7 space-y-8">
+            <Card className="border-none shadow-2xl rounded-2xl overflow-hidden ring-1 ring-slate-100">
+              <CardHeader className="bg-slate-900 text-white p-8">
+                <CardTitle className="text-lg font-headline font-black uppercase italic flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-slate-900"><span className="text-xs">01</span></div>
+                  Datos de Facturación
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-1">
-                   <Label className="text-[13px] font-bold text-[#111]">Nombre Completo</Label>
+              <CardContent className="p-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Nombre Completo</Label>
                    <Input value={`${formData.firstName} ${formData.lastName}`} onChange={e => {
                      const parts = e.target.value.split(' ');
                      setFormData({...formData, firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || ''})
-                   }} className="amazon-input" placeholder="Ej: Juan Pérez" required />
+                   }} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold" required />
                  </div>
-                 <div className="space-y-1">
-                   <Label className="text-[13px] font-bold text-[#111]">E-mail</Label>
-                   <Input type="email" value={formData.email} className="amazon-input" required disabled />
+                 <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Dirección de E-mail</Label>
+                   <Input type="email" value={formData.email} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold opacity-50" disabled />
                  </div>
-                 <div className="space-y-1">
-                   <Label className="text-[13px] font-bold text-[#111]">Número de teléfono</Label>
-                   <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="amazon-input" required />
+                 <div className="space-y-2 md:col-span-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">WhatsApp de contacto</Label>
+                   <Input placeholder="50588888888" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold" required />
                  </div>
-                 {isPhysical && (
-                   <>
-                    <div className="md:col-span-2 space-y-1">
-                      <Label className="text-[13px] font-bold text-[#111]">Dirección exacta</Label>
-                      <Input placeholder="Barrio, de la iglesia 2c abajo..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="amazon-input" required />
-                    </div>
-                   </>
-                 )}
               </CardContent>
             </Card>
 
-            <Card className="premium-card">
-              <CardHeader className="border-b bg-slate-50/50">
-                <CardTitle className="text-lg font-black flex items-center gap-3">
-                  <span className="h-6 w-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">2</span>
-                  Método de pago
+            <Card className="border-none shadow-2xl rounded-2xl overflow-hidden ring-1 ring-slate-100">
+              <CardHeader className="bg-slate-900 text-white p-8">
+                <CardTitle className="text-lg font-headline font-black uppercase italic flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-slate-900"><span className="text-xs">02</span></div>
+                  Método de Liquidación
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-8">
-                {isPhysical ? (
-                  <div className="flex gap-4 p-6 bg-blue-50 rounded-lg border border-blue-100">
-                    <Truck className="h-8 w-8 text-blue-600 shrink-0" />
-                    <p className="text-[13px] text-blue-700">Pago contra entrega en efectivo. Te llamaremos para coordinar.</p>
+              <CardContent className="p-10">
+                {product?.paymentLink ? (
+                  <div className="p-8 bg-green-50 rounded-2xl border-2 border-dashed border-green-200 text-center space-y-4">
+                     <CreditCard className="h-10 w-10 text-green-600 mx-auto" />
+                     <div>
+                       <h4 className="font-black text-green-900 uppercase">Procesador de Pago Pocket</h4>
+                       <p className="text-[11px] text-green-700 font-medium">Serás redirigido al portal oficial de pago tras confirmar tus datos.</p>
+                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {product?.paymentLink ? (
-                      <div className="flex gap-4 p-6 bg-green-50 rounded-lg border border-green-100">
-                        <CreditCard className="h-8 w-8 text-green-600 shrink-0" />
-                        <p className="text-[13px] text-green-700">Serás redirigido al enlace de pago oficial tras confirmar tus datos.</p>
+                  <div className="space-y-6">
+                    <div className="p-6 bg-slate-50 rounded-2xl border ring-1 ring-black/5 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Landmark className="h-5 w-5 text-slate-900" />
+                        <h4 className="font-black text-slate-900 uppercase text-xs">Transferencia Bancaria Directa</h4>
                       </div>
-                    ) : (
-                      <div className="p-6 bg-slate-50 border rounded-lg space-y-4">
-                        <h4 className="font-bold text-slate-800 flex items-center gap-2"><Landmark className="h-4 w-4" /> Transferencia Bancaria</h4>
-                        <p className="text-xs">Banco: {product?.bankType}</p>
-                        <p className="text-sm font-black font-mono">{product?.bankAccount}</p>
-                        <Input value={formData.voucherRef} onChange={e => setFormData({...formData, voucherRef: e.target.value})} className="amazon-input" placeholder="Nº Referencia del Voucher" required />
+                      <div className="grid grid-cols-2 gap-4 text-[11px]">
+                         <div><p className="text-slate-400 uppercase font-black">Banco:</p><p className="font-bold text-slate-900 uppercase">{product?.bankType || 'Sincronizando...'}</p></div>
+                         <div><p className="text-slate-400 uppercase font-black">Nº Cuenta:</p><p className="font-mono font-bold text-slate-900">{product?.bankAccount || 'Consultar Admin'}</p></div>
                       </div>
-                    )}
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Referencia del Voucher</Label>
+                       <Input value={formData.voucherRef} onChange={e => setFormData({...formData, voucherRef: e.target.value})} className="h-14 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-lg text-primary text-center" placeholder="Ej: 12345678" required />
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          <div className="lg:col-span-4 space-y-4 sticky top-24">
-             <Card className="premium-card p-6 border-2 border-primary/20">
-                <Button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold h-12 rounded-md shadow-sm border border-[#F2C200] mb-4"
-                >
-                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isPhysical ? 'Confirmar Pedido' : (product?.paymentLink ? 'Pagar Ahora' : 'Finalizar Compra'))}
-                </Button>
-                <div className="space-y-4 border-t pt-4">
-                  <div className="flex justify-between text-lg font-black text-[#B12704]">
-                    <span>Total del pedido:</span>
-                    <span>${product?.price?.toFixed(2)}</span>
+          <div className="lg:col-span-5 space-y-6 sticky top-24">
+             <Card className="border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] rounded-[2.5rem] bg-slate-950 text-white overflow-hidden">
+                <div className="p-10 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-2xl">
+                       <Zap className="h-7 w-7 fill-current" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-headline font-black uppercase italic tracking-tight">Resumen de <span className="text-primary">Orden</span></h3>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Socio Ref: {affiliateId.substring(0,8)}</p>
+                    </div>
                   </div>
+
+                  <div className="space-y-4 border-t border-white/5 pt-8">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-medium text-slate-400 uppercase">Producto seleccionado:</span>
+                      <span className="text-xs font-black uppercase text-right max-w-[150px] truncate">{product?.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-6 border-t border-white/5">
+                      <span className="text-lg font-black text-slate-400 uppercase italic">Total a liquidar:</span>
+                      <span className="text-4xl font-black text-primary tracking-tighter">${product?.price?.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full h-20 rounded-2xl bg-primary hover:bg-primary/90 text-slate-950 font-black text-xl uppercase italic shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 gap-3"
+                  >
+                    {loading ? <Loader2 className="animate-spin h-7 w-7" /> : (
+                      <>LIQUIDAR PEDIDO <ArrowRight className="h-6 w-6" /></>
+                    )}
+                  </Button>
                 </div>
              </Card>
+
+             <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4 text-[10px] text-blue-700 font-bold leading-relaxed">
+                <ShieldCheck className="h-6 w-6 text-blue-600 shrink-0" />
+                <p>Protección de datos bajo cifrado militar. Tu información de pago ocurre en un entorno controlado de Sync Connect.</p>
+             </div>
           </div>
         </form>
       </div>
@@ -249,7 +266,7 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>}>
       <CheckoutContent />
     </Suspense>
   )
