@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -15,9 +16,9 @@ import {
   CheckCircle2,
   Trophy,
   Award,
-  Download,
+  FileDown,
   Printer,
-  FileDown
+  Image as ImageIcon
 } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase, useUser, setDocumentNonBlocking, useDoc } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
@@ -75,6 +76,15 @@ export default function AffiliateAcademyPage() {
     return url;
   };
 
+  const getYoutubeThumbnail = (url: string) => {
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return `https://img.youtube.com/vi/${match[2]}/mqdefault.jpg`;
+    }
+    return null;
+  };
+
   const percent = lessons && lessons.length > 0 ? (completedIds.length / lessons.length) * 100 : 0;
   const isGraduated = percent === 100 && (lessons?.length || 0) > 0;
 
@@ -84,60 +94,62 @@ export default function AffiliateAcademyPage() {
 
   return (
     <DashboardShell role="affiliate">
-      <div className="space-y-8 print:hidden">
+      <div className="space-y-10 print:hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-lg">
-              <GraduationCap className="h-6 w-6" />
+          <div className="flex items-center gap-5">
+            <div className="h-14 w-14 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-2xl">
+              <GraduationCap className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase">Sync <span className="text-slate-500">Academy</span></h1>
-              <p className="text-slate-500 text-sm font-medium">Formación oficial para Socios Platinum.</p>
+              <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight uppercase italic leading-none">Sync <span className="text-primary">Academy</span></h1>
+              <p className="text-slate-500 font-medium mt-1">Formación oficial para Socios Platinum.</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6 bg-white p-4 rounded-2xl border shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-center gap-6 bg-white p-4 px-6 rounded-3xl border shadow-xl ring-1 ring-slate-100">
              <div className="text-right">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Progreso del Programa</p>
-                <p className="text-lg font-black text-slate-900">{Math.round(percent)}%</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu Progreso</p>
+                <div className="flex items-center gap-2">
+                   <p className="text-2xl font-black text-slate-900 leading-none">{Math.round(percent)}%</p>
+                </div>
              </div>
-             <div className="h-10 w-px bg-slate-100" />
+             <div className="h-12 w-px bg-slate-100" />
              <div className={cn(
-               "h-12 w-12 rounded-xl flex items-center justify-center transition-all",
-               isGraduated ? "bg-amber-100 text-amber-600 shadow-lg shadow-amber-200" : "bg-slate-50 text-slate-300"
+               "h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-700",
+               isGraduated ? "bg-amber-100 text-amber-600 shadow-xl shadow-amber-200" : "bg-slate-50 text-slate-200"
              )}>
-                <Trophy className="h-6 w-6" />
+                <Trophy className="h-7 w-7" />
              </div>
           </div>
         </div>
 
         {isGraduated && (
-          <Card className="border-none shadow-2xl rounded-[2.5rem] bg-slate-950 text-white p-8 md:p-12 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000"><Award className="h-64 w-64 text-primary" /></div>
-             <div className="relative z-10 space-y-6">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
-                   PROGRAMA COMPLETADO ✓
+          <Card className="border-none shadow-2xl rounded-[3rem] bg-slate-950 text-white p-12 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000"><Award className="h-80 w-80 text-primary" /></div>
+             <div className="relative z-10 space-y-8">
+                <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-primary/20 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.4em]">
+                   ESTADO: GRADUADO ✓
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-3xl md:text-5xl font-headline font-black tracking-tight leading-none uppercase italic">
-                     ESPECIALISTA EN <span className="text-primary">MARKETING SYNC</span>
+                <div className="space-y-3">
+                  <h2 className="text-4xl md:text-6xl font-headline font-black tracking-tighter leading-none uppercase italic">
+                     MÁSTER EN <span className="text-primary">VENTAS DIGITALES</span>
                   </h2>
-                  <p className="text-slate-400 font-medium max-w-xl text-sm">
-                     Has demostrado dominio total de las herramientas de cierre y estrategias digitales. Tu título oficial está listo.
+                  <p className="text-slate-400 font-medium max-w-2xl text-lg leading-relaxed">
+                     Has completado el ciclo de formación técnica. Eres oficialmente un especialista certificado en el sistema Sync.
                   </p>
                 </div>
                 
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button className="h-14 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-2xl gap-3">
-                      <FileDown className="h-5 w-5" /> DESCARGAR MI DIPLOMA
+                    <Button className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-2xl gap-3 transition-all active:scale-95">
+                      <FileDown className="h-6 w-6" /> GENERAR DIPLOMA OFICIAL
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl p-0 border-none bg-transparent shadow-none">
                      <CertificateView profile={profile} />
-                     <div className="mt-8 flex justify-center gap-4">
-                        <Button onClick={handlePrint} className="h-12 rounded-xl bg-white text-slate-900 font-black text-[10px] uppercase gap-2 hover:bg-slate-50">
-                          <Printer className="h-4 w-4" /> GUARDAR COMO PDF / IMPRIMIR
+                     <div className="mt-10 flex justify-center gap-4">
+                        <Button onClick={handlePrint} className="h-14 px-8 rounded-2xl bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest gap-2 hover:bg-slate-50 shadow-2xl">
+                          <Printer className="h-5 w-5" /> IMPRIMIR O GUARDAR PDF
                         </Button>
                      </div>
                   </DialogContent>
@@ -149,14 +161,14 @@ export default function AffiliateAcademyPage() {
         {lessonsLoading ? (
           <div className="flex justify-center py-40"><Loader2 className="animate-spin text-slate-300 h-10 w-10" /></div>
         ) : !lessons || lessons.length === 0 ? (
-          <Card className="p-32 text-center border-dashed border-2 border-slate-200 bg-white rounded-xl">
-             <Video className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contenido próximamente disponible</p>
+          <Card className="p-40 text-center border-dashed border-2 border-slate-200 bg-white rounded-3xl">
+             <Video className="h-16 w-16 text-slate-100 mx-auto mb-6" />
+             <p className="text-xs font-black text-slate-400 uppercase tracking-[0.5em]">Próximo material en desarrollo</p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-8 space-y-6">
-              <Card className="border-none shadow-2xl rounded-2xl overflow-hidden bg-black aspect-video relative ring-1 ring-white/10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="lg:col-span-8 space-y-10">
+              <Card className="border-none shadow-2xl rounded-3xl overflow-hidden bg-black aspect-video relative ring-1 ring-white/10 shadow-slate-900/10">
                 {activeLesson ? (
                   <iframe 
                     src={getEmbedUrl(activeLesson.videoUrl)} 
@@ -166,73 +178,78 @@ export default function AffiliateAcademyPage() {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-white/10">
-                    <PlayCircle className="h-20 w-20" />
+                    <PlayCircle className="h-24 w-24" />
                   </div>
                 )}
               </Card>
               
               {activeLesson && (
-                <div className="space-y-6 px-2">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight italic">{activeLesson.title}</h2>
-                      <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                         <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Sesión: {new Date(activeLesson.createdAt).toLocaleDateString()}</span>
-                         <span className="flex items-center gap-1.5 text-primary"><ShieldCheck className="h-3.5 w-3.5" /> Verificado</span>
+                <div className="space-y-8 px-2">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic">{activeLesson.title}</h2>
+                      <div className="flex items-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                         <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> Publicado: {new Date(activeLesson.createdAt).toLocaleDateString()}</span>
+                         <span className="flex items-center gap-2 text-primary"><ShieldCheck className="h-4 w-4" /> Academia Sync</span>
                       </div>
                     </div>
                     <Button 
                       onClick={() => toggleComplete(activeLesson.id)}
                       className={cn(
-                        "h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
-                        isCompleted(activeLesson.id) ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-slate-900 text-white hover:bg-slate-800"
+                        "h-14 px-10 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95",
+                        isCompleted(activeLesson.id) ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-slate-950 text-white hover:bg-slate-900"
                       )}
                     >
-                      {isCompleted(activeLesson.id) ? <><CheckCircle2 className="mr-2 h-4 w-4" /> LECCIÓN TERMINADA</> : "MARCAR COMO FINALIZADA"}
+                      {isCompleted(activeLesson.id) ? <><CheckCircle2 className="mr-2 h-5 w-5" /> LECCIÓN TERMINADA ✓</> : "MARCAR COMO FINALIZADA"}
                     </Button>
                   </div>
-                  <div className="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-                    <p className="text-slate-600 text-sm leading-relaxed font-medium whitespace-pre-wrap">
-                      {activeLesson.description || 'Sin descripción detallada.'}
+                  <div className="p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <p className="text-slate-600 text-lg leading-relaxed font-medium whitespace-pre-wrap">
+                      {activeLesson.description || 'Este módulo no cuenta con descripción adicional.'}
                     </p>
                   </div>
                 </div>
               )}
             </div>
 
-            <Card className="lg:col-span-4 border-none shadow-xl rounded-2xl bg-white overflow-hidden h-[600px] flex flex-col ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-50 border-b p-6">
-                <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Módulos del Curso</CardTitle>
+            <Card className="lg:col-span-4 border-none shadow-2xl rounded-3xl bg-white overflow-hidden h-[700px] flex flex-col ring-1 ring-slate-100">
+              <CardHeader className="bg-slate-950 border-b p-8 text-white">
+                <CardTitle className="text-xs font-black uppercase tracking-[0.3em]">Lista de Módulos</CardTitle>
               </CardHeader>
               <ScrollArea className="flex-1">
-                <div className="p-3 space-y-1">
-                  {lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson, idx) => (
-                    <button 
-                      key={lesson.id}
-                      onClick={() => setSelectedLesson(lesson)}
-                      className={cn(
-                        "w-full text-left p-4 rounded-xl flex items-center gap-4 transition-all group",
-                        activeLesson?.id === lesson.id ? "bg-slate-900 text-white shadow-lg" : "hover:bg-slate-50"
-                      )}
-                    >
-                      <div className={cn(
-                        "h-10 w-10 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-colors",
-                        isCompleted(lesson.id) ? "bg-green-500 text-white" : (activeLesson?.id === lesson.id ? "bg-white/10 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-white")
-                      )}>
-                        {isCompleted(lesson.id) ? <CheckCircle2 className="h-5 w-5" /> : idx + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-[11px] font-black uppercase truncate", activeLesson?.id === lesson.id ? "text-white" : "text-slate-700")}>{lesson.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                           <PlayCircle className={cn("h-3 w-3", activeLesson?.id === lesson.id ? "text-slate-400" : "text-slate-300")} />
-                           <span className={cn("text-[8px] font-bold uppercase tracking-widest", activeLesson?.id === lesson.id ? "text-slate-500" : "text-slate-400")}>
-                             {isCompleted(lesson.id) ? 'Revisar' : 'Empezar'}
-                           </span>
+                <div className="p-4 space-y-2">
+                  {lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson, idx) => {
+                    const thumb = getYoutubeThumbnail(lesson.videoUrl);
+                    return (
+                      <button 
+                        key={lesson.id}
+                        onClick={() => setSelectedLesson(lesson)}
+                        className={cn(
+                          "w-full text-left p-4 rounded-2xl flex items-center gap-5 transition-all group",
+                          activeLesson?.id === lesson.id ? "bg-slate-900 text-white shadow-2xl rotate-1" : "hover:bg-slate-50"
+                        )}
+                      >
+                        <div className="relative h-14 w-24 shrink-0 rounded-xl overflow-hidden bg-slate-100 border">
+                           {thumb ? (
+                             <img src={thumb} className="w-full h-full object-cover" alt="" />
+                           ) : <div className="h-full w-full flex items-center justify-center text-slate-300"><ImageIcon className="h-4 w-4" /></div>}
+                           {isCompleted(lesson.id) && (
+                             <div className="absolute inset-0 bg-green-600/60 backdrop-blur-[2px] flex items-center justify-center">
+                               <CheckCircle2 className="h-6 w-6 text-white" />
+                             </div>
+                           )}
+                           <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[7px] font-black text-white">#{idx + 1}</div>
                         </div>
-                      </div>
-                      <ChevronRight className={cn("h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1", activeLesson?.id === lesson.id ? "text-white" : "text-slate-200")} />
-                    </button>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-[11px] font-black uppercase truncate tracking-tight", activeLesson?.id === lesson.id ? "text-white" : "text-slate-900")}>{lesson.title}</p>
+                          <p className={cn("text-[9px] font-bold uppercase tracking-widest mt-1", activeLesson?.id === lesson.id ? "text-slate-400" : "text-slate-400")}>
+                            {isCompleted(lesson.id) ? 'Revisar' : 'Por ver'}
+                          </p>
+                        </div>
+                        <ChevronRight className={cn("h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1", activeLesson?.id === lesson.id ? "text-white" : "text-slate-200")} />
+                      </button>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </Card>
@@ -240,7 +257,6 @@ export default function AffiliateAcademyPage() {
         )}
       </div>
 
-      {/* VISTA DEL DIPLOMA PARA IMPRESIÓN */}
       <div className="hidden print:block fixed inset-0 bg-white z-[9999]">
          <CertificateView profile={profile} />
       </div>
@@ -252,48 +268,46 @@ function CertificateView({ profile }: { profile: any }) {
   const date = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   
   return (
-    <div className="bg-white border-[20px] border-slate-900 p-16 md:p-24 text-center space-y-12 relative overflow-hidden aspect-[1.414/1] flex flex-col justify-center">
-       {/* Bordes decorativos */}
-       <div className="absolute top-0 left-0 w-32 h-32 border-l-[10px] border-t-[10px] border-primary" />
-       <div className="absolute bottom-0 right-0 w-32 h-32 border-r-[10px] border-b-[10px] border-primary" />
-       <div className="absolute inset-0 border-2 border-slate-100 m-4" />
+    <div className="bg-white border-[30px] border-slate-900 p-24 text-center space-y-16 relative overflow-hidden aspect-[1.414/1] flex flex-col justify-center">
+       <div className="absolute top-0 left-0 w-40 h-40 border-l-[15px] border-t-[15px] border-primary" />
+       <div className="absolute bottom-0 right-0 w-40 h-40 border-r-[15px] border-b-[15px] border-primary" />
        
-       <div className="space-y-4 relative z-10">
-          <div className="h-20 w-20 bg-slate-900 rounded-full flex items-center justify-center text-primary mx-auto mb-8 shadow-2xl">
-             <Award className="h-10 w-10 fill-current" />
-          </div>
-          <h4 className="text-[12px] font-black uppercase tracking-[0.6em] text-slate-400">Sync Connect Academy • Certificado Oficial</h4>
-          <h1 className="text-6xl font-headline font-black text-slate-950 uppercase italic tracking-tighter leading-none">DIPLOMA DE <span className="text-primary">MÉRITO</span></h1>
-       </div>
-
        <div className="space-y-6 relative z-10">
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-widest">Este documento acredita a:</p>
-          <div className="border-b-2 border-slate-900 pb-2 inline-block px-12">
-            <h2 className="text-4xl font-headline font-black text-slate-900 uppercase italic tracking-tight">{profile?.firstName} {profile?.lastName}</h2>
+          <div className="h-24 w-24 bg-slate-900 rounded-full flex items-center justify-center text-primary mx-auto mb-10 shadow-2xl">
+             <Award className="h-12 w-12 fill-current" />
           </div>
-          <p className="text-lg font-medium text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Como graduado oficial del programa de alto rendimiento, obteniendo la designación y el rango de:
+          <h4 className="text-[14px] font-black uppercase tracking-[0.8em] text-slate-400 mb-2">Sync Connect Academy • Global Education</h4>
+          <h1 className="text-7xl font-headline font-black text-slate-950 uppercase italic tracking-tighter leading-none">CERTIFICADO DE <span className="text-primary">MÉRITO</span></h1>
+       </div>
+
+       <div className="space-y-10 relative z-10">
+          <p className="text-lg font-medium text-slate-500 uppercase tracking-[0.4em]">Por cuanto el socio embajador:</p>
+          <div className="border-b-[3px] border-slate-900 pb-4 inline-block px-16">
+            <h2 className="text-5xl font-headline font-black text-slate-900 uppercase italic tracking-tight">{profile?.firstName} {profile?.lastName}</h2>
+          </div>
+          <p className="text-xl font-medium text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            Ha completado satisfactoriamente los módulos de formación profesional en marketing estratégico y técnicas de cierre masivo.
           </p>
-          <div className="py-4 px-8 bg-slate-50 inline-block rounded-xl border-2 border-dashed border-slate-200">
-             <h3 className="text-2xl font-black text-primary uppercase italic tracking-tight">ESPECIALISTA EN MARKETING DIGITAL SYNC</h3>
+          <div className="py-6 px-12 bg-slate-50 inline-block rounded-2xl border-4 border-dashed border-slate-200 shadow-inner">
+             <h3 className="text-3xl font-black text-primary uppercase italic tracking-tight">MÁSTER EN VENTAS DIGITALES SYNC</h3>
           </div>
        </div>
 
-       <div className="grid grid-cols-2 gap-20 pt-12 relative z-10">
-          <div className="space-y-4">
+       <div className="grid grid-cols-2 gap-32 pt-16 relative z-10">
+          <div className="space-y-5">
              <div className="h-px bg-slate-300 w-full" />
-             <p className="text-[10px] font-black uppercase text-slate-900">DIRECCIÓN GENERAL SYNC</p>
-             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Firma Autorizada</p>
+             <p className="text-xs font-black uppercase text-slate-900 tracking-widest">DIRECCIÓN EJECUTIVA SYNC</p>
+             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">Firma Autorizada</p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
              <div className="h-px bg-slate-300 w-full" />
-             <p className="text-[10px] font-black uppercase text-slate-900">{date}</p>
-             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Fecha de Expedición</p>
+             <p className="text-xs font-black uppercase text-slate-900 tracking-widest">{date}</p>
+             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">Fecha de Expedición</p>
           </div>
        </div>
 
-       <div className="absolute bottom-10 left-10 opacity-10">
-         <span className="text-4xl font-black italic">SYNC CONNECT</span>
+       <div className="absolute bottom-12 left-12 opacity-5">
+         <span className="text-6xl font-black italic tracking-tighter">SYNC CONNECT ELITE</span>
        </div>
     </div>
   )

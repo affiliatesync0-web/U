@@ -20,22 +20,16 @@ import {
   X,
   Search,
   ChevronDown,
-  ShoppingCart,
   LogOut,
   Terminal,
   Zap,
-  Settings,
   ShieldCheck,
-  User as UserIcon,
-  CreditCard,
-  ChevronRight,
-  MessageCircle,
-  MessageSquare,
   MapPin,
   UserCheck,
   GraduationCap,
-  Bell,
-  BellRing
+  MessageSquare,
+  MessageCircle,
+  Bell
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -53,9 +47,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useToast } from "@/hooks/use-toast"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -71,31 +63,15 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const pathname = usePathname();
   const db = useFirestore();
   const auth = useAuth();
-  const { toast } = useToast();
   
   const [mounted, setMounted] = useState(false);
   const [isVerifyingRole, setIsVerifyingRole] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
 
   const cleanEmail = user?.email?.toLowerCase().trim() || '';
   const isUserAdmin = cleanEmail === ADMIN_EMAIL;
 
-  useEffect(() => { 
-    setMounted(true); 
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotifPermission(Notification.permission);
-    }
-  }, []);
-
-  const requestNotifPermission = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
-    const permission = await Notification.requestPermission();
-    setNotifPermission(permission);
-    if (permission === 'granted') {
-      toast({ title: "Notificaciones Activas", description: "Recibirás alertas de ventas en tiempo real." });
-    }
-  };
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     async function verifyAccess() {
@@ -134,165 +110,125 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   }
 
   if (!mounted || isUserLoading || isVerifyingRole) {
-    return <div className="min-h-screen flex items-center justify-center bg-white"><div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
+    return <div className="min-h-screen flex items-center justify-center bg-white"><div className="h-10 w-10 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin" /></div>
   }
 
   const adminItems = [
-    { title: "Resumen", url: "/dashboard/admin", icon: LayoutDashboard },
-    { title: "Sync Academy", url: "/dashboard/admin/academy", icon: GraduationCap },
-    { title: "Afiliados Platinum", url: "/dashboard/admin/affiliates", icon: Users },
-    { title: "Base Compradores", url: "/dashboard/admin/buyers", icon: UserCheck },
-    { title: "Mapa de Red", url: "/dashboard/admin/map", icon: MapPin },
-    { title: "Buzón Maestro", url: "/dashboard/admin/support", icon: MessageSquare },
-    { title: "Catálogo Admin", url: "/dashboard/admin/products", icon: Package },
-    { title: "Build Center", url: "/dashboard/admin/releases", icon: Terminal },
-    { title: "Estrategias Lab", url: "/dashboard/admin/sales-lab", icon: Zap },
-    { title: "Auditoría Ventas", url: "/dashboard/admin/sales", icon: ShoppingBag },
-    { title: "Diseño & Config", url: "/dashboard/admin/design", icon: Palette },
+    { title: "Inicio", url: "/dashboard/admin", icon: LayoutDashboard },
+    { title: "Academy", url: "/dashboard/admin/academy", icon: GraduationCap },
+    { title: "Afiliados", url: "/dashboard/admin/affiliates", icon: Users },
+    { title: "Compradores", url: "/dashboard/admin/buyers", icon: UserCheck },
+    { title: "Mapa", url: "/dashboard/admin/map", icon: MapPin },
+    { title: "Buzón", url: "/dashboard/admin/support", icon: MessageSquare },
+    { title: "Productos", url: "/dashboard/admin/products", icon: Package },
+    { title: "Builds", url: "/dashboard/admin/releases", icon: Terminal },
+    { title: "Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
+    { title: "Ventas", url: "/dashboard/admin/sales", icon: ShoppingBag },
+    { title: "Config", url: "/dashboard/admin/design", icon: Palette },
   ]
 
   const affiliateItems = [
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
-    { title: "Sync Academy", url: "/dashboard/affiliate/academy", icon: GraduationCap },
-    { title: "Buzón Privado", url: "/dashboard/affiliate/support", icon: MessageCircle },
-    { title: "Marketplace", url: "/dashboard/affiliate/products", icon: ShoppingBag },
-    { title: "Sales Lab", url: "/dashboard/affiliate/sales-lab", icon: Flame },
-    { title: "Mis Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },
-    { title: "Perfil de Cobros", url: "/dashboard/affiliate/profile", icon: UserCircle },
+    { title: "Academy", url: "/dashboard/affiliate/academy", icon: GraduationCap },
+    { title: "Buzón", url: "/dashboard/affiliate/support", icon: MessageCircle },
+    { title: "Mercado", url: "/dashboard/affiliate/products", icon: ShoppingBag },
+    { title: "Estrategias", url: "/dashboard/affiliate/sales-lab", icon: Flame },
+    { title: "Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },
+    { title: "Pagos", url: "/dashboard/affiliate/profile", icon: UserCircle },
   ]
 
   const buyerItems = [
     { title: "Mis Pedidos", url: "/dashboard/buyer", icon: LayoutDashboard },
-    { title: "Explorar Marketplace", url: "/dashboard/buyer/products", icon: ShoppingBasket },
+    { title: "Tienda", url: "/dashboard/buyer/products", icon: ShoppingBasket },
   ]
 
   const menuItems = isUserAdmin ? adminItems : (role === 'buyer' ? buyerItems : affiliateItems);
 
   return (
-    <div className="min-h-screen bg-[#EAEDED] flex flex-col">
-      <header className="sticky top-0 z-[100] w-full flex flex-col shadow-md bg-[#131921]">
-        <div className="h-[60px] md:h-[72px] flex items-center px-4 gap-4">
-          <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white shrink-0">
-            <div className="relative h-8 w-24 md:h-10 md:w-32">
-              {displayLogoUrl ? (
-                <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
-              ) : (
-                <span className="text-white font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-              )}
-            </div>
-          </Link>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* HEADER CORPORATIVO UNIFICADO */}
+      <header className="sticky top-0 z-[100] w-full bg-slate-950 text-white border-b border-white/5">
+        <div className="h-16 md:h-20 flex items-center px-4 md:px-10 justify-between">
+          <div className="flex items-center gap-8">
+            <Link href={isUserAdmin ? "/dashboard/admin" : (role === 'buyer' ? "/dashboard/buyer" : "/dashboard/affiliate")} className="shrink-0">
+              <div className="relative h-8 w-24 md:h-10 md:w-32">
+                {displayLogoUrl ? (
+                  <Image src={displayLogoUrl} alt="Logo" fill className="object-contain" unoptimized />
+                ) : (
+                  <span className="text-white font-black text-lg italic uppercase tracking-tighter">Sync<span className="text-primary">Connect</span></span>
+                )}
+              </div>
+            </Link>
 
-          <div className="flex-1 flex h-10 md:h-11 items-center mx-4 group">
-            <div className="flex-1 flex h-full bg-white rounded-md overflow-hidden focus-within:ring-[3px] focus-within:ring-[#FF9900]">
-              <Input placeholder="Buscar en Sync..." className="flex-1 border-none focus-visible:ring-0 text-[15px] h-full px-4" />
-              <button className="bg-[#FEBD69] hover:bg-[#F3A847] w-12 md:w-14 h-full flex items-center justify-center"><Search className="h-6 w-6 text-[#333]" /></button>
-            </div>
+            {/* NAV DESKTOP - SIN OPCIONES A LOS LADOS, TODO EN EL CENTRO/TOP */}
+            <nav className="hidden lg:flex items-center gap-1">
+              {menuItems.map((item) => (
+                <Link 
+                  key={item.url} 
+                  href={item.url} 
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                    pathname === item.url ? "bg-white/10 text-white" : "text-white/40 hover:text-white"
+                  )}
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </nav>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {notifPermission !== 'granted' && (
-              <button onClick={requestNotifPermission} className="p-2 text-white hover:text-primary animate-pulse hidden md:block" title="Activar Notificaciones">
-                <BellRing className="h-5 w-5" />
-              </button>
-            )}
+          <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left transition-all">
-                  <span className="text-[#CCCCCC] text-[11px] font-bold uppercase tracking-wider">Hola, {isUserAdmin ? 'Admin' : (user?.displayName?.split(' ')[0] || 'Usuario')}</span>
-                  <div className="flex items-center text-white font-black text-[14px]">Mi Cuenta <ChevronDown className="h-3 w-3 ml-1 text-[#CCCCCC]" /></div>
+                <button className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/5 transition-all text-left">
+                  <div className="h-9 w-9 rounded-lg bg-white/10 flex items-center justify-center text-white font-black text-sm">
+                    {user?.displayName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 text-white/40">Cuenta {role}</p>
+                    <p className="text-xs font-black uppercase truncate max-w-[100px]">{user?.displayName?.split(' ')[0] || 'Socio'}</p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 opacity-40 hidden md:block" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 p-0 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] border-none rounded-2xl overflow-hidden mt-2">
-                <DropdownMenuLabel className="p-6 bg-slate-50 border-b">
-                   <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white font-black text-lg shadow-lg">
-                        {user?.displayName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-black text-slate-900 truncate">{user?.displayName || 'Usuario Sync'}</span>
-                        <span className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest">{user?.email}</span>
-                      </div>
-                   </div>
+              <DropdownMenuContent align="end" className="w-64 p-2 bg-slate-900 border-white/5 text-white rounded-2xl shadow-2xl mt-2">
+                <DropdownMenuLabel className="p-4 border-b border-white/5 mb-2">
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Identificado como:</p>
+                   <p className="text-sm font-black truncate">{user?.email}</p>
                 </DropdownMenuLabel>
-                
-                <div className="p-3">
-                   {menuItems.map((item) => (
-                     <DropdownMenuItem key={item.url} asChild className="p-0 mb-1 focus:bg-transparent">
-                        <Link 
-                          href={item.url} 
-                          className={cn(
-                            "flex items-center justify-between p-3 rounded-xl transition-all group",
-                            pathname === item.url ? "bg-primary/5 text-primary" : "text-slate-600 hover:bg-slate-50"
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                             <div className={cn(
-                               "h-9 w-9 rounded-lg flex items-center justify-center transition-all",
-                               pathname === item.url ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:shadow-md"
-                             )}>
-                                <item.icon className="h-4.5 w-4.5" />
-                             </div>
-                             <span className="text-[13px] font-black uppercase tracking-tight">{item.title}</span>
-                          </div>
-                          <ChevronRight className={cn("h-4 w-4 transition-transform group-hover:translate-x-1", pathname === item.url ? "text-primary" : "text-slate-300")} />
-                        </Link>
-                     </DropdownMenuItem>
-                   ))}
-                </div>
-
-                <DropdownMenuSeparator className="m-0 bg-slate-100" />
-                
-                <div className="p-4 bg-slate-50/50">
-                  <Button 
-                    className="w-full h-12 rounded-xl bg-slate-900 hover:bg-red-600 text-white font-black text-[11px] uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-2 group" 
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4 text-primary group-hover:text-white transition-colors" /> CERRAR SESIÓN
-                  </Button>
-                </div>
+                <DropdownMenuItem onClick={handleLogout} className="rounded-xl p-3 text-red-400 focus:bg-red-400/10 focus:text-red-400 font-black text-[10px] uppercase tracking-widest gap-2 cursor-pointer">
+                  <LogOut className="h-4 w-4" /> CERRAR SESIÓN
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <div className="relative p-2 hidden sm:block">
-              <ShoppingCart className="h-9 w-9 text-white" />
-              <span className="absolute top-0 right-0 text-[#FF9900] font-black bg-[#131921] px-1 rounded-sm text-xs">0</span>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-[#232F3E] h-[39px] flex items-center px-4 overflow-x-auto no-scrollbar">
-          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white font-black text-[14px] flex items-center gap-1 mr-4 shrink-0"><Menu className="h-5 w-5" /> Todo</button>
-          <div className="flex items-center gap-1">
-            {menuItems.map((item) => (
-              <Link key={item.url} href={item.url} className={cn("px-4 py-2 text-white text-[13px] whitespace-nowrap transition-all hover:bg-white/5 rounded-md", pathname === item.url ? "font-black" : "font-medium")}>
-                {item.title}
-              </Link>
-            ))}
+            {/* BOTÓN MÓVIL BURGER */}
+            <Button variant="ghost" size="icon" className="lg:hidden text-white" onClick={() => setIsMobileMenuOpen(true)}>
+              <Menu className="h-6 w-6" />
+            </Button>
           </div>
         </div>
       </header>
 
+      {/* MOBILE MENU - OVERLAY */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[200] flex">
-           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-all" onClick={() => setIsMobileMenuOpen(false)} />
-           <div className="relative w-[300px] bg-white h-full animate-in slide-in-from-left duration-300">
-              <div className="bg-[#232F3E] p-6 flex items-center justify-between text-white shadow-xl">
-                 <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span className="font-black uppercase tracking-tighter">Sync Navigation</span>
-                 </div>
-                 <button onClick={() => setIsMobileMenuOpen(false)} className="hover:rotate-90 transition-transform"><X className="h-6 w-6" /></button>
+           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+           <div className="relative w-[85%] max-w-xs bg-slate-900 h-full animate-in slide-in-from-right duration-300">
+              <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
+                 <span className="font-black text-white text-lg uppercase italic tracking-tighter">Sync <span className="text-primary">Menu</span></span>
+                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/40 hover:text-white"><X className="h-6 w-6" /></button>
               </div>
               <ScrollArea className="h-[calc(100vh-80px)] p-6">
-                 <div className="space-y-1">
+                 <div className="space-y-2">
                    {menuItems.map((item) => (
                      <Link 
                       key={item.url} 
                       href={item.url} 
                       onClick={() => setIsMobileMenuOpen(false)} 
                       className={cn(
-                        "flex items-center gap-4 py-4 px-4 rounded-xl font-black uppercase text-xs transition-all",
-                        pathname === item.url ? "bg-primary/5 text-primary" : "text-slate-600 hover:bg-slate-50"
+                        "flex items-center gap-4 p-4 rounded-xl font-black uppercase text-xs tracking-widest transition-all",
+                        pathname === item.url ? "bg-white/10 text-white shadow-xl" : "text-white/40 hover:bg-white/5"
                       )}
                     >
                        <item.icon className="h-5 w-5" /> {item.title}
@@ -304,11 +240,10 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         </div>
       )}
 
-      <main className="flex-1 p-4 md:p-10 max-w-[1500px] mx-auto w-full">{children}</main>
+      <main className="flex-1 p-6 md:p-12 max-w-7xl mx-auto w-full">{children}</main>
 
-      <footer className="bg-[#131A22] text-white py-10 border-t-8 border-[#232F3E] text-center">
-         <span className="font-black text-xl italic">Sync<span className="text-[#FF9900]">.Connect</span></span>
-         <p className="text-[11px] text-[#888] mt-2 tracking-widest uppercase">© 2024 Nicaragua Elite Network Engine.</p>
+      <footer className="py-12 border-t border-slate-200 bg-white text-center">
+         <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.5em]">Sync Connect Proprietary System • El Salvador & Nicaragua</p>
       </footer>
     </div>
   )
