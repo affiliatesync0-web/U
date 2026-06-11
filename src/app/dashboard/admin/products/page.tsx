@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -97,8 +98,10 @@ export default function AdminProductsPage() {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setImageProgress(progress);
         }, 
-        () => {
+        (error) => {
+          console.error("Upload error:", error);
           setImageProgress(null);
+          toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo cargar la imagen." });
         }, 
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
@@ -108,6 +111,7 @@ export default function AdminProductsPage() {
         }
       );
     } catch (err) {
+      console.error("Firebase Storage init error:", err);
       setImageProgress(null);
     }
   };
@@ -255,27 +259,31 @@ export default function AdminProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto</Label>
-                    <div className="relative h-40 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
+                    <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto (Subir Archivo)</Label>
+                    <div className="relative h-48 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
                       {imageProgress !== null ? (
-                        <div className="flex flex-col items-center gap-2">
-                           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-                           <Progress value={imageProgress} className="w-24 h-1" />
+                        <div className="flex flex-col items-center gap-4 p-8 w-full">
+                           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                           <div className="w-full space-y-1">
+                              <Progress value={imageProgress} className="h-2 w-full" />
+                              <p className="text-[9px] font-black text-slate-400 text-center uppercase tracking-widest">{Math.round(imageProgress)}% COMPLETADO</p>
+                           </div>
                         </div>
                       ) : formData.imageUrl ? (
-                        <img src={formData.imageUrl} className="h-full w-full object-cover" alt="preview" />
+                        <div className="relative w-full h-full">
+                          <img src={formData.imageUrl} className="w-full h-full object-cover" alt="preview" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <Button variant="secondary" size="sm" className="rounded-full font-black text-[9px] uppercase" onClick={() => fileInputRef.current?.click()}>CAMBIAR IMAGEN</Button>
+                          </div>
+                        </div>
                       ) : (
-                        <ImageIcon className="h-8 w-8 text-slate-200" />
+                        <div className="text-center space-y-2 p-8 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                          <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mx-auto">
+                            <Upload className="h-6 w-6 text-slate-300" />
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Haz clic para subir desde dispositivo</p>
+                        </div>
                       )}
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="absolute bottom-2 right-2 shadow-lg rounded-lg font-black text-[8px] uppercase h-8" 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={imageProgress !== null}
-                      >
-                        <Upload className="h-3 w-3 mr-1" /> {formData.imageUrl ? 'CAMBIAR' : 'SUBIR'}
-                      </Button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                   </div>
@@ -315,7 +323,7 @@ export default function AdminProductsPage() {
 
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="ghost" onClick={closeDialog} className="font-black text-[10px] uppercase tracking-widest">CANCELAR</Button>
-                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-xl" onClick={handleSave}>
+                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-xl" onClick={handleSave} disabled={imageProgress !== null}>
                   <Save className="h-4 w-4 mr-2" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICAR PRODUCTO'}
                 </Button>
               </div>
