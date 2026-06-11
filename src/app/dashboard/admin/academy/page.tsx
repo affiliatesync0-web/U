@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -21,7 +22,7 @@ export default function AdminAcademyPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [isFinalizing, setIsFinalizing] = useState(false)
   
-  const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
+  const academyQuery = useMemoFirebase(() => db ? collection(db, 'academy_lessons') : null, [db]);
   const { data: lessons, isLoading } = useCollection(academyQuery);
 
   const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ export default function AdminAcademyPage() {
   })
 
   const handleSave = async () => {
-    if (!formData.title || !formData.videoUrl) {
+    if (!formData.title || !formData.videoUrl || !db) {
       toast({ variant: "destructive", title: "Faltan datos", description: "El título y el link del video son obligatorios." });
       return;
     }
@@ -54,7 +55,7 @@ export default function AdminAcademyPage() {
   }
 
   const handleDelete = (id: string) => {
-    if(confirm("¿Seguro que quieres eliminar esta lección permanentemente?")) {
+    if(confirm("¿Seguro que quieres eliminar esta lección permanentemente?") && db) {
       deleteDocumentNonBlocking(doc(db, 'academy_lessons', id));
       toast({ title: "Lección eliminada" });
     }
@@ -110,13 +111,13 @@ export default function AdminAcademyPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
             <div className="col-span-full flex justify-center py-20"><Loader2 className="animate-spin text-slate-300" /></div>
-          ) : lessons?.length === 0 ? (
+          ) : !lessons || lessons.length === 0 ? (
             <Card className="col-span-full p-20 text-center border-dashed border-2 border-slate-200 bg-white rounded-xl">
                <Video className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Sin contenido en la academia</p>
             </Card>
           ) : (
-            lessons?.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson) => (
+            lessons.sort((a, b) => (a.order || 0) - (b.order || 0)).map((lesson) => (
               <Card key={lesson.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-xl overflow-hidden bg-white group">
                 <div className="aspect-video bg-slate-100 relative flex items-center justify-center">
                   <PlayCircle className="h-10 w-10 text-slate-300 group-hover:text-slate-900 transition-colors" />

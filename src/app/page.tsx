@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react';
@@ -11,7 +12,9 @@ import {
   Loader2,
   ChevronDown,
   Package,
-  MessageCircle
+  MessageCircle,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-context';
@@ -24,7 +27,7 @@ import placeholderData from '@/app/lib/placeholder-images.json';
 export default function Home() {
   const { t } = useLanguage();
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const configQuery = useMemoFirebase(() => collection(db, 'site_config'), [db]);
   const { data: configs } = useCollection(configQuery);
@@ -93,7 +96,7 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href="/auth/register" className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
+          <Link href="/auth/login" className="flex items-end p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white relative">
             <div className="relative">
               <ShoppingCart className="h-9 w-9 text-white" />
               <span className="absolute top-[-2px] left-[55%] -translate-x-1/2 text-[#FF9900] font-black text-[16px] leading-none">0</span>
@@ -109,29 +112,62 @@ export default function Home() {
           <Menu className="h-5 w-5" /> Todo
         </button>
         <div className="flex items-center h-full gap-4 text-white text-[14px] font-medium whitespace-nowrap">
-          <Link href="/auth/register" className="p-2 hover:underline">Vender en Sync</Link>
+          <Link href="/auth/login" className="p-2 hover:underline">Vender en Sync</Link>
           <Link href="#" className="p-2 hover:underline">Lo más vendido</Link>
         </div>
       </nav>
 
       {/* CONTENIDO DINÁMICO */}
       <main className="flex-1 pb-20">
-        <div className="relative h-[250px] md:h-[450px] w-full bg-slate-900 overflow-hidden">
-           <Image src="https://picsum.photos/seed/sync_main/1500/600" alt="Banner" fill className="object-cover opacity-40" priority unoptimized />
+        <div className="relative h-[300px] md:h-[500px] w-full bg-slate-900 overflow-hidden">
+           <Image src="https://picsum.photos/seed/sync_main/1500/600" alt="Banner" fill className="object-cover opacity-30" priority unoptimized />
            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EAEDED]" />
            <div className="absolute inset-0 flex items-center px-10 md:px-20">
-              <div className="max-w-xl space-y-4">
-                 <h1 className="text-4xl md:text-6xl font-black text-white leading-tight uppercase italic tracking-tighter">
+              <div className="max-w-2xl space-y-6">
+                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
+                   <ShieldCheck className="h-3 w-3" /> Infraestructura Segura
+                 </div>
+                 <h1 className="text-4xl md:text-7xl font-black text-white leading-tight uppercase italic tracking-tighter">
                    Elite <span className="text-primary">Marketplace</span>
                  </h1>
-                 <p className="text-lg text-slate-200 font-bold uppercase tracking-widest">Venta directa por WhatsApp con soporte real.</p>
+                 <p className="text-lg md:text-xl text-slate-300 font-bold uppercase tracking-widest max-w-lg leading-relaxed">
+                   Inicia sesión para acceder a nuestro catálogo privado de productos exclusivos.
+                 </p>
+                 {!user && (
+                   <div className="pt-4 flex gap-4">
+                      <Button asChild className="h-14 px-10 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-black uppercase text-xs tracking-widest rounded-md shadow-xl border-b-4 border-[#e6c300]">
+                         <Link href="/auth/login">INICIAR SESIÓN</Link>
+                      </Button>
+                      <Button asChild variant="outline" className="h-14 px-10 border-white/20 text-white hover:bg-white/5 font-black uppercase text-xs tracking-widest rounded-md">
+                         <Link href="/auth/register">REGISTRO PRIVADO</Link>
+                      </Button>
+                   </div>
+                 )}
               </div>
            </div>
         </div>
 
-        <section className="container mx-auto px-4 -mt-16 md:-mt-32 relative z-40">
-          {productsLoading ? (
+        <section className="container mx-auto px-4 -mt-16 md:-mt-24 relative z-40">
+          {isUserLoading || productsLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>
+          ) : !user ? (
+            <Card className="bg-white border-none shadow-2xl p-20 text-center rounded-3xl overflow-hidden relative group">
+               <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
+               <div className="max-w-md mx-auto space-y-6">
+                  <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mx-auto shadow-inner group-hover:rotate-12 transition-transform duration-500">
+                    <Lock className="h-10 w-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-black text-slate-900 uppercase italic">Contenido Restringido</h3>
+                    <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                      Por políticas de seguridad de **Sync Connect**, el catálogo oficial solo está disponible para socios y clientes autenticados.
+                    </p>
+                  </div>
+                  <Button asChild className="w-full h-14 bg-slate-900 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg">
+                    <Link href="/auth/login">IDENTIFÍCATE AQUÍ</Link>
+                  </Button>
+               </div>
+            </Card>
           ) : !products || products.length === 0 ? (
             <div className="bg-white p-20 text-center rounded-sm border shadow-sm">
                <Package className="h-16 w-16 mx-auto text-slate-200 mb-4" />

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -9,10 +10,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS, PRODUCT_TYPES } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Video, Edit3, AlertCircle, Save, X, Package, Truck, CreditCard } from 'lucide-react'
+import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Package, Truck, CreditCard, Edit3, Save, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -20,16 +21,7 @@ import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, d
 import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from '@/components/ui/badge'
-
-interface VideoItem {
-  id: string;
-  title: string;
-  url: string;
-  type: 'content' | 'training';
-  isLocal?: boolean;
-}
 
 export default function AdminProductsPage() {
   const { toast } = useToast()
@@ -40,7 +32,6 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [imageProgress, setImageProgress] = useState<number | null>(null)
-  const [storageError, setStorageError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -97,8 +88,6 @@ export default function AdminProductsPage() {
     if (!file) return;
 
     setImageProgress(0);
-    setStorageError(null);
-
     try {
       const { storage } = initializeFirebase();
       const storageRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
@@ -109,9 +98,7 @@ export default function AdminProductsPage() {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setImageProgress(progress);
         }, 
-        (error) => {
-          console.error("Upload error:", error);
-          setStorageError("Fallo al subir imagen.");
+        () => {
           setImageProgress(null);
         }, 
         async () => {
@@ -122,7 +109,6 @@ export default function AdminProductsPage() {
         }
       );
     } catch (err) {
-      setStorageError("Error de inicialización de Storage");
       setImageProgress(null);
     }
   };
@@ -141,7 +127,7 @@ export default function AdminProductsPage() {
       })
       setFormData(prev => ({ ...prev, description: result.description }))
     } catch (e) {
-      toast({ variant: "destructive", title: "Error IA", description: "No se pudo conectar con el cerebro digital." })
+      toast({ variant: "destructive", title: "Error IA" })
     } finally {
       setGenerating(false)
     }
@@ -149,7 +135,7 @@ export default function AdminProductsPage() {
 
   const handleSave = () => {
     if (!formData.name || !formData.price || !formData.commission) {
-      toast({ variant: "destructive", title: "Campos Requeridos", description: "Nombre, precio y comisión son obligatorios." });
+      toast({ variant: "destructive", title: "Campos Requeridos" });
       return;
     }
 
@@ -161,10 +147,10 @@ export default function AdminProductsPage() {
       updatedAt: new Date().toISOString()
     };
 
-    if (editingId) {
+    if (editingId && db) {
       updateDocumentNonBlocking(doc(db, 'products', editingId), productData);
       toast({ title: "Producto Actualizado" });
-    } else {
+    } else if (db) {
       addDocumentNonBlocking(collection(db, 'products'), { ...productData, createdAt: new Date().toISOString() });
       toast({ title: "Producto Publicado" });
     }
@@ -175,12 +161,11 @@ export default function AdminProductsPage() {
     setIsAdding(false);
     setEditingId(null);
     setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '' });
-    setStorageError(null);
     setImageProgress(null);
   }
 
   const handleDelete = (id: string) => {
-    if(confirm("¿Seguro que quieres eliminar este producto?")) {
+    if(confirm("¿Seguro que quieres eliminar este producto?") && db) {
       deleteDocumentNonBlocking(doc(db, 'products', id));
       toast({ title: "Producto eliminado" });
     }

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -32,7 +33,9 @@ import {
   MessageSquare,
   MapPin,
   UserCheck,
-  GraduationCap
+  GraduationCap,
+  Bell,
+  BellRing
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -52,6 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useToast } from "@/hooks/use-toast"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -67,15 +71,31 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const pathname = usePathname();
   const db = useFirestore();
   const auth = useAuth();
+  const { toast } = useToast();
   
   const [mounted, setMounted] = useState(false);
   const [isVerifyingRole, setIsVerifyingRole] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
 
   const cleanEmail = user?.email?.toLowerCase().trim() || '';
   const isUserAdmin = cleanEmail === ADMIN_EMAIL;
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { 
+    setMounted(true); 
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestNotifPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const permission = await Notification.requestPermission();
+    setNotifPermission(permission);
+    if (permission === 'granted') {
+      toast({ title: "Notificaciones Activas", description: "Recibirás alertas de ventas en tiempo real." });
+    }
+  };
 
   useEffect(() => {
     async function verifyAccess() {
@@ -91,9 +111,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
       if (pathname.startsWith('/dashboard/admin')) { router.push('/dashboard/affiliate'); return; }
 
       try {
-        const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
-        if (role === 'affiliate' && !affSnap.exists() && !isUserAdmin) {
-          router.replace('/dashboard/buyer');
+        if (db) {
+          const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
+          if (role === 'affiliate' && !affSnap.exists() && !isUserAdmin) {
+            router.replace('/dashboard/buyer');
+          }
         }
       } catch (err) { console.error(err); } finally { setIsVerifyingRole(false); }
     }
@@ -168,6 +190,11 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {notifPermission !== 'granted' && (
+              <button onClick={requestNotifPermission} className="p-2 text-white hover:text-primary animate-pulse hidden md:block" title="Activar Notificaciones">
+                <BellRing className="h-5 w-5" />
+              </button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex flex-col items-start p-2 rounded-sm hover:outline hover:outline-1 hover:outline-white text-left transition-all">
