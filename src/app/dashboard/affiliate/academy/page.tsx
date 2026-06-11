@@ -26,7 +26,7 @@ import {
   Star,
   Zap,
   FileText,
-  AlertCircle
+  Layers
 } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase, useUser, setDocumentNonBlocking, useDoc } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
@@ -43,8 +43,11 @@ export default function AffiliateAcademyPage() {
   const { user } = useUser()
   const { toast } = useToast()
   
-  const academyQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
-  const { data: lessons, isLoading: lessonsLoading } = useCollection(academyQuery);
+  const modulesQuery = useMemoFirebase(() => collection(db, 'academy_modules'), [db]);
+  const { data: modules, isLoading: modulesLoading } = useCollection(modulesQuery);
+
+  const lessonsQuery = useMemoFirebase(() => collection(db, 'academy_lessons'), [db]);
+  const { data: lessons, isLoading: lessonsLoading } = useCollection(lessonsQuery);
 
   const affiliateRef = useMemoFirebase(() => (user ? doc(db, 'affiliates', user.uid) : null), [db, user]);
   const { data: profile } = useDoc(affiliateRef);
@@ -56,8 +59,15 @@ export default function AffiliateAcademyPage() {
   const [showExam, setShowExam] = useState(false)
   const [examPassed, setExamPassed] = useState(false)
   
-  const sortedLessons = lessons ? [...lessons].sort((a, b) => (a.order || 0) - (b.order || 0)) : []
-  const currentLesson = sortedLessons[activeIndex]
+  const sortedModules = modules ? [...modules].sort((a, b) => (a.order || 0) - (b.order || 0)) : []
+  const allLessons = lessons ? [...lessons].sort((a, b) => {
+    const modA = sortedModules.find(m => m.id === a.moduleId)?.order || 0;
+    const modB = sortedModules.find(m => m.id === b.moduleId)?.order || 0;
+    if (modA !== modB) return modA - modB;
+    return (a.order || 0) - (b.order || 0);
+  }) : []
+
+  const currentLesson = allLessons[activeIndex]
   const completedIds = progress?.completedLessonIds || []
 
   useEffect(() => {
@@ -74,8 +84,7 @@ export default function AffiliateAcademyPage() {
     let newIds = [...completedIds];
     if (!newIds.includes(lessonId)) {
       newIds.push(lessonId);
-      toast({ title: "Módulo Finalizado", description: "Contenido registrado en tu expediente." });
-      
+      toast({ title: "Clase Finalizada", description: "Contenido registrado." });
       setDocumentNonBlocking(progressRef, {
         uid: user.uid,
         completedLessonIds: newIds,
@@ -91,24 +100,16 @@ export default function AffiliateAcademyPage() {
     return url;
   };
 
-  const lessonPercent = sortedLessons.length > 0 ? (completedIds.length / sortedLessons.length) * 100 : 0;
-  const allLessonsDone = lessonPercent === 100 && sortedLessons.length > 0;
+  const lessonPercent = allLessons.length > 0 ? (completedIds.length / allLessons.length) * 100 : 0;
+  const allLessonsDone = lessonPercent === 100 && allLessons.length > 0;
   const isGraduated = examPassed && allLessonsDone;
 
-  const handleNext = () => {
-    if (activeIndex < sortedLessons.length - 1) {
-      setActiveIndex(activeIndex + 1);
-    } else if (allLessonsDone && !examPassed) {
-      setShowExam(true);
-    }
-  };
-
-  if (lessonsLoading) {
+  if (modulesLoading || lessonsLoading) {
     return (
       <DashboardShell role="affiliate">
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accediendo a Sync Academy...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cargando Plan de Estudios...</p>
         </div>
       </DashboardShell>
     )
@@ -116,31 +117,25 @@ export default function AffiliateAcademyPage() {
 
   return (
     <DashboardShell role="affiliate">
-      <div className="max-w-4xl mx-auto space-y-8 pb-20">
+      <div className="max-w-5xl mx-auto space-y-10 pb-20">
         
-        {/* HEADER CORPORATIVO */}
-        <div className="flex flex-col items-center text-center space-y-6">
-           <div className="h-20 w-20 bg-slate-900 rounded-3xl flex items-center justify-center shadow-xl">
-             <GraduationCap className="h-10 w-10 text-primary" />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b pb-8">
+           <div className="flex items-center gap-5">
+              <div className="h-16 w-16 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl">
+                <GraduationCap className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-headline font-black text-slate-900 uppercase italic leading-none">Sync Academy</h1>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Elite Educational System</p>
+              </div>
            </div>
-           <div>
-             <h1 className="text-3xl font-headline font-black text-slate-900 uppercase tracking-tight">SYNC ACADEMY</h1>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-1">Entrenamiento de Alto Rendimiento</p>
+           <div className="w-full md:w-64 space-y-2">
+              <div className="flex justify-between items-end">
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Progreso Global</span>
+                 <span className="text-xs font-black text-primary">{Math.round(lessonPercent)}%</span>
+              </div>
+              <Progress value={lessonPercent} className="h-1.5 bg-slate-200" />
            </div>
-        </div>
-
-        {/* BARRA DE PROGRESO */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-end">
-             <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado de la formación</p>
-                <h4 className="text-sm font-black text-slate-900 uppercase">
-                  {isGraduated ? '✓ CERTIFICACIÓN OBTENIDA' : (allLessonsDone ? 'PENDIENTE: EXAMEN FINAL' : `MÓDULO ${activeIndex + 1} EN CURSO`)}
-                </h4>
-             </div>
-             <span className="text-xs font-black text-primary">{Math.round(lessonPercent)}%</span>
-          </div>
-          <Progress value={lessonPercent} className="h-2 bg-slate-200" />
         </div>
 
         {showExam ? (
@@ -153,138 +148,158 @@ export default function AffiliateAcademyPage() {
             onBack={() => setShowExam(false)}
           />
         ) : (
-          <>
-            {/* VIDEO Y CONTENIDO */}
-            {currentLesson ? (
-              <div className="space-y-6 animate-in fade-in duration-700">
-                <Card className="border-none shadow-2xl rounded-2xl overflow-hidden bg-black aspect-video relative ring-1 ring-slate-200">
-                   <iframe 
-                      src={getEmbedUrl(currentLesson.videoUrl)} 
-                      className="w-full h-full border-none"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            {/* LADO IZQUIERDO: CONTENIDO */}
+            <div className="lg:col-span-8 space-y-8">
+              {currentLesson ? (
+                <div className="space-y-8 animate-in fade-in duration-700">
+                  <Card className="border-none shadow-2xl rounded-3xl overflow-hidden bg-black aspect-video relative ring-1 ring-slate-100">
+                     <iframe 
+                        src={getEmbedUrl(currentLesson.videoUrl)} 
+                        className="w-full h-full border-none"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                  </Card>
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                   <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic leading-none">{currentLesson.title}</h2>
-                   <Button 
-                    onClick={() => toggleComplete(currentLesson.id)}
-                    className={cn(
-                      "h-10 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest",
-                      isCompleted(currentLesson.id) ? "bg-green-600 text-white" : "bg-slate-900 text-white"
-                    )}
-                   >
-                     {isCompleted(currentLesson.id) ? "MÓDULO COMPLETADO ✓" : "MARCAR COMO FINALIZADO"}
-                   </Button>
-                </div>
-                
-                <div className="bg-white p-8 rounded-2xl border ring-1 ring-slate-100 shadow-sm space-y-4">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                     <FileText className="h-3.5 w-3.5" /> Guía de estudio del módulo
-                   </p>
-                   <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                     {currentLesson.description}
-                   </p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-20 bg-white rounded-3xl border-dashed border-2 border-slate-200">
-                 <PlayCircle className="h-12 w-12 text-slate-100 mx-auto mb-4" />
-                 <p className="text-[10px] font-black uppercase text-slate-400">Aún no hay módulos publicados</p>
-              </div>
-            )}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                     <div>
+                       <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">REPRODUCIENDO:</p>
+                       <h2 className="text-2xl md:text-3xl font-black text-slate-900 uppercase italic leading-none">{currentLesson.title}</h2>
+                     </div>
+                     <Button 
+                      onClick={() => toggleComplete(currentLesson.id)}
+                      className={cn(
+                        "h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl transition-all active:scale-95",
+                        isCompleted(currentLesson.id) ? "bg-green-600 text-white" : "bg-slate-900 text-white"
+                      )}
+                     >
+                       {isCompleted(currentLesson.id) ? "MÓDULO COMPLETADO ✓" : "MARCAR COMO FINALIZADO"}
+                     </Button>
+                  </div>
+                  
+                  <div className="bg-white p-10 rounded-[2.5rem] border ring-1 ring-slate-100 shadow-sm space-y-4">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                       <FileText className="h-4 w-4" /> Notas de la sesión
+                     </p>
+                     <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                       {currentLesson.description || 'Sin notas adicionales para esta lección.'}
+                     </p>
+                  </div>
 
-            {/* CONTROLES DE NAVEGACIÓN */}
-            <div className="grid grid-cols-2 gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setActiveIndex(activeIndex - 1)} 
-                disabled={activeIndex === 0}
-                className="h-14 rounded-xl border-slate-200 font-black text-xs uppercase"
-              >
-                <ChevronLeft className="mr-2 h-5 w-5" /> ANTERIOR
-              </Button>
-              <Button 
-                onClick={handleNext} 
-                className="h-14 rounded-xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl"
-              >
-                {activeIndex === sortedLessons.length - 1 && allLessonsDone && !examPassed ? 'INICIAR EXAMEN FINAL' : 'SIGUIENTE MÓDULO'} <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveIndex(activeIndex - 1)} 
+                      disabled={activeIndex === 0}
+                      className="h-16 rounded-2xl border-slate-200 font-black text-xs uppercase"
+                    >
+                      <ChevronLeft className="mr-2 h-5 w-5" /> ANTERIOR
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (activeIndex < allLessons.length - 1) setActiveIndex(activeIndex + 1);
+                        else if (allLessonsDone && !examPassed) setShowExam(true);
+                      }} 
+                      className="h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl"
+                    >
+                      {activeIndex === allLessons.length - 1 && allLessonsDone && !examPassed ? 'INICIAR EXAMEN FINAL' : 'SIGUIENTE CLASE'} <ChevronRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-40 bg-white rounded-[3rem] border-dashed border-2 border-slate-200">
+                   <Layers className="h-16 w-16 text-slate-100 mx-auto mb-6" />
+                   <p className="text-xs font-black uppercase text-slate-400 tracking-widest">No hay lecciones disponibles</p>
+                </div>
+              )}
             </div>
 
-            {/* LISTA DE MÓDULOS */}
-            <div className="space-y-4 pt-10 border-t">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4" /> Temario Oficial Sync
+            {/* LADO DERECHO: TEMARIO GRUPADO */}
+            <div className="lg:col-span-4 space-y-6">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 px-2">
+                <Layers className="h-4 w-4" /> Temario Modular
               </h3>
               
-              <Accordion type="single" collapsible className="space-y-2">
-                {sortedLessons.map((lesson, idx) => (
-                  <AccordionItem key={lesson.id} value={lesson.id} className="border-none bg-white rounded-xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
-                    <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center gap-4 text-left">
-                        <div className={cn(
-                          "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                          activeIndex === idx ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
-                        )}>
-                          {isCompleted(lesson.id) ? <CheckCircle2 className="h-4 w-4" /> : <span className="font-black text-xs">{idx + 1}</span>}
+              <Accordion type="multiple" className="space-y-3">
+                {sortedModules.map((mod) => {
+                  const moduleLessons = allLessons.filter(l => l.moduleId === mod.id);
+                  return (
+                    <AccordionItem key={mod.id} value={mod.id} className="border-none bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
+                      <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 transition-colors group">
+                        <div className="flex items-center gap-4 text-left">
+                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 shadow-inner group-data-[state=open]:bg-primary group-data-[state=open]:text-white">
+                            <span className="font-black text-xs">{mod.order}</span>
+                          </div>
+                          <div>
+                            <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 block">{mod.title}</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase">{moduleLessons.length} Clases</span>
+                          </div>
                         </div>
-                        <span className={cn(
-                          "text-xs font-black uppercase tracking-tight",
-                          activeIndex === idx ? "text-primary" : "text-slate-600"
-                        )}>{lesson.title}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-6 pt-0">
-                      <div className="pl-12 space-y-4">
-                        <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{lesson.description?.substring(0, 150)}...</p>
-                        <Button 
-                          variant="ghost" 
-                          onClick={() => setActiveIndex(idx)}
-                          className="h-8 px-4 rounded-lg bg-slate-50 text-slate-900 font-black text-[9px] uppercase hover:bg-slate-100"
-                        >
-                          ENTRAR A CLASE
-                        </Button>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-
-                {/* CERTIFICADO FINAL */}
-                <div className={cn(
-                  "rounded-xl p-6 flex items-center justify-between mt-6 border-2 border-dashed transition-all",
-                  isGraduated ? "bg-slate-900 text-white border-primary border-solid shadow-2xl scale-[1.02]" : "bg-slate-50 text-slate-400 border-slate-200"
-                )}>
-                   <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "h-12 w-12 rounded-xl flex items-center justify-center",
-                        isGraduated ? "bg-primary text-slate-900" : "bg-slate-200 text-slate-400"
-                      )}>
-                        <Award className="h-7 w-7" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black uppercase tracking-tight">Diploma Profesional</h4>
-                        <p className="text-[9px] font-bold uppercase tracking-widest">{isGraduated ? 'DISPONIBLE PARA DESCARGA' : 'DESBLOQUEAR CON EXAMEN APROBADO'}</p>
-                      </div>
-                   </div>
-                   {isGraduated ? (
-                     <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="text-primary hover:bg-white/10"><FileDown className="h-6 w-6" /></Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-5xl p-0 border-none bg-transparent shadow-none">
-                           <CertificateView profile={profile} />
-                           <div className="mt-8 flex justify-center">
-                              <Button onClick={() => window.print()} className="h-14 px-8 rounded-xl bg-white text-black font-black text-xs uppercase shadow-2xl">GUARDAR COMO PDF</Button>
-                           </div>
-                        </DialogContent>
-                     </Dialog>
-                   ) : <Lock className="h-4 w-4" />}
-                </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-3 pb-4 pt-0">
+                        <div className="space-y-1">
+                          {moduleLessons.map((lesson) => {
+                            const lIndex = allLessons.findIndex(l => l.id === lesson.id);
+                            return (
+                              <button 
+                                key={lesson.id}
+                                onClick={() => setActiveIndex(lIndex)}
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-4 rounded-xl transition-all text-left",
+                                  activeIndex === lIndex ? "bg-primary/5 ring-1 ring-primary/20" : "hover:bg-slate-50"
+                                )}
+                              >
+                                {isCompleted(lesson.id) ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> : <PlayCircle className="h-4 w-4 text-slate-300 shrink-0" />}
+                                <span className={cn(
+                                  "text-[10px] font-bold uppercase truncate",
+                                  activeIndex === lIndex ? "text-primary" : "text-slate-500"
+                                )}>
+                                  {lesson.order}. {lesson.title}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
               </Accordion>
+
+              {/* DIPLOMA SECTION */}
+              <Card className={cn(
+                "p-8 rounded-[2rem] border-2 border-dashed transition-all mt-6 text-center space-y-4",
+                isGraduated ? "bg-slate-950 text-white border-primary shadow-2xl scale-[1.02]" : "bg-slate-50 text-slate-400 border-slate-200"
+              )}>
+                 <div className={cn(
+                   "h-20 w-20 rounded-[1.5rem] flex items-center justify-center mx-auto shadow-2xl",
+                   isGraduated ? "bg-primary text-slate-950" : "bg-slate-200 text-slate-400"
+                 )}>
+                   <Award className="h-10 w-10" />
+                 </div>
+                 <div>
+                   <h4 className="text-xs font-black uppercase tracking-tight">Diploma Profesional</h4>
+                   <p className="text-[8px] font-bold uppercase tracking-widest mt-1">
+                     {isGraduated ? 'DISPONIBLE PARA DESCARGA' : 'DESBLOQUEAR AL 100%'}
+                   </p>
+                 </div>
+                 {isGraduated ? (
+                    <Dialog>
+                       <DialogTrigger asChild>
+                         <Button className="w-full h-12 rounded-xl bg-primary text-slate-950 font-black text-[10px] uppercase shadow-lg shadow-primary/20">VER MI TÍTULO</Button>
+                       </DialogTrigger>
+                       <DialogContent className="max-w-5xl p-0 border-none bg-transparent shadow-none">
+                          <CertificateView profile={profile} />
+                          <div className="mt-8 flex justify-center">
+                             <Button onClick={() => window.print()} className="h-14 px-8 rounded-xl bg-white text-black font-black text-xs uppercase shadow-2xl">GUARDAR COMO PDF</Button>
+                          </div>
+                       </DialogContent>
+                    </Dialog>
+                 ) : <div className="h-12 flex items-center justify-center"><Lock className="h-5 w-5 opacity-20" /></div>}
+              </Card>
             </div>
-          </>
+          </div>
         )}
       </div>
     </DashboardShell>
@@ -304,51 +319,48 @@ function AcademyExam({ onPass, onBack }: { onPass: () => void, onBack: () => voi
 
   const handleSubmit = () => {
     if (Object.keys(answers).length < questions.length) {
-      toast({ variant: "destructive", title: "Examen Incompleto", description: "Responde todas las preguntas para continuar." });
+      toast({ variant: "destructive", title: "Examen Incompleto" });
       return;
     }
-
     setChecking(true);
     setTimeout(() => {
       const allCorrect = questions.every(q => answers[q.id] === q.correct);
       if (allCorrect) {
-        toast({ title: "¡Felicidades!", description: "Has aprobado el examen con 100% de éxito." });
         onPass();
       } else {
-        toast({ variant: "destructive", title: "Intento Fallido", description: "Revisa los módulos y vuelve a intentarlo. Debes acertar todas." });
+        toast({ variant: "destructive", title: "Error en las respuestas", description: "Debes acertar el 100%." });
         setChecking(false);
       }
     }, 1500);
   };
 
   return (
-    <Card className="border-none shadow-2xl rounded-2xl bg-white overflow-hidden animate-in zoom-in-95 duration-500">
-      <div className="bg-slate-900 p-8 text-white">
-        <div className="flex items-center gap-3 mb-2">
-          <Zap className="h-5 w-5 text-primary" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Validación de Conocimientos</span>
+    <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden max-w-2xl mx-auto">
+      <div className="bg-slate-900 p-10 text-white">
+        <div className="flex items-center gap-3 mb-4">
+          <Zap className="h-6 w-6 text-primary" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Examen de Certificación</span>
         </div>
-        <h2 className="text-2xl font-headline font-black uppercase italic">Examen Final de <span className="text-primary">Especialista</span></h2>
+        <h2 className="text-3xl font-headline font-black uppercase italic">Validación de <span className="text-primary">Especialista</span></h2>
       </div>
       <CardContent className="p-10 space-y-10">
         {questions.map((q, idx) => (
-          <div key={q.id} className="space-y-4">
-             <h4 className="text-sm font-black text-slate-900 uppercase leading-relaxed">{idx + 1}. {q.q}</h4>
-             <RadioGroup onValueChange={(v) => setAnswers({...answers, [q.id]: v})} className="grid gap-3">
+          <div key={q.id} className="space-y-6">
+             <h4 className="text-lg font-black text-slate-900 uppercase leading-tight">{idx + 1}. {q.q}</h4>
+             <RadioGroup onValueChange={(v) => setAnswers({...answers, [q.id]: v})} className="grid gap-4">
                 {q.options.map(opt => (
-                  <div key={opt} className="flex items-center space-x-3 p-4 rounded-xl border hover:bg-slate-50 transition-colors cursor-pointer">
+                  <div key={opt} className="flex items-center space-x-3 p-5 rounded-2xl border hover:bg-slate-50 transition-all cursor-pointer">
                     <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
-                    <Label htmlFor={`${q.id}-${opt}`} className="text-xs font-medium cursor-pointer flex-1">{opt}</Label>
+                    <Label htmlFor={`${q.id}-${opt}`} className="text-sm font-bold cursor-pointer flex-1">{opt}</Label>
                   </div>
                 ))}
              </RadioGroup>
           </div>
         ))}
-
         <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
-          <Button variant="ghost" onClick={onBack} className="flex-1 h-14 rounded-xl font-black text-[10px] uppercase">VOLVER A LOS MÓDULOS</Button>
-          <Button onClick={handleSubmit} disabled={checking} className="flex-[2] h-14 rounded-xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl">
-            {checking ? <Loader2 className="animate-spin h-5 w-5" /> : "ENVIAR EVALUACIÓN"}
+          <Button variant="ghost" onClick={onBack} className="flex-1 h-16 rounded-2xl font-black text-xs uppercase">REVISAR CLASES</Button>
+          <Button onClick={handleSubmit} disabled={checking} className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl">
+            {checking ? <Loader2 className="animate-spin" /> : "ENVIAR EVALUACIÓN"}
           </Button>
         </div>
       </CardContent>
@@ -362,7 +374,6 @@ function CertificateView({ profile }: { profile: any }) {
   
   return (
     <div className="bg-slate-950 border-[2px] border-primary p-12 md:p-24 text-center space-y-12 md:space-y-16 relative overflow-hidden aspect-[1.414/1] flex flex-col justify-center select-none shadow-[0_0_100px_rgba(255,153,0,0.15)] print:m-0 print:border-none">
-       {/* MARCO DE PODER */}
        <div className="absolute top-0 left-0 w-64 h-64 border-l-[30px] border-t-[30px] border-primary/20 opacity-50" />
        <div className="absolute bottom-0 right-0 w-64 h-64 border-r-[30px] border-b-[30px] border-primary/20 opacity-50" />
        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none" />
