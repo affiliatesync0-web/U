@@ -10,8 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { useLanguage } from '@/components/language-context'
-import { Loader2, Truck, CreditCard, Landmark, ShieldCheck, Zap, ArrowRight } from 'lucide-react'
+import { Loader2, CreditCard, ShieldCheck, Zap, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { sendOrderConfirmedEmail } from '@/lib/email'
 
@@ -41,10 +40,7 @@ function CheckoutContent() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    address: '',
-    city: '',
-    voucherRef: ''
+    phone: ''
   })
 
   useEffect(() => {
@@ -73,14 +69,13 @@ function CheckoutContent() {
       const buyerId = formData.email.toLowerCase().trim()
       const buyerRef = doc(db, 'buyers', buyerId)
       
+      // 1. Guardar/Actualizar Prospecto
       setDocumentNonBlocking(buyerRef, {
         id: buyerId,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: buyerId,
         phone: formData.phone.trim(),
-        address: formData.address || '',
-        city: formData.city || '',
         referredBy: affiliateId,
         registeredAt: new Date().toISOString()
       }, { merge: true })
@@ -89,20 +84,19 @@ function CheckoutContent() {
       const commissionRate = product?.commissionRate || 0
       const commissionEarned = (saleAmount * commissionRate) / 100
 
+      // 2. Registrar Transacción
       const saleData = {
         affiliateId: affiliateId,
         productId: productId,
         productName: product?.name || 'Producto Sync',
-        productType: product?.type || 'Digital',
         buyerId: buyerId,
         buyerName: `${formData.firstName} ${formData.lastName}`,
         saleDate: new Date().toISOString(),
         saleAmount: saleAmount,
         commissionEarned: commissionEarned,
-        productPayoutAmount: saleAmount - commissionEarned,
         status: 'Pending',
-        paymentMethod: product?.paymentLink ? 'Pocket_Digital' : 'Transfer',
-        voucherReference: formData.voucherRef.trim() || 'DIRECT_LINK_PURCHASE'
+        paymentMethod: 'Pocket_Digital',
+        voucherReference: 'POCKET_LINK_PENDING'
       }
 
       addDocumentNonBlocking(collection(db, 'sales'), saleData)
@@ -111,19 +105,22 @@ function CheckoutContent() {
         to: formData.email,
         name: formData.firstName,
         product: product?.name || 'Producto Sync',
-        isPhysical: product?.type === 'Físico'
+        isPhysical: false
       }).catch(err => console.error("Error email checkout:", err));
 
+      // 3. Redirigir al link de Pocket
       if (product?.paymentLink) {
-        toast({ title: "Iniciando Pasarela", description: "Redirigiendo a pago seguro." })
-        window.location.href = product.paymentLink;
+        toast({ title: "Sincronización Exitosa", description: "Redirigiendo a pasarela segura..." })
+        setTimeout(() => {
+          window.location.href = product.paymentLink;
+        }, 1500);
       } else {
-        toast({ title: "Registro Exitoso", description: "Tu solicitud está siendo procesada." })
-        router.push('/dashboard/buyer');
+        toast({ variant: "destructive", title: "Error de Pasarela", description: "Este producto no tiene configurada una pasarela de pago." })
+        setLoading(false)
       }
 
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Fallo al procesar la solicitud." })
+      toast({ variant: "destructive", title: "Error", description: "Fallo al procesar la solicitud corporativa." })
       setLoading(false)
     }
   }
@@ -132,7 +129,7 @@ function CheckoutContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse">Sincronizando Pasarela de Pago...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse">Iniciando Pasarela de Pago...</p>
       </div>
     );
   }
@@ -187,32 +184,13 @@ function CheckoutContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-10">
-                {product?.paymentLink ? (
-                  <div className="p-8 bg-green-50 rounded-2xl border-2 border-dashed border-green-200 text-center space-y-4">
-                     <CreditCard className="h-10 w-10 text-green-600 mx-auto" />
-                     <div>
-                       <h4 className="font-black text-green-900 uppercase">Procesador de Pago Pocket</h4>
-                       <p className="text-[11px] text-green-700 font-medium">Serás redirigido al portal oficial de pago tras confirmar tus datos.</p>
-                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="p-6 bg-slate-50 rounded-2xl border ring-1 ring-black/5 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Landmark className="h-5 w-5 text-slate-900" />
-                        <h4 className="font-black text-slate-900 uppercase text-xs">Transferencia Bancaria Directa</h4>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-[11px]">
-                         <div><p className="text-slate-400 uppercase font-black">Banco:</p><p className="font-bold text-slate-900 uppercase">{product?.bankType || 'Sincronizando...'}</p></div>
-                         <div><p className="text-slate-400 uppercase font-black">Nº Cuenta:</p><p className="font-mono font-bold text-slate-900">{product?.bankAccount || 'Consultar Admin'}</p></div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Referencia del Voucher</Label>
-                       <Input value={formData.voucherRef} onChange={e => setFormData({...formData, voucherRef: e.target.value})} className="h-14 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-lg text-primary text-center" placeholder="Ej: 12345678" required />
-                    </div>
-                  </div>
-                )}
+                <div className="p-8 bg-green-50 rounded-2xl border-2 border-dashed border-green-200 text-center space-y-4">
+                   <CreditCard className="h-10 w-10 text-green-600 mx-auto" />
+                   <div>
+                     <h4 className="font-black text-green-900 uppercase">Procesador de Pago Pocket</h4>
+                     <p className="text-[11px] text-green-700 font-medium">Serás redirigido al portal oficial de pago tras confirmar tus datos.</p>
+                   </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -247,7 +225,7 @@ function CheckoutContent() {
                     className="w-full h-20 rounded-2xl bg-primary hover:bg-primary/90 text-slate-950 font-black text-xl uppercase italic shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 gap-3"
                   >
                     {loading ? <Loader2 className="animate-spin h-7 w-7" /> : (
-                      <>LIQUIDAR PEDIDO <ArrowRight className="h-6 w-6" /></>
+                      <>FINALIZAR COMPRA <ArrowRight className="h-6 w-6" /></>
                     )}
                   </Button>
                 </div>
@@ -255,7 +233,7 @@ function CheckoutContent() {
 
              <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4 text-[10px] text-blue-700 font-bold leading-relaxed">
                 <ShieldCheck className="h-6 w-6 text-blue-600 shrink-0" />
-                <p>Protección de datos bajo cifrado militar. Tu información de pago ocurre en un entorno controlado de Sync Connect.</p>
+                <p>Protección de datos bajo cifrado de grado militar. Tu información de pago ocurre en un entorno controlado de Sync Connect.</p>
              </div>
           </div>
         </form>

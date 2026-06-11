@@ -12,9 +12,7 @@ import {
   ShieldCheck,
   ChevronRight,
   LayoutDashboard,
-  Server,
-  Zap,
-  Globe
+  Server
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -78,7 +76,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      {/* HEADER CORPORATIVO */}
       <header className="bg-slate-950 h-20 flex items-center px-6 md:px-12 justify-between sticky top-0 z-[100] border-b border-white/5">
         <div className="flex items-center gap-2">
           <div className="relative h-10 w-32 md:h-12 md:w-40">
@@ -90,17 +87,15 @@ export default function Home() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Button asChild className="h-11 px-8 bg-primary text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-2xl shadow-primary/20">
+          <Button asChild className="h-11 px-8 bg-primary text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-2xl">
              <Link href="/auth/login">INICIAR SESIÓN</Link>
           </Button>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col">
-        {/* HERO SECTION - ACCESO RESTRINGIDO */}
         <section className="relative flex-1 flex items-center justify-center py-20 px-6 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,153,0,0.03),transparent_70%)]" />
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
           
           <div className="max-w-4xl w-full relative z-10 text-center space-y-12">
              <div className="space-y-4">
@@ -117,32 +112,30 @@ export default function Home() {
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
                 <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white p-10 text-left group hover:bg-slate-900 hover:text-white transition-all duration-500 ring-1 ring-slate-100">
-                   <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-900 mb-8 shadow-inner group-hover:bg-primary group-hover:text-white transition-colors">
+                   <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-900 mb-8 shadow-inner group-hover:bg-primary transition-colors">
                       <LayoutDashboard className="h-7 w-7" />
                    </div>
                    <h3 className="text-xl font-headline font-black uppercase italic mb-2 tracking-tight">Afiliados Platinum</h3>
                    <p className="text-sm font-medium opacity-60 mb-8 leading-relaxed">Gestione su red, monitoree comisiones y acceda a las herramientas de cierre Sync Lab AI.</p>
                    <Button asChild className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase text-[10px] tracking-widest group-hover:bg-white group-hover:text-slate-900">
-                      <Link href="/auth/login" className="flex items-center justify-center gap-2">ENTRAR AL PANEL <ChevronRight className="h-4 w-4" /></Link>
+                      <Link href="/auth/login" className="flex items-center justify-center gap-2 text-inherit">ENTRAR AL PANEL <ChevronRight className="h-4 w-4" /></Link>
                    </Button>
                 </Card>
 
                 <Card className="border-none shadow-2xl rounded-[2.5rem] bg-slate-900 text-white p-10 text-left ring-1 ring-white/10 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><Server className="h-32 w-32" /></div>
                    <div className="h-14 w-14 rounded-2xl bg-white/10 flex items-center justify-center text-primary mb-8 shadow-inner border border-white/5">
                       <Lock className="h-7 w-7" />
                    </div>
                    <h3 className="text-xl font-headline font-black uppercase italic mb-2 tracking-tight">Portal Clientes</h3>
                    <p className="text-sm font-medium text-slate-400 mb-8 leading-relaxed">Acceda a sus productos digitales adquiridos y gestione sus pagos de forma segura.</p>
-                   <Button asChild className="w-full h-14 rounded-xl bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20">
-                      <Link href="/auth/login" className="flex items-center justify-center gap-2">ÁREA DE CLIENTES <ChevronRight className="h-4 w-4" /></Link>
+                   <Button asChild className="w-full h-14 rounded-xl bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-xl">
+                      <Link href="/auth/login" className="flex items-center justify-center gap-2 text-inherit">ÁREA DE CLIENTES <ChevronRight className="h-4 w-4" /></Link>
                    </Button>
                 </Card>
              </div>
           </div>
         </section>
 
-        {/* FOOTER CORPORATIVO */}
         <footer className="py-12 px-6 border-t bg-white flex flex-col md:flex-row items-center justify-between gap-6">
            <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">© 2024 Sync Connect Nicaragua • Infraestructura Propietaria</p>
            <div className="flex items-center gap-8">
