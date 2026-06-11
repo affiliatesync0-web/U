@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -14,7 +13,6 @@ import {
   Palette,
   Users2,
   Flame,
-  ShoppingBasket,
   UserCircle,
   Menu,
   X,
@@ -24,9 +22,7 @@ import {
   Zap,
   MapPin,
   UserCheck,
-  GraduationCap,
-  MessageSquare,
-  MessageCircle
+  GraduationCap
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -92,7 +88,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
         if (db) {
           const affSnap = await getDoc(doc(db, 'affiliates', user.uid));
           if (!affSnap.exists()) {
-            // Si no es admin ni afiliado, lo expulsamos
             await signOut(auth);
             window.location.href = '/';
             return;
@@ -128,7 +123,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Afiliados", url: "/dashboard/admin/affiliates", icon: Users },
     { title: "Compradores", url: "/dashboard/admin/buyers", icon: UserCheck },
     { title: "Mapa", url: "/dashboard/admin/map", icon: MapPin },
-    { title: "Buzón", url: "/dashboard/admin/support", icon: MessageSquare },
     { title: "Productos", url: "/dashboard/admin/products", icon: Package },
     { title: "Builds", url: "/dashboard/admin/releases", icon: Terminal },
     { title: "Estrategias", url: "/dashboard/admin/sales-lab", icon: Zap },
@@ -139,7 +133,6 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Academy", url: "/dashboard/affiliate/academy", icon: GraduationCap },
-    { title: "Buzón", url: "/dashboard/affiliate/support", icon: MessageCircle },
     { title: "Mercado", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Estrategias", url: "/dashboard/affiliate/sales-lab", icon: Flame },
     { title: "Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },

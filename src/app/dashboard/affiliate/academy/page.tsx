@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -21,7 +20,6 @@ import {
   CheckCircle2,
   Trophy,
   Award,
-  FileDown,
   Lock,
   Star,
   Zap,
