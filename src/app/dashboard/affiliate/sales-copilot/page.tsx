@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -136,7 +135,7 @@ export default function SalesCopilotPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
+        <div className="flex-1 flex-col lg:flex-row flex gap-4 overflow-hidden">
           <div className={cn("lg:w-[280px] flex-col shrink-0 overflow-hidden lg:flex", mobileShowChat ? "hidden" : "flex")}>
             <Card className="border-none shadow-xl rounded-2xl bg-white overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
               <CardHeader className="bg-slate-900 text-white p-6 space-y-4 shrink-0">
