@@ -10,7 +10,8 @@ export function cn(...inputs: ClassValue[]) {
  * Soporta formatos: /file/d/ID/view, /open?id=ID, /uc?id=ID
  */
 export function getGoogleDriveDirectLink(url: string | null | undefined): string {
-  if (!url || !url.includes('drive.google.com')) return url || "";
+  if (!url) return "";
+  if (!url.includes('drive.google.com')) return url;
 
   try {
     let fileId = "";
@@ -26,7 +27,6 @@ export function getGoogleDriveDirectLink(url: string | null | undefined): string
     }
 
     if (fileId) {
-      // Usamos el endpoint de thumbnail con tamaño máximo para mejor calidad
       return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
     }
   } catch (e) {
@@ -34,4 +34,23 @@ export function getGoogleDriveDirectLink(url: string | null | undefined): string
   }
 
   return url;
+}
+
+/**
+ * Extrae el ID de video de una URL de YouTube.
+ */
+export function getYoutubeId(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+/**
+ * Obtiene la miniatura de un video de YouTube.
+ */
+export function getYoutubeThumbnail(url: string): string {
+  const id = getYoutubeId(url);
+  if (!id) return "https://picsum.photos/seed/video/600/400";
+  return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
 }

@@ -253,13 +253,28 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
       const { storage } = initializeFirebase();
       const storageRef = ref(storage, `site_assets/${id}_${Date.now()}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on('state_changed', null, (err) => { setUploading(false); }, async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setUrl(downloadURL);
-        setUploading(false);
-        onSave(id, downloadURL, defaultHint);
-      });
-    } catch (error) { setUploading(false); }
+
+      uploadTask.on('state_changed', null, 
+        (err) => { 
+          console.error("Upload error:", err);
+          setUploading(false); 
+        }, 
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setUrl(downloadURL);
+            onSave(id, downloadURL, defaultHint);
+          } catch (e) {
+            console.error("Error finalizing design asset upload:", e);
+          } finally {
+            setUploading(false);
+          }
+        }
+      );
+    } catch (error) { 
+      console.error("Storage initialization failed:", error);
+      setUploading(false); 
+    }
   };
 
   return (

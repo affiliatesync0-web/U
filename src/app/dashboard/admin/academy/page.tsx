@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -14,7 +13,7 @@ import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, Ch
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
-import { cn } from '@/lib/utils'
+import { cn, getYoutubeThumbnail } from '@/lib/utils'
 
 export default function AdminAcademyPage() {
   const { toast } = useToast()
@@ -196,11 +195,11 @@ export default function AdminAcademyPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {moduleLessons.map(lesson => (
-                      <Card key={lesson.id} className="border-none shadow-lg hover:shadow-xl transition-all rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
-                         <div className="aspect-video bg-slate-900 flex items-center justify-center group relative">
-                            <Video className="h-10 w-10 text-slate-700" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <PlayCircle className="h-12 w-12 text-white" />
+                      <Card key={lesson.id} className="border-none shadow-lg hover:shadow-xl transition-all rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100 group">
+                         <div className="aspect-video bg-slate-900 flex items-center justify-center relative overflow-hidden">
+                            <img src={getYoutubeThumbnail(lesson.videoUrl)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Video Preview" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <PlayCircle className="h-12 w-12 text-white/80" />
                             </div>
                          </div>
                          <CardContent className="p-6 flex justify-between items-start">

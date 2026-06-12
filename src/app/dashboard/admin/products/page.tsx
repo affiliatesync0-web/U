@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -104,15 +103,22 @@ export default function AdminProductsPage() {
           toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo cargar la imagen." });
         }, 
         async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
-          setImageProgress(null);
-          toast({ title: "Imagen Cargada ✓" });
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
+            toast({ title: "Imagen Cargada ✓" });
+          } catch (err) {
+            console.error("Error obteniendo URL:", err);
+            toast({ variant: "destructive", title: "Error Final", description: "No se pudo obtener el enlace de la imagen." });
+          } finally {
+            setImageProgress(null);
+          }
         }
       );
     } catch (err) {
       console.error("Firebase Storage init error:", err);
       setImageProgress(null);
+      toast({ variant: "destructive", title: "Error Crítico", description: "No se pudo conectar con el servidor de archivos." });
     }
   };
 
@@ -262,7 +268,7 @@ export default function AdminProductsPage() {
                     <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto (Subir Archivo)</Label>
                     <div className="relative h-48 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
                       {imageProgress !== null ? (
-                        <div className="flex flex-col items-center gap-4 p-8 w-full">
+                        <div className="flex flex-col items-center gap-4 p-8 w-full animate-in fade-in">
                            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
                            <div className="w-full space-y-1">
                               <Progress value={imageProgress} className="h-2 w-full" />
