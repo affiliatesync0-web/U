@@ -33,7 +33,7 @@ function getAdminApp() {
       // Durante el 'next build' en Vercel, las variables de entorno pueden no estar presentes.
       // Retornamos null silenciosamente en lugar de romper el build.
       if (process.env.NODE_ENV === 'production') {
-        console.warn("ADMIN_INIT_WARNING: Credenciales no detectadas. El build continuará pero las funciones Admin fallarán en runtime si no se configuran.");
+        console.warn("ADMIN_INIT_WARNING: Credenciales administrativas (Service Account) no detectadas. La eliminación de usuarios fallará.");
       }
       return null;
     }

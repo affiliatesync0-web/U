@@ -64,15 +64,33 @@ export default function AdminAffiliatesPage() {
     
     setIsDeleting(true);
     try {
+      // 1. Intentar borrar de Authentication (vía Server Action)
       const res = await adminDeleteUser(uid);
+      
       if(res.success) {
-        deleteDocumentNonBlocking(doc(db, 'affiliates', uid));
-        toast({ title: "Socio Eliminado", description: "El acceso y el registro han sido removidos." });
+        // 2. Si se borró de Auth (o no existía), borrar el documento de Firestore
+        if (db) {
+          deleteDocumentNonBlocking(doc(db, 'affiliates', uid));
+          toast({ 
+            title: "Socio Eliminado ✓", 
+            description: "El acceso y el registro de base de datos han sido removidos." 
+          });
+        }
       } else {
-        toast({ variant: "destructive", title: "Error", description: res.error });
+        // Mostrar el error específico (ej: falta configuración de variables de entorno)
+        toast({ 
+          variant: "destructive", 
+          title: "Error de Privilegios", 
+          description: res.error || "No se pudo eliminar el acceso del usuario." 
+        });
       }
     } catch (e) {
-      toast({ variant: "destructive", title: "Error de Servidor" });
+      console.error("Delete error:", e);
+      toast({ 
+        variant: "destructive", 
+        title: "Error Crítico", 
+        description: "Hubo un fallo en la conexión con el servidor administrativo." 
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -157,7 +175,7 @@ export default function AdminAffiliatesPage() {
                       <TableCell className="font-black text-xs text-slate-900">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell className="px-8 text-right">
                         <div className="flex justify-end gap-2">
-                          <AffiliateDetailsDialog affiliate={aff} onDelete={() => handleDeleteAffiliate(aff.id)} />
+                          <AffiliateDetailsDialog affiliate={aff} />
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -165,7 +183,7 @@ export default function AdminAffiliatesPage() {
                             onClick={() => handleDeleteAffiliate(aff.id)}
                             disabled={isDeleting}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                           </Button>
                         </div>
                       </TableCell>
@@ -181,7 +199,7 @@ export default function AdminAffiliatesPage() {
   )
 }
 
-function AffiliateDetailsDialog({ affiliate, onDelete }: { affiliate: any, onDelete: () => void }) {
+function AffiliateDetailsDialog({ affiliate }: { affiliate: any }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -263,12 +281,6 @@ function AffiliateDetailsDialog({ affiliate, onDelete }: { affiliate: any, onDel
                  </div>
                </div>
             </div>
-          </div>
-
-          <div className="pt-8 border-t flex justify-end">
-             <Button variant="ghost" onClick={onDelete} className="h-12 px-8 rounded-xl text-red-500 hover:bg-red-50 font-black text-[10px] uppercase tracking-widest">
-                ELIMINAR SOCIO PERMANENTEMENTE
-             </Button>
           </div>
         </div>
       </DialogContent>
