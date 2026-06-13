@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -89,15 +90,21 @@ export default function AdminDesignPage() {
     handleSaveValue('settings', data);
   };
 
-  const handleSaveOpenWa = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      baseUrl: formData.get('baseUrl'),
-      apiKey: formData.get('apiKey'),
-      sessionName: formData.get('sessionName'),
-    };
-    handleSaveValue('whatsapp-api', data);
+  const handleTestEmail = async () => {
+    if (!user?.email) return;
+    setTestLoading(true);
+    try {
+      const res = await testEmailConfig(user.email);
+      if (res.success) {
+        toast({ title: "Email Enviado", description: `Revisa tu bandeja de entrada: ${user.email}` });
+      } else {
+        toast({ variant: "destructive", title: "Error SMTP", description: res.error });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: "Fallo en la conexión SMTP." });
+    } finally {
+      setTestLoading(false);
+    }
   };
 
   if (isUserLoading || isLoading) {
@@ -147,9 +154,14 @@ export default function AdminDesignPage() {
                   <Label className="text-[10px] font-black uppercase text-slate-400">Pass Aplicación (16 dígitos)</Label>
                   <Input name="smtp_password" type="password" defaultValue={settings.smtp_password || ''} className="h-12 rounded-xl font-mono" />
                 </div>
-                <Button type="submit" className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black uppercase text-[10px]" disabled={savingId === 'settings'}>
-                  {savingId === 'settings' ? <Loader2 className="animate-spin h-4 w-4" /> : "GUARDAR SMTP"}
-                </Button>
+                <div className="flex gap-4">
+                   <Button type="button" onClick={handleTestEmail} variant="outline" className="flex-1 h-14 rounded-2xl font-black uppercase text-[10px]" disabled={testLoading}>
+                     {testLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "PROBAR ENVÍO"}
+                   </Button>
+                   <Button type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 text-white font-black uppercase text-[10px]" disabled={savingId === 'settings'}>
+                     {savingId === 'settings' ? <Loader2 className="animate-spin h-4 w-4" /> : "GUARDAR SMTP"}
+                   </Button>
+                </div>
               </form>
             </CardContent>
           </Card>

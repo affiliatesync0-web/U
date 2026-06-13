@@ -82,6 +82,15 @@ export async function sendEmail({ to, subject, text, html, title }: { to: string
   }
 }
 
+export async function testEmailConfig(to: string) {
+  return await sendEmail({
+    to,
+    subject: '🧪 Prueba de Conexión Sync Connect',
+    text: 'Si recibes este correo, tu configuración SMTP de Gmail está funcionando correctamente dentro de la infraestructura de Sync Connect.',
+    title: 'Prueba de Sistema'
+  });
+}
+
 export async function sendPasswordResetEmailCustom({ to, link }: { to: string, link: string }) {
   const content = `
     <div style="margin-bottom: 30px; text-align: center;">

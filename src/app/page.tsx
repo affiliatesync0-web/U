@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, Suspense } from 'react'
@@ -39,7 +40,6 @@ function LoginPageContent() {
   const { user, isUserLoading } = useUser()
   
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
