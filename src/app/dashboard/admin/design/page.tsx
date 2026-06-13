@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
@@ -128,7 +127,6 @@ export default function AdminDesignPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* SMTP CONFIG */}
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-slate-900 text-white p-10">
               <div className="flex items-center gap-4">
@@ -168,7 +166,6 @@ export default function AdminDesignPage() {
             </CardContent>
           </Card>
 
-          {/* OPENWA CONFIG */}
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-[#25D366] text-white p-10">
               <div className="flex items-center gap-4">
@@ -198,7 +195,6 @@ export default function AdminDesignPage() {
           </Card>
         </div>
 
-        {/* OTROS AJUSTES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <Card className="premium-card p-10 space-y-6 rounded-[2.5rem]">
             <div className="flex items-center gap-3">
@@ -227,7 +223,6 @@ export default function AdminDesignPage() {
           </Card>
         </div>
 
-        {/* ASSETS VISUALES */}
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-1 w-12 bg-primary rounded-full" />
