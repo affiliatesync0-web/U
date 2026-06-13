@@ -142,8 +142,6 @@ export default function AffiliateDashboard() {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      
-      // Asegurar que el video tenga dimensiones antes de capturar
       if (video.videoWidth === 0) return;
 
       canvas.width = video.videoWidth;
@@ -168,7 +166,6 @@ export default function AffiliateDashboard() {
       
       let blob: Blob;
       if (typeof imageSource === 'string') {
-        // Convertir dataURI a Blob
         const response = await fetch(imageSource);
         blob = await response.blob();
       } else {
@@ -274,7 +271,6 @@ export default function AffiliateDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-           {/* MENSAJES Y NOTIFICACIONES */}
            <div className="lg:col-span-4 space-y-8">
               <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-slate-100">
                 <CardHeader className="bg-slate-900 p-8 text-white flex flex-row items-center justify-between">

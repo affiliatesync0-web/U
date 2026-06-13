@@ -31,7 +31,7 @@ export default function AffiliateSiteBuilderPage() {
     if (!db || !user) return null;
     return query(collection(db, 'user_sites'), where('userId', '==', user.uid));
   }, [db, user]);
-  const { data: userSites, isLoading: loadingSites } = useCollection(userSitesQuery);
+  const { data: userSites, isLoading: loadingSites } = useCollection(sitesQuery);
 
   const handleGenerate = async () => {
     if (!selectedProductId || !user || !profile) {
