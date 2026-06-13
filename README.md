@@ -25,3 +25,10 @@ Para mantener la integridad de la marca y la seguridad del sistema:
 # I
 Actualizado Fri Jun 12 06:33:19 PM UTC 2026
 # P
+echo "# C" >> README.md 
+git init 
+git add README.md 
+git commit -m "primer commit" 
+git branch -M main 
+git remote add origin https://github.com/affiliatesync0-web/C.git
+ git push -u origin main# C
