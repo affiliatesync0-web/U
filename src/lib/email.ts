@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -87,22 +88,13 @@ export async function sendPasswordResetEmailCustom({ to, link }: { to: string, l
       <p style="font-size: 16px; color: #475569; margin-bottom: 35px; text-align: left;">
         Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Para continuar y establecer tu nueva contraseña de forma segura, haz clic en el botón de abajo:
       </p>
-      
       <div style="margin: 40px 0;">
         <a href="${link}" style="background: linear-gradient(135deg, #ff9900 0%, #e68a00 100%); color: #ffffff; padding: 22px 40px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 153, 0, 0.3);">
           Establecer Nueva Contraseña
         </a>
       </div>
-
-      <p style="font-size: 13px; color: #94a3b8; margin-top: 40px; text-align: left;">
-        Si el botón no funciona, copia y pega el siguiente enlace en tu navegador. Recuerda que este enlace es privado y ocurre exclusivamente dentro de nuestra plataforma:
-      </p>
-      <p style="font-size: 11px; color: #0f172a; word-break: break-all; background: #f8fafc; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #f1f5f9;">
-        ${link}
-      </p>
-
       <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: left;">
-        Este enlace expirará pronto por motivos de seguridad. Si no has solicitado este cambio, puedes ignorar este correo de forma segura.
+        Este enlace es privado y ocurre exclusivamente dentro de nuestra plataforma.
       </p>
     </div>
   `;
@@ -111,31 +103,47 @@ export async function sendPasswordResetEmailCustom({ to, link }: { to: string, l
     to,
     subject: '🔐 Recuperación de Acceso: Sync Connect',
     text: `Usa este enlace para cambiar tu contraseña: ${link}`,
-    html: getEmailWrapper(content, "Restaurar Contraseña"),
+    html: getEmailWrapper(content, "Seguridad de Cuenta"),
     title: "Seguridad de Cuenta"
   });
 }
 
 export async function sendAccountActivatedEmail({ to, name }: { to: string, name: string }) {
-  const content = `<p>¡Hola <strong>${name}</strong>!</p><p>Tu cuenta de <strong>Socio Platinum</strong> ha sido aprobada. Ya puedes empezar a generar comisiones.</p>`;
-  return await sendEmail({ to, subject: '✅ Cuenta Activada', text: 'Tu cuenta ha sido activada.', html: getEmailWrapper(content, "¡Bienvenido!"), title: "Activación Sync" });
+  const content = `
+    <div style="text-align: left;">
+      <p style="font-size: 18px; color: #0f172a; font-weight: 700; margin-bottom: 20px;">¡Felicidades, ${name}!</p>
+      <p style="margin-bottom: 20px; font-size: 16px; color: #475569;">
+        Tu cuenta de <strong>Socio Embajador</strong> ha sido aprobada manualmente por el equipo administrativo de Sync Connect.
+      </p>
+      <div style="background-color: #f8fafc; border-left: 4px solid #ff9900; padding: 25px; border-radius: 12px; margin: 30px 0;">
+        <h4 style="margin: 0 0 10px 0; color: #0f172a; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Nuevo Rango Alcanzado:</h4>
+        <p style="margin: 0; font-size: 24px; font-weight: 900; color: #1e293b; font-style: italic;">Socio Platinum ✓</p>
+      </div>
+      <p style="margin-bottom: 30px; font-size: 15px; color: #475569;">
+        A partir de este momento, tienes acceso total al <strong>Marketplace Platinum</strong>, la <strong>Sync Academy</strong> y nuestro potente <strong>AI Web Builder</strong> para maximizar tus ventas.
+      </p>
+      <div style="text-align: center;">
+        <a href="https://syncconnect.ni" style="background: #131921; color: #ffffff; padding: 20px 40px; border-radius: 16px; text-decoration: none; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+          ENTRAR AL PANEL AHORA
+        </a>
+      </div>
+    </div>
+  `;
+  return await sendEmail({ 
+    to, 
+    subject: '💎 ¡Cuenta Activada! Bienvenida a Sync Platinum', 
+    text: 'Tu cuenta de Socio Platinum ha sido aprobada. Ya puedes entrar al sistema.', 
+    html: getEmailWrapper(content, "Bienvenida Oficial"), 
+    title: "Activación Sync Connect" 
+  });
 }
 
 export async function sendOrderConfirmedEmail({ to, name, product, isPhysical }: { to: string, name: string, product: string, isPhysical: boolean }) {
-  const content = `<p>Hola ${name}, pedido registrado: <strong>${product}</strong>. ${isPhysical ? 'Tu paquete está en camino (Pago Contra Entrega).' : 'Acceso digital en validación.'}</p>`;
-  return await sendEmail({ to, subject: `🛒 Pedido Confirmado - ${product}`, text: 'Pedido registrado.', html: getEmailWrapper(content, "Estado del Pedido") });
-}
-
-export async function sendPaymentNotification({ to, name, amount, bank }: { to: string, name: string, amount: number, bank: string }) {
-  const content = `<div style="text-align:center;"><p>Pago de comisiones realizado:</p><h3 style="font-size:40px; color:#16a34a;">$${amount.toFixed(2)}</h3><p>BANCO: ${bank.toUpperCase()}</p></div>`;
-  return await sendEmail({ to, subject: '💰 Pago de Comisiones', text: `Pago de $${amount.toFixed(2)} realizado.`, html: getEmailWrapper(content, "Liquidación Exitosa") });
-}
-
-export async function testEmailConfig(to: string) {
-  return await sendEmail({ to, subject: '🧪 Prueba de Sistema', text: 'Conexión SMTP verificada.', title: "Test Ok" });
+  const content = `<p>Hola ${name}, tu registro de compra para <strong>${product}</strong> ha sido exitoso.</p><p>${isPhysical ? 'Nuestro equipo de logística se pondrá en contacto para la entrega física.' : 'Tu acceso digital está siendo validado por la administración.'}</p>`;
+  return await sendEmail({ to, subject: `🛒 Registro de Compra: ${product}`, text: 'Pedido registrado.', html: getEmailWrapper(content, "Confirmación de Orden") });
 }
 
 export async function sendNewPasswordAdmin({ to, name, newPassword }: { to: string, name: string, newPassword: string }) {
-  const content = `<p>Tu nueva clave temporal es:</p><h2 style="text-align:center; letter-spacing:5px;">${newPassword}</h2>`;
-  return await sendEmail({ to, subject: '🔐 Nueva Contraseña', text: `Tu clave es: ${newPassword}`, html: getEmailWrapper(content, "Seguridad") });
+  const content = `<p>Hola ${name}, se ha generado un nuevo acceso administrativo para tu cuenta.</p><p>Tu nueva clave temporal es:</p><h2 style="text-align:center; letter-spacing:5px; background:#f8fafc; padding:20px; border-radius:12px;">${newPassword}</h2>`;
+  return await sendEmail({ to, subject: '🔐 Restauración de Acceso', text: `Tu clave es: ${newPassword}`, html: getEmailWrapper(content, "Nueva Contraseña") });
 }
