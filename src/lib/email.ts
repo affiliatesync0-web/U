@@ -90,6 +90,29 @@ export async function testEmailConfig(to: string) {
   });
 }
 
+export async function sendLoginAlertEmail({ to, name }: { to: string, name: string }) {
+  const content = `
+    <div style="text-align: left;">
+      <p style="font-size: 18px; color: #0f172a; font-weight: 700; margin-bottom: 20px;">Aviso de Seguridad</p>
+      <p style="margin-bottom: 20px; font-size: 16px; color: #475569;">
+        Hola <strong>${name}</strong>, se ha detectado un nuevo inicio de sesión en tu cuenta de Sync Connect.
+      </p>
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin: 30px 0;">
+        <p style="margin: 0; font-size: 13px; color: #64748b;"><strong>Fecha y Hora:</strong> ${new Date().toLocaleString()}</p>
+        <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Ubicación:</strong> Detectada por Red Sync</p>
+      </div>
+      <p style="font-size: 14px; color: #94a3b8;">Si no has sido tú, te recomendamos cambiar tu contraseña de inmediato desde el portal oficial.</p>
+    </div>
+  `;
+  return await sendEmail({ 
+    to, 
+    subject: '🔐 Alerta: Nuevo Inicio de Sesión detectado', 
+    text: `Se ha iniciado sesión en tu cuenta de Sync Connect a las ${new Date().toLocaleString()}.`, 
+    html: getEmailWrapper(content, "Seguridad de Acceso"),
+    title: "Alerta de Acceso"
+  });
+}
+
 export async function sendPayoutProcessedEmail({ to, name, amount }: { to: string, name: string, amount: number }) {
   const content = `
     <div style="text-align: left;">

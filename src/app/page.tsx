@@ -27,6 +27,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
+import { sendLoginAlertEmail } from '@/lib/email'
 
 const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
@@ -67,9 +68,17 @@ function LoginPageContent() {
     }
   }, [user, isUserLoading, db, router, auth]);
 
-  const handleLoginSuccess = async (userEmail: string | null, uid: string) => {
+  const handleLoginSuccess = async (userEmail: string | null, uid: string, displayName: string | null) => {
     const cleanEmail = userEmail?.toLowerCase().trim() || '';
     
+    // Notificar al correo sobre el inicio de sesión
+    if (userEmail) {
+      sendLoginAlertEmail({
+        to: userEmail,
+        name: displayName || 'Socio'
+      }).catch(err => console.error("Error enviando alerta login:", err));
+    }
+
     if (cleanEmail === ADMIN_EMAIL) {
       router.replace('/dashboard/admin');
       return;
@@ -104,7 +113,7 @@ function LoginPageContent() {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
       if (result?.user) {
-        await handleLoginSuccess(result.user.email, result.user.uid);
+        await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
       }
     } catch (error: any) {
       setLoading(false);
@@ -120,7 +129,7 @@ function LoginPageContent() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
-      await handleLoginSuccess(result.user.email, result.user.uid);
+      await handleLoginSuccess(result.user.email, result.user.uid, result.user.displayName);
     } catch (error: any) {
       setLoading(false);
       setErrorMsg("ID de Usuario o contraseña incorrectos.");

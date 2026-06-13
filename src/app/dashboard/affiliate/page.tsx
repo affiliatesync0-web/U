@@ -18,7 +18,9 @@ import {
   Award,
   Bell,
   CheckCircle2,
-  Upload
+  Upload,
+  X,
+  RefreshCcw
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -57,6 +59,11 @@ export default function AffiliateDashboard() {
   const [copiedAffiliate, setCopiedAffiliate] = useState(false);
   const [inviteAffiliateLink, setInviteAffiliateLink] = useState('');
   
+  // Camera State
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setIsMounted(true); }, []);
@@ -103,6 +110,42 @@ export default function AffiliateDashboard() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({ title: "Enlace Copiado", description: "¡Listo para compartir!" });
+  };
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setStream(mediaStream);
+      if (videoRef.current) videoRef.current.srcObject = mediaStream;
+      setShowCamera(true);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Cámara no disponible", description: "Asegúrate de dar permisos de acceso." });
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = async () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        setNewPhotoUrl(dataUrl);
+        stopCamera();
+        toast({ title: "Foto capturada ✓" });
+      }
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,52 +381,76 @@ export default function AffiliateDashboard() {
         </div>
       </div>
 
-      <Dialog open={isEditingPhoto} onOpenChange={setIsEditingPhoto}>
-        <DialogContent className="rounded-[3.5rem] p-12 border-none shadow-2xl bg-white max-w-md w-[95vw]">
-          <div className="space-y-10">
+      <Dialog open={isEditingPhoto} onOpenChange={(v) => { setIsEditingPhoto(v); if(!v) stopCamera(); }}>
+        <DialogContent className="rounded-[3.5rem] p-10 border-none shadow-2xl bg-white max-w-md w-[95vw]">
+          <div className="space-y-8">
             <div className="text-center space-y-2">
-               <div className="h-16 w-16 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto mb-4 shadow-inner"><Camera className="h-8 w-8" /></div>
-               <DialogHeader><DialogTitle className="text-3xl font-headline font-black text-slate-900 text-center uppercase tracking-tight italic">Nueva <span className="text-primary">Imagen</span></DialogTitle></DialogHeader>
-               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Identidad Visual Platinum</p>
+               <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4"><Camera className="h-7 w-7" /></div>
+               <DialogHeader><DialogTitle className="text-2xl font-headline font-black text-slate-900 text-center uppercase italic">Actualizar <span className="text-primary">Identidad</span></DialogTitle></DialogHeader>
+               <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest">Socio Embajador Platinum</p>
             </div>
             
             <div className="space-y-6">
-               <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">URL de la Foto</Label>
-                  <Input 
-                   placeholder="Pega el enlace directo aquí..." 
-                   value={newPhotoUrl} 
-                   onChange={(e) => setNewPhotoUrl(e.target.value)} 
-                   className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 font-bold text-sm" 
-                  />
-               </div>
-               
-               <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
-                  <div className="relative flex justify-center text-[10px] uppercase font-black text-slate-300"><span className="bg-white px-2">o sube un archivo</span></div>
-               </div>
+               {showCamera ? (
+                 <div className="space-y-4 animate-in zoom-in-95 duration-300">
+                    <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-slate-950 border-4 border-slate-100 shadow-inner">
+                       <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                       <div className="absolute top-4 right-4"><Badge className="bg-red-600 animate-pulse border-none">LIVE</Badge></div>
+                    </div>
+                    <canvas ref={canvasRef} className="hidden" />
+                    <div className="grid grid-cols-2 gap-4">
+                       <Button variant="outline" onClick={stopCamera} className="h-14 rounded-2xl font-black text-[10px] uppercase">CANCELAR</Button>
+                       <Button onClick={capturePhoto} className="h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase shadow-xl">TOMAR FOTO</Button>
+                    </div>
+                 </div>
+               ) : (
+                 <>
+                   <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Enlace de Imagen</Label>
+                      <Input 
+                       placeholder="Pega la URL aquí..." 
+                       value={newPhotoUrl} 
+                       onChange={(e) => setNewPhotoUrl(e.target.value)} 
+                       className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 font-bold text-xs" 
+                      />
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-4">
+                      <Button 
+                        onClick={startCamera} 
+                        variant="outline" 
+                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                      >
+                        <Camera className="h-6 w-6 text-slate-400" />
+                        <span className="text-[9px] font-black uppercase">USAR CÁMARA</span>
+                      </Button>
 
-               <Button 
-                onClick={() => fileInputRef.current?.click()} 
-                variant="outline" 
-                className="w-full h-14 rounded-2xl border-dashed border-2 font-black text-[10px] uppercase"
-                disabled={uploading}
-               >
-                 {uploading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                 {uploading ? "SUBIENDO..." : "SUBIR DESDE DISPOSITIVO"}
-               </Button>
-               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                      <Button 
+                        onClick={() => fileInputRef.current?.click()} 
+                        variant="outline" 
+                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                        disabled={uploading}
+                      >
+                        {uploading ? <Loader2 className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6 text-slate-400" />}
+                        <span className="text-[9px] font-black uppercase">{uploading ? "SUBIENDO..." : "SUBIR ARCHIVO"}</span>
+                      </Button>
+                   </div>
+                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                 </>
+               )}
             </div>
 
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-50">
-               <Button onClick={() => { 
-                if(affiliateRef && newPhotoUrl) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); 
-                setIsEditingPhoto(false); 
-                setNewPhotoUrl('');
-                toast({ title: "Perfil Actualizado" }); 
-              }} className="w-full h-18 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all">CONFIRMAR CAMBIO</Button>
-              <Button variant="ghost" onClick={() => setIsEditingPhoto(false)} className="h-12 rounded-2xl font-black text-[10px] uppercase text-slate-400 tracking-widest">CANCELAR</Button>
-            </div>
+            {!showCamera && (
+              <div className="flex flex-col gap-3 pt-4 border-t border-slate-50">
+                <Button onClick={() => { 
+                  if(affiliateRef && newPhotoUrl) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); 
+                  setIsEditingPhoto(false); 
+                  setNewPhotoUrl('');
+                  toast({ title: "Perfil Actualizado ✓" }); 
+                }} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all">GUARDAR CAMBIOS</Button>
+                <button onClick={() => setIsEditingPhoto(false)} className="text-[9px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-500 transition-colors">CERRAR VENTANA</button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
