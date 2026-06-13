@@ -32,3 +32,4 @@ git commit -m "primer commit"
 git branch -M main 
 git remote add origin https://github.com/affiliatesync0-web/C.git
  git push -u origin main# C
+# C
