@@ -67,7 +67,7 @@ export async function sendEmail({ to, subject, text, html, title }: { to: string
       tls: { rejectUnauthorized: false }
     });
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"${config.fromName}" <${config.user}>`,
       to,
       subject,
@@ -155,16 +155,11 @@ export async function sendAccountActivatedEmail({ to, name }: { to: string, name
       <p style="margin-bottom: 30px; font-size: 15px; color: #475569;">
         A partir de este momento, tienes acceso total al <strong>Marketplace Platinum</strong>, la <strong>Sync Academy</strong> y nuestro potente <strong>AI Web Builder</strong> para maximizar tus ventas.
       </p>
-      <div style="text-align: center;">
-        <a href="https://syncconnect.ni" style="background: #131921; color: #ffffff; padding: 20px 40px; border-radius: 16px; text-decoration: none; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
-          ENTRAR AL PANEL AHORA
-        </a>
-      </div>
     </div>
   `;
   return await sendEmail({ 
     to, 
-    subject: '💎 ¡Cuenta Activada! Bienvenida a Sync Platinum', 
+    subject: '💎 ¡Cuenta Activada! Bienvenido a Sync Platinum', 
     text: 'Tu cuenta de Socio Platinum ha sido aprobada. Ya puedes entrar al sistema.', 
     html: getEmailWrapper(content, "Bienvenida Oficial"), 
     title: "Activación Sync Connect" 
@@ -185,18 +180,14 @@ export async function sendAccountStatusEmail({ to, name, status }: { to: string,
           ${isBlocked ? 'ACCESO RESTRINGIDO (BLOQUEADO)' : 'ACCESO RESTAURADO (ACTIVO)'}
         </p>
       </div>
-      ${isBlocked ? 
-        '<p style="font-size: 14px; color: #64748b;">Tu acceso a las herramientas de IA y Marketplace ha sido suspendido por la administración. Contacta a soporte para más detalles.</p>' : 
-        '<p style="font-size: 14px; color: #64748b;">Tu acceso ha sido rehabilitado. Puedes volver a operar con normalidad.</p>'
-      }
     </div>
   `;
   return await sendEmail({ 
     to, 
     subject: `Aviso de Sistema: Estado de Cuenta Actualizado`, 
     text: `Tu cuenta ahora está: ${status === 'Active' ? 'Activa' : 'Bloqueada'}`, 
-    html: getEmailWrapper(content, "Actualización de Seguridad"), 
-    title: "Seguridad Sync Connect" 
+    html: getEmailWrapper(content, "Seguridad Sync Connect"), 
+    title: "Seguridad de Cuenta" 
   });
 }
 
@@ -221,9 +212,6 @@ export async function sendPasswordResetEmailCustom({ to, link }: { to: string, l
           Establecer Nueva Contraseña
         </a>
       </div>
-      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: left;">
-        Este enlace es privado y ocurre exclusivamente dentro de nuestra plataforma.
-      </p>
     </div>
   `;
 
