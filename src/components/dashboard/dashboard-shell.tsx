@@ -22,7 +22,8 @@ import {
   Zap,
   MapPin,
   UserCheck,
-  GraduationCap
+  GraduationCap,
+  Globe
 } from "lucide-react"
 import { useLanguage } from "@/components/language-context"
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase"
@@ -121,6 +122,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
     { title: "Inicio", url: "/dashboard/admin", icon: LayoutDashboard },
     { title: "Academy", url: "/dashboard/admin/academy", icon: GraduationCap },
     { title: "Afiliados", url: "/dashboard/admin/affiliates", icon: Users },
+    { title: "Web Builder", url: "/dashboard/admin/site-builder", icon: Globe },
     { title: "Compradores", url: "/dashboard/admin/buyers", icon: UserCheck },
     { title: "Mapa", url: "/dashboard/admin/map", icon: MapPin },
     { title: "Productos", url: "/dashboard/admin/products", icon: Package },
@@ -133,6 +135,7 @@ export function DashboardShell({ children, role }: DashboardShellProps) {
   const affiliateItems = [
     { title: "Panel", url: "/dashboard/affiliate", icon: LayoutDashboard },
     { title: "Academy", url: "/dashboard/affiliate/academy", icon: GraduationCap },
+    { title: "Web Builder", url: "/dashboard/affiliate/site-builder", icon: Globe },
     { title: "Mercado", url: "/dashboard/affiliate/products", icon: ShoppingBag },
     { title: "Estrategias", url: "/dashboard/affiliate/sales-lab", icon: Flame },
     { title: "Clientes", url: "/dashboard/affiliate/buyers", icon: Users2 },
