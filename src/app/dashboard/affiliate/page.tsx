@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { 
@@ -18,7 +17,8 @@ import {
   Trophy,
   Award,
   Bell,
-  CheckCircle2
+  CheckCircle2,
+  Upload
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -35,8 +35,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
 import { collection, query, where, doc, onSnapshot, orderBy, limit } from 'firebase/firestore'
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { useToast } from '@/hooks/use-toast'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -51,10 +52,13 @@ export default function AffiliateDashboard() {
 
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [copiedAffiliate, setCopiedAffiliate] = useState(false);
   const [inviteAffiliateLink, setInviteAffiliateLink] = useState('');
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
@@ -101,14 +105,44 @@ export default function AffiliateDashboard() {
     toast({ title: "Enlace Copiado", description: "¡Listo para compartir!" });
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !affiliateRef) return;
+
+    setUploading(true);
+    try {
+      const { storage } = initializeFirebase();
+      const storageRef = ref(storage, `profiles/${user.uid}_${Date.now()}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', null, 
+        (error) => {
+          console.error("Upload error:", error);
+          setUploading(false);
+          toast({ variant: "destructive", title: "Error al subir", description: "No se pudo cargar la imagen." });
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          updateDocumentNonBlocking(affiliateRef, { photoUrl: downloadURL });
+          setUploading(false);
+          setIsEditingPhoto(false);
+          toast({ title: "Foto Actualizada ✓" });
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      setUploading(false);
+    }
+  };
+
   return (
     <DashboardShell role="affiliate">
       <div className="space-y-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
           <div className="flex items-center gap-6">
             <div className="relative group">
-              <Avatar className="h-24 w-24 border-[6px] border-white shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} />
+              <Avatar className="h-24 w-24 border-[6px] border-white shadow-2xl group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+                <AvatarImage src={getGoogleDriveDirectLink(profile?.photoUrl)} className="object-cover" />
                 <AvatarFallback className="bg-primary text-white text-3xl font-black">{profile?.firstName?.charAt(0)}</AvatarFallback>
               </Avatar>
               <button 
@@ -123,8 +157,11 @@ export default function AffiliateDashboard() {
                 {t.welcomeBack}, <span className="text-primary">{profile?.firstName}</span>
               </h1>
               <div className="flex flex-wrap items-center gap-3">
-                <Badge className="bg-slate-900 text-white border-none font-black text-[9px] tracking-widest px-3 py-1 uppercase">
-                   ESTADO: {profile?.status === 'Active' ? 'SOCIO VERIFICADO ✓' : 'CUENTA EN AUDITORÍA'}
+                <Badge className={cn(
+                  "border-none font-black text-[9px] tracking-widest px-3 py-1 uppercase",
+                  profile?.status === 'Active' ? "bg-slate-900 text-white" : "bg-red-900 text-white"
+                )}>
+                   ESTADO: {profile?.status === 'Active' ? 'SOCIO VERIFICADO ✓' : profile?.status === 'Blocked' ? 'ACCESO RESTRINGIDO 🔒' : 'CUENTA EN AUDITORÍA'}
                 </Badge>
                 {profile?.status === 'Active' && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-green-100">
@@ -135,7 +172,7 @@ export default function AffiliateDashboard() {
             </div>
           </div>
           
-          <Card className="premium-card bg-slate-900 text-white min-w-[240px] group overflow-hidden">
+          <Card className="premium-card bg-slate-900 text-white min-w-[240px] group overflow-hidden border-none shadow-2xl">
              <div className="p-8 relative">
                 <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700"><Wallet className="h-20 w-20" /></div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2">Saldo Disponible</p>
@@ -155,7 +192,7 @@ export default function AffiliateDashboard() {
             { title: "Ventas Registradas", value: sales?.length.toString() || '0', icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50", sub: "Historial total" },
             { title: "Ganancias Aprobadas", value: `$${totalEarnedApproved.toLocaleString()}`, icon: BadgeCheck, color: "text-green-500", bg: "bg-green-50", sub: "Capital confirmado" },
           ].map((stat, i) => (
-            <Card key={i} className="premium-card group">
+            <Card key={i} className="premium-card group border-none shadow-xl">
               <CardContent className="p-10">
                 <div className="flex justify-between items-start mb-8">
                   <div className={`h-16 w-16 rounded-[1.5rem] ${stat.bg} ${stat.color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500`}>
@@ -209,7 +246,7 @@ export default function AffiliateDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="premium-card bg-slate-950 text-white p-10 relative overflow-hidden group">
+              <Card className="premium-card bg-slate-950 text-white p-10 relative overflow-hidden group border-none shadow-2xl">
                  <div className="absolute top-0 right-0 p-8 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000"><LinkIcon className="h-32 w-32 text-primary" /></div>
                  <div className="relative z-10 space-y-8">
                     <div className="flex items-center gap-4">
@@ -238,7 +275,7 @@ export default function AffiliateDashboard() {
            </div>
 
            <div className="lg:col-span-8 space-y-8">
-              <Card className="premium-card overflow-hidden">
+              <Card className="premium-card overflow-hidden border-none shadow-2xl">
                 <CardHeader className="px-10 py-10 border-b border-slate-50 flex flex-row items-center justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-2xl font-headline font-black text-slate-900 uppercase">Actividad Comercial</CardTitle>
@@ -310,23 +347,41 @@ export default function AffiliateDashboard() {
                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Identidad Visual Platinum</p>
             </div>
             
-            <div className="space-y-4">
-               <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">URL de la Foto</Label>
-               <Input 
-                placeholder="Pega el enlace directo aquí..." 
-                value={newPhotoUrl} 
-                onChange={(e) => setNewPhotoUrl(e.target.value)} 
-                className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 font-bold text-sm" 
-               />
+            <div className="space-y-6">
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">URL de la Foto</Label>
+                  <Input 
+                   placeholder="Pega el enlace directo aquí..." 
+                   value={newPhotoUrl} 
+                   onChange={(e) => setNewPhotoUrl(e.target.value)} 
+                   className="h-16 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 font-bold text-sm" 
+                  />
+               </div>
+               
+               <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
+                  <div className="relative flex justify-center text-[10px] uppercase font-black text-slate-300"><span className="bg-white px-2">o sube un archivo</span></div>
+               </div>
+
+               <Button 
+                onClick={() => fileInputRef.current?.click()} 
+                variant="outline" 
+                className="w-full h-14 rounded-2xl border-dashed border-2 font-black text-[10px] uppercase"
+                disabled={uploading}
+               >
+                 {uploading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                 {uploading ? "SUBIENDO..." : "SUBIR DESDE DISPOSITIVO"}
+               </Button>
+               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pt-4 border-t border-slate-50">
                <Button onClick={() => { 
-                if(affiliateRef) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); 
+                if(affiliateRef && newPhotoUrl) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); 
                 setIsEditingPhoto(false); 
                 setNewPhotoUrl('');
                 toast({ title: "Perfil Actualizado" }); 
-              }} className="w-full h-18 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all">ACTUALIZAR MI PERFIL</Button>
+              }} className="w-full h-18 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all">CONFIRMAR CAMBIO</Button>
               <Button variant="ghost" onClick={() => setIsEditingPhoto(false)} className="h-12 rounded-2xl font-black text-[10px] uppercase text-slate-400 tracking-widest">CANCELAR</Button>
             </div>
           </div>

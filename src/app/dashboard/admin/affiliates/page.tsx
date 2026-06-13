@@ -19,7 +19,9 @@ import {
   FileCheck,
   CreditCard,
   X,
-  UserCheck
+  UserCheck,
+  Lock,
+  Unlock
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -39,7 +41,7 @@ import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { adminDeleteUser } from '@/lib/auth-actions'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { sendAccountActivatedEmail } from '@/lib/email'
+import { sendAccountActivatedEmail, sendAccountStatusEmail } from '@/lib/email'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
@@ -49,7 +51,7 @@ export default function AdminAffiliatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isActivating, setIsActivating] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
@@ -64,15 +66,13 @@ export default function AdminAffiliatesPage() {
 
   const handleActivateAffiliate = async (aff: any) => {
     if (!db) return;
-    setIsActivating(aff.id);
+    setIsProcessing(aff.id);
     try {
-      // 1. Actualizar estado en Firestore
       updateDocumentNonBlocking(doc(db, 'affiliates', aff.id), {
         status: 'Active',
         activatedAt: new Date().toISOString()
       });
 
-      // 2. Crear notificación de bienvenida
       const notifId = `welcome_${aff.id}`;
       await setDoc(doc(db, 'notifications', notifId), {
         userId: aff.id,
@@ -83,19 +83,59 @@ export default function AdminAffiliatesPage() {
         isRead: false
       });
 
-      // 3. Enviar email de activación
       if (aff.email) {
         await sendAccountActivatedEmail({
           to: aff.email,
           name: aff.firstName
-        }).catch(err => console.error("Error enviando email activación:", err));
+        }).catch(err => console.error("Error email activación:", err));
       }
 
       toast({ title: "Socio Activado ✓", description: `La cuenta de ${aff.firstName} ahora es Platinum.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo activar la cuenta." });
     } finally {
-      setIsActivating(null);
+      setIsProcessing(null);
+    }
+  };
+
+  const handleToggleBlock = async (aff: any) => {
+    if (!db) return;
+    const newStatus = aff.status === 'Blocked' ? 'Active' : 'Blocked';
+    setIsProcessing(aff.id);
+    try {
+      updateDocumentNonBlocking(doc(db, 'affiliates', aff.id), {
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      });
+
+      const notifId = `status_${aff.id}_${Date.now()}`;
+      await setDoc(doc(db, 'notifications', notifId), {
+        userId: aff.id,
+        title: newStatus === 'Blocked' ? '⚠️ Acceso Suspendido' : '🔓 Acceso Restaurado',
+        message: newStatus === 'Blocked' 
+          ? 'Tu acceso ha sido restringido por la administración. Contacta a soporte.' 
+          : 'Tu cuenta ha sido reactivada. Ya puedes volver a operar.',
+        type: 'system',
+        createdAt: new Date().toISOString(),
+        isRead: false
+      });
+
+      if (aff.email) {
+        await sendAccountStatusEmail({
+          to: aff.email,
+          name: aff.firstName,
+          status: newStatus
+        }).catch(err => console.error("Error email estatus:", err));
+      }
+
+      toast({ 
+        title: newStatus === 'Blocked' ? "Socio Bloqueado" : "Socio Desbloqueado", 
+        description: `El acceso de ${aff.firstName} ha sido actualizado.` 
+      });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo cambiar el estado." });
+    } finally {
+      setIsProcessing(null);
     }
   };
 
@@ -179,8 +219,10 @@ export default function AdminAffiliatesPage() {
                     <TableRow key={aff.id} className="h-16 border-b last:border-0 hover:bg-slate-50/50 transition-colors group">
                       <TableCell className="px-8">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">
-                            {aff.firstName?.charAt(0)}
+                          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 overflow-hidden">
+                            {aff.photoUrl ? (
+                              <img src={getGoogleDriveDirectLink(aff.photoUrl)} className="w-full h-full object-cover" alt="" />
+                            ) : aff.firstName?.charAt(0)}
                           </div>
                           <div>
                             <p className="font-bold text-xs uppercase text-slate-900">{aff.firstName} {aff.lastName}</p>
@@ -191,25 +233,39 @@ export default function AdminAffiliatesPage() {
                       <TableCell>
                         <Badge variant="outline" className={cn(
                           "text-[8px] font-black uppercase px-2 py-0.5 rounded-sm",
-                          aff.status === 'Active' ? "border-green-200 text-green-600 bg-green-50" : "border-amber-200 text-amber-600 bg-amber-50 animate-pulse"
+                          aff.status === 'Active' ? "border-green-200 text-green-600 bg-green-50" : 
+                          aff.status === 'Blocked' ? "border-red-200 text-red-600 bg-red-50" :
+                          "border-amber-200 text-amber-600 bg-amber-50 animate-pulse"
                         )}>
-                          {aff.status === 'Active' ? 'VERIFICADO' : 'PENDIENTE'}
+                          {aff.status === 'Active' ? 'VERIFICADO' : aff.status === 'Blocked' ? 'BLOQUEADO' : 'PENDIENTE'}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-black text-xs text-slate-900">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell className="px-8 text-right">
                         <div className="flex justify-end gap-2">
-                          {aff.status !== 'Active' && (
+                          {aff.status === 'Pending' && (
                             <Button 
                               size="sm" 
                               className="h-8 px-4 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg"
                               onClick={() => handleActivateAffiliate(aff)}
-                              disabled={isActivating === aff.id}
+                              disabled={isProcessing === aff.id}
                             >
-                              {isActivating === aff.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
-                              ACTIVAR SOCIO
+                              {isProcessing === aff.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+                              ACTIVAR
                             </Button>
                           )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={cn(
+                              "h-8 w-8 rounded-lg",
+                              aff.status === 'Blocked' ? "text-green-500 hover:bg-green-50" : "text-amber-500 hover:bg-amber-50"
+                            )}
+                            onClick={() => handleToggleBlock(aff)}
+                            disabled={isProcessing === aff.id}
+                          >
+                            {isProcessing === aff.id ? <Loader2 className="h-4 w-4 animate-spin" /> : aff.status === 'Blocked' ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                          </Button>
                           <AffiliateDetailsDialog affiliate={aff} />
                           <Button 
                             variant="ghost" 
@@ -245,8 +301,10 @@ function AffiliateDetailsDialog({ affiliate }: { affiliate: any }) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-0 border-none shadow-2xl bg-white">
         <div className="bg-slate-900 p-8 text-white flex justify-between items-center">
           <div className="flex items-center gap-4">
-             <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-xl">
-               <User className="h-6 w-6" />
+             <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-xl overflow-hidden">
+               {affiliate.photoUrl ? (
+                 <img src={getGoogleDriveDirectLink(affiliate.photoUrl)} className="w-full h-full object-cover" alt="" />
+               ) : <User className="h-6 w-6" />}
              </div>
              <div>
                <DialogTitle className="text-xl font-headline font-black uppercase italic tracking-tight">{affiliate.firstName} {affiliate.lastName}</DialogTitle>

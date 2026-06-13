@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -144,6 +143,35 @@ export async function sendAccountActivatedEmail({ to, name }: { to: string, name
     text: 'Tu cuenta de Socio Platinum ha sido aprobada. Ya puedes entrar al sistema.', 
     html: getEmailWrapper(content, "Bienvenida Oficial"), 
     title: "Activación Sync Connect" 
+  });
+}
+
+export async function sendAccountStatusEmail({ to, name, status }: { to: string, name: string, status: string }) {
+  const isBlocked = status === 'Blocked';
+  const content = `
+    <div style="text-align: left;">
+      <p style="font-size: 18px; color: #0f172a; font-weight: 700; margin-bottom: 20px;">Hola, ${name}</p>
+      <p style="margin-bottom: 20px; font-size: 16px; color: #475569;">
+        Se ha actualizado el estado de tu cuenta de socio en nuestra infraestructura tecnológica.
+      </p>
+      <div style="background-color: ${isBlocked ? '#fef2f2' : '#f0fdf4'}; border-left: 4px solid ${isBlocked ? '#ef4444' : '#22c55e'}; padding: 25px; border-radius: 12px; margin: 30px 0;">
+        <h4 style="margin: 0 0 10px 0; color: #0f172a; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Estado de Cuenta:</h4>
+        <p style="margin: 0; font-size: 20px; font-weight: 900; color: ${isBlocked ? '#b91c1c' : '#15803d'};">
+          ${isBlocked ? 'ACCESO RESTRINGIDO (BLOQUEADO)' : 'ACCESO RESTAURADO (ACTIVO)'}
+        </p>
+      </div>
+      ${isBlocked ? 
+        '<p style="font-size: 14px; color: #64748b;">Tu acceso a las herramientas de IA y Marketplace ha sido suspendido por la administración. Contacta a soporte para más detalles.</p>' : 
+        '<p style="font-size: 14px; color: #64748b;">Tu acceso ha sido rehabilitado. Puedes volver a operar con normalidad.</p>'
+      }
+    </div>
+  `;
+  return await sendEmail({ 
+    to, 
+    subject: `Aviso de Sistema: Estado de Cuenta Actualizado`, 
+    text: `Tu cuenta ahora está: ${status === 'Active' ? 'Activa' : 'Bloqueada'}`, 
+    html: getEmailWrapper(content, "Actualización de Seguridad"), 
+    title: "Seguridad Sync Connect" 
   });
 }
 
