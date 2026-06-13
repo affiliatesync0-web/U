@@ -90,29 +90,31 @@ export async function testEmailConfig(to: string) {
   });
 }
 
-export async function sendPasswordResetEmailCustom({ to, link }: { to: string, link: string }) {
+export async function sendPayoutProcessedEmail({ to, name, amount }: { to: string, name: string, amount: number }) {
   const content = `
-    <div style="margin-bottom: 30px; text-align: center;">
-      <p style="font-size: 16px; color: #475569; margin-bottom: 35px; text-align: left;">
-        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Para continuar y establecer tu nueva contraseña de forma segura, haz clic en el botón de abajo:
+    <div style="text-align: left;">
+      <p style="font-size: 18px; color: #0f172a; font-weight: 700; margin-bottom: 20px;">¡Hola, ${name}!</p>
+      <p style="margin-bottom: 20px; font-size: 16px; color: #475569;">
+        Nos complace informarte que se ha procesado tu liquidación de comisiones correspondiente a tu actividad como <strong>Socio Platinum</strong>.
       </p>
-      <div style="margin: 40px 0;">
-        <a href="${link}" style="background: linear-gradient(135deg, #ff9900 0%, #e68a00 100%); color: #ffffff; padding: 22px 40px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 153, 0, 0.3);">
-          Establecer Nueva Contraseña
-        </a>
+      <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 25px; border-radius: 12px; margin: 30px 0; text-align: center;">
+        <h4 style="margin: 0 0 10px 0; color: #0f172a; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Monto Liquidado:</h4>
+        <p style="margin: 0; font-size: 32px; font-weight: 900; color: #15803d; font-style: italic;">$${amount.toFixed(2)} USD</p>
       </div>
-      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: left;">
-        Este enlace es privado y ocurre exclusivamente dentro de nuestra plataforma.
+      <p style="margin-bottom: 30px; font-size: 15px; color: #475569;">
+        El dinero ha sido enviado a la cuenta bancaria que tienes registrada en tu perfil. Recuerda que dependiendo de tu banco, el saldo puede tardar de 2 a 24 horas en verse reflejado.
       </p>
+      <div style="text-align: center;">
+        <p style="font-size: 12px; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Gracias por ser parte de Sync Connect</p>
+      </div>
     </div>
   `;
-
-  return await sendEmail({
-    to,
-    subject: '🔐 Recuperación de Acceso: Sync Connect',
-    text: `Usa este enlace para cambiar tu contraseña: ${link}`,
-    html: getEmailWrapper(content, "Seguridad de Cuenta"),
-    title: "Seguridad de Cuenta"
+  return await sendEmail({ 
+    to, 
+    subject: '💰 ¡Pago Procesado! Tus comisiones han sido enviadas', 
+    text: `Se ha procesado tu pago de $${amount.toFixed(2)}.`, 
+    html: getEmailWrapper(content, "Comprobante de Pago"), 
+    title: "Liquidación Sync Connect" 
   });
 }
 
@@ -183,4 +185,30 @@ export async function sendOrderConfirmedEmail({ to, name, product, isPhysical }:
 export async function sendNewPasswordAdmin({ to, name, newPassword }: { to: string, name: string, newPassword: string }) {
   const content = `<p>Hola ${name}, se ha generado un nuevo acceso administrativo para tu cuenta.</p><p>Tu nueva clave temporal es:</p><h2 style="text-align:center; letter-spacing:5px; background:#f8fafc; padding:20px; border-radius:12px;">${newPassword}</h2>`;
   return await sendEmail({ to, subject: '🔐 Restauración de Acceso', text: `Tu clave es: ${newPassword}`, html: getEmailWrapper(content, "Nueva Contraseña") });
+}
+
+export async function sendPasswordResetEmailCustom({ to, link }: { to: string, link: string }) {
+  const content = `
+    <div style="margin-bottom: 30px; text-align: center;">
+      <p style="font-size: 16px; color: #475569; margin-bottom: 35px; text-align: left;">
+        Has solicitado restablecer el acceso a tu cuenta en <strong>Sync Connect</strong>. Para continuar y establecer tu nueva contraseña de forma segura, haz clic en el botón de abajo:
+      </p>
+      <div style="margin: 40px 0;">
+        <a href="${link}" style="background: linear-gradient(135deg, #ff9900 0%, #e68a00 100%); color: #ffffff; padding: 22px 40px; border-radius: 18px; text-decoration: none; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 153, 0, 0.3);">
+          Establecer Nueva Contraseña
+        </a>
+      </div>
+      <p style="font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: left;">
+        Este enlace es privado y ocurre exclusivamente dentro de nuestra plataforma.
+      </p>
+    </div>
+  `;
+
+  return await sendEmail({
+    to,
+    subject: '🔐 Recuperación de Acceso: Sync Connect',
+    text: `Usa este enlace para cambiar tu contraseña: ${link}`,
+    html: getEmailWrapper(content, "Seguridad de Cuenta"),
+    title: "Seguridad de Cuenta"
+  });
 }

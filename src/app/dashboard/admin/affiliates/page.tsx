@@ -21,7 +21,9 @@ import {
   X,
   UserCheck,
   Lock,
-  Unlock
+  Unlock,
+  Banknote,
+  DollarSign
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -41,7 +43,7 @@ import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { adminDeleteUser } from '@/lib/auth-actions'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
-import { sendAccountActivatedEmail, sendAccountStatusEmail } from '@/lib/email'
+import { sendAccountActivatedEmail, sendAccountStatusEmail, sendPayoutProcessedEmail } from '@/lib/email'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
@@ -134,6 +136,49 @@ export default function AdminAffiliatesPage() {
       });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo cambiar el estado." });
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleProcessPayment = async (aff: any) => {
+    if (!db || !aff.currentBalance || aff.currentBalance <= 0) return;
+    
+    if (!confirm(`¿Confirmar pago de $${aff.currentBalance.toFixed(2)} a ${aff.firstName}? El saldo se reseteará a cero.`)) return;
+
+    setIsProcessing(aff.id);
+    try {
+      const currentAmount = aff.currentBalance;
+      
+      // 1. Resetear saldo
+      updateDocumentNonBlocking(doc(db, 'affiliates', aff.id), {
+        currentBalance: 0,
+        lastPayoutAt: new Date().toISOString()
+      });
+
+      // 2. Notificación interna
+      const notifId = `payout_${aff.id}_${Date.now()}`;
+      await setDoc(doc(db, 'notifications', notifId), {
+        userId: aff.id,
+        title: '💰 ¡Pago Procesado!',
+        message: `Se ha realizado el envío de $${currentAmount.toFixed(2)} USD a tu cuenta bancaria. ¡Felicidades!`,
+        type: 'sale',
+        createdAt: new Date().toISOString(),
+        isRead: false
+      });
+
+      // 3. Email de comprobante
+      if (aff.email) {
+        await sendPayoutProcessedEmail({
+          to: aff.email,
+          name: aff.firstName,
+          amount: currentAmount
+        }).catch(err => console.error("Error email pago:", err));
+      }
+
+      toast({ title: "Pago Liquidado ✓", description: `Se ha reseteado el saldo de ${aff.firstName}.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo procesar el pago." });
     } finally {
       setIsProcessing(null);
     }
@@ -243,6 +288,17 @@ export default function AdminAffiliatesPage() {
                       <TableCell className="font-black text-xs text-slate-900">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell className="px-8 text-right">
                         <div className="flex justify-end gap-2">
+                          {aff.currentBalance > 0 && (
+                            <Button 
+                              size="sm" 
+                              className="h-8 px-4 bg-primary hover:bg-slate-900 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg"
+                              onClick={() => handleProcessPayment(aff)}
+                              disabled={isProcessing === aff.id}
+                            >
+                              {isProcessing === aff.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Banknote className="h-3.5 w-3.5" />}
+                              PAGAR
+                            </Button>
+                          )}
                           {aff.status === 'Pending' && (
                             <Button 
                               size="sm" 
