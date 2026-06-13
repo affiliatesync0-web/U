@@ -39,7 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking, initializeFirebase } from '@/firebase'
 import { collection, query, where, doc, onSnapshot, orderBy, limit } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useToast } from '@/hooks/use-toast'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -114,9 +114,16 @@ export default function AffiliateDashboard() {
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } } 
+      });
       setStream(mediaStream);
-      if (videoRef.current) videoRef.current.srcObject = mediaStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
+      }
       setShowCamera(true);
     } catch (err) {
       toast({ variant: "destructive", title: "Cámara no disponible", description: "Asegúrate de dar permisos de acceso." });
@@ -135,12 +142,16 @@ export default function AffiliateDashboard() {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
+      
+      // Asegurar que el video tenga dimensiones antes de capturar
+      if (video.videoWidth === 0) return;
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         setNewPhotoUrl(dataUrl);
         stopCamera();
         toast({ title: "Foto capturada ✓" });
@@ -148,34 +159,41 @@ export default function AffiliateDashboard() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user || !affiliateRef) return;
-
+  const uploadProfileImage = async (imageSource: string | File) => {
+    if (!user || !affiliateRef) return;
     setUploading(true);
     try {
       const { storage } = initializeFirebase();
-      const storageRef = ref(storage, `profiles/${user.uid}_${Date.now()}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const storageRef = ref(storage, `profiles/${user.uid}_${Date.now()}.jpg`);
+      
+      let blob: Blob;
+      if (typeof imageSource === 'string') {
+        // Convertir dataURI a Blob
+        const response = await fetch(imageSource);
+        blob = await response.blob();
+      } else {
+        blob = imageSource;
+      }
 
-      uploadTask.on('state_changed', null, 
-        (error) => {
-          console.error("Upload error:", error);
-          setUploading(false);
-          toast({ variant: "destructive", title: "Error al subir", description: "No se pudo cargar la imagen." });
-        }, 
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          updateDocumentNonBlocking(affiliateRef, { photoUrl: downloadURL });
-          setUploading(false);
-          setIsEditingPhoto(false);
-          toast({ title: "Foto Actualizada ✓" });
-        }
-      );
-    } catch (err) {
-      console.error(err);
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      updateDocumentNonBlocking(affiliateRef, { photoUrl: downloadURL });
+      toast({ title: "Perfil Actualizado ✓" });
+      setIsEditingPhoto(false);
+      setNewPhotoUrl('');
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({ variant: "destructive", title: "Error al subir", description: "No se pudo procesar la imagen." });
+    } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadProfileImage(file);
   };
 
   return (
@@ -406,7 +424,7 @@ export default function AffiliateDashboard() {
                ) : (
                  <>
                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Enlace de Imagen</Label>
+                      <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Enlace de Imagen (Opcional)</Label>
                       <Input 
                        placeholder="Pega la URL aquí..." 
                        value={newPhotoUrl} 
@@ -420,6 +438,7 @@ export default function AffiliateDashboard() {
                         onClick={startCamera} 
                         variant="outline" 
                         className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                        disabled={uploading}
                       >
                         <Camera className="h-6 w-6 text-slate-400" />
                         <span className="text-[9px] font-black uppercase">USAR CÁMARA</span>
@@ -442,12 +461,22 @@ export default function AffiliateDashboard() {
 
             {!showCamera && (
               <div className="flex flex-col gap-3 pt-4 border-t border-slate-50">
-                <Button onClick={() => { 
-                  if(affiliateRef && newPhotoUrl) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl }); 
-                  setIsEditingPhoto(false); 
-                  setNewPhotoUrl('');
-                  toast({ title: "Perfil Actualizado ✓" }); 
-                }} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all">GUARDAR CAMBIOS</Button>
+                <Button 
+                  onClick={() => { 
+                    if (newPhotoUrl.startsWith('data:')) {
+                      uploadProfileImage(newPhotoUrl);
+                    } else if (newPhotoUrl) {
+                      if(affiliateRef) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl });
+                      setIsEditingPhoto(false);
+                      setNewPhotoUrl('');
+                      toast({ title: "Perfil Actualizado ✓" });
+                    }
+                  }} 
+                  className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all"
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "GUARDAR CAMBIOS"}
+                </Button>
                 <button onClick={() => setIsEditingPhoto(false)} className="text-[9px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-500 transition-colors">CERRAR VENTANA</button>
               </div>
             )}
