@@ -2,6 +2,10 @@
 /**
  * @fileOverview Generador de landing pages impulsado por Gemini 1.5 Flash.
  * Crea estructuras de venta persuasivas basadas en los detalles técnicos de un producto.
+ * 
+ * - generateWebsiteContent - Función principal del flujo.
+ * - GenerateWebsiteInput - Interfaz de entrada.
+ * - GenerateWebsiteOutput - Interfaz de salida estructurada.
  */
 
 import {ai} from '@/ai/genkit';
@@ -30,8 +34,16 @@ const GenerateWebsiteOutputSchema = z.object({
 });
 export type GenerateWebsiteOutput = z.infer<typeof GenerateWebsiteOutputSchema>;
 
+/**
+ * Wrapper para llamar al flujo de generación de sitios web.
+ */
 export async function generateWebsiteContent(input: GenerateWebsiteInput): Promise<GenerateWebsiteOutput> {
-  return generateWebsiteFlow(input);
+  try {
+    return await generateWebsiteFlow(input);
+  } catch (error) {
+    console.error("Error en generateWebsiteFlow:", error);
+    throw new Error("No se pudo conectar con el motor de IA. Verifica tu API Key.");
+  }
 }
 
 const websitePrompt = ai.definePrompt({
@@ -57,7 +69,7 @@ INSTRUCCIONES DE TONO:
 - Directo, eliminando palabras de relleno.
 - Enfocado 100% en la CONVERSIÓN de ventas.
 
-IMPORTANTE: Los textos deben estar listos para publicar. No uses corchetes ni placeholders.`,
+IMPORTANTE: Los textos deben estar listos para publicar. No uses corchetes ni placeholders. Genera un objeto JSON puro que cumpla estrictamente con el esquema de salida solicitado.`,
 });
 
 const generateWebsiteFlow = ai.defineFlow(
@@ -67,8 +79,13 @@ const generateWebsiteFlow = ai.defineFlow(
     outputSchema: GenerateWebsiteOutputSchema,
   },
   async input => {
-    // Usamos explícitamente el motor de Gemini para este flujo
+    // Ejecutamos el prompt con el modelo configurado por defecto
     const {output} = await websitePrompt(input);
-    return output!;
+    
+    if (!output) {
+      throw new Error("La IA no devolvió un resultado válido.");
+    }
+    
+    return output;
   }
 );
