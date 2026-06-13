@@ -18,7 +18,8 @@ import {
   Eye,
   FileCheck,
   CreditCard,
-  X
+  X,
+  UserCheck
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -31,13 +32,14 @@ import {
 } from "@/components/ui/table"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase'
-import { collection, doc } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useUser, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { collection, doc, setDoc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { adminDeleteUser } from '@/lib/auth-actions'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
+import { sendAccountActivatedEmail } from '@/lib/email'
 
 export default function AdminAffiliatesPage() {
   const { t } = useLanguage();
@@ -47,6 +49,7 @@ export default function AdminAffiliatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isActivating, setIsActivating] = useState<string | null>(null);
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
@@ -59,38 +62,59 @@ export default function AdminAffiliatesPage() {
     toast({ title: "Enlace Copiado", description: "Envía este link solo a personas autorizadas." });
   };
 
+  const handleActivateAffiliate = async (aff: any) => {
+    if (!db) return;
+    setIsActivating(aff.id);
+    try {
+      // 1. Actualizar estado en Firestore
+      updateDocumentNonBlocking(doc(db, 'affiliates', aff.id), {
+        status: 'Active',
+        activatedAt: new Date().toISOString()
+      });
+
+      // 2. Crear notificación de bienvenida
+      const notifId = `welcome_${aff.id}`;
+      await setDoc(doc(db, 'notifications', notifId), {
+        userId: aff.id,
+        title: '💎 ¡Cuenta Activada!',
+        message: 'Bienvenido a la red élite. Tu acceso al Marketplace Platinum y herramientas de IA ya está habilitado.',
+        type: 'system',
+        createdAt: new Date().toISOString(),
+        isRead: false
+      });
+
+      // 3. Enviar email de activación
+      if (aff.email) {
+        await sendAccountActivatedEmail({
+          to: aff.email,
+          name: aff.firstName
+        }).catch(err => console.error("Error enviando email activación:", err));
+      }
+
+      toast({ title: "Socio Activado ✓", description: `La cuenta de ${aff.firstName} ahora es Platinum.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo activar la cuenta." });
+    } finally {
+      setIsActivating(null);
+    }
+  };
+
   const handleDeleteAffiliate = async (uid: string) => {
     if(!confirm("¿ELIMINAR SOCIO DEFINITIVAMENTE? Esta acción borrará su acceso y su perfil.")) return;
     
     setIsDeleting(true);
     try {
-      // 1. Intentar borrar de Authentication (vía Server Action)
       const res = await adminDeleteUser(uid);
-      
       if(res.success) {
-        // 2. Si se borró de Auth (o no existía), borrar el documento de Firestore
         if (db) {
           deleteDocumentNonBlocking(doc(db, 'affiliates', uid));
-          toast({ 
-            title: "Socio Eliminado ✓", 
-            description: "El acceso y el registro de base de datos han sido removidos." 
-          });
+          toast({ title: "Socio Eliminado ✓", description: "El acceso y el registro han sido removidos." });
         }
       } else {
-        // Mostrar el error específico (ej: falta configuración de variables de entorno)
-        toast({ 
-          variant: "destructive", 
-          title: "Error de Privilegios", 
-          description: res.error || "No se pudo eliminar el acceso del usuario." 
-        });
+        toast({ variant: "destructive", title: "Error de Privilegios", description: res.error || "No se pudo eliminar el acceso." });
       }
     } catch (e) {
-      console.error("Delete error:", e);
-      toast({ 
-        variant: "destructive", 
-        title: "Error Crítico", 
-        description: "Hubo un fallo en la conexión con el servidor administrativo." 
-      });
+      toast({ variant: "destructive", title: "Error Crítico", description: "Fallo en conexión administrativa." });
     } finally {
       setIsDeleting(false);
     }
@@ -147,7 +171,7 @@ export default function AdminAffiliatesPage() {
                     <TableHead className="px-8 font-black uppercase text-[10px] text-slate-500">Socio Platinum</TableHead>
                     <TableHead className="font-black uppercase text-[10px] text-slate-500">Estado</TableHead>
                     <TableHead className="font-black uppercase text-[10px] text-slate-500">Saldo ($)</TableHead>
-                    <TableHead className="px-8 text-right font-black uppercase text-[10px] text-slate-500">Expediente</TableHead>
+                    <TableHead className="px-8 text-right font-black uppercase text-[10px] text-slate-500">Acciones Maestras</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -167,7 +191,7 @@ export default function AdminAffiliatesPage() {
                       <TableCell>
                         <Badge variant="outline" className={cn(
                           "text-[8px] font-black uppercase px-2 py-0.5 rounded-sm",
-                          aff.status === 'Active' ? "border-green-200 text-green-600 bg-green-50" : "border-slate-200 text-slate-400 bg-slate-50"
+                          aff.status === 'Active' ? "border-green-200 text-green-600 bg-green-50" : "border-amber-200 text-amber-600 bg-amber-50 animate-pulse"
                         )}>
                           {aff.status === 'Active' ? 'VERIFICADO' : 'PENDIENTE'}
                         </Badge>
@@ -175,6 +199,17 @@ export default function AdminAffiliatesPage() {
                       <TableCell className="font-black text-xs text-slate-900">${aff.currentBalance?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell className="px-8 text-right">
                         <div className="flex justify-end gap-2">
+                          {aff.status !== 'Active' && (
+                            <Button 
+                              size="sm" 
+                              className="h-8 px-4 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg"
+                              onClick={() => handleActivateAffiliate(aff)}
+                              disabled={isActivating === aff.id}
+                            >
+                              {isActivating === aff.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+                              ACTIVAR SOCIO
+                            </Button>
+                          )}
                           <AffiliateDetailsDialog affiliate={aff} />
                           <Button 
                             variant="ghost" 
@@ -204,7 +239,7 @@ function AffiliateDetailsDialog({ affiliate }: { affiliate: any }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest gap-2">
-          <Eye className="h-3.5 w-3.5" /> VER EXPEDIENTE
+          <Eye className="h-3.5 w-3.5" /> EXPEDIENTE
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-0 border-none shadow-2xl bg-white">
