@@ -3,36 +3,27 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { 
   Mail, 
-  ShieldCheck, 
-  Send, 
-  RefreshCw, 
   Loader2, 
-  Smartphone, 
   ImageIcon,
-  KeyRound,
-  ShieldAlert,
   Server,
   Upload,
   CreditCard,
   MessageSquare,
-  Zap,
-  Box
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser, initializeFirebase } from '@/firebase'
-import { doc, collection } from 'firebase/firestore'
+import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { testEmailConfig } from '@/lib/email'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function AdminDesignPage() {
   const { toast } = useToast()
@@ -49,23 +40,6 @@ export default function AdminDesignPage() {
   const { data: overrides, isLoading } = useCollection(configQuery);
 
   const images = placeholderData.placeholderImages || [];
-
-  const handleSave = (imgId: string, url: string, hint: string) => {
-    const configRef = doc(db, 'site_config', imgId);
-    setSavingId(imgId);
-    
-    setDocumentNonBlocking(configRef, {
-      id: imgId,
-      imageUrl: (url || "").trim(),
-      imageHint: (hint || "").trim(),
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-
-    setTimeout(() => {
-      setSavingId(null);
-      toast({ title: "Imagen Actualizada", description: "Cambios aplicados." });
-    }, 1000);
-  };
 
   const handleSaveValue = (id: string, data: any) => {
     const configRef = doc(db, 'site_config', id);
@@ -88,6 +62,34 @@ export default function AdminDesignPage() {
       smtp_from_name: formData.get('smtp_from_name'),
     };
     handleSaveValue('settings', data);
+  };
+
+  const handleSaveOpenWa = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      baseUrl: formData.get('baseUrl')?.toString().trim(),
+      apiKey: formData.get('apiKey')?.toString().trim(),
+      sessionName: formData.get('sessionName')?.toString().trim(),
+    };
+    handleSaveValue('whatsapp-api', data);
+  };
+
+  const handleSaveImage = (imgId: string, url: string, hint: string) => {
+    const configRef = doc(db, 'site_config', imgId);
+    setSavingId(imgId);
+    
+    setDocumentNonBlocking(configRef, {
+      id: imgId,
+      imageUrl: (url || "").trim(),
+      imageHint: (hint || "").trim(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    setTimeout(() => {
+      setSavingId(null);
+      toast({ title: "Imagen Actualizada" });
+    }, 1000);
   };
 
   const handleTestEmail = async () => {
@@ -170,7 +172,7 @@ export default function AdminDesignPage() {
           <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100">
             <CardHeader className="bg-[#25D366] text-white p-10">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center text-white shadow-xl"><MessageSquare className="h-6 w-6" /></div>
+                <div className="h-12 w-12 bg-green-500/20 rounded-2xl flex items-center justify-center text-green-600 shadow-xl"><MessageSquare className="h-6 w-6" /></div>
                 <CardTitle className="text-2xl font-headline font-black uppercase">WhatsApp OpenWA</CardTitle>
               </div>
             </CardHeader>
@@ -188,7 +190,7 @@ export default function AdminDesignPage() {
                   <Label className="text-[10px] font-black uppercase text-slate-400">Nombre de Sesión</Label>
                   <Input name="sessionName" defaultValue={waSettings.sessionName || 'my-bot'} className="h-12 rounded-xl" />
                 </div>
-                <Button type="submit" className="w-full h-14 rounded-2xl bg-[#075E54] text-white font-black uppercase text-[10px]" disabled={savingId === 'whatsapp-api'}>
+                <Button type="submit" className="w-full h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black uppercase text-[10px]" disabled={savingId === 'whatsapp-api'}>
                   {savingId === 'whatsapp-api' ? <Loader2 className="animate-spin h-4 w-4" /> : "CONECTAR WHATSAPP"}
                 </Button>
               </form>
@@ -198,7 +200,7 @@ export default function AdminDesignPage() {
 
         {/* OTROS AJUSTES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <Card className="premium-card p-10 space-y-6">
+          <Card className="premium-card p-10 space-y-6 rounded-[2.5rem]">
             <div className="flex items-center gap-3">
               <CreditCard className="h-5 w-5 text-primary" />
               <h3 className="text-lg font-black uppercase tracking-tight italic">Link de Activación</h3>
@@ -211,10 +213,10 @@ export default function AdminDesignPage() {
             />
           </Card>
 
-          <Card className="premium-card p-10 space-y-6">
+          <Card className="premium-card p-10 space-y-6 rounded-[2.5rem]">
             <div className="flex items-center gap-3">
-              <Smartphone className="h-5 w-5 text-green-500" />
-              <h3 className="text-lg font-black uppercase tracking-tight italic">Soporte Central</h3>
+              <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600"><MessageSquare className="h-4 w-4" /></div>
+              <h3 className="text-lg font-black uppercase tracking-tight italic">WhatsApp Soporte</h3>
             </div>
             <Input 
               placeholder="50588888888" 
@@ -239,7 +241,7 @@ export default function AdminDesignPage() {
                 description={img.description}
                 defaultUrl={overrides?.find(o => o.id === img.id)?.imageUrl || img.imageUrl}
                 defaultHint={overrides?.find(o => o.id === img.id)?.imageHint || img.imageHint}
-                onSave={handleSave}
+                onSave={handleSaveImage}
                 isSaving={savingId === img.id}
               />
             ))}
