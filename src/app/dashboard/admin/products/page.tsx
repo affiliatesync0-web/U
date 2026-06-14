@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS, PRODUCT_TYPES } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Package, Truck, CreditCard, Edit3, Save, X } from 'lucide-react'
+import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Package, Truck, CreditCard, Edit3, Save, X, Link as LinkIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -21,6 +21,11 @@ import { collection, doc } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+
+interface MarketingLink {
+  label: string;
+  url: string;
+}
 
 export default function AdminProductsPage() {
   const { toast } = useToast()
@@ -55,7 +60,8 @@ export default function AdminProductsPage() {
     paymentLink: '',
     features: '',
     description: '',
-    imageUrl: ''
+    imageUrl: '',
+    marketingLinks: [] as MarketingLink[]
   })
 
   useEffect(() => {
@@ -75,7 +81,8 @@ export default function AdminProductsPage() {
           paymentLink: p.paymentLink || '',
           features: p.features || '',
           description: p.description || '',
-          imageUrl: p.imageUrl || ''
+          imageUrl: p.imageUrl || '',
+          marketingLinks: p.marketingLinks || []
         });
         setIsAdding(true);
       }
@@ -120,6 +127,26 @@ export default function AdminProductsPage() {
       setImageProgress(null);
       toast({ variant: "destructive", title: "Error Crítico", description: "No se pudo conectar con el servidor de archivos." });
     }
+  };
+
+  const handleAddLink = () => {
+    setFormData(prev => ({
+      ...prev,
+      marketingLinks: [...prev.marketingLinks, { label: '', url: '' }]
+    }));
+  };
+
+  const handleUpdateLink = (index: number, field: keyof MarketingLink, value: string) => {
+    const updatedLinks = [...formData.marketingLinks];
+    updatedLinks[index][field] = value;
+    setFormData(prev => ({ ...prev, marketingLinks: updatedLinks }));
+  };
+
+  const handleRemoveLink = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      marketingLinks: prev.marketingLinks.filter((_, i) => i !== index)
+    }));
   };
 
   const handleAIHelp = async () => {
@@ -169,7 +196,7 @@ export default function AdminProductsPage() {
   const closeDialog = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '' });
+    setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '', marketingLinks: [] });
     setImageProgress(null);
   }
 
@@ -265,29 +292,24 @@ export default function AdminProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto (Subir Archivo)</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto</Label>
                     <div className="relative h-48 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
                       {imageProgress !== null ? (
-                        <div className="flex flex-col items-center gap-4 p-8 w-full animate-in fade-in">
+                        <div className="flex flex-col items-center gap-4 p-8 w-full">
                            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-                           <div className="w-full space-y-1">
-                              <Progress value={imageProgress} className="h-2 w-full" />
-                              <p className="text-[9px] font-black text-slate-400 text-center uppercase tracking-widest">{Math.round(imageProgress)}% COMPLETADO</p>
-                           </div>
+                           <Progress value={imageProgress} className="h-2 w-full" />
                         </div>
                       ) : formData.imageUrl ? (
                         <div className="relative w-full h-full">
                           <img src={formData.imageUrl} className="w-full h-full object-cover" alt="preview" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                             <Button variant="secondary" size="sm" className="rounded-full font-black text-[9px] uppercase" onClick={() => fileInputRef.current?.click()}>CAMBIAR IMAGEN</Button>
+                             <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>CAMBIAR</Button>
                           </div>
                         </div>
                       ) : (
                         <div className="text-center space-y-2 p-8 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                          <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mx-auto">
-                            <Upload className="h-6 w-6 text-slate-300" />
-                          </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Haz clic para subir desde dispositivo</p>
+                          <Upload className="h-6 w-6 text-slate-300 mx-auto" />
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Subir Imagen</p>
                         </div>
                       )}
                     </div>
@@ -298,38 +320,54 @@ export default function AdminProductsPage() {
                 <div className="space-y-6">
                    <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-slate-900" />
-                        <h3 className="text-[10px] font-black uppercase text-slate-900">Copywriting Asistido</h3>
+                        <LinkIcon className="h-4 w-4 text-slate-900" />
+                        <h3 className="text-[10px] font-black uppercase text-slate-900">Links de Publicidad (Marketing)</h3>
                       </div>
-                      <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="Características clave..." className="bg-white border-slate-200 h-10 text-xs" />
-                      <Button onClick={handleAIHelp} variant="outline" className="w-full h-10 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-black text-[9px] uppercase tracking-widest" disabled={generating}>
-                        {generating ? "ESCRIBIENDO..." : "REDACTAR CON IA"}
-                      </Button>
-                      <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[120px] rounded-lg bg-white border-slate-200 p-4 text-xs leading-relaxed" placeholder="Descripción detallada..." />
+                      <div className="space-y-3">
+                        {formData.marketingLinks.map((link, idx) => (
+                          <div key={idx} className="flex gap-2 items-start bg-white p-3 rounded-lg border">
+                            <div className="flex-1 space-y-2">
+                              <Input 
+                                placeholder="Nombre (Ej: Video de Venta)" 
+                                value={link.label} 
+                                onChange={e => handleUpdateLink(idx, 'label', e.target.value)}
+                                className="h-8 text-[10px] font-bold"
+                              />
+                              <Input 
+                                placeholder="https://..." 
+                                value={link.url} 
+                                onChange={e => handleUpdateLink(idx, 'url', e.target.value)}
+                                className="h-8 text-[10px] font-mono"
+                              />
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => handleRemoveLink(idx)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button onClick={handleAddLink} variant="outline" className="w-full h-10 border-dashed border-2 text-[9px] font-black uppercase tracking-widest">
+                          <Plus className="h-3 w-3 mr-2" /> AGREGAR LINK PUBLICITARIO
+                        </Button>
+                      </div>
                    </div>
 
-                   <div className="p-6 bg-slate-900 text-white rounded-xl space-y-4">
+                   <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-slate-400" />
-                        <h3 className="text-[10px] font-black uppercase text-slate-400">Logística de Pago</h3>
+                        <Sparkles className="h-4 w-4 text-slate-900" />
+                        <h3 className="text-[10px] font-black uppercase text-slate-900">Descripción IA</h3>
                       </div>
-                      {formData.type === 'Digital' ? (
-                        <>
-                          <Input value={formData.bankAccount} onChange={e => setFormData({...formData, bankAccount: e.target.value})} placeholder="Nº de Cuenta..." className="h-10 bg-white/5 border-white/10 text-white text-xs" />
-                          <Input value={formData.paymentLink} onChange={e => setFormData({...formData, paymentLink: e.target.value})} placeholder="Link de pago externo..." className="h-10 bg-white/5 border-white/10 text-white text-xs" />
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 italic">
-                          <Truck className="h-4 w-4" /> Pago contra entrega habilitado.
-                        </div>
-                      )}
+                      <Input value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} placeholder="Características clave..." className="bg-white text-xs h-10" />
+                      <Button onClick={handleAIHelp} variant="outline" className="w-full h-10 text-[9px] font-black uppercase" disabled={generating}>
+                        {generating ? "ESCRIBIENDO..." : "REDACTAR CON IA"}
+                      </Button>
+                      <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[100px] text-xs" />
                    </div>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button variant="ghost" onClick={closeDialog} className="font-black text-[10px] uppercase tracking-widest">CANCELAR</Button>
-                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-xl" onClick={handleSave} disabled={imageProgress !== null}>
+                <Button variant="ghost" onClick={closeDialog} className="font-black text-[10px] uppercase">CANCELAR</Button>
+                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase shadow-xl" onClick={handleSave} disabled={imageProgress !== null}>
                   <Save className="h-4 w-4 mr-2" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICAR PRODUCTO'}
                 </Button>
               </div>
