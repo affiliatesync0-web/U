@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react'
@@ -16,7 +17,6 @@ import {
   Package,
   ChevronRight,
   X,
-  FileVideo,
   Globe
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -69,7 +69,7 @@ export default function AdminMarketingLinksPage() {
         marketingLinks: tempLinks,
         updatedAt: new Date().toISOString()
       });
-      toast({ title: "Material de Publicidad Guardado ✓" });
+      toast({ title: "Links de Publicidad Guardados ✓" });
     } catch (e) {
       toast({ variant: "destructive", title: "Error al guardar" });
     } finally {
@@ -87,14 +87,13 @@ export default function AdminMarketingLinksPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <LinkIcon className="h-4 w-4 text-primary" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Gestión de Materiales</span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Gestor de Materiales</span>
           </div>
           <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Links de <span className="text-primary">Publicidad</span></h1>
-          <p className="text-slate-500 font-medium">Asigna videos, drive y landings a cada producto para tus afiliados.</p>
+          <p className="text-slate-500 font-medium">Selecciona un producto y asigna sus materiales de venta para los afiliados.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* LADO IZQUIERDO: LISTA DE PRODUCTOS */}
           <div className="lg:col-span-4 space-y-6">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -125,7 +124,7 @@ export default function AdminMarketingLinksPage() {
                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-inner", selectedProductId === p.id ? "bg-white/10" : "bg-slate-100")}>
                           <Package className="h-5 w-5" />
                        </div>
-                       <span className="text-xs font-black uppercase tracking-tight truncate max-w-[120px]">{p.name}</span>
+                       <span className="text-xs font-black uppercase tracking-tight truncate max-w-[150px]">{p.name}</span>
                     </div>
                     <ChevronRight className={cn("h-4 w-4 transition-transform", selectedProductId === p.id ? "rotate-90 text-primary" : "text-slate-300")} />
                   </button>
@@ -134,13 +133,12 @@ export default function AdminMarketingLinksPage() {
             )}
           </div>
 
-          {/* LADO DERECHO: EDITOR DE LINKS */}
           <div className="lg:col-span-8">
             {!selectedProductId ? (
               <Card className="h-full min-h-[400px] border-dashed border-2 flex flex-col items-center justify-center p-20 text-center bg-white/50 rounded-[3rem]">
                  <LinkIcon className="h-16 w-16 text-slate-100 mb-6" />
                  <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Selecciona un producto</h3>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Para gestionar sus materiales de publicidad</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Asigna materiales de publicidad vinculados</p>
               </Card>
             ) : (
               <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden ring-1 ring-slate-100 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -151,59 +149,51 @@ export default function AdminMarketingLinksPage() {
                      </div>
                      <div>
                        <CardTitle className="text-2xl font-headline font-black uppercase italic tracking-tight">{selectedProduct?.name}</CardTitle>
-                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Editor de Materiales Promocionales</p>
+                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Editor de Links Promocionales</p>
                      </div>
                    </div>
                    <Button variant="ghost" size="icon" onClick={() => setSelectedProductId(null)} className="text-white/20 hover:text-white"><X className="h-6 w-6" /></Button>
                 </CardHeader>
                 <CardContent className="p-10 space-y-8">
                   <div className="space-y-6">
-                    {tempLinks.length === 0 ? (
-                      <div className="text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Sin links registrados todavía</p>
+                    {tempLinks.map((link, idx) => (
+                      <div key={idx} className="flex flex-col md:flex-row gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100 group">
+                         <div className="flex-1 space-y-4">
+                            <div className="space-y-2">
+                              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Nombre del Recurso (Ej: Video de Gancho)</Label>
+                              <div className="relative">
+                                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                                <Input 
+                                  value={link.label} 
+                                  onChange={e => handleUpdateLink(idx, 'label', e.target.value)}
+                                  className="pl-11 h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold"
+                                  placeholder="Escribe un nombre..."
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">URL de Publicidad</Label>
+                              <div className="relative">
+                                <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                                <Input 
+                                  value={link.url} 
+                                  onChange={e => handleUpdateLink(idx, 'url', e.target.value)}
+                                  className="pl-11 h-12 rounded-xl border-none ring-1 ring-slate-200 font-mono text-xs"
+                                  placeholder="https://..."
+                                />
+                              </div>
+                            </div>
+                         </div>
+                         <div className="flex items-end">
+                           <Button variant="ghost" size="icon" onClick={() => handleRemoveLink(idx)} className="h-12 w-12 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl">
+                             <Trash2 className="h-5 w-5" />
+                           </Button>
+                         </div>
                       </div>
-                    ) : (
-                      <div className="grid gap-4">
-                        {tempLinks.map((link, idx) => (
-                          <div key={idx} className="flex flex-col md:flex-row gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100 group">
-                             <div className="flex-1 space-y-4">
-                                <div className="space-y-2">
-                                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Nombre del Material (Ej: Video de Venta 1)</Label>
-                                  <div className="relative">
-                                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-                                    <Input 
-                                      value={link.label} 
-                                      onChange={e => handleUpdateLink(idx, 'label', e.target.value)}
-                                      className="pl-11 h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold"
-                                      placeholder="Nombre descriptivo..."
-                                    />
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">URL de Destino (Google Drive, YouTube, etc)</Label>
-                                  <div className="relative">
-                                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-                                    <Input 
-                                      value={link.url} 
-                                      onChange={e => handleUpdateLink(idx, 'url', e.target.value)}
-                                      className="pl-11 h-12 rounded-xl border-none ring-1 ring-slate-200 font-mono text-xs"
-                                      placeholder="https://..."
-                                    />
-                                  </div>
-                                </div>
-                             </div>
-                             <div className="flex items-end">
-                               <Button variant="ghost" size="icon" onClick={() => handleRemoveLink(idx)} className="h-12 w-12 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl">
-                                 <Trash2 className="h-5 w-5" />
-                               </Button>
-                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    ))}
 
                     <Button onClick={handleAddLink} variant="outline" className="w-full h-16 rounded-2xl border-dashed border-2 text-[10px] font-black uppercase tracking-widest gap-2">
-                       <Plus className="h-5 w-5" /> AGREGAR NUEVO MATERIAL
+                       <Plus className="h-5 w-5" /> AGREGAR LINK PUBLICITARIO
                     </Button>
                   </div>
 
@@ -214,7 +204,7 @@ export default function AdminMarketingLinksPage() {
                       className="h-16 px-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-2xl gap-3 transition-all active:scale-95"
                     >
                       {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
-                      ACTUALIZAR PRODUCTO
+                      GUARDAR CONFIGURACIÓN
                     </Button>
                   </div>
                 </CardContent>

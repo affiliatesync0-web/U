@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
@@ -14,12 +15,9 @@ import {
   ArrowUpRight,
   Zap,
   Camera,
-  Trophy,
-  Award,
   Bell,
   CheckCircle2,
   Upload,
-  X,
   RefreshCcw
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
