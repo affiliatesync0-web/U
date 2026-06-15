@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { doc } from 'firebase/firestore'
-import { Loader2, ShoppingCart, CheckCircle2, Star, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Loader2, ShoppingCart, CheckCircle2, Star, ShieldCheck, ArrowRight, ArrowLeft, Layout } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Link from 'next/link'

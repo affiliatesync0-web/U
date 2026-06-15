@@ -154,6 +154,18 @@ export default function AffiliateDashboard() {
     }
   };
 
+  // Utilidad robusta para convertir base64 a Blob
+  const base64ToBlob = (base64: string) => {
+    const byteString = atob(base64.split(',')[1]);
+    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+  }
+
   const uploadProfileImage = async (imageSource: string | File) => {
     if (!user || !affiliateRef) return;
     setUploading(true);
@@ -162,11 +174,13 @@ export default function AffiliateDashboard() {
       const storageRef = ref(storage, `profiles/${user.uid}_${Date.now()}.jpg`);
       
       let blob: Blob;
-      if (typeof imageSource === 'string') {
-        const response = await fetch(imageSource);
-        blob = await response.blob();
-      } else {
+      if (typeof imageSource === 'string' && imageSource.startsWith('data:')) {
+        blob = base64ToBlob(imageSource);
+      } else if (imageSource instanceof File) {
         blob = imageSource;
+      } else {
+        const response = await fetch(imageSource as string);
+        blob = await response.blob();
       }
 
       await uploadBytes(storageRef, blob);
