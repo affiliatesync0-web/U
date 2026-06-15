@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -153,7 +154,7 @@ export async function sendAccountActivatedEmail({ to, name }: { to: string, name
         <p style="margin: 0; font-size: 24px; font-weight: 900; color: #1e293b; font-style: italic;">Socio Platinum ✓</p>
       </div>
       <p style="margin-bottom: 30px; font-size: 15px; color: #475569;">
-        A partir de este momento, tienes acceso total al <strong>Marketplace Platinum</strong>, la <strong>Sync Academy</strong> y nuestro potente <strong>AI Web Builder</strong> para maximizar tus ventas.
+        A partir de este momento, tienes acceso total al <strong>Marketplace Platinum</strong>, la <strong>Sync Academy</strong> y nuestro potente <strong>Hub de Publicidad</strong> para maximizar tus ventas.
       </p>
     </div>
   `;
