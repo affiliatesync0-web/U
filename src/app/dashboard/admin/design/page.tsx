@@ -20,7 +20,7 @@ import { useLanguage } from '@/components/language-context'
 import placeholderData from '@/app/lib/placeholder-images.json'
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, useUser, initializeFirebase } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { testEmailConfig } from '@/lib/email'
 
@@ -261,28 +261,16 @@ function ImageEditorCard({ id, description, defaultUrl, defaultHint, onSave, isS
     try {
       const { storage } = initializeFirebase();
       const storageRef = ref(storage, `site_assets/${id}_${Date.now()}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', null, 
-        (err) => { 
-          console.error("Upload error:", err);
-          setUploading(false); 
-        }, 
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setUrl(downloadURL);
-            onSave(id, downloadURL, defaultHint);
-          } catch (e) {
-            console.error("Error finalizing design asset upload:", e);
-          } finally {
-            setUploading(false);
-          }
-        }
-      );
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      setUrl(downloadURL);
+      onSave(id, downloadURL, defaultHint);
     } catch (error) { 
-      console.error("Storage initialization failed:", error);
-      setUploading(false); 
+      console.error("Upload error:", error);
+    } finally {
+      setUploading(false);
     }
   };
 

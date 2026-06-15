@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Progress } from '@/components/ui/progress'
 import { PRODUCT_CATEGORIES, NICA_BANKS, PRODUCT_TYPES } from '@/lib/constants'
 import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Package, Truck, CreditCard, Edit3, Save, X, Link as LinkIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -18,7 +17,7 @@ import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser, initializeFirebase, updateDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
@@ -35,7 +34,7 @@ export default function AdminProductsPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
-  const [imageProgress, setImageProgress] = useState<number | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -93,39 +92,21 @@ export default function AdminProductsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setImageProgress(0);
+    setUploadingImage(true);
     try {
       const { storage } = initializeFirebase();
       const storageRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageProgress(progress);
-        }, 
-        (error) => {
-          console.error("Upload error:", error);
-          setImageProgress(null);
-          toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo cargar la imagen." });
-        }, 
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
-            toast({ title: "Imagen Cargada ✓" });
-          } catch (err) {
-            console.error("Error obteniendo URL:", err);
-            toast({ variant: "destructive", title: "Error Final", description: "No se pudo obtener el enlace de la imagen." });
-          } finally {
-            setImageProgress(null);
-          }
-        }
-      );
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
+      toast({ title: "Imagen Cargada ✓" });
     } catch (err) {
-      console.error("Firebase Storage init error:", err);
-      setImageProgress(null);
-      toast({ variant: "destructive", title: "Error Crítico", description: "No se pudo conectar con el servidor de archivos." });
+      console.error("Upload error:", err);
+      toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo cargar la imagen." });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -197,7 +178,7 @@ export default function AdminProductsPage() {
     setIsAdding(false);
     setEditingId(null);
     setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', bankAccount: '', bankType: '', bankHolder: '', paymentLink: '', features: '', description: '', imageUrl: '', marketingLinks: [] });
-    setImageProgress(null);
+    setUploadingImage(false);
   }
 
   const handleDelete = (id: string) => {
@@ -294,10 +275,10 @@ export default function AdminProductsPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto</Label>
                     <div className="relative h-48 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
-                      {imageProgress !== null ? (
+                      {uploadingImage ? (
                         <div className="flex flex-col items-center gap-4 p-8 w-full">
                            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-                           <Progress value={imageProgress} className="h-2 w-full" />
+                           <p className="text-[10px] font-black uppercase text-slate-400">Subiendo...</p>
                         </div>
                       ) : formData.imageUrl ? (
                         <div className="relative w-full h-full">
@@ -367,7 +348,7 @@ export default function AdminProductsPage() {
 
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="ghost" onClick={closeDialog} className="font-black text-[10px] uppercase">CANCELAR</Button>
-                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase shadow-xl" onClick={handleSave} disabled={imageProgress !== null}>
+                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase shadow-xl" onClick={handleSave} disabled={uploadingImage}>
                   <Save className="h-4 w-4 mr-2" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICAR PRODUCTO'}
                 </Button>
               </div>
