@@ -23,7 +23,8 @@ import {
   Lock,
   Unlock,
   Banknote,
-  DollarSign
+  DollarSign,
+  AlertTriangle
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -41,7 +42,7 @@ import { collection, doc, setDoc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { adminDeleteUser } from '@/lib/auth-actions'
+import { adminDeleteUser, adminDeleteAllAffiliates } from '@/lib/auth-actions'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 import { sendAccountActivatedEmail, sendAccountStatusEmail, sendPayoutProcessedEmail } from '@/lib/email'
 
@@ -54,6 +55,7 @@ export default function AdminAffiliatesPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
   const { data: affiliates, isLoading } = useCollection(affiliatesQuery);
@@ -150,13 +152,11 @@ export default function AdminAffiliatesPage() {
     try {
       const currentAmount = aff.currentBalance;
       
-      // 1. Resetear saldo
       updateDocumentNonBlocking(doc(db, 'affiliates', aff.id), {
         currentBalance: 0,
         lastPayoutAt: new Date().toISOString()
       });
 
-      // 2. Notificación interna
       const notifId = `payout_${aff.id}_${Date.now()}`;
       await setDoc(doc(db, 'notifications', notifId), {
         userId: aff.id,
@@ -167,7 +167,6 @@ export default function AdminAffiliatesPage() {
         isRead: false
       });
 
-      // 3. Email de comprobante
       if (aff.email) {
         await sendPayoutProcessedEmail({
           to: aff.email,
@@ -205,6 +204,24 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if(!confirm("⚠️ ADVERTENCIA: Esta acción eliminará a TODOS los afiliados del sistema (Auth y DB). No se puede deshacer. ¿Proceder?")) return;
+    
+    setIsDeletingAll(true);
+    try {
+      const res = await adminDeleteAllAffiliates();
+      if (res.success) {
+        toast({ title: "Limpieza Completada", description: `Se han eliminado ${res.count} registros de afiliados.` });
+      } else {
+        toast({ variant: "destructive", title: "Error", description: res.error });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error Fatal" });
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
   const filteredAffiliates = (affiliates || []).filter(aff => 
     `${aff.firstName} ${aff.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     aff.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -220,6 +237,15 @@ export default function AdminAffiliatesPage() {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4">
+            <Button 
+              onClick={handleDeleteAll} 
+              variant="destructive" 
+              disabled={isDeletingAll || (affiliates?.length || 0) === 0}
+              className="h-12 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest gap-2"
+            >
+              {isDeletingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+              BORRADO NUCLEAR
+            </Button>
             <Button 
               onClick={handleCopyRegisterLink} 
               variant="outline" 

@@ -6,71 +6,57 @@ const ADMIN_EMAIL = 'affiliatesync0@gmail.com';
 
 /**
  * Acción de servidor para eliminar permanentemente a un usuario de Firebase Authentication.
- * Requiere que las variables de entorno del Admin SDK estén configuradas.
  */
 export async function adminDeleteUser(uid: string) {
   if (!adminAuth) {
     return { 
       success: false, 
-      error: 'ERROR DE SERVIDOR: El sistema no tiene permisos administrativos activos en Vercel. Configura FIREBASE_PRIVATE_KEY y FIREBASE_CLIENT_EMAIL.' 
+      error: 'ERROR DE SERVIDOR: El sistema no tiene permisos administrativos activos.' 
     };
   }
 
   try {
-    // Intentar eliminar el usuario de Authentication
     await adminAuth.deleteUser(uid);
     return { success: true };
   } catch (error: any) {
     console.error('Error al eliminar usuario en Auth:', error.code);
-    
-    // Si el usuario no existe en Auth, lo consideramos un éxito para poder limpiar Firestore
-    if (error.code === 'auth/user-not-found') {
-      return { success: true };
-    }
-    
-    return { 
-      success: false, 
-      error: `Error de Firebase Admin: ${error.message}` 
-    };
+    if (error.code === 'auth/user-not-found') return { success: true };
+    return { success: false, error: `Error de Firebase Admin: ${error.message}` };
   }
 }
 
 /**
- * nuclearResetSystem - ELIMINA TODO EL CONTENIDO DEL SISTEMA
+ * Elimina a todos los afiliados de la base de datos y de la autenticación.
  */
-export async function nuclearResetSystem() {
+export async function adminDeleteAllAffiliates() {
   if (!adminAuth || !adminDb) {
     return { success: false, error: 'Admin SDK not initialized.' };
   }
 
   try {
-    const collections = ['affiliates', 'buyers', 'sales', 'notifications', 'private_messages', 'user_sites', 'app_releases', 'sales_lab'];
-    
-    for (const colName of collections) {
-      const snapshot = await adminDb.collection(colName).get();
-      const batch = adminDb.batch();
-      snapshot.docs.forEach((doc) => {
+    const affiliatesSnap = await adminDb.collection('affiliates').get();
+    const batch = adminDb.batch();
+    const uidsToDelete: string[] = [];
+
+    affiliatesSnap.docs.forEach((doc) => {
+      const data = doc.data();
+      if (data.email?.toLowerCase().trim() !== ADMIN_EMAIL) {
         batch.delete(doc.ref);
-      });
-      await batch.commit();
+        uidsToDelete.push(doc.id);
+      }
+    });
+
+    // 1. Borrar de Firestore
+    await batch.commit();
+
+    // 2. Borrar de Auth (en bloques de 1000)
+    if (uidsToDelete.length > 0) {
+      await adminAuth.deleteUsers(uidsToDelete);
     }
 
-    let nextPageToken;
-    do {
-      const listUsersResult = await adminAuth.listUsers(1000, nextPageToken);
-      const uidsToDelete = listUsersResult.users
-        .filter(user => user.email?.toLowerCase().trim() !== ADMIN_EMAIL)
-        .map(user => user.uid);
-      
-      if (uidsToDelete.length > 0) {
-        await adminAuth.deleteUsers(uidsToDelete);
-      }
-      
-      nextPageToken = listUsersResult.pageToken;
-    } while (nextPageToken);
-
-    return { success: true };
+    return { success: true, count: uidsToDelete.length };
   } catch (error: any) {
+    console.error("Error deleting all affiliates:", error);
     return { success: false, error: error.message };
   }
 }
