@@ -154,16 +154,16 @@ export default function AffiliateDashboard() {
     }
   };
 
-  // Utilidad robusta para convertir base64 a Blob
   const base64ToBlob = (base64: string) => {
-    const byteString = atob(base64.split(',')[1]);
-    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+    const parts = base64.split(';base64,');
+    const contentType = parts[0].split(':')[1];
+    const raw = window.atob(parts[1]);
+    const rawLength = raw.length;
+    const uInt8Array = new Uint8Array(rawLength);
+    for (let i = 0; i < rawLength; ++i) {
+      uInt8Array[i] = raw.charCodeAt(i);
     }
-    return new Blob([ab], { type: mimeString });
+    return new Blob([uInt8Array], { type: contentType });
   }
 
   const uploadProfileImage = async (imageSource: string | File) => {
