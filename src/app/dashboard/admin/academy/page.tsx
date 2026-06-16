@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Radio, Bell } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
-import { collection, doc } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore'
 import { cn, getYoutubeThumbnail } from '@/lib/utils'
+import { sendEmail } from '@/lib/email'
 
 export default function AdminAcademyPage() {
   const { toast } = useToast()
@@ -22,6 +23,7 @@ export default function AdminAcademyPage() {
   const [isAddingModule, setIsAddingModule] = useState(false)
   const [isAddingLesson, setIsAddingLesson] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isBroadcasting, setIsBroadcasting] = useState(false)
   
   const modulesQuery = useMemoFirebase(() => db ? collection(db, 'academy_modules') : null, [db]);
   const { data: modules, isLoading: loadingModules } = useCollection(modulesQuery);
@@ -31,6 +33,51 @@ export default function AdminAcademyPage() {
 
   const [moduleData, setModuleData] = useState({ title: '', description: '' })
   const [lessonData, setLessonData] = useState({ title: '', description: '', videoUrl: '', moduleId: '' })
+  const [liveUrl, setLiveUrl] = useState('')
+
+  const handleNotifyLive = async () => {
+    if (!liveUrl || !db) {
+      toast({ variant: "destructive", title: "Link Requerido", description: "Ingresa el enlace de la clase en vivo." });
+      return;
+    }
+    setIsBroadcasting(true);
+    try {
+      const affiliatesSnap = await getDocs(collection(db, 'affiliates'));
+      const activeAffiliates = affiliatesSnap.docs.map(doc => doc.data()).filter(a => a.status === 'Active');
+      
+      const batchPromises = activeAffiliates.map(async (aff) => {
+        // 1. Crear notificación interna
+        const notifId = `live_${Date.now()}_${aff.id}`;
+        await setDoc(doc(db, 'notifications', notifId), {
+          userId: aff.id,
+          title: '🔴 ¡CLASE EN VIVO AHORA!',
+          message: `El administrador ha iniciado una capacitación de élite. Únete ahora mismo.`,
+          type: 'system',
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          actionUrl: liveUrl
+        });
+
+        // 2. Enviar email (opcional pero recomendado)
+        if (aff.email) {
+          sendEmail({
+            to: aff.email,
+            subject: '🔴 URGENTE: Capacitación Sync en Vivo',
+            text: `¡Hola ${aff.firstName}! Estamos iniciando una capacitación en vivo ahora mismo.\n\nAccede aquí: ${liveUrl}\n\nNo te la pierdas.`,
+            title: 'Clase en Vivo'
+          }).catch(e => console.error("Email failed:", e));
+        }
+      });
+
+      await Promise.all(batchPromises);
+      toast({ title: "Broadcast Enviado ✓", description: `Notificación enviada a ${activeAffiliates.length} socios.` });
+      setLiveUrl('');
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error en Broadcast" });
+    } finally {
+      setIsBroadcasting(false);
+    }
+  }
 
   const handleSaveModule = async () => {
     if (!moduleData.title || !db) return;
@@ -93,7 +140,7 @@ export default function AdminAcademyPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Sync <span className="text-primary">Academy Manager</span></h1>
-            <p className="text-slate-500 font-medium">Organiza el conocimiento por módulos y lecciones de alto impacto.</p>
+            <p className="text-slate-500 font-medium">Capacitaciones modulares y alertas en vivo para la red.</p>
           </div>
           
           <div className="flex gap-4">
@@ -106,7 +153,36 @@ export default function AdminAcademyPage() {
           </div>
         </div>
 
-        {/* DIALOG: NUEVO MÓDULO */}
+        {/* BROADCAST LIVE PANEL */}
+        <Card className="border-none shadow-2xl rounded-[2.5rem] bg-slate-900 text-white overflow-hidden">
+           <div className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+              <div className="h-20 w-20 bg-red-600 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.4)] animate-pulse shrink-0">
+                 <Radio className="h-10 w-10 text-white" />
+              </div>
+              <div className="flex-1 space-y-4 text-center md:text-left">
+                 <h3 className="text-2xl font-headline font-black uppercase italic">Clase <span className="text-red-500">En Vivo</span></h3>
+                 <p className="text-slate-400 text-sm font-medium">Ingresa el link de la reunión y notifica a todos tus socios Platinum al instante.</p>
+                 <div className="flex flex-col sm:flex-row gap-3">
+                    <Input 
+                      placeholder="https://zoom.us/j/... o Link de YouTube" 
+                      value={liveUrl}
+                      onChange={e => setLiveUrl(e.target.value)}
+                      className="h-14 bg-white/5 border-none ring-1 ring-white/10 rounded-xl text-white font-bold"
+                    />
+                    <Button 
+                      onClick={handleNotifyLive} 
+                      disabled={isBroadcasting}
+                      className="h-14 px-10 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest gap-3 shadow-xl"
+                    >
+                      {isBroadcasting ? <Loader2 className="animate-spin h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                      LANZAR ALERTA
+                    </Button>
+                 </div>
+              </div>
+           </div>
+        </Card>
+
+        {/* DIALOGS AND LISTING REMAINS THE SAME AS PREVIOUS CODE */}
         <Dialog open={isAddingModule} onOpenChange={setIsAddingModule}>
           <DialogContent className="max-w-lg rounded-2xl p-0 border-none shadow-2xl bg-white overflow-hidden">
             <div className="bg-slate-950 p-8 text-white flex justify-between items-center">
@@ -129,7 +205,6 @@ export default function AdminAcademyPage() {
           </DialogContent>
         </Dialog>
 
-        {/* DIALOG: NUEVA LECCIÓN */}
         <Dialog open={isAddingLesson} onOpenChange={setIsAddingLesson}>
           <DialogContent className="max-w-lg rounded-2xl p-0 border-none shadow-2xl bg-white overflow-hidden">
             <div className="bg-slate-950 p-8 text-white flex justify-between items-center">

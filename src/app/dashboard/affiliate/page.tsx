@@ -285,6 +285,11 @@ export default function AffiliateDashboard() {
                                 <span className="text-[8px] font-bold text-slate-400 uppercase">{new Date(notif.createdAt).toLocaleDateString()}</span>
                              </div>
                              <p className="text-[11px] font-medium text-slate-600 leading-relaxed">{notif.message}</p>
+                             {notif.actionUrl && (
+                               <Button asChild size="sm" className="w-full h-8 mt-2 bg-red-600 hover:bg-red-700 text-white font-black text-[9px] uppercase">
+                                  <a href={notif.actionUrl} target="_blank">IR A LA CLASE LIVE</a>
+                               </Button>
+                             )}
                           </div>
                         ))
                       )}
