@@ -9,12 +9,19 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Radio, Bell } from 'lucide-react'
+import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Radio, Bell, HelpCircle, ListChecks, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
+import { collection, doc, getDocs, setDoc, query, where } from 'firebase/firestore'
 import { cn, getYoutubeThumbnail } from '@/lib/utils'
 import { sendEmail } from '@/lib/email'
+
+interface Question {
+  id?: string;
+  text: string;
+  options: string[];
+  correctIndex: number;
+}
 
 export default function AdminAcademyPage() {
   const { toast } = useToast()
@@ -22,6 +29,7 @@ export default function AdminAcademyPage() {
   
   const [isAddingModule, setIsAddingModule] = useState(false)
   const [isAddingLesson, setIsAddingLesson] = useState(false)
+  const [isEditingQuiz, setIsEditingQuiz] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isBroadcasting, setIsBroadcasting] = useState(false)
   
@@ -35,6 +43,9 @@ export default function AdminAcademyPage() {
   const [lessonData, setLessonData] = useState({ title: '', description: '', videoUrl: '', moduleId: '' })
   const [liveUrl, setLiveUrl] = useState('')
 
+  // Quiz State
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([])
+
   const handleNotifyLive = async () => {
     if (!liveUrl || !db) {
       toast({ variant: "destructive", title: "Link Requerido", description: "Ingresa el enlace de la clase en vivo." });
@@ -46,7 +57,6 @@ export default function AdminAcademyPage() {
       const activeAffiliates = affiliatesSnap.docs.map(doc => doc.data()).filter(a => a.status === 'Active');
       
       const batchPromises = activeAffiliates.map(async (aff) => {
-        // 1. Crear notificación interna
         const notifId = `live_${Date.now()}_${aff.id}`;
         await setDoc(doc(db, 'notifications', notifId), {
           userId: aff.id,
@@ -58,7 +68,6 @@ export default function AdminAcademyPage() {
           actionUrl: liveUrl
         });
 
-        // 2. Enviar email (opcional pero recomendado)
         if (aff.email) {
           sendEmail({
             to: aff.email,
@@ -120,6 +129,60 @@ export default function AdminAcademyPage() {
     }
   }
 
+  const openQuizEditor = async (moduleId: string) => {
+    setIsEditingQuiz(moduleId);
+    setIsProcessing(true);
+    try {
+      const q = query(collection(db, 'academy_questions'), where('moduleId', '==', moduleId));
+      const snap = await getDocs(q);
+      const existing = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Question));
+      setQuizQuestions(existing.length > 0 ? existing : [{ text: '', options: ['', '', ''], correctIndex: 0 }]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error al cargar examen" });
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  const handleAddQuestion = () => {
+    setQuizQuestions([...quizQuestions, { text: '', options: ['', '', ''], correctIndex: 0 }]);
+  }
+
+  const handleUpdateQuestion = (idx: number, field: keyof Question, value: any) => {
+    const updated = [...quizQuestions];
+    (updated[idx] as any)[field] = value;
+    setQuizQuestions(updated);
+  }
+
+  const handleUpdateOption = (qIdx: number, optIdx: number, value: string) => {
+    const updated = [...quizQuestions];
+    updated[qIdx].options[optIdx] = value;
+    setQuizQuestions(updated);
+  }
+
+  const handleSaveQuiz = async () => {
+    if (!isEditingQuiz || !db) return;
+    setIsProcessing(true);
+    try {
+      // Borrar antiguos y guardar nuevos para simplicidad (o actualizar si tienen ID)
+      const batchPromises = quizQuestions.map(q => {
+        const qRef = q.id ? doc(db, 'academy_questions', q.id) : doc(collection(db, 'academy_questions'));
+        return setDoc(qRef, {
+          ...q,
+          moduleId: isEditingQuiz,
+          updatedAt: new Date().toISOString()
+        });
+      });
+      await Promise.all(batchPromises);
+      toast({ title: "Examen Guardado ✓" });
+      setIsEditingQuiz(null);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error al guardar examen" });
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   const handleDeleteModule = (id: string) => {
     if(confirm("¿Eliminar módulo y todas sus lecciones?") && db) {
       deleteDocumentNonBlocking(doc(db, 'academy_modules', id));
@@ -153,7 +216,6 @@ export default function AdminAcademyPage() {
           </div>
         </div>
 
-        {/* BROADCAST LIVE PANEL */}
         <Card className="border-none shadow-2xl rounded-[2.5rem] bg-slate-900 text-white overflow-hidden">
            <div className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
               <div className="h-20 w-20 bg-red-600 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.4)] animate-pulse shrink-0">
@@ -182,7 +244,7 @@ export default function AdminAcademyPage() {
            </div>
         </Card>
 
-        {/* DIALOGS AND LISTING REMAINS THE SAME AS PREVIOUS CODE */}
+        {/* MODAL: CREAR MÓDULO */}
         <Dialog open={isAddingModule} onOpenChange={setIsAddingModule}>
           <DialogContent className="max-w-lg rounded-2xl p-0 border-none shadow-2xl bg-white overflow-hidden">
             <div className="bg-slate-950 p-8 text-white flex justify-between items-center">
@@ -205,6 +267,60 @@ export default function AdminAcademyPage() {
           </DialogContent>
         </Dialog>
 
+        {/* MODAL: EDITAR EXAMEN DEL MÓDULO */}
+        <Dialog open={!!isEditingQuiz} onOpenChange={(v) => !v && setIsEditingQuiz(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 border-none shadow-2xl bg-white">
+            <div className="bg-primary p-8 text-white flex justify-between items-center sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <HelpCircle className="h-6 w-6" />
+                <DialogTitle className="text-xl font-headline font-black uppercase italic">Configurar Examen de Módulo</DialogTitle>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setIsEditingQuiz(null)} className="text-white/40 hover:text-white"><X className="h-5 w-5" /></Button>
+            </div>
+            <div className="p-10 space-y-8">
+              {quizQuestions.map((q, qIdx) => (
+                <div key={qIdx} className="p-6 bg-slate-50 rounded-2xl border space-y-4 relative group">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pregunta {qIdx + 1}</span>
+                    <Button variant="ghost" size="icon" className="text-red-300 hover:text-red-500 h-8 w-8" onClick={() => setQuizQuestions(quizQuestions.filter((_, i) => i !== qIdx))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 ml-1">Enunciado</Label>
+                    <Input value={q.text} onChange={e => handleUpdateQuestion(qIdx, 'text', e.target.value)} className="h-12 bg-white font-bold" placeholder="¿Cuál es la regla de oro?" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 ml-1">Opciones (Marca la correcta)</Label>
+                    {q.options.map((opt, oIdx) => (
+                      <div key={oIdx} className="flex gap-2 items-center">
+                        <RadioGroup value={q.correctIndex.toString()} onValueChange={v => handleUpdateQuestion(qIdx, 'correctIndex', parseInt(v))}>
+                          <div className="flex items-center space-x-2">
+                             <Radio value={oIdx.toString()} className={cn(q.correctIndex === oIdx ? "text-primary" : "")} />
+                          </div>
+                        </RadioGroup>
+                        <Input value={opt} onChange={e => handleUpdateOption(qIdx, oIdx, e.target.value)} className={cn("flex-1 h-10 bg-white text-xs", q.correctIndex === oIdx ? "ring-2 ring-primary/50" : "")} placeholder={`Opción ${oIdx + 1}`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              
+              <Button variant="outline" onClick={handleAddQuestion} className="w-full h-14 border-dashed border-2 rounded-2xl font-black text-[10px] uppercase gap-2">
+                <Plus className="h-4 w-4" /> AÑADIR PREGUNTA
+              </Button>
+
+              <div className="pt-6 border-t">
+                <Button className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-2xl gap-3" onClick={handleSaveQuiz} disabled={isProcessing}>
+                  {isProcessing ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
+                  GUARDAR EXAMEN COMPLETO
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* MODAL: NUEVA LECCIÓN */}
         <Dialog open={isAddingLesson} onOpenChange={setIsAddingLesson}>
           <DialogContent className="max-w-lg rounded-2xl p-0 border-none shadow-2xl bg-white overflow-hidden">
             <div className="bg-slate-950 p-8 text-white flex justify-between items-center">
@@ -265,7 +381,12 @@ export default function AdminAcademyPage() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{moduleLessons.length} LECCIONES CARGADAS</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="text-red-300 hover:text-red-500" onClick={() => handleDeleteModule(mod.id)}><Trash2 className="h-5 w-5" /></Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openQuizEditor(mod.id)} className="h-10 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-primary text-primary hover:bg-primary/5">
+                        <ListChecks className="h-4 w-4" /> GESTIONAR EXAMEN
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-red-300 hover:text-red-500" onClick={() => handleDeleteModule(mod.id)}><Trash2 className="h-5 w-5" /></Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -301,5 +422,13 @@ export default function AdminAcademyPage() {
         )}
       </div>
     </DashboardShell>
+  )
+}
+
+function Radio({ value, className, onClick }: { value: string, className?: string, onClick?: () => void }) {
+  return (
+    <div className={cn("h-4 w-4 rounded-full border-2 border-slate-300 flex items-center justify-center", className)}>
+      <div className="h-2 w-2 rounded-full bg-current opacity-0 data-[state=checked]:opacity-100" />
+    </div>
   )
 }

@@ -24,10 +24,12 @@ import {
   Star,
   Zap,
   FileText,
-  Layers
+  Layers,
+  HelpCircle,
+  ListChecks
 } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase, useUser, setDocumentNonBlocking, useDoc } from '@/firebase'
-import { collection, doc } from 'firebase/firestore'
+import { collection, doc, query, where, getDocs } from 'firebase/firestore'
 import { cn, getGoogleDriveDirectLink } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
@@ -54,8 +56,8 @@ export default function AffiliateAcademyPage() {
   const { data: progress } = useDoc(progressRef);
 
   const [activeIndex, setActiveIndex] = useState(0)
-  const [showExam, setShowExam] = useState(false)
-  const [examPassed, setExamPassed] = useState(false)
+  const [showQuiz, setShowQuiz] = useState<string | null>(null) // moduleId
+  const [currentQuizQuestions, setCurrentQuizQuestions] = useState<any[]>([])
   
   const sortedModules = modules ? [...modules].sort((a, b) => (a.order || 0) - (b.order || 0)) : []
   const allLessons = lessons ? [...lessons].sort((a, b) => {
@@ -67,14 +69,10 @@ export default function AffiliateAcademyPage() {
 
   const currentLesson = allLessons[activeIndex]
   const completedIds = progress?.completedLessonIds || []
-
-  useEffect(() => {
-    if (progress?.examPassed) {
-      setExamPassed(true);
-    }
-  }, [progress]);
+  const passedModuleIds = progress?.passedModuleIds || []
 
   const isCompleted = (id: string) => completedIds.includes(id)
+  const isModulePassed = (moduleId: string) => passedModuleIds.includes(moduleId)
 
   const toggleComplete = async (lessonId: string) => {
     if (!user || !progressRef) return;
@@ -82,7 +80,7 @@ export default function AffiliateAcademyPage() {
     let newIds = [...completedIds];
     if (!newIds.includes(lessonId)) {
       newIds.push(lessonId);
-      toast({ title: "Clase Finalizada", description: "Contenido registrado." });
+      toast({ title: "Clase Finalizada ✓", description: "Sigue adelante con tu formación." });
       setDocumentNonBlocking(progressRef, {
         uid: user.uid,
         completedLessonIds: newIds,
@@ -90,6 +88,27 @@ export default function AffiliateAcademyPage() {
       }, { merge: true });
     }
   };
+
+  const startModuleQuiz = async (moduleId: string) => {
+    try {
+      const q = query(collection(db, 'academy_questions'), where('moduleId', '==', moduleId));
+      const snap = await getDocs(q);
+      const questions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      if (questions.length === 0) {
+        toast({ title: "Sin examen", description: "Este módulo no requiere evaluación teórica." });
+        // Auto-pasar si no hay examen
+        const newPassed = [...passedModuleIds, moduleId];
+        if (progressRef) setDocumentNonBlocking(progressRef, { passedModuleIds: newPassed }, { merge: true });
+        return;
+      }
+
+      setCurrentQuizQuestions(questions);
+      setShowQuiz(moduleId);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error al cargar quiz" });
+    }
+  }
 
   const getEmbedUrl = (url: string) => {
     if (!url) return "";
@@ -99,8 +118,7 @@ export default function AffiliateAcademyPage() {
   };
 
   const lessonPercent = allLessons.length > 0 ? (completedIds.length / allLessons.length) * 100 : 0;
-  const allLessonsDone = lessonPercent === 100 && allLessons.length > 0;
-  const isGraduated = examPassed && allLessonsDone;
+  const isGraduated = passedModuleIds.length === sortedModules.length && sortedModules.length > 0;
 
   if (modulesLoading || lessonsLoading) {
     return (
@@ -136,14 +154,16 @@ export default function AffiliateAcademyPage() {
            </div>
         </div>
 
-        {showExam ? (
+        {showQuiz ? (
           <AcademyExam 
+            questions={currentQuizQuestions}
             onPass={() => {
-              setExamPassed(true);
-              setShowExam(false);
-              if (progressRef) setDocumentNonBlocking(progressRef, { examPassed: true }, { merge: true });
+              const newPassed = [...passedModuleIds, showQuiz];
+              if (progressRef) setDocumentNonBlocking(progressRef, { passedModuleIds: newPassed }, { merge: true });
+              setShowQuiz(null);
+              toast({ title: "¡Módulo Aprobado!", description: "Has certificado este nivel con éxito." });
             }} 
-            onBack={() => setShowExam(false)}
+            onBack={() => setShowQuiz(null)}
           />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -197,11 +217,10 @@ export default function AffiliateAcademyPage() {
                     <Button 
                       onClick={() => {
                         if (activeIndex < allLessons.length - 1) setActiveIndex(activeIndex + 1);
-                        else if (allLessonsDone && !examPassed) setShowExam(true);
                       }} 
                       className="h-16 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase shadow-xl"
                     >
-                      {activeIndex === allLessons.length - 1 && allLessonsDone && !examPassed ? 'INICIAR EXAMEN FINAL' : 'SIGUIENTE CLASE'} <ChevronRight className="ml-2 h-5 w-5" />
+                      SIGUIENTE CLASE <ChevronRight className="ml-2 h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -222,16 +241,20 @@ export default function AffiliateAcademyPage() {
               <Accordion type="multiple" className="space-y-3">
                 {sortedModules.map((mod) => {
                   const moduleLessons = allLessons.filter(l => l.moduleId === mod.id);
+                  const completedInModule = moduleLessons.filter(l => isCompleted(l.id)).length;
+                  const isModuleFinished = moduleLessons.length > 0 && completedInModule === moduleLessons.length;
+                  const passed = isModulePassed(mod.id);
+
                   return (
                     <AccordionItem key={mod.id} value={mod.id} className="border-none bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
                       <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 transition-colors group">
                         <div className="flex items-center gap-4 text-left">
-                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 shadow-inner group-data-[state=open]:bg-primary group-data-[state=open]:text-white">
-                            <span className="font-black text-xs">{mod.order}</span>
+                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner group-data-[state=open]:bg-primary group-data-[state=open]:text-white", passed ? "bg-green-100 text-green-600" : "bg-slate-100")}>
+                            {passed ? <CheckCircle2 className="h-5 w-5" /> : <span className="font-black text-xs">{mod.order}</span>}
                           </div>
                           <div>
                             <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 block">{mod.title}</span>
-                            <span className="text-[8px] font-bold text-slate-400 uppercase">{moduleLessons.length} Clases</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase">{completedInModule}/{moduleLessons.length} Clases</span>
                           </div>
                         </div>
                       </AccordionTrigger>
@@ -258,6 +281,19 @@ export default function AffiliateAcademyPage() {
                               </button>
                             );
                           })}
+
+                          {isModuleFinished && !passed && (
+                            <div className="pt-4 px-2">
+                               <Button onClick={() => startModuleQuiz(mod.id)} className="w-full h-12 bg-primary text-white rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 animate-bounce">
+                                 <HelpCircle className="h-4 w-4" /> HACER EXAMEN DE NIVEL
+                               </Button>
+                            </div>
+                          )}
+                          {passed && (
+                             <div className="pt-2 px-2 flex items-center justify-center gap-2 text-green-600 font-black text-[8px] uppercase">
+                                <ShieldCheck className="h-3 w-3" /> NIVEL CERTIFICADO ✓
+                             </div>
+                          )}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -279,7 +315,7 @@ export default function AffiliateAcademyPage() {
                  <div>
                    <h4 className="text-xs font-black uppercase tracking-tight">Diploma Profesional</h4>
                    <p className="text-[8px] font-bold uppercase tracking-widest mt-1">
-                     {isGraduated ? 'DISPONIBLE PARA DESCARGA' : 'DESBLOQUEAR AL 100%'}
+                     {isGraduated ? 'DISPONIBLE PARA DESCARGA' : 'CERTIFICA TODOS LOS MÓDULOS'}
                    </p>
                  </div>
                  {isGraduated ? (
@@ -304,29 +340,23 @@ export default function AffiliateAcademyPage() {
   )
 }
 
-function AcademyExam({ onPass, onBack }: { onPass: () => void, onBack: () => void }) {
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+function AcademyExam({ questions, onPass, onBack }: { questions: any[], onPass: () => void, onBack: () => void }) {
+  const [answers, setAnswers] = useState<Record<number, number>>({});
   const [checking, setChecking] = useState(false);
   const { toast } = useToast();
 
-  const questions = [
-    { id: 1, q: "¿Cuál es el objetivo principal del Marketing Digital Sync?", options: ["Vender productos sin calidad", "Generar conexiones de valor y cierres efectivos", "Spamear redes sociales"], correct: "Generar conexiones de valor y cierres efectivos" },
-    { id: 2, q: "¿Qué elemento es indispensable para validar una comisión?", options: ["Enviar un mensaje de texto", "El número de referencia del voucher bancario", "Tener muchos seguidores"], correct: "El número de referencia del voucher bancario" },
-    { id: 3, q: "¿Cuál es la función del Sync Lab AI?", options: ["Crear imágenes falsas", "Proporcionar ganchos y scripts de venta persuasivos", "Administrar cuentas de banco"], correct: "Proporcionar ganchos y scripts de venta persuasivos" }
-  ];
-
   const handleSubmit = () => {
     if (Object.keys(answers).length < questions.length) {
-      toast({ variant: "destructive", title: "Examen Incompleto" });
+      toast({ variant: "destructive", title: "Examen Incompleto", description: "Responde todas las preguntas." });
       return;
     }
     setChecking(true);
     setTimeout(() => {
-      const allCorrect = questions.every(q => answers[q.id] === q.correct);
+      const allCorrect = questions.every((q, idx) => answers[idx] === q.correctIndex);
       if (allCorrect) {
         onPass();
       } else {
-        toast({ variant: "destructive", title: "Error en las respuestas", description: "Debes acertar el 100%." });
+        toast({ variant: "destructive", title: "Evaluación fallida", description: "Debes acertar todas las preguntas para certificar el nivel." });
         setChecking(false);
       }
     }, 1500);
@@ -337,19 +367,19 @@ function AcademyExam({ onPass, onBack }: { onPass: () => void, onBack: () => voi
       <div className="bg-slate-900 p-10 text-white">
         <div className="flex items-center gap-3 mb-4">
           <Zap className="h-6 w-6 text-primary" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Examen de Certificación</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Evaluación de Nivel</span>
         </div>
-        <h2 className="text-3xl font-headline font-black uppercase italic">Validación de <span className="text-primary">Especialista</span></h2>
+        <h2 className="text-3xl font-headline font-black uppercase italic">Validación de <span className="text-primary">Conocimientos</span></h2>
       </div>
       <CardContent className="p-10 space-y-10">
         {questions.map((q, idx) => (
-          <div key={q.id} className="space-y-6">
-             <h4 className="text-lg font-black text-slate-900 uppercase leading-tight">{idx + 1}. {q.q}</h4>
-             <RadioGroup onValueChange={(v) => setAnswers({...answers, [q.id]: v})} className="grid gap-4">
-                {q.options.map(opt => (
-                  <div key={opt} className="flex items-center space-x-3 p-5 rounded-2xl border hover:bg-slate-50 transition-all cursor-pointer">
-                    <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
-                    <Label htmlFor={`${q.id}-${opt}`} className="text-sm font-bold cursor-pointer flex-1">{opt}</Label>
+          <div key={idx} className="space-y-6">
+             <h4 className="text-lg font-black text-slate-900 uppercase leading-tight">{idx + 1}. {q.text}</h4>
+             <RadioGroup onValueChange={(v) => setAnswers({...answers, [idx]: parseInt(v)})} className="grid gap-4">
+                {q.options.map((opt: string, optIdx: number) => (
+                  <div key={optIdx} className="flex items-center space-x-3 p-5 rounded-2xl border hover:bg-slate-50 transition-all cursor-pointer">
+                    <RadioGroupItem value={optIdx.toString()} id={`${idx}-${optIdx}`} />
+                    <Label htmlFor={`${idx}-${optIdx}`} className="text-sm font-bold cursor-pointer flex-1">{opt}</Label>
                   </div>
                 ))}
              </RadioGroup>
@@ -374,12 +404,7 @@ function CertificateView({ profile }: { profile: any }) {
     <div className="bg-slate-950 border-[2px] border-primary p-12 md:p-24 text-center space-y-12 md:space-y-16 relative overflow-hidden aspect-[1.414/1] flex flex-col justify-center select-none shadow-[0_0_100px_rgba(255,153,0,0.15)] print:m-0 print:border-none">
        <div className="absolute top-0 left-0 w-64 h-64 border-l-[30px] border-t-[30px] border-primary/20 opacity-50" />
        <div className="absolute bottom-0 right-0 w-64 h-64 border-r-[30px] border-b-[30px] border-primary/20 opacity-50" />
-       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none" />
        
-       <div className="absolute -top-20 -right-20 opacity-10 rotate-12">
-          <Award className="h-96 w-96 text-primary" />
-       </div>
-
        <div className="space-y-6 md:space-y-10 relative z-10">
           <div className="flex justify-center items-center gap-8 mb-10">
              <div className="h-px bg-primary/30 flex-1" />
@@ -410,12 +435,9 @@ function CertificateView({ profile }: { profile: any }) {
                       <AvatarImage src={photoUrl} className="object-cover" />
                       <AvatarFallback className="bg-slate-800 text-white font-black text-2xl">{profile?.firstName?.charAt(0)}</AvatarFallback>
                    </Avatar>
-                   <div className="absolute -bottom-2 -right-2 bg-primary text-slate-950 p-2 rounded-full z-30 shadow-lg ring-4 ring-slate-950">
-                      <ShieldCheck className="h-5 w-5" />
-                   </div>
                 </div>
                 <div className="border-b-[4px] border-primary pb-4">
-                  <h2 className="text-4xl md:text-7xl font-headline font-black text-white uppercase italic tracking-tight shadow-primary/20 drop-shadow-2xl">
+                  <h2 className="text-4xl md:text-7xl font-headline font-black text-white uppercase italic tracking-tight">
                     {profile?.firstName} {profile?.lastName}
                   </h2>
                 </div>
@@ -423,10 +445,10 @@ function CertificateView({ profile }: { profile: any }) {
           </div>
 
           <p className="text-xl md:text-2xl font-medium text-slate-400 max-w-4xl mx-auto leading-relaxed mt-10">
-            Habiendo completado satisfactoriamente el ciclo de formación técnica y la evaluación final de aptitudes comerciales.
+            Habiendo completado satisfactoriamente el ciclo de formación técnica y la evaluación de aptitudes comerciales por módulos.
           </p>
           
-          <div className="inline-block relative group">
+          <div className="inline-block relative">
              <div className="py-6 px-16 bg-primary text-slate-950 inline-block rounded-2xl shadow-[0_15px_40px_rgba(255,153,0,0.4)] relative z-10">
                 <h3 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter flex items-center gap-4">
                   <Zap className="h-8 w-8 fill-current" /> MÁSTER EN VENTAS DIGITALES SYNC
@@ -436,15 +458,13 @@ function CertificateView({ profile }: { profile: any }) {
        </div>
 
        <div className="grid grid-cols-2 gap-32 pt-16 relative z-10 max-w-5xl mx-auto w-full">
-          <div className="space-y-5">
+          <div className="space-y-5 text-left">
              <div className="h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent w-full" />
              <p className="text-xs font-black uppercase text-white tracking-[0.4em]">DIRECCIÓN SYNC</p>
-             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">FIRMA AUTORIZADA</p>
           </div>
-          <div className="space-y-5">
+          <div className="space-y-5 text-right">
              <div className="h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent w-full" />
              <p className="text-xs font-black uppercase text-white tracking-[0.4em]">{date}</p>
-             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">FECHA DE EMISIÓN</p>
           </div>
        </div>
     </div>
