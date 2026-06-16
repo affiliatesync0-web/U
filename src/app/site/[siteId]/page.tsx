@@ -20,7 +20,7 @@ export default function PublicSitePage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
           <div className="h-16 w-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 animate-pulse">Generando Experiencia...</p>
+          <p className="text-[10px] font-black uppercase tracking-0.4em text-slate-400 animate-pulse">Generando Experiencia...</p>
         </div>
       </div>
     );
@@ -51,7 +51,7 @@ export default function PublicSitePage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.03),transparent_70%)] pointer-events-none" />
         
         <div className="max-w-5xl mx-auto text-center space-y-12 relative z-10">
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-slate-50 border border-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-[0.3em] shadow-sm">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-slate-50 border border-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-0.3em shadow-sm">
             <Star className="h-3.5 w-3.5 fill-primary text-primary" /> Oportunidad Exclusiva Seleccionada
           </div>
           <h1 className="text-5xl md:text-8xl font-headline font-black tracking-tighter leading-[1.1] md:leading-[1] text-slate-950 uppercase italic">
@@ -128,7 +128,7 @@ export default function PublicSitePage() {
                 <Link href={checkoutUrl}>EMPEZAR AHORA MISMO</Link>
               </Button>
             </div>
-            <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Únete a la Red de Élite Sync Connect</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-0.4em">Únete a la Red de Élite Sync Connect</p>
           </div>
         </div>
       </section>
@@ -136,9 +136,9 @@ export default function PublicSitePage() {
       <footer className="py-16 px-6 border-t bg-slate-50/30 text-center space-y-6">
         <div className="flex items-center justify-center gap-3">
            <div className="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg">S</div>
-           <p className="text-[11px] font-black uppercase text-slate-900 tracking-[0.5em]">Sync Connect Nicaragua</p>
+           <p className="text-[11px] font-black uppercase text-slate-900 tracking-0.5em">Sync Connect Nicaragua</p>
         </div>
-        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em]">© 2024 Global Education & Management Systems • All Rights Reserved</p>
+        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-0.2em">© 2024 Global Education & Management Systems • All Rights Reserved</p>
         <div className="flex items-center justify-center gap-4 text-[9px] font-black text-slate-300 uppercase">
           <ShieldCheck className="h-4 w-4 text-green-600/50" /> Transacción Blindada con Cifrado Militar
         </div>

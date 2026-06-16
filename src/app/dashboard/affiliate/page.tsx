@@ -158,6 +158,12 @@ export default function AffiliateDashboard() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadProfileImage(file);
+  };
+
   const uploadProfileImage = async (imageSource: string | File) => {
     if (!user || !affiliateRef) return;
     setUploading(true);
@@ -184,7 +190,8 @@ export default function AffiliateDashboard() {
       setIsEditingPhoto(false);
       setNewPhotoUrl('');
     } catch (error) {
-      toast({ variant: "destructive", title: "Error al subir" });
+      console.error("Upload error:", error);
+      toast({ variant: "destructive", title: "Error al subir", description: "Hubo un problema con la red." });
     } finally {
       setUploading(false);
     }
@@ -225,7 +232,7 @@ export default function AffiliateDashboard() {
           <Card className="premium-card bg-slate-900 text-white min-w-[240px] group overflow-hidden border-none shadow-2xl">
              <div className="p-8 relative">
                 <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700"><Wallet className="h-20 w-20" /></div>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2">Saldo Disponible</p>
+                <p className="text-[10px] font-black uppercase tracking-0.3em text-slate-500 mb-2">Saldo Disponible</p>
                 <h2 className="text-4xl font-black tracking-tighter italic text-white">${profile?.currentBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
              </div>
           </Card>
@@ -246,7 +253,7 @@ export default function AffiliateDashboard() {
                   <ArrowUpRight className="h-5 w-5 text-slate-200 group-hover:text-primary transition-colors" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.title}</p>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-0.2em">{stat.title}</p>
                   <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">{stat.value}</h3>
                 </div>
               </CardContent>

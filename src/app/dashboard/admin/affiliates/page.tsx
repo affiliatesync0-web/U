@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -53,7 +52,7 @@ export default function AdminAffiliatesPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const affiliatesQuery = useMemoFirebase(() => collection(db, 'affiliates'), [db]);
@@ -188,7 +187,7 @@ export default function AdminAffiliatesPage() {
   const handleDeleteAffiliate = async (uid: string) => {
     if(!confirm("¿ELIMINAR SOCIO DEFINITIVAMENTE? Esta acción borrará su acceso y su perfil.")) return;
     
-    setIsDeleting(true);
+    setIsDeleting(uid);
     try {
       const res = await adminDeleteUser(uid);
       if(res.success) {
@@ -197,12 +196,12 @@ export default function AdminAffiliatesPage() {
           toast({ title: "Socio Eliminado ✓", description: "El acceso y el registro han sido removidos." });
         }
       } else {
-        toast({ variant: "destructive", title: "Error de Privilegios", description: res.error || "No se pudo eliminar el acceso." });
+        toast({ variant: "destructive", title: "Error", description: res.error || "No se pudo eliminar el acceso." });
       }
     } catch (e) {
       toast({ variant: "destructive", title: "Error Crítico", description: "Fallo en conexión administrativa." });
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(null);
     }
   };
 
@@ -329,9 +328,9 @@ export default function AdminAffiliatesPage() {
                             size="icon" 
                             className="h-8 w-8 rounded-lg text-red-300 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleDeleteAffiliate(aff.id)}
-                            disabled={isDeleting}
+                            disabled={isDeleting === aff.id}
                           >
-                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            {isDeleting === aff.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                           </Button>
                         </div>
                       </TableCell>
@@ -373,7 +372,7 @@ function AffiliateDetailsDialog({ affiliate }: { affiliate: any }) {
         <div className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-6">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-0.2em flex items-center gap-2">
                  <FileCheck className="h-4 w-4" /> Verificación Biométrica (KYC)
                </h3>
                <div className="grid grid-cols-2 gap-4">
@@ -398,7 +397,7 @@ function AffiliateDetailsDialog({ affiliate }: { affiliate: any }) {
 
             <div className="space-y-8">
                <div className="space-y-6">
-                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-0.2em flex items-center gap-2">
                    <CreditCard className="h-4 w-4" /> Datos de Liquidación
                  </h3>
                  <div className="p-6 bg-slate-50 rounded-2xl space-y-4 border border-slate-100">
