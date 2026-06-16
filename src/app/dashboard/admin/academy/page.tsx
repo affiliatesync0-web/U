@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Radio, Bell, HelpCircle, ListChecks, CheckCircle2 } from 'lucide-react'
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Bell, HelpCircle, ListChecks, CheckCircle2, Radio } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
 import { collection, doc, getDocs, setDoc, query, where } from 'firebase/firestore'
@@ -164,7 +165,6 @@ export default function AdminAcademyPage() {
     if (!isEditingQuiz || !db) return;
     setIsProcessing(true);
     try {
-      // Borrar antiguos y guardar nuevos para simplicidad (o actualizar si tienen ID)
       const batchPromises = quizQuestions.map(q => {
         const qRef = q.id ? doc(db, 'academy_questions', q.id) : doc(collection(db, 'academy_questions'));
         return setDoc(qRef, {
@@ -292,16 +292,14 @@ export default function AdminAcademyPage() {
                   </div>
                   <div className="grid grid-cols-1 gap-3">
                     <Label className="text-[10px] font-black uppercase text-slate-500 ml-1">Opciones (Marca la correcta)</Label>
-                    {q.options.map((opt, oIdx) => (
-                      <div key={oIdx} className="flex gap-2 items-center">
-                        <RadioGroup value={q.correctIndex.toString()} onValueChange={v => handleUpdateQuestion(qIdx, 'correctIndex', parseInt(v))}>
-                          <div className="flex items-center space-x-2">
-                             <Radio value={oIdx.toString()} className={cn(q.correctIndex === oIdx ? "text-primary" : "")} />
-                          </div>
-                        </RadioGroup>
-                        <Input value={opt} onChange={e => handleUpdateOption(qIdx, oIdx, e.target.value)} className={cn("flex-1 h-10 bg-white text-xs", q.correctIndex === oIdx ? "ring-2 ring-primary/50" : "")} placeholder={`Opción ${oIdx + 1}`} />
-                      </div>
-                    ))}
+                    <RadioGroup value={q.correctIndex.toString()} onValueChange={v => handleUpdateQuestion(qIdx, 'correctIndex', parseInt(v))}>
+                      {q.options.map((opt, oIdx) => (
+                        <div key={oIdx} className="flex gap-2 items-center space-x-2">
+                          <RadioGroupItem value={oIdx.toString()} id={`q${qIdx}-o${oIdx}`} />
+                          <Input value={opt} onChange={e => handleUpdateOption(qIdx, oIdx, e.target.value)} className={cn("flex-1 h-10 bg-white text-xs", q.correctIndex === oIdx ? "ring-2 ring-primary/50" : "")} placeholder={`Opción ${oIdx + 1}`} />
+                        </div>
+                      ))}
+                    </RadioGroup>
                   </div>
                 </div>
               ))}
@@ -422,13 +420,5 @@ export default function AdminAcademyPage() {
         )}
       </div>
     </DashboardShell>
-  )
-}
-
-function Radio({ value, className, onClick }: { value: string, className?: string, onClick?: () => void }) {
-  return (
-    <div className={cn("h-4 w-4 rounded-full border-2 border-slate-300 flex items-center justify-center", className)}>
-      <div className="h-2 w-2 rounded-full bg-current opacity-0 data-[state=checked]:opacity-100" />
-    </div>
   )
 }
