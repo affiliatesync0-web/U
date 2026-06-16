@@ -92,19 +92,25 @@ export default function AdminProductsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validación básica de seguridad
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "Archivo muy pesado", description: "Máximo 10MB permitido." });
+      return;
+    }
+
     setUploadingImage(true);
     try {
       const { storage } = initializeFirebase();
       const storageRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
       
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const result = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(result.ref);
       
       setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
       toast({ title: "Imagen Cargada ✓" });
     } catch (err) {
       console.error("Upload error:", err);
-      toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo cargar la imagen." });
+      toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo conectar con el servidor de almacenamiento." });
     } finally {
       setUploadingImage(false);
     }
@@ -276,9 +282,9 @@ export default function AdminProductsPage() {
                     <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto</Label>
                     <div className="relative h-48 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
                       {uploadingImage ? (
-                        <div className="flex flex-col items-center gap-4 p-8 w-full">
-                           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-                           <p className="text-[10px] font-black uppercase text-slate-400">Subiendo...</p>
+                        <div className="flex flex-col items-center gap-4 p-8 w-full bg-white/80 backdrop-blur-sm z-20">
+                           <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                           <p className="text-[11px] font-black uppercase text-slate-500 tracking-widest animate-pulse">Subiendo Archivo...</p>
                         </div>
                       ) : formData.imageUrl ? (
                         <div className="relative w-full h-full">
