@@ -17,7 +17,8 @@ import {
   Bell,
   CheckCircle2,
   Upload,
-  RefreshCcw
+  RefreshCcw,
+  X
 } from 'lucide-react'
 import { useLanguage } from '@/components/language-context'
 import {
@@ -139,7 +140,11 @@ export default function AffiliateDashboard() {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      if (video.videoWidth === 0) return;
+      
+      if (video.videoWidth === 0) {
+        toast({ variant: "destructive", title: "Cámara no lista", description: "Espera un momento a que la cámara inicie." });
+        return;
+      }
 
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -149,22 +154,10 @@ export default function AffiliateDashboard() {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         setNewPhotoUrl(dataUrl);
         stopCamera();
-        toast({ title: "Foto capturada ✓" });
+        toast({ title: "Captura realizada ✓" });
       }
     }
   };
-
-  const base64ToBlob = (base64: string) => {
-    const parts = base64.split(';base64,');
-    const contentType = parts[0].split(':')[1];
-    const raw = window.atob(parts[1]);
-    const rawLength = raw.length;
-    const uInt8Array = new Uint8Array(rawLength);
-    for (let i = 0; i < rawLength; ++i) {
-      uInt8Array[i] = raw.charCodeAt(i);
-    }
-    return new Blob([uInt8Array], { type: contentType });
-  }
 
   const uploadProfileImage = async (imageSource: string | File) => {
     if (!user || !affiliateRef) return;
@@ -175,7 +168,8 @@ export default function AffiliateDashboard() {
       
       let blob: Blob;
       if (typeof imageSource === 'string' && imageSource.startsWith('data:')) {
-        blob = base64ToBlob(imageSource);
+        const response = await fetch(imageSource);
+        blob = await response.blob();
       } else if (imageSource instanceof File) {
         blob = imageSource;
       } else {
@@ -192,7 +186,7 @@ export default function AffiliateDashboard() {
       setNewPhotoUrl('');
     } catch (error) {
       console.error("Upload error:", error);
-      toast({ variant: "destructive", title: "Error al subir", description: "No se pudo procesar la imagen." });
+      toast({ variant: "destructive", title: "Error al subir", description: "Fallo de conexión con el servidor." });
     } finally {
       setUploading(false);
     }
@@ -407,12 +401,13 @@ export default function AffiliateDashboard() {
       </div>
 
       <Dialog open={isEditingPhoto} onOpenChange={(v) => { setIsEditingPhoto(v); if(!v) stopCamera(); }}>
-        <DialogContent className="rounded-[3.5rem] p-10 border-none shadow-2xl bg-white max-w-md w-[95vw]">
+        <DialogContent className="rounded-[3.5rem] p-10 border-none shadow-2xl bg-white max-w-md w-[95vw] overflow-hidden">
           <div className="space-y-8">
-            <div className="text-center space-y-2">
+            <div className="text-center relative">
+               <Button variant="ghost" size="icon" onClick={() => setIsEditingPhoto(false)} className="absolute -top-4 -right-4 text-slate-300 hover:text-slate-900"><X className="h-6 w-6" /></Button>
                <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4"><Camera className="h-7 w-7" /></div>
-               <DialogHeader><DialogTitle className="text-2xl font-headline font-black text-slate-900 text-center uppercase italic">Actualizar <span className="text-primary">Identidad</span></DialogTitle></DialogHeader>
-               <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest">Socio Embajador Platinum</p>
+               <DialogHeader><DialogTitle className="text-2xl font-headline font-black text-slate-900 text-center uppercase italic leading-none">Identidad <span className="text-primary">Sync</span></DialogTitle></DialogHeader>
+               <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest mt-1">Socio Embajador Platinum</p>
             </div>
             
             <div className="space-y-6">
@@ -420,20 +415,20 @@ export default function AffiliateDashboard() {
                  <div className="space-y-4 animate-in zoom-in-95 duration-300">
                     <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-slate-950 border-4 border-slate-100 shadow-inner">
                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                       <div className="absolute top-4 right-4"><Badge className="bg-red-600 animate-pulse border-none">LIVE</Badge></div>
+                       <div className="absolute top-4 right-4"><Badge className="bg-red-600 animate-pulse border-none text-[8px]">LIVE FEED</Badge></div>
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
                     <div className="grid grid-cols-2 gap-4">
-                       <Button variant="outline" onClick={stopCamera} className="h-14 rounded-2xl font-black text-[10px] uppercase">CANCELAR</Button>
+                       <Button variant="outline" onClick={stopCamera} className="h-14 rounded-2xl font-black text-[10px] uppercase border-slate-200">CANCELAR</Button>
                        <Button onClick={capturePhoto} className="h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase shadow-xl">TOMAR FOTO</Button>
                     </div>
                  </div>
                ) : (
                  <>
                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Enlace de Imagen (Opcional)</Label>
+                      <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Vincular URL externa</Label>
                       <Input 
-                       placeholder="Pega la URL aquí..." 
+                       placeholder="Pega la URL de tu imagen aquí..." 
                        value={newPhotoUrl} 
                        onChange={(e) => setNewPhotoUrl(e.target.value)} 
                        className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 font-bold text-xs" 
@@ -444,7 +439,7 @@ export default function AffiliateDashboard() {
                       <Button 
                         onClick={startCamera} 
                         variant="outline" 
-                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all border-slate-200"
                         disabled={uploading}
                       >
                         <Camera className="h-6 w-6 text-slate-400" />
@@ -454,11 +449,11 @@ export default function AffiliateDashboard() {
                       <Button 
                         onClick={() => fileInputRef.current?.click()} 
                         variant="outline" 
-                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all border-slate-200"
                         disabled={uploading}
                       >
-                        {uploading ? <Loader2 className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6 text-slate-400" />}
-                        <span className="text-[9px] font-black uppercase">{uploading ? "SUBIENDO..." : "SUBIR ARCHIVO"}</span>
+                        {uploading ? <Loader2 className="animate-spin h-6 w-6 text-primary" /> : <Upload className="h-6 w-6 text-slate-400" />}
+                        <span className="text-[9px] font-black uppercase">{uploading ? "PROCESANDO..." : "SUBIR ARCHIVO"}</span>
                       </Button>
                    </div>
                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
@@ -480,11 +475,13 @@ export default function AffiliateDashboard() {
                     }
                   }} 
                   className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all"
-                  disabled={uploading}
+                  disabled={uploading || (!newPhotoUrl)}
                 >
-                  {uploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "GUARDAR CAMBIOS"}
+                  {uploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "CONFIRMAR IDENTIDAD"}
                 </Button>
-                <button onClick={() => setIsEditingPhoto(false)} className="text-[9px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-500 transition-colors">CERRAR VENTANA</button>
+                <p className="text-[8px] text-center text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                  Tu imagen será visible en toda la infraestructura Sync Connect.
+                </p>
               </div>
             )}
           </div>

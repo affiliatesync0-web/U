@@ -1,10 +1,16 @@
-
 "use client"
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function RemovedSiteBuilderPage() {
   const router = useRouter()
-  useEffect(() => { router.replace('/dashboard/affiliate') }, [router])
-  return null
+  useEffect(() => {
+    router.replace('/dashboard/affiliate/marketing-links')
+  }, [router])
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 }

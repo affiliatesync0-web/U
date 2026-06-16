@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase'
 import { doc } from 'firebase/firestore'
-import { Loader2, ShoppingCart, CheckCircle2, Star, ShieldCheck, ArrowRight, Layout } from 'lucide-react'
+import { Loader2, ShoppingCart, CheckCircle2, Star, ShieldCheck, ArrowRight, LayoutTemplate } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
@@ -63,7 +63,7 @@ export default function PublicSitePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <Button asChild size="lg" className="w-full sm:w-auto h-24 px-16 bg-slate-900 hover:bg-slate-800 text-white font-black text-xl rounded-full shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all hover:scale-105 active:scale-95 group border-b-8 border-primary">
               <Link href={checkoutUrl}>
-                {hero.ctaText?.toUpperCase()} <ArrowRight className="ml-3 h-7 w-7 transition-transform group-hover:translate-x-3 text-primary" />
+                {hero.ctaText?.toUpperCase() || 'ADQUIRIR AHORA'} <ArrowRight className="ml-3 h-7 w-7 transition-transform group-hover:translate-x-3 text-primary" />
               </Link>
             </Button>
           </div>
@@ -76,18 +76,6 @@ export default function PublicSitePage() {
           </div>
         </div>
       </section>
-
-      {/* PRODUCT IMAGE PREVIEW */}
-      {site.productImageUrl && (
-        <section className="pb-32 px-6">
-          <div className="max-w-6xl mx-auto relative group">
-            <div className="absolute inset-0 bg-primary/10 blur-[150px] rounded-full opacity-30 group-hover:opacity-40 transition-opacity" />
-            <div className="relative aspect-video rounded-[4rem] overflow-hidden border-[15px] border-slate-50 shadow-2xl bg-slate-100">
-              <img src={site.productImageUrl} alt="Product Preview" className="w-full h-full object-cover" />
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* CONTENT SECTIONS */}
       <section className="py-40 bg-slate-50/50">
@@ -107,7 +95,7 @@ export default function PublicSitePage() {
                 </div>
               </div>
               <div className="flex-1 w-full aspect-square md:aspect-auto md:h-[500px] bg-white rounded-[4rem] shadow-2xl border-[12px] border-white ring-1 ring-slate-100 p-12 flex flex-col justify-center gap-8 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-10 opacity-5"><Layout className="h-48 w-48 text-slate-950" /></div>
+                 <div className="absolute top-0 right-0 p-10 opacity-5"><LayoutTemplate className="h-48 w-48 text-slate-950" /></div>
                  <div className="space-y-4 relative z-10">
                    <div className="h-3 w-40 bg-primary/20 rounded-full" />
                    <div className="h-3 w-full bg-slate-100 rounded-full" />
