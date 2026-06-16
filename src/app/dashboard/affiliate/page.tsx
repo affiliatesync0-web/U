@@ -175,11 +175,8 @@ export default function AffiliateDashboard() {
       if (typeof imageSource === 'string' && imageSource.startsWith('data:')) {
         const response = await fetch(imageSource);
         blob = await response.blob();
-      } else if (imageSource instanceof File) {
-        blob = imageSource;
       } else {
-        const response = await fetch(imageSource as string);
-        blob = await response.blob();
+        blob = imageSource as File;
       }
 
       await uploadBytes(storageRef, blob);
@@ -194,6 +191,7 @@ export default function AffiliateDashboard() {
       toast({ variant: "destructive", title: "Error al subir", description: "Hubo un problema con la red." });
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 

@@ -92,7 +92,6 @@ export default function AdminProductsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validación básica de seguridad
     if (file.size > 10 * 1024 * 1024) {
       toast({ variant: "destructive", title: "Archivo muy pesado", description: "Máximo 10MB permitido." });
       return;
@@ -113,6 +112,7 @@ export default function AdminProductsPage() {
       toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo conectar con el servidor de almacenamiento." });
     } finally {
       setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
