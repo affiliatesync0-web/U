@@ -57,7 +57,6 @@ export default function AffiliateDashboard() {
   const [copiedAffiliate, setCopiedAffiliate] = useState(false);
   const [inviteAffiliateLink, setInviteAffiliateLink] = useState('');
   
-  // Camera State
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -142,7 +141,7 @@ export default function AffiliateDashboard() {
       const canvas = canvasRef.current;
       
       if (video.videoWidth === 0) {
-        toast({ variant: "destructive", title: "Cámara no lista", description: "Espera un momento a que la cámara inicie." });
+        toast({ variant: "destructive", title: "Cámara no lista" });
         return;
       }
 
@@ -185,17 +184,10 @@ export default function AffiliateDashboard() {
       setIsEditingPhoto(false);
       setNewPhotoUrl('');
     } catch (error) {
-      console.error("Upload error:", error);
-      toast({ variant: "destructive", title: "Error al subir", description: "Fallo de conexión con el servidor." });
+      toast({ variant: "destructive", title: "Error al subir" });
     } finally {
       setUploading(false);
     }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await uploadProfileImage(file);
   };
 
   return (
@@ -226,11 +218,6 @@ export default function AffiliateDashboard() {
                 )}>
                    ESTADO: {profile?.status === 'Active' ? 'SOCIO VERIFICADO ✓' : profile?.status === 'Blocked' ? 'ACCESO RESTRINGIDO 🔒' : 'CUENTA EN AUDITORÍA'}
                 </Badge>
-                {profile?.status === 'Active' && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-green-100">
-                     <CheckCircle2 className="h-3 w-3" /> Membresía Platinum Activa
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -239,12 +226,7 @@ export default function AffiliateDashboard() {
              <div className="p-8 relative">
                 <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700"><Wallet className="h-20 w-20" /></div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2">Saldo Disponible</p>
-                <div className="flex items-center gap-3">
-                   <h2 className="text-4xl font-black tracking-tighter italic text-white">${profile?.currentBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-                   <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                      <TrendingUp className="h-3.5 w-3.5" />
-                   </div>
-                </div>
+                <h2 className="text-4xl font-black tracking-tighter italic text-white">${profile?.currentBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
              </div>
           </Card>
         </div>
@@ -266,9 +248,6 @@ export default function AffiliateDashboard() {
                 <div className="space-y-1">
                   <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.title}</p>
                   <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">{stat.value}</h3>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pt-2 flex items-center gap-2">
-                     <span className="h-1 w-1 rounded-full bg-slate-200" /> {stat.sub}
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -298,9 +277,7 @@ export default function AffiliateDashboard() {
                                 <span className="text-[10px] font-black text-primary uppercase">{notif.title}</span>
                                 <span className="text-[8px] font-bold text-slate-400 uppercase">{new Date(notif.createdAt).toLocaleDateString()}</span>
                              </div>
-                             <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
-                                {notif.message}
-                             </p>
+                             <p className="text-[11px] font-medium text-slate-600 leading-relaxed">{notif.message}</p>
                           </div>
                         ))
                       )}
@@ -311,23 +288,10 @@ export default function AffiliateDashboard() {
               <Card className="premium-card bg-slate-950 text-white p-10 relative overflow-hidden group border-none shadow-2xl">
                  <div className="absolute top-0 right-0 p-8 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000"><LinkIcon className="h-32 w-32 text-primary" /></div>
                  <div className="relative z-10 space-y-8">
-                    <div className="flex items-center gap-4">
-                       <div className="h-14 w-14 bg-primary/20 rounded-[1.25rem] flex items-center justify-center text-primary shadow-2xl">
-                          <Zap className="h-7 w-7" />
-                       </div>
-                       <div>
-                          <h3 className="text-xl font-headline font-black uppercase italic">Invitar Socios</h3>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Gana $1.00 por cada registro</p>
-                       </div>
-                    </div>
+                    <h3 className="text-xl font-headline font-black uppercase italic">Invitar Socios</h3>
                     <div className="space-y-4">
-                      <div className="p-4 bg-white/5 rounded-xl border border-white/10 font-mono text-[9px] text-slate-300 break-all leading-relaxed">
-                        {inviteAffiliateLink}
-                      </div>
-                      <Button 
-                        onClick={() => handleCopy(inviteAffiliateLink, setCopiedAffiliate)} 
-                        className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl gap-3"
-                      >
+                      <div className="p-4 bg-white/5 rounded-xl border border-white/10 font-mono text-[9px] text-slate-300 break-all">{inviteAffiliateLink}</div>
+                      <Button onClick={() => handleCopy(inviteAffiliateLink, setCopiedAffiliate)} className="w-full h-14 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-2xl gap-3">
                         {copiedAffiliate ? <BadgeCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                         {copiedAffiliate ? "COPIADO" : "LINK DE RECLUTAMIENTO"}
                       </Button>
@@ -339,10 +303,7 @@ export default function AffiliateDashboard() {
            <div className="lg:col-span-8 space-y-8">
               <Card className="premium-card overflow-hidden border-none shadow-2xl">
                 <CardHeader className="px-10 py-10 border-b border-slate-50 flex flex-row items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-2xl font-headline font-black text-slate-900 uppercase">Actividad Comercial</CardTitle>
-                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Tus transacciones más recientes</p>
-                  </div>
+                  <CardTitle className="text-2xl font-headline font-black text-slate-900 uppercase">Actividad Comercial</CardTitle>
                   <Button variant="ghost" size="sm" className="h-10 rounded-xl font-black text-[9px] uppercase tracking-widest hover:text-primary" onClick={() => router.push('/dashboard/affiliate/register-sale')}>VER HISTORIAL</Button>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -365,22 +326,14 @@ export default function AffiliateDashboard() {
                         </TableHeader>
                         <TableBody>
                           {sales.slice(0, 10).map((sale) => (
-                            <TableRow key={sale.id} className="h-24 hover:bg-slate-50/30 transition-all border-b last:border-0 group">
+                            <TableRow key={sale.id} className="h-24 hover:bg-slate-50/30 transition-all border-b last:border-0">
                               <TableCell className="px-10">
-                                <div className="flex items-center gap-4">
-                                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shadow-inner group-hover:rotate-3 transition-transform">
-                                    {sale.productName?.charAt(0)}
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="font-black text-slate-800 uppercase text-xs tracking-tight">{sale.productName}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID Ref: {sale.voucherReference}</span>
-                                  </div>
-                                </div>
+                                <span className="font-black text-slate-800 uppercase text-xs">{sale.productName}</span>
                               </TableCell>
                               <TableCell>
                                 <Badge className={cn(
-                                  "text-[9px] font-black px-4 py-1.5 rounded-full uppercase border-none shadow-sm",
-                                  sale.status === 'Completed' ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700 animate-pulse"
+                                  "text-[9px] font-black px-4 py-1.5 rounded-full uppercase border-none",
+                                  sale.status === 'Completed' ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                                 )}>
                                   {sale.status === 'Completed' ? 'Validada ✓' : 'Pendiente'}
                                 </Badge>
@@ -404,85 +357,41 @@ export default function AffiliateDashboard() {
         <DialogContent className="rounded-[3.5rem] p-10 border-none shadow-2xl bg-white max-w-md w-[95vw] overflow-hidden">
           <div className="space-y-8">
             <div className="text-center relative">
-               <Button variant="ghost" size="icon" onClick={() => setIsEditingPhoto(false)} className="absolute -top-4 -right-4 text-slate-300 hover:text-slate-900"><X className="h-6 w-6" /></Button>
-               <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4"><Camera className="h-7 w-7" /></div>
-               <DialogHeader><DialogTitle className="text-2xl font-headline font-black text-slate-900 text-center uppercase italic leading-none">Identidad <span className="text-primary">Sync</span></DialogTitle></DialogHeader>
-               <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest mt-1">Socio Embajador Platinum</p>
+               <Button variant="ghost" size="icon" onClick={() => setIsEditingPhoto(false)} className="absolute -top-4 -right-4"><X className="h-6 w-6" /></Button>
+               <h2 className="text-2xl font-headline font-black uppercase italic leading-none">Identidad <span className="text-primary">Sync</span></h2>
             </div>
             
             <div className="space-y-6">
                {showCamera ? (
-                 <div className="space-y-4 animate-in zoom-in-95 duration-300">
+                 <div className="space-y-4">
                     <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-slate-950 border-4 border-slate-100 shadow-inner">
                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                       <div className="absolute top-4 right-4"><Badge className="bg-red-600 animate-pulse border-none text-[8px]">LIVE FEED</Badge></div>
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
                     <div className="grid grid-cols-2 gap-4">
-                       <Button variant="outline" onClick={stopCamera} className="h-14 rounded-2xl font-black text-[10px] uppercase border-slate-200">CANCELAR</Button>
-                       <Button onClick={capturePhoto} className="h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase shadow-xl">TOMAR FOTO</Button>
+                       <Button variant="outline" onClick={stopCamera} className="h-14 rounded-2xl font-black">CANCELAR</Button>
+                       <Button onClick={capturePhoto} className="h-14 rounded-2xl bg-primary text-white font-black">TOMAR FOTO</Button>
                     </div>
                  </div>
                ) : (
-                 <>
-                   <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Vincular URL externa</Label>
-                      <Input 
-                       placeholder="Pega la URL de tu imagen aquí..." 
-                       value={newPhotoUrl} 
-                       onChange={(e) => setNewPhotoUrl(e.target.value)} 
-                       className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 px-6 font-bold text-xs" 
-                      />
-                   </div>
-                   
-                   <div className="grid grid-cols-2 gap-4">
-                      <Button 
-                        onClick={startCamera} 
-                        variant="outline" 
-                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all border-slate-200"
-                        disabled={uploading}
-                      >
-                        <Camera className="h-6 w-6 text-slate-400" />
-                        <span className="text-[9px] font-black uppercase">USAR CÁMARA</span>
-                      </Button>
-
-                      <Button 
-                        onClick={() => fileInputRef.current?.click()} 
-                        variant="outline" 
-                        className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-all border-slate-200"
-                        disabled={uploading}
-                      >
-                        {uploading ? <Loader2 className="animate-spin h-6 w-6 text-primary" /> : <Upload className="h-6 w-6 text-slate-400" />}
-                        <span className="text-[9px] font-black uppercase">{uploading ? "PROCESANDO..." : "SUBIR ARCHIVO"}</span>
-                      </Button>
-                   </div>
-                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-                 </>
+                 <div className="grid grid-cols-2 gap-4">
+                    <Button onClick={startCamera} variant="outline" className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2">
+                      <Camera className="h-6 w-6" />
+                      <span className="text-[9px] font-black uppercase">USAR CÁMARA</span>
+                    </Button>
+                    <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="h-24 rounded-2xl border-dashed border-2 flex flex-col items-center justify-center gap-2">
+                      {uploading ? <Loader2 className="animate-spin" /> : <Upload className="h-6 w-6" />}
+                      <span className="text-[9px] font-black uppercase">SUBIR ARCHIVO</span>
+                    </Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                 </div>
                )}
             </div>
 
-            {!showCamera && (
-              <div className="flex flex-col gap-3 pt-4 border-t border-slate-50">
-                <Button 
-                  onClick={() => { 
-                    if (newPhotoUrl.startsWith('data:')) {
-                      uploadProfileImage(newPhotoUrl);
-                    } else if (newPhotoUrl) {
-                      if(affiliateRef) updateDocumentNonBlocking(affiliateRef, { photoUrl: newPhotoUrl });
-                      setIsEditingPhoto(false);
-                      setNewPhotoUrl('');
-                      toast({ title: "Perfil Actualizado ✓" });
-                    }
-                  }} 
-                  className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-xs shadow-2xl active:scale-95 transition-all"
-                  disabled={uploading || (!newPhotoUrl)}
-                >
-                  {uploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "CONFIRMAR IDENTIDAD"}
-                </Button>
-                <p className="text-[8px] text-center text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                  Tu imagen será visible en toda la infraestructura Sync Connect.
-                </p>
-              </div>
+            {!showCamera && newPhotoUrl && (
+              <Button onClick={() => uploadProfileImage(newPhotoUrl)} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase" disabled={uploading}>
+                {uploading ? <Loader2 className="animate-spin mr-2" /> : "GUARDAR CAMBIOS"}
+              </Button>
             )}
           </div>
         </DialogContent>
