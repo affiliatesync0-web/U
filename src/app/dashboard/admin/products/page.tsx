@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PRODUCT_CATEGORIES, NICA_BANKS, PRODUCT_TYPES } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Package, Truck, CreditCard, Edit3, Save, X, Link as LinkIcon } from 'lucide-react'
+import { Plus, Trash2, Search, Loader2, Image as ImageIcon, Upload, GraduationCap, Sparkles, Package, Edit3, Save, X, Link as LinkIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/components/language-context'
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
@@ -100,7 +100,8 @@ export default function AdminProductsPage() {
     setUploadingImage(true);
     try {
       const { storage } = initializeFirebase();
-      const storageRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
+      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const storageRef = ref(storage, `products/${fileName}`);
       
       const result = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(result.ref);
@@ -355,7 +356,7 @@ export default function AdminProductsPage() {
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="ghost" onClick={closeDialog} className="font-black text-[10px] uppercase">CANCELAR</Button>
                 <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase shadow-xl" onClick={handleSave} disabled={uploadingImage}>
-                  <Save className="h-4 w-4 mr-2" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICAR PRODUCTO'}
+                  <Save className="h-4 w-4 mr-2" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICA PRODUCTO'}
                 </Button>
               </div>
             </div>

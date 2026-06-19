@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Bell, HelpCircle, ListChecks, CheckCircle2, Radio } from 'lucide-react'
+import { Plus, Trash2, Loader2, PlayCircle, Video, Save, X, Layers, BookOpen, ChevronRight, Bell, HelpCircle, ListChecks, CheckCircle2, Radio as RadioIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
 import { collection, doc, getDocs, setDoc, query, where } from 'firebase/firestore'
@@ -219,7 +219,7 @@ export default function AdminAcademyPage() {
         <Card className="border-none shadow-2xl rounded-[2.5rem] bg-slate-900 text-white overflow-hidden">
            <div className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
               <div className="h-20 w-20 bg-red-600 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.4)] animate-pulse shrink-0">
-                 <Radio className="h-10 w-10 text-white" />
+                 <RadioIcon className="h-10 w-10 text-white" />
               </div>
               <div className="flex-1 space-y-4 text-center md:text-left">
                  <h3 className="text-2xl font-headline font-black uppercase italic">Clase <span className="text-red-500">En Vivo</span></h3>
