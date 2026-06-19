@@ -1,24 +1,18 @@
 "use client"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { PRODUCT_CATEGORIES, PRODUCT_TYPES } from '@/lib/constants'
-import { Plus, Trash2, Search, Loader2, Upload, GraduationCap, Sparkles, Package, Edit3, Save, X, Link as LinkIcon } from 'lucide-react'
+import { Plus, Trash2, Search, Loader2, GraduationCap, Sparkles, Package, Edit3, Save, X, Link as LinkIcon, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useLanguage } from '@/components/language-context'
-import { generateProductDescription } from '@/ai/flows/generate-product-description-flow'
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser, initializeFirebase, updateDocumentNonBlocking } from '@/firebase'
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser, updateDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { Badge } from '@/components/ui/badge'
 
 interface MarketingLink {
   label: string;
@@ -31,11 +25,7 @@ export default function AdminProductsPage() {
   const { user } = useUser()
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [generating, setGenerating] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  
-  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const productsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -80,38 +70,9 @@ export default function AdminProductsPage() {
     }
   }, [editingId, products]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "Archivo muy pesado", description: "Máximo 10MB permitido." });
-      return;
-    }
-
-    setUploadingImage(true);
-    try {
-      const { storage } = initializeFirebase();
-      const fileName = `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-      const storageRef = ref(storage, fileName);
-      
-      const result = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(result.ref);
-      
-      setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
-      toast({ title: "Imagen Cargada ✓" });
-    } catch (err) {
-      console.error("Upload error:", err);
-      toast({ variant: "destructive", title: "Error de Subida", description: "Fallo en la conexión con el servidor." });
-    } finally {
-      setUploadingImage(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
   const handleSave = () => {
-    if (!formData.name || !formData.price || !formData.commission) {
-      toast({ variant: "destructive", title: "Campos Requeridos" });
+    if (!formData.name || !formData.price || !formData.commission || !formData.imageUrl) {
+      toast({ variant: "destructive", title: "Campos Requeridos", description: "Por favor completa el nombre, precio, comisión y link de imagen." });
       return;
     }
 
@@ -125,10 +86,10 @@ export default function AdminProductsPage() {
 
     if (editingId && db) {
       updateDocumentNonBlocking(doc(db, 'products', editingId), productData);
-      toast({ title: "Producto Actualizado" });
+      toast({ title: "Producto Actualizado ✓" });
     } else if (db) {
       addDocumentNonBlocking(collection(db, 'products'), { ...productData, createdAt: new Date().toISOString() });
-      toast({ title: "Producto Publicado" });
+      toast({ title: "Producto Publicado ✓" });
     }
     closeDialog();
   }
@@ -137,7 +98,6 @@ export default function AdminProductsPage() {
     setIsAdding(false);
     setEditingId(null);
     setFormData({ name: '', type: 'Digital', category: 'Curso', code: '', price: '', commission: '', paymentLink: '', features: '', description: '', imageUrl: '', marketingLinks: [] });
-    setUploadingImage(false);
   }
 
   const handleDelete = (id: string) => {
@@ -152,132 +112,148 @@ export default function AdminProductsPage() {
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase">Catálogo de <span className="text-slate-500">Productos</span></h1>
-            <p className="text-slate-500 text-sm font-medium mt-1">Gestiona productos digitales y físicos para la red.</p>
+            <h1 className="text-3xl font-headline font-black text-slate-900 tracking-tight uppercase italic">Catálogo de <span className="text-primary">Productos</span></h1>
+            <p className="text-slate-500 text-sm font-medium mt-1">Gestiona productos digitales y físicos para la red mediante links directos.</p>
           </div>
           <div className="flex gap-4">
              <div className="relative w-full md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-10 h-10 rounded-lg bg-white border-slate-200" />
              </div>
-             <Button onClick={() => setIsAdding(true)} className="h-10 px-6 bg-slate-900 hover:bg-slate-800 rounded-lg font-black text-[10px] uppercase tracking-widest gap-2">
+             <Button onClick={() => setIsAdding(true)} className="h-10 px-6 bg-slate-900 hover:bg-slate-800 rounded-lg font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl">
               <Plus className="h-4 w-4" /> NUEVO PRODUCTO
             </Button>
           </div>
         </div>
 
         <Dialog open={isAdding} onOpenChange={(open) => !open && closeDialog()}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-0 border-none shadow-2xl bg-white">
-            <div className="bg-slate-900 p-6 text-white shrink-0 flex items-center justify-between">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 border-none shadow-2xl bg-white">
+            <div className="bg-slate-900 p-8 text-white shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="h-10 w-10 bg-slate-800 rounded-lg flex items-center justify-center text-white border border-white/10">
-                  {formData.type === 'Digital' ? <GraduationCap className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+                <div className="h-12 w-12 bg-slate-800 rounded-xl flex items-center justify-center text-white border border-white/10 shadow-inner">
+                  {formData.type === 'Digital' ? <GraduationCap className="h-6 w-6 text-primary" /> : <Package className="h-6 w-6 text-primary" />}
                 </div>
                 <div>
-                  <DialogTitle className="text-xl font-headline font-black uppercase">{editingId ? 'Editar Producto' : 'Nuevo Producto'}</DialogTitle>
+                  <DialogTitle className="text-2xl font-headline font-black uppercase italic tracking-tight">{editingId ? 'Editar Producto' : 'Nuevo Producto'}</DialogTitle>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Configuración de activo comercial</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={closeDialog}>
-                <X className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="text-white/40 hover:text-white rounded-full" onClick={closeDialog}>
+                <X className="h-6 w-6" />
               </Button>
             </div>
             
-            <div className="p-8 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
+            <div className="p-10 space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-8">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase">Nombre Comercial</Label>
-                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-12 rounded-lg bg-slate-50 border-slate-200 font-bold" />
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Comercial</Label>
+                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-primary font-bold px-6" placeholder="Ej: Curso de Marketing Pro" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-slate-400 uppercase">Precio ($)</Label>
-                      <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="h-12 rounded-lg bg-slate-50 border-slate-200 font-black" />
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio ($)</Label>
+                      <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-primary font-black px-6" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-slate-400 uppercase">Comisión (%)</Label>
-                      <Input type="number" value={formData.commission} onChange={e => setFormData({...formData, commission: e.target.value})} className="h-12 rounded-lg bg-slate-50 border-slate-200 font-black text-green-600" />
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comisión (%)</Label>
+                      <Input type="number" value={formData.commission} onChange={e => setFormData({...formData, commission: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-primary font-black text-green-600 px-6" />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase">Imagen del Producto</Label>
-                    <div className="relative h-48 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-slate-100 group">
-                      {uploadingImage ? (
-                        <div className="flex flex-col items-center gap-4 p-8 w-full bg-white/80 backdrop-blur-sm z-20">
-                           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                           <p className="text-[11px] font-black uppercase text-slate-500 tracking-widest animate-pulse">Subiendo Archivo...</p>
-                        </div>
-                      ) : formData.imageUrl ? (
-                        <div className="relative w-full h-full">
-                          <img src={formData.imageUrl} className="w-full h-full object-cover" alt="preview" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                             <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>CAMBIAR</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center space-y-2 p-8 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                          <Upload className="h-6 w-6 text-slate-300 mx-auto" />
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Subir Imagen</p>
-                        </div>
-                      )}
+                  <div className="space-y-4">
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Imagen del Producto (URL)</Label>
+                    <div className="relative">
+                      <ImageIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
+                      <Input 
+                        value={formData.imageUrl} 
+                        onChange={e => setFormData({...formData, imageUrl: e.target.value})} 
+                        className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-primary font-bold pl-14 pr-6" 
+                        placeholder="https://link-de-tu-imagen.com/foto.jpg"
+                      />
                     </div>
-                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                    
+                    {formData.imageUrl && (
+                      <div className="mt-4 p-2 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 overflow-hidden aspect-video relative group">
+                        <img src={formData.imageUrl} className="w-full h-full object-cover rounded-[1.5rem]" alt="preview" onError={(e) => (e.currentTarget.src = "https://picsum.photos/seed/error/600/400")} />
+                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <p className="text-white font-black text-[10px] uppercase">Vista Previa del Activo</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                   <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-slate-900" />
-                        <h3 className="text-[10px] font-black uppercase text-slate-900">Descripción IA</h3>
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Link de Pago Seguro (Pocket/Directo)</Label>
+                    <div className="relative">
+                      <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
+                      <Input value={formData.paymentLink} onChange={e => setFormData({...formData, paymentLink: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold pl-14 pr-6" placeholder="https://checkout..." />
+                    </div>
+                  </div>
+
+                  <div className="p-8 bg-slate-900 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-6 opacity-10"><Sparkles className="h-20 w-20 text-primary" /></div>
+                      <div className="flex items-center gap-3 relative z-10">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        <h3 className="text-sm font-black uppercase text-white tracking-widest italic">Descripción Estratégica</h3>
                       </div>
-                      <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="min-h-[150px] text-xs" />
+                      <Textarea 
+                        value={formData.description} 
+                        onChange={e => setFormData({...formData, description: e.target.value})} 
+                        className="min-h-[180px] bg-white/5 border-none ring-1 ring-white/10 text-white text-xs leading-relaxed focus:ring-primary rounded-2xl p-6 relative z-10" 
+                        placeholder="Escribe los beneficios clave que verá el cliente..."
+                      />
                    </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button variant="ghost" onClick={closeDialog} className="font-black text-[10px] uppercase">CANCELAR</Button>
-                <Button className="h-12 px-10 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase shadow-xl" onClick={handleSave} disabled={uploadingImage}>
-                  <Save className="h-4 w-4 mr-2" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICA PRODUCTO'}
+              <div className="flex justify-end gap-4 pt-8 border-t">
+                <Button variant="ghost" onClick={closeDialog} className="h-14 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50">CANCELAR</Button>
+                <Button className="h-14 px-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl gap-3 transition-all active:scale-95" onClick={handleSave}>
+                  <Save className="h-5 w-5 text-primary" /> {editingId ? 'GUARDAR CAMBIOS' : 'PUBLICAR PRODUCTO'}
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* ... Tabla de productos (permanece igual) ... */}
-        <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white ring-1 ring-slate-100">
+        <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white ring-1 ring-slate-100">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50 h-14">
-                    <TableHead className="px-6 font-black uppercase text-[10px] text-slate-400">Producto</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] text-slate-400">Precio</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] text-slate-400">Comisión</TableHead>
-                    <TableHead className="px-6 text-right font-black uppercase text-[10px] text-slate-400">Acciones</TableHead>
+                  <TableRow className="bg-slate-50/50 h-20">
+                    <TableHead className="px-10 font-black uppercase text-[10px] tracking-widest text-slate-400">Producto / Activo</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Precio de Venta</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Comisión Socio</TableHead>
+                    <TableHead className="px-10 text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(products || []).filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
-                    <TableRow key={p.id} className="h-16 border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                            {p.imageUrl ? <img src={p.imageUrl} className="h-full w-full object-cover" alt="" /> : <Package className="h-4 w-4 text-slate-300 m-auto mt-2" />}
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={4} className="h-40 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></TableCell></TableRow>
+                  ) : products?.filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
+                    <TableRow key={p.id} className="h-24 border-b last:border-0 hover:bg-slate-50/30 transition-colors group">
+                      <TableCell className="px-10">
+                        <div className="flex items-center gap-5">
+                          <div className="h-14 w-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border-2 border-white shadow-lg group-hover:rotate-2 transition-transform">
+                            {p.imageUrl ? <img src={p.imageUrl} className="h-full w-full object-cover" alt="" /> : <Package className="h-6 w-6 text-slate-300 m-auto mt-4" />}
                           </div>
-                          <span className="font-bold text-xs uppercase text-slate-800 truncate max-w-[200px]">{p.name}</span>
+                          <div>
+                            <span className="font-black text-sm uppercase text-slate-900 block truncate max-w-[250px]">{p.name}</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{p.code}</span>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="font-black text-xs text-slate-900">${p.price?.toFixed(2)}</TableCell>
-                      <TableCell className="font-black text-xs text-green-600">{p.commissionRate}%</TableCell>
-                      <TableCell className="px-6 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-900" onClick={() => setEditingId(p.id)}><Edit3 className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-500" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <TableCell className="font-black text-sm text-slate-900">${p.price?.toFixed(2)}</TableCell>
+                      <TableCell className="font-black text-sm text-green-600">%{p.commissionRate}</TableCell>
+                      <TableCell className="px-10 text-right">
+                        <div className="flex justify-end gap-3">
+                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-100" onClick={() => setEditingId(p.id)}><Edit3 className="h-5 w-5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-red-200 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(p.id)}><Trash2 className="h-5 w-5" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
